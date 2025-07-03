@@ -1,4 +1,3 @@
-// ===== MapRenderer.cpp (Updated for modern Mapnik API) =====
 #include "MapRenderer.hpp"
 #include <mapnik/map.hpp>
 #include <mapnik/layer.hpp>

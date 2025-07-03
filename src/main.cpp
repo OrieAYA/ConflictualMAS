@@ -1,4 +1,3 @@
-// ===== main.cpp (Simplified and corrected) =====
 #include <iostream>
 #include <Box.hpp>
 #include <MapRenderer.hpp>
@@ -19,8 +18,6 @@ int main() {
     
         osmium::io::Reader reader(osm_filepath, osmium::io::read_meta::no);
     
-        // Activer le filtrage par bounding box dans le handler
-        // (remplace l'ancien set_bounding_box qui n'existe pas)
         handler.enable_bounding_box_filter(true);
         std::cout << "Bounding box filtering enabled in handler." << std::endl;
     
@@ -32,7 +29,6 @@ int main() {
         std::cout << "Ways collected: " << handler.data_collector.ways.size() << std::endl;
 
         if (!handler.data_collector.nodes.empty()) {
-            // Render the map
             MapRenderer renderer;
             osmium::Box render_bbox(139.7, 35.655, 139.715, 35.665);
             

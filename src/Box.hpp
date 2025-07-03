@@ -7,11 +7,10 @@
 #include <osmium/osm/location.hpp>
 #include <osmium/osm/node.hpp>
 #include <osmium/osm/way.hpp>
-#include <osmium/osm/box.hpp>  // Added missing include
+#include <osmium/osm/box.hpp>
 #include <osmium/handler.hpp>
 #include <osmium/geom/relations.hpp>
 
-// Unified MyData struct
 struct MyData {
     struct Point {
         double lat;

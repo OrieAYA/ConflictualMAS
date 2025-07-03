@@ -1,4 +1,3 @@
-// ===== Box.cpp =====
 #include "Box.hpp"
 #include <iostream>
 #include <algorithm>
@@ -6,9 +5,6 @@
 #include <osmium/io/any_input.hpp>
 #include <osmium/io/error.hpp>
 #include <osmium/geom/haversine.hpp>
-
-// Toutes les méthodes de MyHandler sont définies inline dans Box.hpp
-// Seule la fonction Test() est implémentée ici
 
 int Test(int argc, char* argv[]) {
     if (argc != 2) {
@@ -28,7 +24,7 @@ int Test(int argc, char* argv[]) {
                   << handler.shibuya_bbox.top_right().lon() << ", "
                   << handler.shibuya_bbox.top_right().lat() << std::endl;
 
-        // Créer le reader sans bounding box (la fonction n'existe pas)
+        // Créer le reader sans bounding box
         osmium::io::Reader reader(osm_filename, osmium::io::read_meta::no);
         
         // Activer le filtrage par bounding box dans le handler
