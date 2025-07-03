@@ -1,0 +1,510 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeDetermineSystem.cmake:205 (message)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      The system is: Windows - 10.0.26100 - AMD64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler:  
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      MSBuild Òü«ÒâÉÒâ╝Òé©ÒâºÒâ│ 17.14.14+a129329f1 (.NET Framework)
+      2025/07/03 17:56:58 Òü½ÒâôÒâ½ÒâëÒéÆÚûïÕºïÒüùÒü¥ÒüùÒüƒÒÇé
+      
+      ÒâÄÒâ╝Òâë 1 õ©èÒü«ÒâùÒâ¡Òé©ÒéºÒé»Òâê "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\4.0.3\\CompilerIdCXX\\CompilerIdCXX.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê)ÒÇé
+      PrepareForBuild:
+        ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "Debug\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        µºïÚÇáÕîûÕç║ÕèøÒüîµ£ëÕè╣Òü½Òü¬ÒüúÒüªÒüäÒü¥ÒüÖÒÇéÒé│Òâ│ÒâæÒéñÒâ®Þ¿║µû¡Òü«µø©Õ╝ÅÞ¿¡Õ«ÜÒü½Òü»Òé¿Òâ®Òâ╝ÚÜÄÕ▒ñÒüîÕÅìµÿáÒüòÒéîÒü¥ÒüÖÒÇéÞ®│þ┤░Òü½ÒüñÒüäÒüªÒü»ÒÇühttps://aka.ms/cpp/structured-output ÒéÆÕÅéþàºÒüùÒüªÒüÅÒüáÒüòÒüäÒÇé
+        ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "Debug\\CompilerIdCXX.tlog\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+      InitializeBuildStatus:
+        "AlwaysCreate" ÒüîµîçÕ«ÜÒüòÒéîÒüƒÒüƒÒéü "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild" Òü«Òé┐ÒââÒâü Òé┐Òé╣Òé»ÒéÆÕ«ƒÞíîÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+      VcpkgTripletSelection:
+        Using triplet "x64-windows" from "C:\\libs\\vcpkg\\installed\\x64-windows\\"
+        Using normalized configuration "Release"
+      ClCompile:
+        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\libs\\vcpkg\\installed\\x64-windows\\include" /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc143.pdb" /external:W0 /Gd /TP /FC /errorReport:queue CMakeCXXCompilerId.cpp
+        CMakeCXXCompilerId.cpp
+      Link:
+        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdCXX.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\\libs\\vcpkg\\installed\\x64-windows\\lib" /LIBPATH:"C:\\libs\\vcpkg\\installed\\x64-windows\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib "C:\\libs\\vcpkg\\installed\\x64-windows\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdCXX.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdCXX.lib" /MACHINE:X64 Debug\\CMakeCXXCompilerId.obj
+        CompilerIdCXX.vcxproj -> C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\4.0.3\\CompilerIdCXX\\CompilerIdCXX.exe
+      AppLocalFromInstalled:
+        pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\libs\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\4.0.3\\CompilerIdCXX\\CompilerIdCXX.exe" "C:\\libs\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.write.1u.tlog" "Debug\\vcpkg.applocal.log"
+        'pwsh.exe' is not recognized as an internal or external command,
+        operable program or batch file.
+        Òé│Òâ×Òâ│Òâë "pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\libs\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\4.0.3\\CompilerIdCXX\\CompilerIdCXX.exe" "C:\\libs\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.write.1u.tlog" "Debug\\vcpkg.applocal.log"" Òü»Òé│Òâ╝Òâë 9009 ÒüºþÁéõ║åÒüùÒü¥ÒüùÒüƒÒÇé
+        "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -ExecutionPolicy Bypass -noprofile -File "C:\\libs\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\4.0.3\\CompilerIdCXX\\CompilerIdCXX.exe" "C:\\libs\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.write.1u.tlog" "Debug\\vcpkg.applocal.log"
+      PostBuildEvent:
+        for %%i in (cl.exe) do @echo CMAKE_CXX_COMPILER=%%~$PATH:i
+        :VCEnd
+        CMAKE_CXX_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe
+      FinalizeBuildStatus:
+        ÒâòÒéíÒéñÒâ½ "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild" ÒéÆÕëèÚÖñÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.lastbuildstate" Òü«Òé┐ÒââÒâü Òé┐Òé╣Òé»ÒéÆÕ«ƒÞíîÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+      ÒâùÒâ¡Òé©ÒéºÒé»Òâê "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\4.0.3\\CompilerIdCXX\\CompilerIdCXX.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê) Òü«ÒâôÒâ½ÒâëÒüîÕ«îõ║åÒüùÒü¥ÒüùÒüƒÒÇé
+      
+      ÒâôÒâ½ÒâëÒü½µêÉÕèƒÒüùÒü¥ÒüùÒüƒÒÇé
+          0 ÕÇïÒü«Þ¡ªÕæè
+          0 Òé¿Òâ®Òâ╝
+      
+      þÁîÚüÄµÖéÚûô 00:00:02.82
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.vcxproj"
+      
+      The CXX compiler identification is MSVC, found in:
+        C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/4.0.3/CompilerIdCXX/CompilerIdCXX.exe
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-sitn5d"
+      binary: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-sitn5d"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      VCPKG_INSTALLED_DIR: "C:/libs/vcpkg/installed"
+      VCPKG_PREFER_SYSTEM_LIBS: "OFF"
+      VCPKG_TARGET_TRIPLET: "x64-windows"
+      Z_VCPKG_ROOT_DIR: "C:/libs/vcpkg"
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-sitn5d'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_8edce.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        MSBuild Òü«ÒâÉÒâ╝Òé©ÒâºÒâ│ 17.14.14+a129329f1 (.NET Framework)
+        2025/07/03 17:57:02 Òü½ÒâôÒâ½ÒâëÒéÆÚûïÕºïÒüùÒü¥ÒüùÒüƒÒÇé
+        
+        ÒâÄÒâ╝Òâë 1 õ©èÒü«ÒâùÒâ¡Òé©ÒéºÒé»Òâê "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-sitn5d\\cmTC_8edce.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê)ÒÇé
+        PrepareForBuild:
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_8edce.dir\\Debug\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          µºïÚÇáÕîûÕç║ÕèøÒüîµ£ëÕè╣Òü½Òü¬ÒüúÒüªÒüäÒü¥ÒüÖÒÇéÒé│Òâ│ÒâæÒéñÒâ®Þ¿║µû¡Òü«µø©Õ╝ÅÞ¿¡Õ«ÜÒü½Òü»Òé¿Òâ®Òâ╝ÚÜÄÕ▒ñÒüîÕÅìµÿáÒüòÒéîÒü¥ÒüÖÒÇéÞ®│þ┤░Òü½ÒüñÒüäÒüªÒü»ÒÇühttps://aka.ms/cpp/structured-output ÒéÆÕÅéþàºÒüùÒüªÒüÅÒüáÒüòÒüäÒÇé
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-sitn5d\\Debug\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_8edce.dir\\Debug\\cmTC_8edce.tlog\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        InitializeBuildStatus:
+          "AlwaysCreate" ÒüîµîçÕ«ÜÒüòÒéîÒüƒÒüƒÒéü "cmTC_8edce.dir\\Debug\\cmTC_8edce.tlog\\unsuccessfulbuild" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          "cmTC_8edce.dir\\Debug\\cmTC_8edce.tlog\\unsuccessfulbuild" Òü«Òé┐ÒââÒâü Òé┐Òé╣Òé»ÒéÆÕ«ƒÞíîÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_8edce.dir\\Debug\\\\" /Fd"cmTC_8edce.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.0\\Modules\\CMakeCXXCompilerABI.cpp"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.44.35211 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_8edce.dir\\Debug\\\\" /Fd"cmTC_8edce.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.0\\Modules\\CMakeCXXCompilerABI.cpp"
+          CMakeCXXCompilerABI.cpp
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-sitn5d\\Debug\\cmTC_8edce.exe" /INCREMENTAL /ILK:"cmTC_8edce.dir\\Debug\\cmTC_8edce.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-sitn5d/Debug/cmTC_8edce.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-sitn5d/Debug/cmTC_8edce.lib" /MACHINE:X64  /machine:x64 cmTC_8edce.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_8edce.vcxproj -> C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-sitn5d\\Debug\\cmTC_8edce.exe
+        FinalizeBuildStatus:
+          ÒâòÒéíÒéñÒâ½ "cmTC_8edce.dir\\Debug\\cmTC_8edce.tlog\\unsuccessfulbuild" ÒéÆÕëèÚÖñÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          "cmTC_8edce.dir\\Debug\\cmTC_8edce.tlog\\cmTC_8edce.lastbuildstate" Òü«Òé┐ÒââÒâü Òé┐Òé╣Òé»ÒéÆÕ«ƒÞíîÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        ÒâùÒâ¡Òé©ÒéºÒé»Òâê "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-sitn5d\\cmTC_8edce.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê) Òü«ÒâôÒâ½ÒâëÒüîÕ«îõ║åÒüùÒü¥ÒüùÒüƒÒÇé
+        
+        ÒâôÒâ½ÒâëÒü½µêÉÕèƒÒüùÒü¥ÒüùÒüƒÒÇé
+            0 ÕÇïÒü«Þ¡ªÕæè
+            0 Òé¿Òâ®Òâ╝
+        
+        þÁîÚüÄµÖéÚûô 00:00:01.12
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeDetermineCompilerABI.cmake:227 (message)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|link\\.exe|lld-link(\\.exe)?))("|,| |$)]
+        linker tool for 'CXX': C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/HostX64/x64/link.exe
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: []
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/Internal/CMakeDetermineLinkerId.cmake:36 (message)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeDetermineCompilerABI.cmake:270 (cmake_determine_linker_id)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Running the CXX compiler's linker: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/HostX64/x64/link.exe" "-v"
+      Microsoft (R) Incremental Linker Version 14.44.35211.0
+      Copyright (C) Microsoft Corporation.  All rights reserved.
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CheckSymbolExists.cmake:160 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CheckSymbolExists.cmake:69 (__CHECK_SYMBOL_EXISTS_IMPL)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/FindBZip2.cmake:100 (check_symbol_exists)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:896 (_find_package)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeFindDependencyMacro.cmake:78 (find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost_iostreams/boost_iostreams-config.cmake:61 (find_dependency)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:896 (_find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/BoostConfig.cmake:67 (find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/BoostConfig.cmake:128 (boostcfg_find_component)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/vcpkg-cmake-wrapper.cmake:3 (_find_package)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:850 (include)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/FindBoost.cmake:609 (find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/vcpkg-cmake-wrapper.cmake:3 (_find_package)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:850 (include)"
+      - "CMakeLists.txt:23 (find_package)"
+    directories:
+      source: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-qkpn0w"
+      binary: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-qkpn0w"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/cmake"
+      VCPKG_INSTALLED_DIR: "C:/libs/vcpkg/installed"
+      VCPKG_PREFER_SYSTEM_LIBS: "OFF"
+      VCPKG_TARGET_TRIPLET: "x64-windows"
+      Z_VCPKG_ROOT_DIR: "C:/libs/vcpkg"
+    buildResult:
+      variable: "BZIP2_NEED_PREFIX"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-qkpn0w'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_149fe.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        MSBuild Òü«ÒâÉÒâ╝Òé©ÒâºÒâ│ 17.14.14+a129329f1 (.NET Framework)
+        2025/07/03 17:57:05 Òü½ÒâôÒâ½ÒâëÒéÆÚûïÕºïÒüùÒü¥ÒüùÒüƒÒÇé
+        
+        ÒâÄÒâ╝Òâë 1 õ©èÒü«ÒâùÒâ¡Òé©ÒéºÒé»Òâê "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-qkpn0w\\cmTC_149fe.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê)ÒÇé
+        PrepareForBuild:
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_149fe.dir\\Debug\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          µºïÚÇáÕîûÕç║ÕèøÒüîµ£ëÕè╣Òü½Òü¬ÒüúÒüªÒüäÒü¥ÒüÖÒÇéÒé│Òâ│ÒâæÒéñÒâ®Þ¿║µû¡Òü«µø©Õ╝ÅÞ¿¡Õ«ÜÒü½Òü»Òé¿Òâ®Òâ╝ÚÜÄÕ▒ñÒüîÕÅìµÿáÒüòÒéîÒü¥ÒüÖÒÇéÞ®│þ┤░Òü½ÒüñÒüäÒüªÒü»ÒÇühttps://aka.ms/cpp/structured-output ÒéÆÕÅéþàºÒüùÒüªÒüÅÒüáÒüòÒüäÒÇé
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-qkpn0w\\Debug\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_149fe.dir\\Debug\\cmTC_149fe.tlog\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        InitializeBuildStatus:
+          "AlwaysCreate" ÒüîµîçÕ«ÜÒüòÒéîÒüƒÒüƒÒéü "cmTC_149fe.dir\\Debug\\cmTC_149fe.tlog\\unsuccessfulbuild" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          "cmTC_149fe.dir\\Debug\\cmTC_149fe.tlog\\unsuccessfulbuild" Òü«Òé┐ÒââÒâü Òé┐Òé╣Òé»ÒéÆÕ«ƒÞíîÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        SetModuleDependencies:
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_149fe.dir\\Debug\\cmTC_149fe_MD.tlog\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          ÒâóÒé©ÒâÑÒâ╝Òâ½õ¥ØÕ¡ÿÚûóõ┐éÒü«Òé¢Òâ╝Òé╣ÒéÆÒé╣Òé¡ÒâúÒâ│ÒüùÒüªÒüäÒü¥ÒüÖ...
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\libs\\vcpkg\\installed\\x64-windows\\include" /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_149fe.dir\\Debug\\\\" /scanDependencies "cmTC_149fe.dir\\Debug\\\\" /Fo"cmTC_149fe.dir\\Debug\\\\" /Fd"cmTC_149fe.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-qkpn0w\\CheckSymbolExists.cxx"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.44.35211 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /I"C:\\libs\\vcpkg\\installed\\x64-windows\\include" /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_149fe.dir\\Debug\\\\" /scanDependencies "cmTC_149fe.dir\\Debug\\\\" /Fo"cmTC_149fe.dir\\Debug\\\\" /Fd"cmTC_149fe.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-qkpn0w\\CheckSymbolExists.cxx"
+          CheckSymbolExists.cxx
+        ClCompile:
+          Òé│Òâ│ÒâæÒéñÒâ½ÒüùÒüªÒüäÒü¥ÒüÖ...
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\libs\\vcpkg\\installed\\x64-windows\\include" /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_149fe.dir\\Debug\\\\" /Fo"cmTC_149fe.dir\\Debug\\\\" /Fd"cmTC_149fe.dir\\Debug\\vc143.pdb" /sourceDependencies "cmTC_149fe.dir\\Debug\\.d.json" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-qkpn0w\\CheckSymbolExists.cxx"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.44.35211 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /I"C:\\libs\\vcpkg\\installed\\x64-windows\\include" /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_149fe.dir\\Debug\\\\" /Fo"cmTC_149fe.dir\\Debug\\\\" /Fd"cmTC_149fe.dir\\Debug\\vc143.pdb" /sourceDependencies "cmTC_149fe.dir\\Debug\\.d.json" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-qkpn0w\\CheckSymbolExists.cxx"
+          CheckSymbolExists.cxx
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-qkpn0w\\Debug\\cmTC_149fe.exe" /INCREMENTAL /ILK:"cmTC_149fe.dir\\Debug\\cmTC_149fe.ilk" /NOLOGO "C:\\libs\\vcpkg\\installed\\x64-windows\\debug\\lib\\bz2d.lib" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-qkpn0w/Debug/cmTC_149fe.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-qkpn0w/Debug/cmTC_149fe.lib" /MACHINE:X64  /machine:x64 cmTC_149fe.dir\\Debug\\CheckSymbolExists.obj
+          cmTC_149fe.vcxproj -> C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-qkpn0w\\Debug\\cmTC_149fe.exe
+        FinalizeBuildStatus:
+          ÒâòÒéíÒéñÒâ½ "cmTC_149fe.dir\\Debug\\cmTC_149fe.tlog\\unsuccessfulbuild" ÒéÆÕëèÚÖñÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          "cmTC_149fe.dir\\Debug\\cmTC_149fe.tlog\\cmTC_149fe.lastbuildstate" Òü«Òé┐ÒââÒâü Òé┐Òé╣Òé»ÒéÆÕ«ƒÞíîÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        ÒâùÒâ¡Òé©ÒéºÒé»Òâê "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-qkpn0w\\cmTC_149fe.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê) Òü«ÒâôÒâ½ÒâëÒüîÕ«îõ║åÒüùÒü¥ÒüùÒüƒÒÇé
+        
+        ÒâôÒâ½ÒâëÒü½µêÉÕèƒÒüùÒü¥ÒüùÒüƒÒÇé
+            0 ÕÇïÒü«Þ¡ªÕæè
+            0 Òé¿Òâ®Òâ╝
+        
+        þÁîÚüÄµÖéÚûô 00:00:01.50
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CheckCXXSourceCompiles.cmake:58 (cmake_check_source_compiles)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/FindThreads.cmake:99 (check_cxx_source_compiles)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/FindThreads.cmake:163 (_threads_check_libc)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:896 (_find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/liblzma/vcpkg-cmake-wrapper.cmake:57 (find_package)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:850 (include)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeFindDependencyMacro.cmake:78 (find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost_iostreams/boost_iostreams-config.cmake:62 (find_dependency)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:896 (_find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/BoostConfig.cmake:67 (find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/BoostConfig.cmake:128 (boostcfg_find_component)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/vcpkg-cmake-wrapper.cmake:3 (_find_package)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:850 (include)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/FindBoost.cmake:609 (find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/vcpkg-cmake-wrapper.cmake:3 (_find_package)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:850 (include)"
+      - "CMakeLists.txt:23 (find_package)"
+    checks:
+      - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
+    directories:
+      source: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-tmof2m"
+      binary: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-tmof2m"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/cmake"
+      VCPKG_INSTALLED_DIR: "C:/libs/vcpkg/installed"
+      VCPKG_PREFER_SYSTEM_LIBS: "OFF"
+      VCPKG_TARGET_TRIPLET: "x64-windows"
+      Z_VCPKG_ROOT_DIR: "C:/libs/vcpkg"
+    buildResult:
+      variable: "CMAKE_HAVE_LIBC_PTHREAD"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-tmof2m'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_a8d3e.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        MSBuild Òü«ÒâÉÒâ╝Òé©ÒâºÒâ│ 17.14.14+a129329f1 (.NET Framework)
+        2025/07/03 17:57:07 Òü½ÒâôÒâ½ÒâëÒéÆÚûïÕºïÒüùÒü¥ÒüùÒüƒÒÇé
+        
+        ÒâÄÒâ╝Òâë 1 õ©èÒü«ÒâùÒâ¡Òé©ÒéºÒé»Òâê "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\cmTC_a8d3e.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê)ÒÇé
+        PrepareForBuild:
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_a8d3e.dir\\Debug\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          µºïÚÇáÕîûÕç║ÕèøÒüîµ£ëÕè╣Òü½Òü¬ÒüúÒüªÒüäÒü¥ÒüÖÒÇéÒé│Òâ│ÒâæÒéñÒâ®Þ¿║µû¡Òü«µø©Õ╝ÅÞ¿¡Õ«ÜÒü½Òü»Òé¿Òâ®Òâ╝ÚÜÄÕ▒ñÒüîÕÅìµÿáÒüòÒéîÒü¥ÒüÖÒÇéÞ®│þ┤░Òü½ÒüñÒüäÒüªÒü»ÒÇühttps://aka.ms/cpp/structured-output ÒéÆÕÅéþàºÒüùÒüªÒüÅÒüáÒüòÒüäÒÇé
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\Debug\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_a8d3e.dir\\Debug\\cmTC_a8d3e.tlog\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        InitializeBuildStatus:
+          "AlwaysCreate" ÒüîµîçÕ«ÜÒüòÒéîÒüƒÒüƒÒéü "cmTC_a8d3e.dir\\Debug\\cmTC_a8d3e.tlog\\unsuccessfulbuild" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          "cmTC_a8d3e.dir\\Debug\\cmTC_a8d3e.tlog\\unsuccessfulbuild" Òü«Òé┐ÒââÒâü Òé┐Òé╣Òé»ÒéÆÕ«ƒÞíîÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        SetModuleDependencies:
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_a8d3e.dir\\Debug\\cmTC_a8d3e_MD.tlog\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          ÒâóÒé©ÒâÑÒâ╝Òâ½õ¥ØÕ¡ÿÚûóõ┐éÒü«Òé¢Òâ╝Òé╣ÒéÆÒé╣Òé¡ÒâúÒâ│ÒüùÒüªÒüäÒü¥ÒüÖ...
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_a8d3e.dir\\Debug\\\\" /scanDependencies "cmTC_a8d3e.dir\\Debug\\\\" /Fo"cmTC_a8d3e.dir\\Debug\\\\" /Fd"cmTC_a8d3e.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\src.cxx"
+        C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\src.cxx(1,10): fatal  error C1083: include ???????????'pthread.h':No such file or directory [C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\cmTC_a8d3e.vcxproj]
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.44.35211 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_a8d3e.dir\\Debug\\\\" /scanDependencies "cmTC_a8d3e.dir\\Debug\\\\" /Fo"cmTC_a8d3e.dir\\Debug\\\\" /Fd"cmTC_a8d3e.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\src.cxx"
+          src.cxx
+        C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\src.cxx(1,10): error C1083: include ÒâòÒéíÒéñÒâ½ÒéÆÚûïÒüæÒü¥ÒüøÒéôÒÇé'pthread.h':No such file or directory [C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\cmTC_a8d3e.vcxproj]
+        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Microsoft\\VC\\v170\\Microsoft.CppCommon.targets(532,5): warning MSB8074: ÒâóÒé©ÒâÑÒâ╝Òâ½Òü«õ¥ØÕ¡ÿÚûóõ┐éÒâòÒéíÒéñÒâ½ cmTC_a8d3e.dir\\Debug\\src.cxx.module.json ÒéÆÞ¬¡Òü┐ÕÅûÒéîÒü¥ÒüøÒéô: ÕÉìÕëìþ®║Úûô '' Òü«Þªüþ┤á 'root' ÒéÆµîçÕ«ÜÒüùÒüªÒüÅÒüáÒüòÒüäÒÇéÒÇéÕÉìÕëìÒüî ''ÒÇüÕÉìÕëìþ®║ÚûôÒüî '' Òü« 'None' Òüîµñ£Õç║ÒüòÒéîÒü¥ÒüùÒüƒÒÇé  ÒâôÒâ½ÒâëÚáåÕ║ÅÒüîµ¡úÒüùÒüÅÒü¬ÒüäÕÅ»Þâ¢µÇºÒüîÒüéÒéèÒü¥ÒüÖÒÇé [C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\cmTC_a8d3e.vcxproj]
+        ClCompile:
+          Òé│Òâ│ÒâæÒéñÒâ½ÒüùÒüªÒüäÒü¥ÒüÖ...
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_a8d3e.dir\\Debug\\\\" /Fo"cmTC_a8d3e.dir\\Debug\\\\" /Fd"cmTC_a8d3e.dir\\Debug\\vc143.pdb" /sourceDependencies "cmTC_a8d3e.dir\\Debug\\.d.json" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\src.cxx"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.44.35211 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_a8d3e.dir\\Debug\\\\" /Fo"cmTC_a8d3e.dir\\Debug\\\\" /Fd"cmTC_a8d3e.dir\\Debug\\vc143.pdb" /sourceDependencies "cmTC_a8d3e.dir\\Debug\\.d.json" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\src.cxx"
+          src.cxx
+        C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\src.cxx(1,10): error C1083: include ÒâòÒéíÒéñÒâ½ÒéÆÚûïÒüæÒü¥ÒüøÒéôÒÇé'pthread.h':No such file or directory [C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\cmTC_a8d3e.vcxproj]
+        ÒâùÒâ¡Òé©ÒéºÒé»Òâê "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\cmTC_a8d3e.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê) Òü«ÒâôÒâ½ÒâëÒüîþÁéõ║åÒüùÒü¥ÒüùÒüƒ -- Õñ▒µòùÒÇé
+        
+        ÒâôÒâ½ÒâëÒü½Õñ▒µòùÒüùÒü¥ÒüùÒüƒÒÇé
+        
+        "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\cmTC_a8d3e.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê) (1) ->
+        (SetModuleDependencies Òé┐Òâ╝Òé▓ÒââÒâê) -> 
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Microsoft\\VC\\v170\\Microsoft.CppCommon.targets(532,5): warning MSB8074: ÒâóÒé©ÒâÑÒâ╝Òâ½Òü«õ¥ØÕ¡ÿÚûóõ┐éÒâòÒéíÒéñÒâ½ cmTC_a8d3e.dir\\Debug\\src.cxx.module.json ÒéÆÞ¬¡Òü┐ÕÅûÒéîÒü¥ÒüøÒéô: ÕÉìÕëìþ®║Úûô '' Òü«Þªüþ┤á 'root' ÒéÆµîçÕ«ÜÒüùÒüªÒüÅÒüáÒüòÒüäÒÇéÒÇéÕÉìÕëìÒüî ''ÒÇüÕÉìÕëìþ®║ÚûôÒüî '' Òü« 'None' Òüîµñ£Õç║ÒüòÒéîÒü¥ÒüùÒüƒÒÇé  ÒâôÒâ½ÒâëÚáåÕ║ÅÒüîµ¡úÒüùÒüÅÒü¬ÒüäÕÅ»Þâ¢µÇºÒüîÒüéÒéèÒü¥ÒüÖÒÇé [C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\cmTC_a8d3e.vcxproj]
+        
+        
+        "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\cmTC_a8d3e.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê) (1) ->
+        (SetModuleDependencies Òé┐Òâ╝Òé▓ÒââÒâê) -> 
+          C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\src.cxx(1,10): fatal  error C1083: include ???????????'pthread.h':No such file or directory [C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\cmTC_a8d3e.vcxproj]
+          C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\src.cxx(1,10): error C1083: include ÒâòÒéíÒéñÒâ½ÒéÆÚûïÒüæÒü¥ÒüøÒéôÒÇé'pthread.h':No such file or directory [C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\cmTC_a8d3e.vcxproj]
+        
+        
+        "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\cmTC_a8d3e.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê) (1) ->
+        (ClCompile Òé┐Òâ╝Òé▓ÒââÒâê) -> 
+          C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\src.cxx(1,10): error C1083: include ÒâòÒéíÒéñÒâ½ÒéÆÚûïÒüæÒü¥ÒüøÒéôÒÇé'pthread.h':No such file or directory [C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-tmof2m\\cmTC_a8d3e.vcxproj]
+        
+            1 ÕÇïÒü«Þ¡ªÕæè
+            3 Òé¿Òâ®Òâ╝
+        
+        þÁîÚüÄµÖéÚûô 00:00:00.97
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CheckLibraryExists.cmake:112 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/FindThreads.cmake:112 (check_library_exists)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/FindThreads.cmake:175 (_threads_check_lib)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:896 (_find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/liblzma/vcpkg-cmake-wrapper.cmake:57 (find_package)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:850 (include)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeFindDependencyMacro.cmake:78 (find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost_iostreams/boost_iostreams-config.cmake:62 (find_dependency)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:896 (_find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/BoostConfig.cmake:67 (find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/BoostConfig.cmake:128 (boostcfg_find_component)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/vcpkg-cmake-wrapper.cmake:3 (_find_package)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:850 (include)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/FindBoost.cmake:609 (find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/vcpkg-cmake-wrapper.cmake:3 (_find_package)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:850 (include)"
+      - "CMakeLists.txt:23 (find_package)"
+    checks:
+      - "Looking for pthread_create in pthreads"
+    directories:
+      source: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-pqwczs"
+      binary: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-pqwczs"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/cmake"
+      VCPKG_INSTALLED_DIR: "C:/libs/vcpkg/installed"
+      VCPKG_PREFER_SYSTEM_LIBS: "OFF"
+      VCPKG_TARGET_TRIPLET: "x64-windows"
+      Z_VCPKG_ROOT_DIR: "C:/libs/vcpkg"
+    buildResult:
+      variable: "CMAKE_HAVE_PTHREADS_CREATE"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-pqwczs'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_11e74.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        MSBuild Òü«ÒâÉÒâ╝Òé©ÒâºÒâ│ 17.14.14+a129329f1 (.NET Framework)
+        2025/07/03 17:57:09 Òü½ÒâôÒâ½ÒâëÒéÆÚûïÕºïÒüùÒü¥ÒüùÒüƒÒÇé
+        
+        ÒâÄÒâ╝Òâë 1 õ©èÒü«ÒâùÒâ¡Òé©ÒéºÒé»Òâê "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-pqwczs\\cmTC_11e74.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê)ÒÇé
+        PrepareForBuild:
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_11e74.dir\\Debug\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          µºïÚÇáÕîûÕç║ÕèøÒüîµ£ëÕè╣Òü½Òü¬ÒüúÒüªÒüäÒü¥ÒüÖÒÇéÒé│Òâ│ÒâæÒéñÒâ®Þ¿║µû¡Òü«µø©Õ╝ÅÞ¿¡Õ«ÜÒü½Òü»Òé¿Òâ®Òâ╝ÚÜÄÕ▒ñÒüîÕÅìµÿáÒüòÒéîÒü¥ÒüÖÒÇéÞ®│þ┤░Òü½ÒüñÒüäÒüªÒü»ÒÇühttps://aka.ms/cpp/structured-output ÒéÆÕÅéþàºÒüùÒüªÒüÅÒüáÒüòÒüäÒÇé
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-pqwczs\\Debug\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_11e74.dir\\Debug\\cmTC_11e74.tlog\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        InitializeBuildStatus:
+          "AlwaysCreate" ÒüîµîçÕ«ÜÒüòÒéîÒüƒÒüƒÒéü "cmTC_11e74.dir\\Debug\\cmTC_11e74.tlog\\unsuccessfulbuild" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          "cmTC_11e74.dir\\Debug\\cmTC_11e74.tlog\\unsuccessfulbuild" Òü«Òé┐ÒââÒâü Òé┐Òé╣Òé»ÒéÆÕ«ƒÞíîÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        SetModuleDependencies:
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_11e74.dir\\Debug\\cmTC_11e74_MD.tlog\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          ÒâóÒé©ÒâÑÒâ╝Òâ½õ¥ØÕ¡ÿÚûóõ┐éÒü«Òé¢Òâ╝Òé╣ÒéÆÒé╣Òé¡ÒâúÒâ│ÒüùÒüªÒüäÒü¥ÒüÖ...
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_11e74.dir\\Debug\\\\" /scanDependencies "cmTC_11e74.dir\\Debug\\\\" /Fo"cmTC_11e74.dir\\Debug\\\\" /Fd"cmTC_11e74.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-pqwczs\\CheckFunctionExists.cxx"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.44.35211 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_11e74.dir\\Debug\\\\" /scanDependencies "cmTC_11e74.dir\\Debug\\\\" /Fo"cmTC_11e74.dir\\Debug\\\\" /Fd"cmTC_11e74.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-pqwczs\\CheckFunctionExists.cxx"
+          CheckFunctionExists.cxx
+        ClCompile:
+          Òé│Òâ│ÒâæÒéñÒâ½ÒüùÒüªÒüäÒü¥ÒüÖ...
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_11e74.dir\\Debug\\\\" /Fo"cmTC_11e74.dir\\Debug\\\\" /Fd"cmTC_11e74.dir\\Debug\\vc143.pdb" /sourceDependencies "cmTC_11e74.dir\\Debug\\.d.json" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-pqwczs\\CheckFunctionExists.cxx"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.44.35211 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_11e74.dir\\Debug\\\\" /Fo"cmTC_11e74.dir\\Debug\\\\" /Fd"cmTC_11e74.dir\\Debug\\vc143.pdb" /sourceDependencies "cmTC_11e74.dir\\Debug\\.d.json" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-pqwczs\\CheckFunctionExists.cxx"
+          CheckFunctionExists.cxx
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-pqwczs\\Debug\\cmTC_11e74.exe" /INCREMENTAL /ILK:"cmTC_11e74.dir\\Debug\\cmTC_11e74.ilk" /NOLOGO pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-pqwczs/Debug/cmTC_11e74.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-pqwczs/Debug/cmTC_11e74.lib" /MACHINE:X64  /machine:x64 cmTC_11e74.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: ???? 'pthreads.lib' ???????????? [C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-pqwczs\\cmTC_11e74.vcxproj]
+        ÒâùÒâ¡Òé©ÒéºÒé»Òâê "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-pqwczs\\cmTC_11e74.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê) Òü«ÒâôÒâ½ÒâëÒüîþÁéõ║åÒüùÒü¥ÒüùÒüƒ -- Õñ▒µòùÒÇé
+        
+        ÒâôÒâ½ÒâëÒü½Õñ▒µòùÒüùÒü¥ÒüùÒüƒÒÇé
+        
+        "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-pqwczs\\cmTC_11e74.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê) (1) ->
+        (Link Òé┐Òâ╝Òé▓ÒââÒâê) -> 
+          LINK : fatal error LNK1104: ???? 'pthreads.lib' ???????????? [C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-pqwczs\\cmTC_11e74.vcxproj]
+        
+            0 ÕÇïÒü«Þ¡ªÕæè
+            1 Òé¿Òâ®Òâ╝
+        
+        þÁîÚüÄµÖéÚûô 00:00:00.94
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CheckLibraryExists.cmake:112 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/FindThreads.cmake:112 (check_library_exists)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/FindThreads.cmake:176 (_threads_check_lib)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:896 (_find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/liblzma/vcpkg-cmake-wrapper.cmake:57 (find_package)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:850 (include)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeFindDependencyMacro.cmake:78 (find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost_iostreams/boost_iostreams-config.cmake:62 (find_dependency)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:896 (_find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/BoostConfig.cmake:67 (find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/BoostConfig.cmake:128 (boostcfg_find_component)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/vcpkg-cmake-wrapper.cmake:3 (_find_package)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:850 (include)"
+      - "C:/Program Files/CMake/share/cmake-4.0/Modules/FindBoost.cmake:609 (find_package)"
+      - "C:/libs/vcpkg/installed/x64-windows/share/boost/vcpkg-cmake-wrapper.cmake:3 (_find_package)"
+      - "C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake:850 (include)"
+      - "CMakeLists.txt:23 (find_package)"
+    checks:
+      - "Looking for pthread_create in pthread"
+    directories:
+      source: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-dw9kyf"
+      binary: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-dw9kyf"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/cmake"
+      VCPKG_INSTALLED_DIR: "C:/libs/vcpkg/installed"
+      VCPKG_PREFER_SYSTEM_LIBS: "OFF"
+      VCPKG_TARGET_TRIPLET: "x64-windows"
+      Z_VCPKG_ROOT_DIR: "C:/libs/vcpkg"
+    buildResult:
+      variable: "CMAKE_HAVE_PTHREAD_CREATE"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-dw9kyf'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_6428b.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        MSBuild Òü«ÒâÉÒâ╝Òé©ÒâºÒâ│ 17.14.14+a129329f1 (.NET Framework)
+        2025/07/03 17:57:10 Òü½ÒâôÒâ½ÒâëÒéÆÚûïÕºïÒüùÒü¥ÒüùÒüƒÒÇé
+        
+        ÒâÄÒâ╝Òâë 1 õ©èÒü«ÒâùÒâ¡Òé©ÒéºÒé»Òâê "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dw9kyf\\cmTC_6428b.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê)ÒÇé
+        PrepareForBuild:
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_6428b.dir\\Debug\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          µºïÚÇáÕîûÕç║ÕèøÒüîµ£ëÕè╣Òü½Òü¬ÒüúÒüªÒüäÒü¥ÒüÖÒÇéÒé│Òâ│ÒâæÒéñÒâ®Þ¿║µû¡Òü«µø©Õ╝ÅÞ¿¡Õ«ÜÒü½Òü»Òé¿Òâ®Òâ╝ÚÜÄÕ▒ñÒüîÕÅìµÿáÒüòÒéîÒü¥ÒüÖÒÇéÞ®│þ┤░Òü½ÒüñÒüäÒüªÒü»ÒÇühttps://aka.ms/cpp/structured-output ÒéÆÕÅéþàºÒüùÒüªÒüÅÒüáÒüòÒüäÒÇé
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dw9kyf\\Debug\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_6428b.dir\\Debug\\cmTC_6428b.tlog\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        InitializeBuildStatus:
+          "AlwaysCreate" ÒüîµîçÕ«ÜÒüòÒéîÒüƒÒüƒÒéü "cmTC_6428b.dir\\Debug\\cmTC_6428b.tlog\\unsuccessfulbuild" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          "cmTC_6428b.dir\\Debug\\cmTC_6428b.tlog\\unsuccessfulbuild" Òü«Òé┐ÒââÒâü Òé┐Òé╣Òé»ÒéÆÕ«ƒÞíîÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+        SetModuleDependencies:
+          ÒâçÒéúÒâ¼Òé»ÒâêÒâ¬ "cmTC_6428b.dir\\Debug\\cmTC_6428b_MD.tlog\\" ÒéÆõ¢£µêÉÒüùÒüªÒüäÒü¥ÒüÖÒÇé
+          ÒâóÒé©ÒâÑÒâ╝Òâ½õ¥ØÕ¡ÿÚûóõ┐éÒü«Òé¢Òâ╝Òé╣ÒéÆÒé╣Òé¡ÒâúÒâ│ÒüùÒüªÒüäÒü¥ÒüÖ...
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_6428b.dir\\Debug\\\\" /scanDependencies "cmTC_6428b.dir\\Debug\\\\" /Fo"cmTC_6428b.dir\\Debug\\\\" /Fd"cmTC_6428b.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dw9kyf\\CheckFunctionExists.cxx"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.44.35211 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_6428b.dir\\Debug\\\\" /scanDependencies "cmTC_6428b.dir\\Debug\\\\" /Fo"cmTC_6428b.dir\\Debug\\\\" /Fd"cmTC_6428b.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dw9kyf\\CheckFunctionExists.cxx"
+          CheckFunctionExists.cxx
+        ClCompile:
+          Òé│Òâ│ÒâæÒéñÒâ½ÒüùÒüªÒüäÒü¥ÒüÖ...
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_6428b.dir\\Debug\\\\" /Fo"cmTC_6428b.dir\\Debug\\\\" /Fd"cmTC_6428b.dir\\Debug\\vc143.pdb" /sourceDependencies "cmTC_6428b.dir\\Debug\\.d.json" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dw9kyf\\CheckFunctionExists.cxx"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.44.35211 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /FS /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++20 /ifcOutput "cmTC_6428b.dir\\Debug\\\\" /Fo"cmTC_6428b.dir\\Debug\\\\" /Fd"cmTC_6428b.dir\\Debug\\vc143.pdb" /sourceDependencies "cmTC_6428b.dir\\Debug\\.d.json" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dw9kyf\\CheckFunctionExists.cxx"
+          CheckFunctionExists.cxx
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dw9kyf\\Debug\\cmTC_6428b.exe" /INCREMENTAL /ILK:"cmTC_6428b.dir\\Debug\\cmTC_6428b.ilk" /NOLOGO pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-dw9kyf/Debug/cmTC_6428b.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/CMakeScratch/TryCompile-dw9kyf/Debug/cmTC_6428b.lib" /MACHINE:X64  /machine:x64 cmTC_6428b.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: ???? 'pthread.lib' ???????????? [C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dw9kyf\\cmTC_6428b.vcxproj]
+        ÒâùÒâ¡Òé©ÒéºÒé»Òâê "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dw9kyf\\cmTC_6428b.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê) Òü«ÒâôÒâ½ÒâëÒüîþÁéõ║åÒüùÒü¥ÒüùÒüƒ -- Õñ▒µòùÒÇé
+        
+        ÒâôÒâ½ÒâëÒü½Õñ▒µòùÒüùÒü¥ÒüùÒüƒÒÇé
+        
+        "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dw9kyf\\cmTC_6428b.vcxproj" (µùóÕ«ÜÒü«Òé┐Òâ╝Òé▓ÒââÒâê) (1) ->
+        (Link Òé┐Òâ╝Òé▓ÒââÒâê) -> 
+          LINK : fatal error LNK1104: ???? 'pthread.lib' ???????????? [C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dw9kyf\\cmTC_6428b.vcxproj]
+        
+            0 ÕÇïÒü«Þ¡ªÕæè
+            1 Òé¿Òâ®Òâ╝
+        
+        þÁîÚüÄµÖéÚûô 00:00:00.84
+        
+      exitCode: 1
+...

@@ -1,0 +1,10 @@
+^C:\USERS\SCREP\ONEDRIVE\BUREAU\ALGORITHMS\CONFLICTUALMAS\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS -BC:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build --check-stamp-file C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
