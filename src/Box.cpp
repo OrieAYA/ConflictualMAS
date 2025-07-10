@@ -6,24 +6,20 @@
 #include <osmium/io/error.hpp>
 #include <osmium/geom/haversine.hpp>
 
-int Test(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <osm_pbf_file>\n";
-        return 1;
-    }
-
-    std::string osm_filename = argv[1];
+MyHandler ProcessOSMData(const std::string& osm_filename, double min_lon, double min_lat, double max_lon, double max_lat) {
+    MyHandler handler;
+    
+    // Définir la bounding box personnalisée
+    handler.set_bounding_box(min_lon, min_lat, max_lon, max_lat);
+    
+    std::cout << "Reading OSM file: " << osm_filename << std::endl;
+    std::cout << "Filtering for Custom BBox: "
+              << handler.Map_bbox.bottom_left().lon() << ", "
+              << handler.Map_bbox.bottom_left().lat() << " to "
+              << handler.Map_bbox.top_right().lon() << ", "
+              << handler.Map_bbox.top_right().lat() << std::endl;
 
     try {
-        MyHandler handler;
-
-        std::cout << "Reading OSM file: " << osm_filename << std::endl;
-        std::cout << "Filtering for Shibuya BBox: "
-                  << handler.shibuya_bbox.bottom_left().lon() << ", "
-                  << handler.shibuya_bbox.bottom_left().lat() << " to "
-                  << handler.shibuya_bbox.top_right().lon() << ", "
-                  << handler.shibuya_bbox.top_right().lat() << std::endl;
-
         // Créer le reader sans bounding box
         osmium::io::Reader reader(osm_filename, osmium::io::read_meta::no);
         
@@ -52,11 +48,32 @@ int Test(int argc, char* argv[]) {
 
     } catch (const osmium::io_error& e) {
         std::cerr << "OSM I/O Error: " << e.what() << std::endl;
-        return 1;
+        throw;
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
+        throw;
+    }
+
+    return handler;
+}
+
+int Test(int argc, char* argv[]) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <osm_pbf_file>\n";
         return 1;
     }
 
-    return 0;
+    std::string osm_filename = argv[1];
+    
+    try {
+        // Utiliser la bounding box par défaut de Shibuya
+        MyHandler handler = ProcessOSMData(osm_filename, 139.700, 35.655, 139.715, 35.665);
+        
+        std::cout << "Test completed successfully." << std::endl;
+        return 0;
+        
+    } catch (const std::exception& e) {
+        std::cerr << "Test failed: " << e.what() << std::endl;
+        return 1;
+    }
 }

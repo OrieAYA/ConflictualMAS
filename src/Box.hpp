@@ -16,6 +16,7 @@ struct MyData {
         double lat;
         double lon;
         osmium::object_id_type id = 0;
+        std::vector<osmium::object_id_type> incident_ways;  // Ways incidents à ce point
         
         // Constructor for compatibility
         Point() = default;
@@ -26,6 +27,7 @@ struct MyData {
     struct Way {
         osmium::object_id_type id;
         std::vector<Point> points;
+        int weight = 0;  // Poids basé sur la longueur du chemin
         
         Way() : id(0) {}
         Way(osmium::object_id_type id) : id(id) {}
@@ -55,18 +57,25 @@ struct MyData {
     }
 };
 
+
 class MyHandler : public osmium::handler::Handler {
 private:
     bool m_use_bbox_filter = false;
     std::unordered_map<osmium::object_id_type, osmium::Location> m_node_locations;
 
 public:
-    osmium::Box shibuya_bbox;
+    osmium::Box Map_bbox;
     MyData data_collector;
 
     MyHandler() {
-        shibuya_bbox.extend(osmium::Location(139.700, 35.655)); // SW corner
-        shibuya_bbox.extend(osmium::Location(139.715, 35.665)); // NE corner
+
+    }
+    
+    // Nouvelle méthode pour définir la bounding box
+    void set_bounding_box(double min_lon, double min_lat, double max_lon, double max_lat) {
+        Map_bbox = osmium::Box(); // Reset la box
+        Map_bbox.extend(osmium::Location(min_lon, min_lat));
+        Map_bbox.extend(osmium::Location(max_lon, max_lat));
     }
     
     void enable_bounding_box_filter(bool enable = true) {
@@ -83,7 +92,7 @@ public:
             m_node_locations[node.id()] = node_loc;
             
             // Filtrer le node
-            if (!shibuya_bbox.contains(node_loc)) {
+            if (!Map_bbox.contains(node_loc)) {
                 return;
             }
         }
@@ -109,7 +118,7 @@ public:
             for (const auto& node_ref : way.nodes()) {
                 auto it = m_node_locations.find(node_ref.ref());
                 if (it != m_node_locations.end()) {
-                    if (shibuya_bbox.contains(it->second)) {
+                    if (Map_bbox.contains(it->second)) {
                         intersects_bbox = true;
                         break;
                     }
@@ -136,6 +145,7 @@ public:
     }
 };
 
-int Test(int argc, char* argv[]);
+// Fonction pour traiter les données OSM avec une bounding box personnalisée
+MyHandler ProcessOSMData(const std::string& osm_filename, double min_lon, double min_lat, double max_lon, double max_lat);
 
 #endif // BOX_HPP

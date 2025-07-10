@@ -34,7 +34,6 @@ include_directories("C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/sr
 
 find_package(Mapnik CONFIG REQUIRED)
 
-# --- Votre code de projet ---
 set(SOURCES
     src/main.cpp
     src/Box.cpp

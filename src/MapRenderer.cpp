@@ -14,6 +14,7 @@
 #include <mapnik/value.hpp>
 #include <mapnik/params.hpp>
 #include <iostream>
+#include <filesystem>
 
 MapRenderer::MapRenderer() {
     // Initialize Mapnik if needed
@@ -76,7 +77,7 @@ void MapRenderer::render_shibuya_map(
     mapnik::markers_symbolizer point_sym;
     
     // Set marker properties using put() method
-    mapnik::put(point_sym, mapnik::keys::fill, mapnik::color("red"));
+    mapnik::put(point_sym, mapnik::keys::fill, mapnik::color("black"));
     mapnik::put(point_sym, mapnik::keys::width, mapnik::value_double(8.0));
     mapnik::put(point_sym, mapnik::keys::height, mapnik::value_double(8.0));
     
@@ -88,7 +89,7 @@ void MapRenderer::render_shibuya_map(
     mapnik::line_symbolizer line_sym;
     
     // Set line properties using put() method
-    mapnik::put(line_sym, mapnik::keys::stroke, mapnik::color("blue"));
+    mapnik::put(line_sym, mapnik::keys::stroke, mapnik::color("grey"));
     mapnik::put(line_sym, mapnik::keys::stroke_width, mapnik::value_double(2.0));
     
     line_rule.append(std::move(line_sym));
@@ -122,8 +123,30 @@ void MapRenderer::render_shibuya_map(
         mapnik::agg_renderer<mapnik::image_rgba8> rend(m, im);
         rend.apply();
 
-        mapnik::save_to_file(im, output_filename);
-        std::cout << "Map rendered to " << output_filename << std::endl;
+        int counter = 0;
+        namespace fs = std::filesystem;
+        fs::path dir_path = "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\src\\maps\\";
+        fs::path base_path = output_filename;
+        std::string ext = ".png";
+
+        // Supprimer l'extension si elle existe déjà dans base_path
+        if (base_path.has_extension()) {
+            base_path = base_path.stem();
+        }
+
+        // Construire le chemin initial
+        std::string final_output_filename = (dir_path / (base_path.string() + ext)).string();
+
+        // Continuer tant que le fichier EXISTE pour éviter d'écraser
+        while (fs::exists(final_output_filename)) {
+                counter++;
+                // Append (n) before the extension
+                final_output_filename = (dir_path / (base_path.string() + "(" + std::to_string(counter) + ")" + ext)).string();
+            }
+
+        mapnik::save_to_file(im, final_output_filename);
+        std::cout << "Map rendered to " << final_output_filename << std::endl;
+
     }
     catch (const std::exception& e) {
         std::cerr << "Rendering error: " << e.what() << std::endl;

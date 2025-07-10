@@ -65,6 +65,15 @@
         "stop_token": "cpp",
         "thread": "cpp",
         "unordered_map": "cpp",
-        "xhash": "cpp"
+        "xhash": "cpp",
+        "chrono": "cpp",
+        "codecvt": "cpp",
+        "deque": "cpp",
+        "filesystem": "cpp",
+        "forward_list": "cpp",
+        "map": "cpp",
+        "sstream": "cpp",
+        "typeindex": "cpp",
+        "xtree": "cpp"
     }
 }
