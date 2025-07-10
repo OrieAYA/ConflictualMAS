@@ -4,21 +4,21 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <memory>
 #include <osmium/osm/location.hpp>
 #include <osmium/osm/node.hpp>
 #include <osmium/osm/way.hpp>
 #include <osmium/osm/box.hpp>
 #include <osmium/handler.hpp>
-#include <osmium/geom/relations.hpp>
 
+// Structures de données (inchangées)
 struct MyData {
     struct Point {
         double lat;
         double lon;
         osmium::object_id_type id = 0;
-        std::vector<osmium::object_id_type> incident_ways;  // Ways incidents à ce point
+        std::vector<osmium::object_id_type> incident_ways;
         
-        // Constructor for compatibility
         Point() = default;
         Point(double lat, double lon, osmium::object_id_type id = 0) 
             : lat(lat), lon(lon), id(id) {}
@@ -27,17 +27,15 @@ struct MyData {
     struct Way {
         osmium::object_id_type id;
         std::vector<Point> points;
-        int weight = 0;  // Poids basé sur la longueur du chemin
+        int weight = 0;
         
         Way() : id(0) {}
         Way(osmium::object_id_type id) : id(id) {}
     };
 
-    // Use maps for efficient lookup by ID
     std::unordered_map<osmium::object_id_type, Point> nodes;
     std::unordered_map<osmium::object_id_type, Way> ways;
     
-    // Helper methods for compatibility with vector-based code
     std::vector<Point> get_nodes_vector() const {
         std::vector<Point> result;
         result.reserve(nodes.size());
@@ -57,7 +55,7 @@ struct MyData {
     }
 };
 
-
+// Handler OSM (inchangé)
 class MyHandler : public osmium::handler::Handler {
 private:
     bool m_use_bbox_filter = false;
@@ -67,13 +65,10 @@ public:
     osmium::Box Map_bbox;
     MyData data_collector;
 
-    MyHandler() {
-
-    }
+    MyHandler() {}
     
-    // Nouvelle méthode pour définir la bounding box
     void set_bounding_box(double min_lon, double min_lat, double max_lon, double max_lat) {
-        Map_bbox = osmium::Box(); // Reset la box
+        Map_bbox = osmium::Box();
         Map_bbox.extend(osmium::Location(min_lon, min_lat));
         Map_bbox.extend(osmium::Location(max_lon, max_lat));
     }
@@ -84,20 +79,15 @@ public:
     
     void node(const osmium::Node& node) {
         const osmium::Location node_loc = node.location();
-        
         if (!node_loc.valid()) return;
         
-        // Stocker la localisation du node si filtrage activé
         if (m_use_bbox_filter) {
             m_node_locations[node.id()] = node_loc;
-            
-            // Filtrer le node
             if (!Map_bbox.contains(node_loc)) {
                 return;
             }
         }
         
-        // Ajouter le node aux données collectées
         data_collector.nodes[node.id()] = MyData::Point(
             node_loc.lat(), 
             node_loc.lon(), 
@@ -111,10 +101,8 @@ public:
         MyData::Way current_way(way.id());
         bool has_nodes_in_bbox = false;
         
-        // Si le filtrage est activé, vérifier si le way intersecte la bounding box
         if (m_use_bbox_filter) {
             bool intersects_bbox = false;
-            
             for (const auto& node_ref : way.nodes()) {
                 auto it = m_node_locations.find(node_ref.ref());
                 if (it != m_node_locations.end()) {
@@ -124,13 +112,9 @@ public:
                     }
                 }
             }
-            
-            if (!intersects_bbox) {
-                return;
-            }
+            if (!intersects_bbox) return;
         }
         
-        // Construire le way avec les nodes disponibles
         for (const auto& node_ref : way.nodes()) {
             auto it = data_collector.nodes.find(node_ref.ref());
             if (it != data_collector.nodes.end()) {
@@ -145,7 +129,20 @@ public:
     }
 };
 
-// Fonction pour traiter les données OSM avec une bounding box personnalisée
-MyHandler ProcessOSMData(const std::string& osm_filename, double min_lon, double min_lat, double max_lon, double max_lat);
+struct GeoBox {
+    MyData data;
+    osmium::Box bbox;
+    std::string source_file;
+    bool is_valid = false;
+    
+    GeoBox() = default;
+    GeoBox(const MyData& d, const osmium::Box& b, const std::string& src) 
+        : data(d), bbox(b), source_file(src), is_valid(true) {}
+};
+
+// Fonction indépendante pour créer une box depuis un fichier OSM
+GeoBox create_geo_box(const std::string& osm_filename, 
+                      double min_lon, double min_lat, 
+                      double max_lon, double max_lat);
 
 #endif // BOX_HPP
