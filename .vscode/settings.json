@@ -74,6 +74,7 @@
         "map": "cpp",
         "sstream": "cpp",
         "typeindex": "cpp",
-        "xtree": "cpp"
+        "xtree": "cpp",
+        "random": "cpp"
     }
 }

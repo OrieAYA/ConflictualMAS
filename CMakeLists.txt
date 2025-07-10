@@ -38,6 +38,7 @@ set(SOURCES
     src/main.cpp
     src/Box.cpp
     src/MapRenderer.cpp
+    src/Pathfinding.cpp
 )
 add_executable(main ${SOURCES})
 
@@ -52,3 +53,6 @@ target_link_libraries(main PRIVATE
     ${BZIP2_LIBRARIES}
     ${EXPAT_LIBRARIES}
 )
+
+#Make : cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake
+#Build / Compile : cmake --build . 

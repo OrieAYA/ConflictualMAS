@@ -396,6 +396,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\main.cpp" />
     <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\Box.cpp" />
     <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MapRenderer.cpp" />
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\Pathfinding.cpp" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

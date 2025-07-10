@@ -11,7 +11,7 @@
 #include <osmium/osm/box.hpp>
 #include <osmium/handler.hpp>
 
-// Structures de données (inchangées)
+// Structures de données
 struct MyData {
     struct Point {
         double lat;
@@ -28,6 +28,7 @@ struct MyData {
         osmium::object_id_type id;
         std::vector<Point> points;
         int weight = 0;
+        float distance_meters = 0.0f;  // Distance totale du way en mètres
         
         Way() : id(0) {}
         Way(osmium::object_id_type id) : id(id) {}
@@ -55,11 +56,14 @@ struct MyData {
     }
 };
 
-// Handler OSM (inchangé)
+// Handler OSM
 class MyHandler : public osmium::handler::Handler {
 private:
     bool m_use_bbox_filter = false;
     std::unordered_map<osmium::object_id_type, osmium::Location> m_node_locations;
+    
+    // Fonction pour calculer la distance haversine
+    double calculate_haversine_distance(double lat1, double lon1, double lat2, double lon2) const;
 
 public:
     osmium::Box Map_bbox;
@@ -124,6 +128,16 @@ public:
         }
         
         if (has_nodes_in_bbox && current_way.points.size() > 1) {
+            // Calculer la distance totale du way
+            float total_distance = 0.0f;
+            for (size_t i = 1; i < current_way.points.size(); ++i) {
+                total_distance += static_cast<float>(calculate_haversine_distance(
+                    current_way.points[i-1].lat, current_way.points[i-1].lon,
+                    current_way.points[i].lat, current_way.points[i].lon
+                ));
+            }
+            current_way.distance_meters = total_distance;
+            
             data_collector.ways[way.id()] = current_way;
         }
     }
