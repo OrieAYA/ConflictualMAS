@@ -109,8 +109,8 @@ bool render_map_from_data(const MyData& data,
         mapnik::markers_symbolizer normal_point_sym;
         
         mapnik::put(normal_point_sym, mapnik::keys::fill, mapnik::color("black"));
-        mapnik::put(normal_point_sym, mapnik::keys::width, mapnik::value_double(6.0));
-        mapnik::put(normal_point_sym, mapnik::keys::height, mapnik::value_double(6.0));
+        mapnik::put(normal_point_sym, mapnik::keys::width, mapnik::value_double(4.0));
+        mapnik::put(normal_point_sym, mapnik::keys::height, mapnik::value_double(4.0));
         
         normal_point_rule.append(std::move(normal_point_sym));
         node_style.add_rule(std::move(normal_point_rule));
@@ -121,8 +121,8 @@ bool render_map_from_data(const MyData& data,
             
             mapnik::markers_symbolizer objective_sym;
             mapnik::put(objective_sym, mapnik::keys::fill, mapnik::color("red"));
-            mapnik::put(objective_sym, mapnik::keys::width, mapnik::value_double(8.0));  // Plus gros
-            mapnik::put(objective_sym, mapnik::keys::height, mapnik::value_double(8.0));
+            mapnik::put(objective_sym, mapnik::keys::width, mapnik::value_double(10.0));  // Plus gros
+            mapnik::put(objective_sym, mapnik::keys::height, mapnik::value_double(10.0));
             
             objective_rule.append(std::move(objective_sym));
             node_style.add_rule(std::move(objective_rule));

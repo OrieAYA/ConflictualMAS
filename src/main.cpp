@@ -13,24 +13,23 @@ int main() {
     std::string map_name;
     
     std::cout << "\n=== Configuration de la Bounding Box ===" << std::endl;
-    std::cout << "Entrez les coordonnées de la zone à extraire:" << std::endl;
-    
-    std::cout << "\nValeurs par défaut (Shibuya):" << std::endl;
-    std::cout << "  Min Longitude: 139.700" << std::endl;
-    std::cout << "  Min Latitude:  35.655" << std::endl;
-    std::cout << "  Max Longitude: 139.715" << std::endl;
-    std::cout << "  Max Latitude:  35.665" << std::endl;
     
     char use_default;
-    std::cout << "\nUtiliser les valeurs par défaut (Shibuya) ? (y/n): ";
+    std::cout << "\nUtiliser les valeurs par défaut (Shibuya : y / Asakusa : a) ? (y/a/n): ";
     std::cin >> use_default;
     
     if (use_default == 'y' || use_default == 'Y') {
-        min_lon = 139.700;
-        min_lat = 35.655;
-        max_lon = 139.715;
-        max_lat = 35.665;
+        min_lon = 139.699;
+        min_lat = 35.658;
+        max_lon = 139.704;
+        max_lat = 35.661;
         map_name = "shibuya_map";
+    } else if (use_default == 'a' || use_default == 'A') {
+        min_lon = 139.785;
+        min_lat = 35.705;
+        max_lon = 139.800;
+        max_lat = 35.718;
+        map_name = "asakusa_map";
     } else {
         std::cout << "Min Longitude: ";
         std::cin >> min_lon;
@@ -67,9 +66,9 @@ int main() {
         // Configuration
         FlickrConfig config;
         config.api_key = "9568c6342a890ef1ba342f54c4c1160f";
-        config.search_word = "monument";
+        config.search_word = "temple";
         config.bbox = std::to_string(min_lon) + "," + std::to_string(min_lat) + "," + 
-              std::to_string(max_lon) + "," + std::to_string(max_lat);
+              std::to_string(max_lon) + "," + std::to_string(max_lat);  
         config.poi_assignment_radius = 150.0;
         config.min_date = "2020-01-01";
         config.max_date = "2024-12-31";
