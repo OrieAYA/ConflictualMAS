@@ -109,10 +109,11 @@ GeoBox apply_objectives(GeoBox geo_box, const FlickrConfig& flickr_config,
     FlickrAPIClient client(flickr_config);
     std::vector<FlickrPOI> pois;
     
-    // Charger depuis le cache ou récupérer via API
+    /* Charger depuis le cache ou récupérer via API
     if (use_cache && std::filesystem::exists(cache_filename)) {
         pois = client.load_pois_from_file(cache_filename);
     }
+    */
     
     if (pois.empty()) {
         std::cout << "Fetching fresh data from Flickr API..." << std::endl;

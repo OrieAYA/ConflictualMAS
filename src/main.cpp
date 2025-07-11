@@ -69,7 +69,7 @@ int main() {
         config.search_word = "temple";
         config.bbox = std::to_string(min_lon) + "," + std::to_string(min_lat) + "," + 
               std::to_string(max_lon) + "," + std::to_string(max_lat);  
-        config.poi_assignment_radius = 150.0;
+        config.poi_assignment_radius = 10.0;
         config.min_date = "2020-01-01";
         config.max_date = "2024-12-31";
 
