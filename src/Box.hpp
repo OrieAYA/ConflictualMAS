@@ -1,23 +1,85 @@
 #ifndef BOX_HPP
 #define BOX_HPP
 
+#include <iostream>
 #include <vector>
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <map>
 #include <osmium/osm/location.hpp>
 #include <osmium/osm/node.hpp>
 #include <osmium/osm/way.hpp>
 #include <osmium/osm/box.hpp>
 #include <osmium/handler.hpp>
 
-// Structures de données
+// Configuration pour l'API Flickr
+struct FlickrConfig {
+    std::string api_key;
+    std::string search_word;
+    std::string bbox;  // Format "min_lon,min_lat,max_lon,max_lat"
+    std::string min_date;
+    std::string max_date;
+    double poi_assignment_radius = 100.0;  // Rayon en mètres pour assigner les POIs
+    
+    FlickrConfig() = default;
+    FlickrConfig(const std::string& key, const std::string& word, const std::string& bounding_box)
+        : api_key(key), search_word(word), bbox(bounding_box) {}
+};
+
+// Structure pour un Point d'Intérêt Flickr
+struct FlickrPOI {
+    std::string id;
+    double latitude;
+    double longitude;
+    std::string title;
+    std::string description;
+    std::vector<std::string> tags;
+    
+    FlickrPOI() = default;
+};
+
+// Groupe d'objectifs
+struct ObjectiveGroup {
+    int id;
+    std::string name;
+    std::string description;
+    int point_count = 0;
+    
+    ObjectiveGroup() = default;
+    ObjectiveGroup(int id, const std::string& name, const std::string& desc)
+        : id(id), name(name), description(desc) {}
+};
+
+// Client API Flickr
+class FlickrAPIClient {
+private:
+    FlickrConfig config;
+    
+    static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* response);
+    std::string build_flickr_url(const std::string& method, const std::map<std::string, std::string>& params) const;
+    std::string make_http_request(const std::string& url) const;
+    
+public:
+    FlickrAPIClient(const FlickrConfig& cfg) : config(cfg) {}
+    
+    std::vector<FlickrPOI> fetch_pois() const;
+    void save_pois_to_file(const std::vector<FlickrPOI>& pois, const std::string& filename) const;
+    std::vector<FlickrPOI> load_pois_from_file(const std::string& filename) const;
+};
+
+// Fonction utilitaire pour calculer la distance haversine
+double calculate_haversine_distance(double lat1, double lon1, double lat2, double lon2);
+
+//Struct de donnees
 struct MyData {
     struct Point {
         double lat;
         double lon;
         osmium::object_id_type id = 0;
         std::vector<osmium::object_id_type> incident_ways;
+        int groupe = 0;  // 0 = non objectif, 1 = objectif
+        std::string objective_id = "";  // ID du POI Flickr associé
         
         Point() = default;
         Point(double lat, double lon, osmium::object_id_type id = 0) 
@@ -36,6 +98,7 @@ struct MyData {
 
     std::unordered_map<osmium::object_id_type, Point> nodes;
     std::unordered_map<osmium::object_id_type, Way> ways;
+    std::unordered_map<int, ObjectiveGroup> objective_groups;  // AJOUT: Map des groupes d'objectifs
     
     std::vector<Point> get_nodes_vector() const {
         std::vector<Point> result;
@@ -53,6 +116,16 @@ struct MyData {
             result.push_back(way);
         }
         return result;
+    }
+    
+    // AJOUT: Méthode pour afficher les groupes d'objectifs
+    void print_objective_groups() const {
+        std::cout << "\n=== Groupes d'objectifs ===" << std::endl;
+        for (const auto& [id, group] : objective_groups) {
+            std::cout << "Groupe " << id << ": " << group.name 
+                      << " (" << group.point_count << " points)" << std::endl;
+            std::cout << "  Description: " << group.description << std::endl;
+        }
     }
 };
 
@@ -158,5 +231,9 @@ struct GeoBox {
 GeoBox create_geo_box(const std::string& osm_filename, 
                       double min_lon, double min_lat, 
                       double max_lon, double max_lat);
+
+// AJOUT: Déclaration de la fonction apply_objectives
+GeoBox apply_objectives(GeoBox geo_box, const FlickrConfig& flickr_config, 
+                       const std::string& cache_filename, bool use_cache = true);
 
 #endif // BOX_HPP

@@ -63,6 +63,24 @@ int main() {
         std::cout << "GeoBox créée avec succès!" << std::endl;
         std::cout << "Nodes: " << geo_box.data.nodes.size() << std::endl;
         std::cout << "Ways: " << geo_box.data.ways.size() << std::endl;
+
+        // Configuration
+        FlickrConfig config;
+        config.api_key = "9568c6342a890ef1ba342f54c4c1160f";
+        config.search_word = "monument";
+        config.bbox = std::to_string(min_lon) + "," + std::to_string(min_lat) + "," + 
+              std::to_string(max_lon) + "," + std::to_string(max_lat);
+        config.poi_assignment_radius = 150.0;
+        config.min_date = "2020-01-01";
+        config.max_date = "2024-12-31";
+
+        //Application des objectifs
+        geo_box = apply_objectives(geo_box, config, "cache.json", true);
+
+        //Verif Objectifs
+        std::cout << "\n=== Résultats finaux ===" << std::endl;
+        std::cout << "Total nodes: " << geo_box.data.nodes.size() << std::endl;
+        std::cout << "Total ways: " << geo_box.data.ways.size() << std::endl;
         
         //Rendu indépendant de la map
         if (geo_box.data.nodes.empty()) {

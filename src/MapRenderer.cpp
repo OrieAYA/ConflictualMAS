@@ -43,6 +43,17 @@ bool render_map_from_data(const MyData& data,
                          int height) {
     
     std::cout << "Rendering map from data..." << std::endl;
+
+    // Debug: Compter les points par groupe
+    std::map<int, int> group_counts;
+    for (const auto& [node_id, point_data] : data.nodes) {
+        group_counts[point_data.groupe]++;
+    }
+
+    std::cout << "Points par groupe:" << std::endl;
+    for (const auto& [group_id, count] : group_counts) {
+        std::cout << "  Groupe " << group_id << ": " << count << " points" << std::endl;
+    }
     
     try {
         mapnik::Map m(width, height);
@@ -52,13 +63,17 @@ bool render_map_from_data(const MyData& data,
         mapnik::parameters node_params;
         node_params["type"] = "memory";
         auto node_ds = std::make_shared<mapnik::memory_datasource>(node_params);
-        
+
         for (const auto& [node_id, point_data] : data.nodes) {
             mapnik::context_ptr ctx = std::make_shared<mapnik::context_type>();
+            ctx->push("groupe");  // AJOUT: Déclarer l'attribut groupe
             auto feature = std::make_shared<mapnik::feature_impl>(ctx, node_id);
             
             mapnik::geometry::point<double> point_geom(point_data.lon, point_data.lat);
             feature->set_geometry(std::move(point_geom));
+            
+            // AJOUT: Définir l'attribut groupe
+            feature->put("groupe", point_data.groupe);
             
             node_ds->push(feature);
         }
@@ -87,15 +102,31 @@ bool render_map_from_data(const MyData& data,
 
         // Définir les styles
         mapnik::feature_type_style node_style;
-        mapnik::rule point_rule;
-        mapnik::markers_symbolizer point_sym;
+
+        // Style pour les nodes non-objectifs (groupe 0)
+        mapnik::rule normal_point_rule;
+        normal_point_rule.set_filter(mapnik::parse_expression("[groupe] = 0"));
+        mapnik::markers_symbolizer normal_point_sym;
         
-        mapnik::put(point_sym, mapnik::keys::fill, mapnik::color("black"));
-        mapnik::put(point_sym, mapnik::keys::width, mapnik::value_double(6.0));
-        mapnik::put(point_sym, mapnik::keys::height, mapnik::value_double(6.0));
+        mapnik::put(normal_point_sym, mapnik::keys::fill, mapnik::color("black"));
+        mapnik::put(normal_point_sym, mapnik::keys::width, mapnik::value_double(6.0));
+        mapnik::put(normal_point_sym, mapnik::keys::height, mapnik::value_double(6.0));
         
-        point_rule.append(std::move(point_sym));
-        node_style.add_rule(std::move(point_rule));
+        normal_point_rule.append(std::move(normal_point_sym));
+        node_style.add_rule(std::move(normal_point_rule));
+
+        for (int group_id = 1; group_id <= 5; ++group_id) {
+            mapnik::rule objective_rule;
+            objective_rule.set_filter(mapnik::parse_expression("[groupe] = " + std::to_string(group_id)));
+            
+            mapnik::markers_symbolizer objective_sym;
+            mapnik::put(objective_sym, mapnik::keys::fill, mapnik::color("red"));
+            mapnik::put(objective_sym, mapnik::keys::width, mapnik::value_double(8.0));  // Plus gros
+            mapnik::put(objective_sym, mapnik::keys::height, mapnik::value_double(8.0));
+            
+            objective_rule.append(std::move(objective_sym));
+            node_style.add_rule(std::move(objective_rule));
+        }
 
         mapnik::feature_type_style way_style;
         mapnik::rule line_rule;

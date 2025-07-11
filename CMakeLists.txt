@@ -24,6 +24,7 @@ find_package(Boost 1.55 COMPONENTS system iostreams REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(BZip2 REQUIRED)
 find_package(EXPAT REQUIRED)
+find_package(CURL REQUIRED)
 find_package(Protozero REQUIRED)
 
 include_directories(SYSTEM ${PROTOZERO_INCLUDE_DIR})
@@ -49,6 +50,7 @@ target_link_libraries(main PRIVATE
     mapnik::mapnik
     mapnik::json
     mapnik::wkt
+    CURL::libcurl
     ${ZLIB_LIBRARIES}
     ${BZIP2_LIBRARIES}
     ${EXPAT_LIBRARIES}
