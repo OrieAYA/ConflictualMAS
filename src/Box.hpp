@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <string>
 #include <memory>
 #include <map>
@@ -12,6 +13,8 @@
 #include <osmium/osm/way.hpp>
 #include <osmium/osm/box.hpp>
 #include <osmium/handler.hpp>
+
+bool is_valid_way_type(const osmium::Way& way);
 
 // Configuration pour l'API Flickr
 struct FlickrConfig {
@@ -174,6 +177,10 @@ public:
     
     void way(const osmium::Way& way) {
         if (way.nodes().empty()) return;
+
+        if (!is_valid_way_type(way)) {
+            return;
+        }
         
         MyData::Way current_way(way.id());
         bool has_nodes_in_bbox = false;

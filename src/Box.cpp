@@ -49,6 +49,41 @@ osmium::object_id_type find_nearest_point(const MyData& data, double target_lat,
     return nearest_id;
 }
 
+
+// Fonction pour vérifier si un way est une route/chemin valide (pas piéton)
+bool is_valid_way_type(const osmium::Way& way) {
+    
+    // Vérifier les tags du way
+    for (const auto& tag : way.tags()) {
+        std::string key = tag.key();
+        std::string value = tag.value();
+        
+        // Exclure les bâtiments et structures
+        if (key == "building") {
+            return false;
+        }
+        
+        // Exclure les contours de bâtiments
+        if (key == "building:part") {
+            return false;
+        }
+        
+        // Exclure les zones (landuse, amenity, etc.)
+        if (key == "landuse" || key == "amenity" || key == "leisure" || 
+            key == "natural" || key == "area") {
+            return false;
+        }
+        
+        /* Exclure explicitement les chemins piétons
+        if (key == "foot" && value == "designated") {
+            return false;
+        }*/
+        
+    }
+    
+    return true;
+}
+
 // Fonction indépendante pour créer une GeoBox
 GeoBox create_geo_box(const std::string& osm_filename, 
                       double min_lon, double min_lat, 
@@ -75,6 +110,16 @@ GeoBox create_geo_box(const std::string& osm_filename,
                 if (it != handler.data_collector.nodes.end()) {
                     it->second.incident_ways.push_back(way_id);
                 }
+            }
+        }
+
+        // Supprimer les points sans ways
+        auto nodes_it = handler.data_collector.nodes.begin();
+        while (nodes_it != handler.data_collector.nodes.end()) {
+            if (nodes_it->second.incident_ways.empty()) {
+                nodes_it = handler.data_collector.nodes.erase(nodes_it);
+            } else {
+                ++nodes_it;
             }
         }
         
