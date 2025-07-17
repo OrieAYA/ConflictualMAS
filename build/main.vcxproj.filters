@@ -13,6 +13,12 @@
     <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\Pathfinding.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\GeoBoxManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\utility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\CMakeLists.txt" />

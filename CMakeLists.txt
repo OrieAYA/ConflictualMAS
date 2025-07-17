@@ -40,6 +40,8 @@ set(SOURCES
     src/Box.cpp
     src/MapRenderer.cpp
     src/Pathfinding.cpp
+    src/GeoBoxManager.cpp
+    src/utility.cpp
 )
 add_executable(main ${SOURCES})
 
