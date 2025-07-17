@@ -6,11 +6,29 @@
 #include "utility.hpp"
 
 int main() {
-
-    const std::string osm_file = "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\src\\maps\\kanto-latest.osm.pbf";
-    const std::string cache_dir = "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\geobox_cache_folder";
     
-    return test();
+    const std::string osm_file = "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\src\\maps\\kanto-latest.osm.pbf";
+    const std::string cache_dir = "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\src\\geobox_cache_folder";
+
+    FlickrConfig config;
+    config.api_key = "API_KEY";
+    config.search_word = "temple";
+    config.bbox = "139.785,35.705,139.800,35.718";  // Asakusa
+    config.poi_assignment_radius = 15.0;
+    config.min_date = "2020-01-01";
+    config.max_date = "2024-12-31";
+    
+    complete_workflow(
+        osm_file,
+        139.785, 35.705, 139.800, 35.718,  // Asakusa coordinates
+        cache_dir,
+        "asakusa",
+        "asakusa",
+        2000, 2000,
+        config,
+        true  // Utiliser les objectifs Flickr
+    );
+
     return 0;
 }
 
@@ -25,13 +43,7 @@ create_save_render(
 */
 
 /* Paramètres Shibuya
-load_and_render(
-    cache_dir + "\\shibuya_example.json",
-    "shibuya_small_render",
-    "shibuya_large_render",
-    1000, 1000,
-    4000, 4000
-);
+GeoBox geo_box = GeoBoxManager::load_geobox(cache_dir + "\\shibuya_example.json");
 */
 
 /*
@@ -61,6 +73,8 @@ complete_workflow(
     cache_dir,
     "shibuya_workflow",
     "shibuya_workflow_result",
-    2000, 2000
+    2000, 2000,
+    workflow_config,
+    true  // Utiliser les objectifs Flickr
 );
 */

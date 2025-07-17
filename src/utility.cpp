@@ -135,36 +135,6 @@ void create_save_render(const std::string& osm_file,
     }
 }
 
-// Charger depuis le cache et rendre
-void load_and_render(const std::string& cache_path,
-                    const std::string& output_name_small,
-                    const std::string& output_name_large,
-                    int width_small, int height_small,
-                    int width_large, int height_large) {
-    
-    std::cout << "=== Exemple : Charger depuis le cache et rendre ===" << std::endl;
-    std::cout << "Cache: " << cache_path << std::endl;
-    std::cout << "Output small: " << output_name_small << " (" << width_small << "x" << height_small << ")" << std::endl;
-    std::cout << "Output large: " << output_name_large << " (" << width_large << "x" << height_large << ")" << std::endl;
-    
-    // Vérifier si le cache existe
-    if (GeoBoxManager::cache_exists(cache_path)) {
-        // Charger depuis le cache
-        GeoBox geo_box = GeoBoxManager::load_geobox(cache_path);
-        
-        if (geo_box.is_valid) {
-            // Rendre avec différentes tailles
-            GeoBoxManager::render_geobox(geo_box, output_name_small, width_small, height_small);
-            GeoBoxManager::render_geobox(geo_box, output_name_large, width_large, height_large);
-        } else {
-            std::cerr << "Erreur lors du chargement de la GeoBox" << std::endl;
-        }
-    } else {
-        std::cout << "Cache non trouvé: " << cache_path << std::endl;
-        std::cout << "Exécutez d'abord create_save_render() avec ce chemin" << std::endl;
-    }
-}
-
 // GeoBox avec objectifs Flickr
 void with_flickr_objectives(const std::string& osm_file,
                            double min_lon, double min_lat, double max_lon, double max_lat,
@@ -205,26 +175,33 @@ void complete_workflow(const std::string& osm_file,
                       const std::string& cache_dir,
                       const std::string& cache_prefix,
                       const std::string& output_name,
-                      int width, int height) {
-    
-    std::cout << "=== Exemple : Workflow complet ===" << std::endl;
-    std::cout << "OSM File: " << osm_file << std::endl;
-    std::cout << "BBox: (" << min_lon << ", " << min_lat << ") à (" << max_lon << ", " << max_lat << ")" << std::endl;
-    std::cout << "Cache dir: " << cache_dir << std::endl;
-    std::cout << "Cache prefix: " << cache_prefix << std::endl;
-    std::cout << "Output: " << output_name << " (" << width << "x" << height << ")" << std::endl;
+                      int width, int height,
+                      const FlickrConfig& flickr_config,
+                      bool use_flickr_objectives) {
     
     // Générer le nom complet du cache
     std::string cache_name = GeoBoxManager::generate_cache_name(min_lon, min_lat, max_lon, max_lat, cache_prefix);
     std::string cache_path = cache_dir + "\\" + cache_name;
     
-    std::cout << "Cache path: " << cache_path << std::endl;
+    std::cout << "Étape 1: Création de la GeoBox..." << std::endl;
+    GeoBox original_geo_box;
     
-    std::cout << "Étape 1: Création..." << std::endl;
-    GeoBox original_geo_box = GeoBoxManager::create_geobox(osm_file, min_lon, min_lat, max_lon, max_lat);
+    if (use_flickr_objectives) {
+        // Créer une GeoBox avec objectifs Flickr
+        FlickrConfig adapted_config = flickr_config;
+        adapted_config.bbox = std::to_string(min_lon) + "," + std::to_string(min_lat) + "," + 
+                             std::to_string(max_lon) + "," + std::to_string(max_lat);
+        
+        original_geo_box = GeoBoxManager::create_geobox_with_objectives(
+            osm_file, min_lon, min_lat, max_lon, max_lat, adapted_config
+        );
+    } else {
+        // Créer une GeoBox simple
+        original_geo_box = GeoBoxManager::create_geobox(osm_file, min_lon, min_lat, max_lon, max_lat);
+    }
     
     if (!original_geo_box.is_valid) {
-        std::cout << "Erreur lors de la création" << std::endl;
+        std::cout << "Erreur lors de la création de la GeoBox" << std::endl;
         return;
     }
     
@@ -234,7 +211,7 @@ void complete_workflow(const std::string& osm_file,
         return;
     }
 
-    std::cout << "Étape 3: Rechargement..." << std::endl;
+    std::cout << "Étape 3: Rechargement depuis le cache..." << std::endl;
     GeoBox loaded_geo_box = GeoBoxManager::load_geobox(cache_path);
     
     if (!loaded_geo_box.is_valid) {
@@ -242,8 +219,9 @@ void complete_workflow(const std::string& osm_file,
         return;
     }
 
-    std::cout << "Étape 4: Rendu..." << std::endl;
-    GeoBoxManager::render_geobox(loaded_geo_box, output_name, width, height);
-    
-    std::cout << "Workflow terminé avec succès!" << std::endl;
+    std::cout << "Étape 4: Rendu de la carte..." << std::endl;
+    if (!GeoBoxManager::render_geobox(loaded_geo_box, output_name, width, height)) {
+        std::cout << "Erreur lors du rendu" << std::endl;
+        return;
+    }
 }
