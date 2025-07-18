@@ -13,7 +13,7 @@ int main() {
     const std::string cache_path = cache_dir + "\\asakusa_139.785000_35.705000_139.800000_35.718000.json";
     
     FlickrConfig config;
-    config.api_key = "9568c6342a890ef1ba342f54c4c1160f";
+    config.api_key = "API_KEY";
     config.search_word = "temple";
     config.bbox = "139.785,35.705,139.800,35.718";  // Asakusa
     config.poi_assignment_radius = 15.0;
