@@ -6,52 +6,26 @@
 #include <unordered_map>
 #include <memory>
 
-// Structure pour représenter un graphe avec cache des chemins
-struct PathGraph {
-    std::unordered_map<osmium::object_id_type, std::vector<osmium::object_id_type>> adjacency_list;
-    std::unordered_map<std::pair<osmium::object_id_type, osmium::object_id_type>, 
-                      std::vector<osmium::object_id_type>, 
-                      std::hash<std::string>> cached_paths;
-    std::unordered_map<std::pair<osmium::object_id_type, osmium::object_id_type>, 
-                      double, 
-                      std::hash<std::string>> path_distances;
-    
-    PathGraph() = default;
-};
-
-// Structure pour les phéromones (métaheuristique fourmis)
-struct PheromoneMap {
-    std::unordered_map<std::pair<osmium::object_id_type, osmium::object_id_type>, 
-                      double, 
-                      std::hash<std::string>> pheromone_levels;
-    double evaporation_rate = 0.1;
-    double initial_pheromone = 1.0;
-    
-    PheromoneMap() = default;
-};
-
 // Classe principale pour le pathfinding
 class Pathfinder {
 private:
-    const GeoBox& geo_box;
-    PathGraph graph;
-    PheromoneMap pheromones;
+    GeoBox& geo_box;
     
 public:
-    explicit Pathfinder(const GeoBox& box);
+    explicit Pathfinder(GeoBox& box);
     
     // Méthodes principales
-    void build_graph();
-    std::vector<osmium::object_id_type> find_path_ant_colony(osmium::object_id_type start, 
-                                                            osmium::object_id_type end);
+    std::vector<osmium::object_id_type> A_Star_Search(
+        const MyData::Point& start_point,
+        const MyData::Point& end_point,
+        int path_group = 2
+    );
     
     // Méthodes utilitaires
+    void update_node_weight(osmium::object_id_type node_id, float new_weight);
+    void update_way_group(osmium::object_id_type way_id, int new_group);
     double calculate_distance(osmium::object_id_type node1, osmium::object_id_type node2);
     osmium::object_id_type find_nearest_node(double lat, double lon);
-    
-    // Getters pour le graphe
-    const PathGraph& get_graph() const { return graph; }
-    const PheromoneMap& get_pheromones() const { return pheromones; }
 };
 
 #endif // PATHFINDING_HPP

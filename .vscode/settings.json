@@ -76,6 +76,7 @@
         "typeindex": "cpp",
         "xtree": "cpp",
         "random": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "unordered_set": "cpp"
     }
 }

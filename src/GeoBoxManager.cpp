@@ -253,6 +253,7 @@ json GeoBoxManager::serialize_data(const MyData& data) {
         json point_json;
         point_json["lat"] = point.lat;
         point_json["lon"] = point.lon;
+        point_json["weight"] = point.weight;  // AJOUT: weight pour Point
         point_json["id"] = point.id;
         point_json["incident_ways"] = json::array();
         for (const auto& way_id : point.incident_ways) {
@@ -271,6 +272,7 @@ json GeoBoxManager::serialize_data(const MyData& data) {
         json way_json;
         way_json["id"] = way.id;
         way_json["weight"] = way.weight;
+        way_json["groupe"] = way.groupe;  // AJOUT: groupe pour Way
         way_json["distance_meters"] = way.distance_meters;
         way_json["points"] = json::array();
         
@@ -278,6 +280,7 @@ json GeoBoxManager::serialize_data(const MyData& data) {
             json point_json;
             point_json["lat"] = point.lat;
             point_json["lon"] = point.lon;
+            point_json["weight"] = point.weight;  // AJOUT: weight pour Point
             point_json["id"] = point.id;
             point_json["incident_ways"] = json::array();
             for (const auto& way_id : point.incident_ways) {
@@ -321,6 +324,7 @@ MyData GeoBoxManager::deserialize_data(const json& j) {
             MyData::Point point;
             point.lat = point_json["lat"];
             point.lon = point_json["lon"];
+            point.weight = point_json.value("weight", 0.0f);  // AJOUT: weight avec défaut
             point.id = point_json["id"];
             
             // Désérialiser incident_ways
@@ -345,13 +349,15 @@ MyData GeoBoxManager::deserialize_data(const json& j) {
             
             MyData::Way way;
             way.id = way_json["id"];
-            way.weight = way_json["weight"];
+            way.weight = way_json.value("weight", 0.0f);  // CHANGEMENT: support float + défaut
+            way.groupe = way_json.value("groupe", 0);     // AJOUT: groupe avec défaut
             way.distance_meters = way_json["distance_meters"];
             
             for (const auto& point_json : way_json["points"]) {
                 MyData::Point point;
                 point.lat = point_json["lat"];
                 point.lon = point_json["lon"];
+                point.weight = point_json.value("weight", 0.0f);  // AJOUT: weight avec défaut
                 point.id = point_json["id"];
                 
                 // Désérialiser incident_ways

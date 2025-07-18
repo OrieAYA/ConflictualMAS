@@ -79,6 +79,7 @@ struct MyData {
     struct Point {
         double lat;
         double lon;
+        float weight = 0.0f;
         osmium::object_id_type id = 0;
         std::vector<osmium::object_id_type> incident_ways;
         int groupe = 0;  // 0 = non objectif, 1 = objectif
@@ -92,7 +93,8 @@ struct MyData {
     struct Way {
         osmium::object_id_type id;
         std::vector<Point> points;
-        int weight = 0;
+        float weight = 0.0f;
+        int groupe = 0;
         float distance_meters = 0.0f;  // Distance totale du way en mètres
         
         Way() : id(0) {}

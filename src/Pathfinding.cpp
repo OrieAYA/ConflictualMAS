@@ -1,4 +1,5 @@
 #include "Pathfinding.hpp"
+#include "Box.hpp"
 #include <iostream>
 #include <cmath>
 #include <algorithm>
@@ -9,17 +10,37 @@ Pathfinder::Pathfinder(const GeoBox& box) : geo_box(box) {
 }
 
 // Construction du graphe à partir de la GeoBox
-void Pathfinder::build_graph() {
+std::vector<osmium::object_id_type> Pathfinder::A_Star_Search(
+    const MyData::Point& start_point,
+    const MyData::Point& end_point,
+    int path_group) {
+        std::vector<osmium::object_id_type> path;
 
+        
+
+        return path;
 }
 
-// Algorithme de colonie de fourmis
-std::vector<osmium::object_id_type> Pathfinder::find_path_ant_colony(osmium::object_id_type start, 
-                                                                    osmium::object_id_type end) {
-    
-    std::vector<osmium::object_id_type> path;
-    return path;
+// Méthode pour modifier les weights des nodes
+void Pathfinder::update_node_weight(osmium::object_id_type node_id, float new_weight) {
+    auto it = geo_box.data.nodes.find(node_id);
+    if (it != geo_box.data.nodes.end()) {
+        it->second.weight = new_weight;
+    } else {
+        std::cerr << "Warning: node " << node_id << " not found" << std::endl;
+    }
 }
+
+// Méthode pour modifier le groupe d'un way
+void Pathfinder::update_way_group(osmium::object_id_type way_id, int new_group) {
+    auto it = geo_box.data.ways.find(way_id);
+    if (it != geo_box.data.ways.end()) {
+        it->second.groupe = new_group;
+    } else {
+        std::cerr << "Warning: Way " << way_id << " not found" << std::endl;
+    }
+}
+
 
 // Calcul de distance entre deux nodes
 double Pathfinder::calculate_distance(osmium::object_id_type node1, osmium::object_id_type node2) {
