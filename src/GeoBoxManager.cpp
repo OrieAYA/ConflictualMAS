@@ -304,6 +304,7 @@ json GeoBoxManager::serialize_data(const MyData& data) {
         group_json["name"] = group.name;
         group_json["description"] = group.description;
         group_json["point_count"] = group.point_count;
+        group_json["node_ids"] = group.node_ids;
         
         groups_json[std::to_string(group_id)] = group_json;
     }
@@ -388,6 +389,7 @@ MyData GeoBoxManager::deserialize_data(const json& j) {
             group.name = group_json["name"];
             group.description = group_json["description"];
             group.point_count = group_json["point_count"];
+            group.node_ids = group_json.value("node_ids", std::vector<osmium::object_id_type>{});
             
             data.objective_groups[group_id] = group;
         }

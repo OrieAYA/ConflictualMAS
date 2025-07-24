@@ -3,6 +3,7 @@
 #include "Box.hpp"
 #include "MapRenderer.hpp"
 #include "GeoBoxManager.hpp"
+#include "Pathfinding.hpp"
 #include "utility.hpp"
 
 int main() {
@@ -11,9 +12,14 @@ int main() {
     const std::string cache_dir = "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\src\\geobox_cache_folder";
 
     const std::string cache_path = cache_dir + "\\asakusa_139.785000_35.705000_139.800000_35.718000.json";
+
+    std::string rep;
+    std::cout << "New Geobox and cache (G/g) or System Creation and Pathfinding (P/p): ";
+    std::cin >> rep;
     
+    if (rep == "G" || rep == "g"){
     FlickrConfig config;
-    config.api_key = "API_KEY";
+    config.api_key = "9568c6342a890ef1ba342f54c4c1160f";
     config.search_word = "temple";
     config.bbox = "139.785,35.705,139.800,35.718";  // Asakusa
     config.poi_assignment_radius = 15.0;
@@ -31,17 +37,53 @@ int main() {
         true  // Utiliser les objectifs Flickr
     );
     
-    /*
-    GeoBox loaded_geo_box = GeoBoxManager::load_geobox(cache_path);
+    } else if (rep == "P" || rep == "p") {
+
+    GeoBox geo_box = GeoBoxManager::load_geobox(cache_path);
     
-    if (!loaded_geo_box.is_valid) {
+    if (!geo_box.is_valid) {
         std::cout << "Erreur lors du rechargement" << std::endl;
         return 0;
     }
     else {
         std::cout << "Succes du chargement" << std::endl;
     }
-    */
+    
+    Pathfinder PfSystem(geo_box);
+
+    int group_nb = 1;
+
+    auto group_it = geo_box.data.objective_groups.find(group_nb);
+    if (group_it == geo_box.data.objective_groups.end()) {
+        std::cout << "Groupe " << group_nb << " n'existe pas!" << std::endl;
+        return 0;
+    }
+    else {
+        std::cout << "Groupe trouvé: " << group_it->second.name << std::endl;
+    }
+
+    auto& node_list = geo_box.data.objective_groups[group_nb].node_ids;
+
+    if (node_list.size()<2){
+        std::cout << "Longeur de liste empechant la creation de routes" << std::endl;
+        return 0;
+    }
+    else {
+        std::cout << "Lancement du calcul des routes" << std::endl;
+    }
+
+    for (size_t i = 0; i < node_list.size() - 1; ++i) {
+        osmium::object_id_type curr = node_list[i];
+        osmium::object_id_type next = node_list[i + 1];
+        
+        PfSystem.A_Star_Search(curr, next, group_nb);
+    }
+
+    GeoBoxManager::render_geobox(geo_box, "asakusa", 2000, 2000);
+
+    }
+    
+    std::cout << "Fin de l'application" << std::endl;
 
     return 0;
 }

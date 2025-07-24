@@ -22,7 +22,7 @@ std::vector<osmium::object_id_type> Pathfinder::A_Star_Search(
         GScore[start_point] = 0.0f;
 
         std::unordered_map<osmium::object_id_type, float> FScore;
-        FScore[start_point] = heuristic(start_point);
+        FScore[start_point] = heuristic(start_point, end_point);
 
         osmium::object_id_type actual_node = start_point;
         osmium::object_id_type neighbor = start_point;
@@ -30,20 +30,25 @@ std::vector<osmium::object_id_type> Pathfinder::A_Star_Search(
         float tentative_gScore = 0.0f;
 
         while (!open.empty()){
-            for(const auto& [node_id, score] : FScore){
-                if(score < FScore[actual_node]){
-                    actual_node = node_id;
+
+            osmium::object_id_type actual_node = open[0];
+            size_t best_index = 0;
+            
+            for (size_t i = 1; i < open.size(); ++i) {
+                if (FScore.count(open[i]) && FScore.count(actual_node)) {
+                    if (FScore[open[i]] < FScore[actual_node]) {
+                        actual_node = open[i];
+                        best_index = i;
+                    }
                 }
             }
 
             if(actual_node == end_point){
+                std::cout << "Chemin trouvé " << std::endl;
                 return reconstruct_path(cameFrom, actual_node, path_group);
             }
 
-            auto it = std::find(open.begin(), open.end(), actual_node);
-            if (it != open.end()) {
-                open.erase(it);
-            }
+            open.erase(open.begin() + best_index);
 
             for(const auto& way_id : geo_box.data.nodes[actual_node].incident_ways){
                 auto& way = geo_box.data.ways[way_id];
@@ -54,13 +59,11 @@ std::vector<osmium::object_id_type> Pathfinder::A_Star_Search(
                 }
 
                 tentative_gScore = GScore[actual_node] + way.distance_meters;
-                if(tentative_gScore < GScore[neighbor]){
+                if(!GScore.count(neighbor) || tentative_gScore < GScore[neighbor]){
                     cameFrom[neighbor] = std::make_pair(actual_node, way_id);
                     GScore[neighbor] = tentative_gScore;
-                    FScore[neighbor] = tentative_gScore + heuristic(neighbor);
-                    if(std::find(open.begin(), open.end(), neighbor) == open.end()){
-                        open.insert(open.begin(), neighbor);
-                    }
+                    FScore[neighbor] = tentative_gScore + heuristic(neighbor, end_point);
+                    open.push_back(neighbor);
                 }
             }
             
@@ -76,9 +79,20 @@ std::vector<osmium::object_id_type> Pathfinder::reconstruct_path(
 
         std::vector<osmium::object_id_type> path = {actual_node};
 
-        while(cameFrom.count(actual_node)){
-            actual_node = cameFrom.at(actual_node).first;
-            update_way_group(cameFrom.at(actual_node).second, path_group);
+        int counter = 0;
+
+        while(cameFrom.count(actual_node)) {
+
+            counter++;
+            
+            std::cout << "Reconstruction, étape " << counter << std::endl;
+            
+            auto parent_node = cameFrom.at(actual_node).first;
+            auto way_id = cameFrom.at(actual_node).second;
+            
+            update_way_group(way_id, path_group);
+            
+            actual_node = parent_node;
             path.insert(path.begin(), actual_node);
         }
 
@@ -86,20 +100,11 @@ std::vector<osmium::object_id_type> Pathfinder::reconstruct_path(
 
 }
 
-float Pathfinder::heuristic(osmium::object_id_type node) {
-    const auto& point = geo_box.data.nodes[node];
+float Pathfinder::heuristic(osmium::object_id_type act_node, osmium::object_id_type end_point) {
+    auto& act_n = geo_box.data.nodes[act_node];
+    auto& tar_n = geo_box.data.nodes[end_point];
 
-
-    float lowest = geo_box.data.ways[point.incident_ways[0]].weight;
-
-    for (const auto& way_id : point.incident_ways) {
-        float way = geo_box.data.ways[way_id].weight;
-        if (way < lowest){
-            lowest = way;
-        }
-    }
-
-    return lowest;
+    return calculate_haversine_distance(act_n.lat, act_n.lon, tar_n.lat, tar_n.lon);
 }
 
 // Méthode pour modifier les weights des nodes

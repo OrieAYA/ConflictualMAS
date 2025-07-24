@@ -78,6 +78,7 @@
         "random": "cpp",
         "fstream": "cpp",
         "unordered_set": "cpp",
-        "numeric": "cpp"
+        "numeric": "cpp",
+        "queue": "cpp"
     }
 }

@@ -33,7 +33,7 @@ public:
         int path_group
     );
 
-    float heuristic(osmium::object_id_type node);
+    float heuristic(osmium::object_id_type act_node, osmium::object_id_type end_point);
     
     // Méthodes utilitaires
     void update_node_weight(osmium::object_id_type node_id, float new_weight);
