@@ -16,7 +16,7 @@
 #include <iostream>
 #include <filesystem>
 #include <map>
-#include <numeric>  // AJOUT: Pour std::accumulate si besoin
+#include <numeric>
 
 // Fonction indépendante : Rendu depuis GeoBox
 bool render_map(const GeoBox& geo_box,
@@ -37,7 +37,7 @@ bool render_map(const GeoBox& geo_box,
     return render_map_from_data(geo_box.data, geo_box.bbox, output_filename, width, height);
 }
 
-// Fonction indépendante : Rendu depuis MyData avec support amélioré des groupes
+// Fonction indépendante : Rendu depuis MyData avec RÉCUPÉRATION CORRECTE DES COORDONNÉES
 bool render_map_from_data(const MyData& data,
                          const osmium::Box& bbox,
                          const std::string& output_filename,
@@ -80,46 +80,58 @@ bool render_map_from_data(const MyData& data,
         for (const auto& [node_id, point_data] : data.nodes) {
             mapnik::context_ptr ctx = std::make_shared<mapnik::context_type>();
             ctx->push("groupe");
-            ctx->push("weight");  // AJOUT: Attribut weight
             auto feature = std::make_shared<mapnik::feature_impl>(ctx, node_id);
             
             mapnik::geometry::point<double> point_geom(point_data.lon, point_data.lat);
             feature->set_geometry(std::move(point_geom));
             
             feature->put("groupe", point_data.groupe);
-            feature->put("weight", point_data.weight);  // AJOUT: Définir weight
             
             node_ds->push(feature);
         }
         std::cout << "Added " << data.nodes.size() << " nodes to datasource." << std::endl;
 
-        // === CRÉER DATASOURCE POUR LES WAYS ===
+        // === CRÉER DATASOURCE POUR LES WAYS - CORRECTION MAJEURE ===
         mapnik::parameters way_params;
         way_params["type"] = "memory";
         auto way_ds = std::make_shared<mapnik::memory_datasource>(way_params);
         
+        int ways_added = 0;
+        int ways_skipped = 0;
+        
         for (const auto& [way_id, way_data] : data.ways) {
-            if (way_data.points.size() < 2) continue;
+            // CORRECTIF: Récupérer les coordonnées depuis data.nodes
+            auto node1_it = data.nodes.find(way_data.node1_id);
+            auto node2_it = data.nodes.find(way_data.node2_id);
+            
+            if (node1_it == data.nodes.end() || node2_it == data.nodes.end()) {
+                ways_skipped++;
+                std::cerr << "Way " << way_id << ": nodes introuvables (" 
+                          << way_data.node1_id << ", " << way_data.node2_id << ")" << std::endl;
+                continue;
+            }
             
             mapnik::context_ptr ctx = std::make_shared<mapnik::context_type>();
             ctx->push("groupe");
-            ctx->push("weight");        // AJOUT: Attribut weight
-            ctx->push("distance");      // AJOUT: Attribut distance
+            ctx->push("distance");
             auto feature = std::make_shared<mapnik::feature_impl>(ctx, way_id);
             
+            // CORRECTIF: Construire la géométrie avec les vraies coordonnées
             mapnik::geometry::line_string<double> line_geom;
-            for (const auto& point : way_data.points) {
-                line_geom.emplace_back(point.lon, point.lat);
-            }
+            line_geom.emplace_back(node1_it->second.lon, node1_it->second.lat);
+            line_geom.emplace_back(node2_it->second.lon, node2_it->second.lat);
             
             feature->set_geometry(std::move(line_geom));
-            feature->put("groupe", way_data.groupe);           // AJOUT: Groupe du way
-            feature->put("weight", static_cast<double>(way_data.weight));  // CHANGEMENT: cast float → double
-            feature->put("distance", way_data.distance_meters); // AJOUT: Distance du way
+            feature->put("groupe", way_data.groupe);
+            feature->put("distance", way_data.distance_meters);
             
             way_ds->push(feature);
+            ways_added++;
         }
-        std::cout << "Added " << data.ways.size() << " ways to datasource." << std::endl;
+        
+        std::cout << "Ways processing results:" << std::endl;
+        std::cout << "  Added: " << ways_added << " ways" << std::endl;
+        std::cout << "  Skipped: " << ways_skipped << " ways (missing nodes)" << std::endl;
 
         // === DÉFINIR LES STYLES POUR LES NODES ===
         mapnik::feature_type_style node_style;
@@ -146,8 +158,8 @@ bool render_map_from_data(const MyData& data,
             mapnik::markers_symbolizer objective_sym;
             std::string color = objective_colors[(group_id - 1) % objective_colors.size()];
             mapnik::put(objective_sym, mapnik::keys::fill, mapnik::color(color));
-            mapnik::put(objective_sym, mapnik::keys::width, mapnik::value_double(10.0));
-            mapnik::put(objective_sym, mapnik::keys::height, mapnik::value_double(10.0));
+            mapnik::put(objective_sym, mapnik::keys::width, mapnik::value_double(6.0));
+            mapnik::put(objective_sym, mapnik::keys::height, mapnik::value_double(6.0));
             
             objective_rule.append(std::move(objective_sym));
             node_style.add_rule(std::move(objective_rule));
@@ -177,8 +189,8 @@ bool render_map_from_data(const MyData& data,
             mapnik::line_symbolizer path_sym;
             std::string color = path_colors[(group_id - 1) % path_colors.size()];
             mapnik::put(path_sym, mapnik::keys::stroke, mapnik::color(color));
-            mapnik::put(path_sym, mapnik::keys::stroke_width, mapnik::value_double(6.0));  // Plus épais pour les chemins
-            mapnik::put(path_sym, mapnik::keys::stroke_opacity, mapnik::value_double(0.8));
+            mapnik::put(path_sym, mapnik::keys::stroke_width, mapnik::value_double(2.0));
+            mapnik::put(path_sym, mapnik::keys::stroke_opacity, mapnik::value_double(1.0));
             
             path_rule.append(std::move(path_sym));
             way_style.add_rule(std::move(path_rule));

@@ -80,7 +80,6 @@ struct MyData {
     struct Point {
         double lat;
         double lon;
-        float weight = 0.0f;
         osmium::object_id_type id = 0;
         std::vector<osmium::object_id_type> incident_ways;
         int groupe = 0;  // 0 = non objectif, 1 = objectif
@@ -93,18 +92,21 @@ struct MyData {
     
     struct Way {
         osmium::object_id_type id;
-        std::vector<Point> points;
-        float weight = 0.0f;
+        osmium::object_id_type node1_id;
+        osmium::object_id_type node2_id;
+        std::vector<Point> points; // AJOUT: Liste des points du way
         int groupe = 0;
-        float distance_meters = 0.0f;  // Distance totale du way en mètres
+        float distance_meters = 0.0f;
         
-        Way() : id(0) {}
-        Way(osmium::object_id_type id) : id(id) {}
+        Way() : id(0), node1_id(0), node2_id(0) {}
+        Way(osmium::object_id_type id) : id(id), node1_id(0), node2_id(0) {}
+        Way(osmium::object_id_type id, osmium::object_id_type n1, osmium::object_id_type n2) 
+            : id(id), node1_id(n1), node2_id(n2) {}
     };
 
     std::unordered_map<osmium::object_id_type, Point> nodes;
     std::unordered_map<osmium::object_id_type, Way> ways;
-    std::unordered_map<int, ObjectiveGroup> objective_groups;  // AJOUT: Map des groupes d'objectifs
+    std::unordered_map<int, ObjectiveGroup> objective_groups;  // Map des groupes d'objectifs
     
     std::vector<Point> get_nodes_vector() const {
         std::vector<Point> result;
@@ -124,7 +126,7 @@ struct MyData {
         return result;
     }
     
-    // AJOUT: Méthode pour afficher les groupes d'objectifs
+    // Méthode pour afficher les groupes d'objectifs
     void print_objective_groups() const {
         std::cout << "\n=== Groupes d'objectifs ===" << std::endl;
         for (const auto& [id, group] : objective_groups) {
@@ -143,6 +145,10 @@ private:
     
     // Fonction pour calculer la distance haversine
     double calculate_haversine_distance(double lat1, double lon1, double lat2, double lon2) const;
+
+    static osmium::object_id_type generate_new_way_id(osmium::object_id_type base_id, size_t segment_index) {
+        return base_id * 1000000 + segment_index;
+    }
 
 public:
     osmium::Box Map_bbox;
@@ -178,52 +184,7 @@ public:
         );
     }
     
-    void way(const osmium::Way& way) {
-        if (way.nodes().empty()) return;
-
-        if (!is_valid_way_type(way)) {
-            return;
-        }
-        
-        MyData::Way current_way(way.id());
-        bool has_nodes_in_bbox = false;
-        
-        if (m_use_bbox_filter) {
-            bool intersects_bbox = false;
-            for (const auto& node_ref : way.nodes()) {
-                auto it = m_node_locations.find(node_ref.ref());
-                if (it != m_node_locations.end()) {
-                    if (Map_bbox.contains(it->second)) {
-                        intersects_bbox = true;
-                        break;
-                    }
-                }
-            }
-            if (!intersects_bbox) return;
-        }
-        
-        for (const auto& node_ref : way.nodes()) {
-            auto it = data_collector.nodes.find(node_ref.ref());
-            if (it != data_collector.nodes.end()) {
-                current_way.points.push_back(it->second);
-                has_nodes_in_bbox = true;
-            }
-        }
-        
-        if (has_nodes_in_bbox && current_way.points.size() > 1) {
-            // Calculer la distance totale du way
-            float total_distance = 0.0f;
-            for (size_t i = 1; i < current_way.points.size(); ++i) {
-                total_distance += static_cast<float>(calculate_haversine_distance(
-                    current_way.points[i-1].lat, current_way.points[i-1].lon,
-                    current_way.points[i].lat, current_way.points[i].lon
-                ));
-            }
-            current_way.distance_meters = total_distance;
-            
-            data_collector.ways[way.id()] = current_way;
-        }
-    }
+    void way(const osmium::Way& way);
 };
 
 struct GeoBox {
@@ -242,7 +203,7 @@ GeoBox create_geo_box(const std::string& osm_filename,
                       double min_lon, double min_lat, 
                       double max_lon, double max_lat);
 
-// AJOUT: Déclaration de la fonction apply_objectives
+// Déclaration de la fonction apply_objectives
 GeoBox apply_objectives(GeoBox geo_box, const FlickrConfig& flickr_config, 
                        const std::string& cache_filename, bool use_cache = true);
 

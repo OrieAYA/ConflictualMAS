@@ -9,11 +9,55 @@
 // Constructeur
 Pathfinder::Pathfinder(GeoBox& box) : geo_box(box) {}
 
+bool Pathfinder::Subgraph_construction(
+    Pathfinder PfSystem,
+    const std::vector<osmium::object_id_type>& objective_nodes,
+    int path_group) {
+
+        std::unordered_map<osmium::object_id_type, bool> visited;
+
+        for(const auto& init_node : objective_nodes){
+            visited[init_node] = false;
+        }
+
+        for(const auto& act_n : objective_nodes){
+
+            float nearest_path_length = std::numeric_limits<float>::max();
+            std::vector<osmium::object_id_type> nearest_path = {};
+            osmium::object_id_type nearest_node = 0;
+
+            for(const auto& tar_n : objective_nodes){
+                if(act_n != tar_n && !visited[tar_n]){
+
+                    std::vector<osmium::object_id_type> actual_path = PfSystem.A_Star_Search(act_n, tar_n);
+                    float actual_path_length = 0.0f;
+
+                    for(const auto& act_path_way : actual_path){
+                        actual_path_length = actual_path_length + geo_box.data.ways[act_path_way].distance_meters;
+                    }
+
+                    if(actual_path_length < nearest_path_length){
+                        nearest_path_length = actual_path_length;
+                        nearest_path = actual_path;
+                        nearest_node = tar_n;
+                    }
+                }
+            }
+            
+            for(const auto& way_id : nearest_path){
+                update_way_group(way_id, path_group);
+            }
+
+            visited[nearest_node] = true;
+        }
+    
+        return true;
+}
+
 // Construction du graphe à partir de la GeoBox
 std::vector<osmium::object_id_type> Pathfinder::A_Star_Search(
     const osmium::object_id_type& start_point,
-    const osmium::object_id_type& end_point,
-    int path_group) {
+    const osmium::object_id_type& end_point) {
         std::vector<osmium::object_id_type> open = {start_point};
 
         std::unordered_map<osmium::object_id_type, std::pair<osmium::object_id_type, osmium::object_id_type>> cameFrom;
@@ -44,18 +88,19 @@ std::vector<osmium::object_id_type> Pathfinder::A_Star_Search(
             }
 
             if(actual_node == end_point){
-                std::cout << "Chemin trouvé " << std::endl;
-                return reconstruct_path(cameFrom, actual_node, path_group);
+                return reconstruct_path(cameFrom, actual_node);
             }
 
             open.erase(open.begin() + best_index);
 
             for(const auto& way_id : geo_box.data.nodes[actual_node].incident_ways){
                 auto& way = geo_box.data.ways[way_id];
-                if(way.points[0].id == actual_node){
-                    neighbor = way.points[1].id;
-                }else{
-                    neighbor = way.points[0].id;
+                if(way.node1_id == actual_node){
+                    neighbor = way.node2_id;
+                } else if(way.node2_id == actual_node) {
+                    neighbor = way.node1_id;
+                } else {
+                    continue; // Way struct Error
                 }
 
                 tentative_gScore = GScore[actual_node] + way.distance_meters;
@@ -74,26 +119,17 @@ std::vector<osmium::object_id_type> Pathfinder::A_Star_Search(
 
 std::vector<osmium::object_id_type> Pathfinder::reconstruct_path(
     const std::unordered_map<osmium::object_id_type, std::pair<osmium::object_id_type, osmium::object_id_type>>& cameFrom,
-    osmium::object_id_type actual_node,
-    int path_group) {
+    osmium::object_id_type actual_node) {
 
         std::vector<osmium::object_id_type> path = {actual_node};
 
-        int counter = 0;
-
         while(cameFrom.count(actual_node)) {
-
-            counter++;
-            
-            std::cout << "Reconstruction, étape " << counter << std::endl;
             
             auto parent_node = cameFrom.at(actual_node).first;
             auto way_id = cameFrom.at(actual_node).second;
             
-            update_way_group(way_id, path_group);
-            
             actual_node = parent_node;
-            path.insert(path.begin(), actual_node);
+            path.insert(path.begin(), way_id);
         }
 
         return path;
@@ -101,20 +137,13 @@ std::vector<osmium::object_id_type> Pathfinder::reconstruct_path(
 }
 
 float Pathfinder::heuristic(osmium::object_id_type act_node, osmium::object_id_type end_point) {
+    return 0.0f;
+
+    /*
     auto& act_n = geo_box.data.nodes[act_node];
     auto& tar_n = geo_box.data.nodes[end_point];
 
-    return calculate_haversine_distance(act_n.lat, act_n.lon, tar_n.lat, tar_n.lon);
-}
-
-// Méthode pour modifier les weights des nodes
-void Pathfinder::update_node_weight(osmium::object_id_type node_id, float new_weight) {
-    auto it = geo_box.data.nodes.find(node_id);
-    if (it != geo_box.data.nodes.end()) {
-        it->second.weight = new_weight;
-    } else {
-        std::cerr << "Warning: node " << node_id << " not found" << std::endl;
-    }
+    return calculate_haversine_distance(act_n.lat, act_n.lon, tar_n.lat, tar_n.lon);*/
 }
 
 // Méthode pour modifier le groupe d'un way

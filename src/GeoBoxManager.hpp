@@ -14,18 +14,6 @@ using json = nlohmann::json;
 
 class GeoBoxManager {
 public:
-    // === FONCTIONS PRINCIPALES ===
-    
-    // Créer une GeoBox depuis un fichier OSM
-    static GeoBox create_geobox(const std::string& osm_filepath,
-                               double min_lon, double min_lat,
-                               double max_lon, double max_lat);
-    
-    // Créer une GeoBox avec objectifs Flickr
-    static GeoBox create_geobox_with_objectives(const std::string& osm_filepath,
-                                              double min_lon, double min_lat,
-                                              double max_lon, double max_lat,
-                                              const FlickrConfig& flickr_config);
     
     // Sauvegarder une GeoBox
     static bool save_geobox(const GeoBox& geo_box, const std::string& filepath);
@@ -44,9 +32,7 @@ public:
     static bool cache_exists(const std::string& filepath);
     
     // Générer un nom de fichier de cache
-    static std::string generate_cache_name(double min_lon, double min_lat,
-                                         double max_lon, double max_lat,
-                                         const std::string& prefix = "geobox");
+    static std::string generate_cache_name(const std::string& prefix = "geobox");
     
     // Afficher les informations d'une GeoBox
     static void display_geobox_info(const GeoBox& geo_box);

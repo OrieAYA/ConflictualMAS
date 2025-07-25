@@ -3,62 +3,6 @@
 #include <iomanip>
 #include <sstream>
 
-// === FONCTIONS PRINCIPALES ===
-
-// Créer une GeoBox depuis un fichier OSM
-GeoBox GeoBoxManager::create_geobox(const std::string& osm_filepath,
-                                   double min_lon, double min_lat,
-                                   double max_lon, double max_lat) {
-    
-    std::cout << "=== Création de GeoBox ===" << std::endl;
-    std::cout << "Fichier OSM: " << osm_filepath << std::endl;
-    std::cout << std::fixed << std::setprecision(6);
-    std::cout << "BBox: (" << min_lon << ", " << min_lat << ") à (" << max_lon << ", " << max_lat << ")" << std::endl;
-    
-    try {
-        GeoBox geo_box = create_geo_box(osm_filepath, min_lon, min_lat, max_lon, max_lat);
-        
-        if (geo_box.is_valid) {
-            std::cout << "GeoBox créée avec succès!" << std::endl;
-            std::cout << "Nodes: " << geo_box.data.nodes.size() << std::endl;
-            std::cout << "Ways: " << geo_box.data.ways.size() << std::endl;
-        } else {
-            std::cerr << "Erreur lors de la création de la GeoBox" << std::endl;
-        }
-        
-        return geo_box;
-        
-    } catch (const std::exception& e) {
-        std::cerr << "Erreur: " << e.what() << std::endl;
-        return GeoBox(); // GeoBox invalide
-    }
-}
-
-// Créer une GeoBox avec objectifs Flickr
-GeoBox GeoBoxManager::create_geobox_with_objectives(const std::string& osm_filepath,
-                                                  double min_lon, double min_lat,
-                                                  double max_lon, double max_lat,
-                                                  const FlickrConfig& flickr_config) {
-    
-    std::cout << "=== Création de GeoBox avec objectifs Flickr ===" << std::endl;
-    
-    // Créer la GeoBox de base
-    GeoBox geo_box = create_geobox(osm_filepath, min_lon, min_lat, max_lon, max_lat);
-    
-    if (!geo_box.is_valid) {
-        return geo_box;
-    }
-    
-    // Appliquer les objectifs Flickr
-    std::cout << "Application des objectifs Flickr..." << std::endl;
-    geo_box = apply_objectives(geo_box, flickr_config, "flickr_cache.json", true);
-    
-    std::cout << "GeoBox avec objectifs créée!" << std::endl;
-    geo_box.data.print_objective_groups();
-    
-    return geo_box;
-}
-
 // Sauvegarder une GeoBox
 bool GeoBoxManager::save_geobox(const GeoBox& geo_box, const std::string& filepath) {
     std::cout << "=== Sauvegarde de GeoBox ===" << std::endl;
@@ -200,15 +144,9 @@ bool GeoBoxManager::cache_exists(const std::string& filepath) {
 }
 
 // Générer un nom de fichier de cache
-std::string GeoBoxManager::generate_cache_name(double min_lon, double min_lat,
-                                             double max_lon, double max_lat,
-                                             const std::string& prefix) {
+std::string GeoBoxManager::generate_cache_name(const std::string& prefix) {
     std::ostringstream oss;
-    oss << prefix << "_" 
-        << std::fixed << std::setprecision(6)
-        << min_lon << "_" << min_lat << "_"
-        << max_lon << "_" << max_lat 
-        << ".json";
+    oss << prefix << ".json";
     return oss.str();
 }
 
@@ -253,7 +191,6 @@ json GeoBoxManager::serialize_data(const MyData& data) {
         json point_json;
         point_json["lat"] = point.lat;
         point_json["lon"] = point.lon;
-        point_json["weight"] = point.weight;  // AJOUT: weight pour Point
         point_json["id"] = point.id;
         point_json["incident_ways"] = json::array();
         for (const auto& way_id : point.incident_ways) {
@@ -271,24 +208,15 @@ json GeoBoxManager::serialize_data(const MyData& data) {
     for (const auto& [way_id, way] : data.ways) {
         json way_json;
         way_json["id"] = way.id;
-        way_json["weight"] = way.weight;
-        way_json["groupe"] = way.groupe;  // AJOUT: groupe pour Way
+        way_json["node1_id"] = way.node1_id;
+        way_json["node2_id"] = way.node2_id;
+        way_json["groupe"] = way.groupe;
         way_json["distance_meters"] = way.distance_meters;
         way_json["points"] = json::array();
         
         for (const auto& point : way.points) {
             json point_json;
-            point_json["lat"] = point.lat;
-            point_json["lon"] = point.lon;
-            point_json["weight"] = point.weight;  // AJOUT: weight pour Point
             point_json["id"] = point.id;
-            point_json["incident_ways"] = json::array();
-            for (const auto& way_id : point.incident_ways) {
-                point_json["incident_ways"].push_back(way_id);
-            }
-            point_json["groupe"] = point.groupe;
-            point_json["objective_id"] = point.objective_id;
-            
             way_json["points"].push_back(point_json);
         }
         
@@ -325,7 +253,6 @@ MyData GeoBoxManager::deserialize_data(const json& j) {
             MyData::Point point;
             point.lat = point_json["lat"];
             point.lon = point_json["lon"];
-            point.weight = point_json.value("weight", 0.0f);  // AJOUT: weight avec défaut
             point.id = point_json["id"];
             
             // Désérialiser incident_ways
@@ -350,30 +277,10 @@ MyData GeoBoxManager::deserialize_data(const json& j) {
             
             MyData::Way way;
             way.id = way_json["id"];
-            way.weight = way_json.value("weight", 0.0f);  // CHANGEMENT: support float + défaut
-            way.groupe = way_json.value("groupe", 0);     // AJOUT: groupe avec défaut
+            way.node1_id = way_json["node1_id"];
+            way.node2_id = way_json["node2_id"];
+            way.groupe = way_json.value("groupe", 0);
             way.distance_meters = way_json["distance_meters"];
-            
-            for (const auto& point_json : way_json["points"]) {
-                MyData::Point point;
-                point.lat = point_json["lat"];
-                point.lon = point_json["lon"];
-                point.weight = point_json.value("weight", 0.0f);  // AJOUT: weight avec défaut
-                point.id = point_json["id"];
-                
-                // Désérialiser incident_ways
-                point.incident_ways.clear();
-                if (point_json.contains("incident_ways")) {
-                    for (const auto& way_id : point_json["incident_ways"]) {
-                        point.incident_ways.push_back(way_id.get<osmium::object_id_type>());
-                    }
-                }
-                
-                point.groupe = point_json["groupe"];
-                point.objective_id = point_json.value("objective_id", "");
-                
-                way.points.push_back(point);
-            }
             
             data.ways[way_id] = way;
         }

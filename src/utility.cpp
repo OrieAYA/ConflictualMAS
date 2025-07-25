@@ -2,7 +2,7 @@
 #include <iomanip>
 #include "Box.hpp"
 #include "MapRenderer.hpp"
-#include "GeoBoxManager.hpp"  // SEUL include nécessaire maintenant
+#include "GeoBoxManager.hpp"
 #include "utility.hpp"
 
 int test() {
@@ -52,7 +52,6 @@ int test() {
     std::cout << "Nom de la carte: " << map_name << std::endl;
     
     try {
-        //Création indépendante de la box
         std::cout << "\n=== Création de la GeoBox ===" << std::endl;
         GeoBox geo_box = create_geo_box(osm_filepath, min_lon, min_lat, max_lon, max_lat);
         
@@ -65,7 +64,7 @@ int test() {
         std::cout << "Nodes: " << geo_box.data.nodes.size() << std::endl;
         std::cout << "Ways: " << geo_box.data.ways.size() << std::endl;
 
-        // Configuration
+        // Configuration Flickr
         FlickrConfig config;
         config.api_key = "9568c6342a890ef1ba342f54c4c1160f";
         config.search_word = "temple";
@@ -75,15 +74,15 @@ int test() {
         config.min_date = "2020-01-01";
         config.max_date = "2024-12-31";
 
-        //Application des objectifs
+        // ✅ DÉLÉGUER à apply_objectives (Box.cpp)
         geo_box = apply_objectives(geo_box, config, "cache.json", true);
 
-        //Verif Objectifs
+        // Verification des objectifs
         std::cout << "\n=== Résultats finaux ===" << std::endl;
         std::cout << "Total nodes: " << geo_box.data.nodes.size() << std::endl;
         std::cout << "Total ways: " << geo_box.data.ways.size() << std::endl;
         
-        //Rendu indépendant de la map
+        // ✅ DÉLÉGUER à render_map (MapRenderer.cpp)
         if (geo_box.data.nodes.empty()) {
             std::cout << "Aucune donnée dans la bounding box spécifiée." << std::endl;
             return 1;
@@ -120,15 +119,12 @@ void create_save_render(const std::string& osm_file,
     std::cout << "BBox: (" << min_lon << ", " << min_lat << ") à (" << max_lon << ", " << max_lat << ")" << std::endl;
     std::cout << "Cache: " << cache_path << std::endl;
     std::cout << "Output: " << output_name << " (" << width << "x" << height << ")" << std::endl;
-    
-    // Créer GeoBox
-    GeoBox geo_box = GeoBoxManager::create_geobox(osm_file, min_lon, min_lat, max_lon, max_lat);
+
+    GeoBox geo_box = create_geo_box(osm_file, min_lon, min_lat, max_lon, max_lat);
     
     if (geo_box.is_valid) {
-        // Sauvegarder
+        // Sauvegarder et rendre via GeoBoxManager
         GeoBoxManager::save_geobox(geo_box, cache_path);
-        
-        // Rendre
         GeoBoxManager::render_geobox(geo_box, output_name, width, height);
     } else {
         std::cerr << "Erreur lors de la création de la GeoBox" << std::endl;
@@ -150,26 +146,22 @@ void with_flickr_objectives(const std::string& osm_file,
     std::cout << "Flickr search: " << flickr_config.search_word << std::endl;
     std::cout << "Output: " << output_name << " (" << width << "x" << height << ")" << std::endl;
     
-    // Créer GeoBox avec objectifs
-    GeoBox geo_box = GeoBoxManager::create_geobox_with_objectives(
-        osm_file, min_lon, min_lat, max_lon, max_lat, flickr_config
-    );
+    GeoBox geo_box = create_geo_box(osm_file, min_lon, min_lat, max_lon, max_lat);
     
     if (geo_box.is_valid) {
-        // Afficher info
+        // Ajouter les objectifs Flickr
+        geo_box = apply_objectives(geo_box, flickr_config, "flickr_cache.json", true);
+        
+        // Afficher info, sauvegarder et rendre
         GeoBoxManager::display_geobox_info(geo_box);
-        
-        // Sauvegarder
         GeoBoxManager::save_geobox(geo_box, cache_path);
-        
-        // Rendre
         GeoBoxManager::render_geobox(geo_box, output_name, width, height);
     } else {
         std::cerr << "Erreur lors de la création de la GeoBox avec objectifs" << std::endl;
     }
 }
 
-// Workflow complet (créer, sauvegarder, recharger, rendre)
+// Workflow complet
 void complete_workflow(const std::string& osm_file,
                       double min_lon, double min_lat, double max_lon, double max_lat,
                       const std::string& cache_dir,
@@ -180,29 +172,24 @@ void complete_workflow(const std::string& osm_file,
                       bool use_flickr_objectives) {
     
     // Générer le nom complet du cache
-    std::string cache_name = GeoBoxManager::generate_cache_name(min_lon, min_lat, max_lon, max_lat, cache_prefix);
+    std::string cache_name = GeoBoxManager::generate_cache_name(cache_prefix);
     std::string cache_path = cache_dir + "\\" + cache_name;
     
     std::cout << "Étape 1: Création de la GeoBox..." << std::endl;
-    GeoBox original_geo_box;
-    
-    if (use_flickr_objectives) {
-        // Créer une GeoBox avec objectifs Flickr
-        FlickrConfig adapted_config = flickr_config;
-        adapted_config.bbox = std::to_string(min_lon) + "," + std::to_string(min_lat) + "," + 
-                             std::to_string(max_lon) + "," + std::to_string(max_lat);
-        
-        original_geo_box = GeoBoxManager::create_geobox_with_objectives(
-            osm_file, min_lon, min_lat, max_lon, max_lat, adapted_config
-        );
-    } else {
-        // Créer une GeoBox simple
-        original_geo_box = GeoBoxManager::create_geobox(osm_file, min_lon, min_lat, max_lon, max_lat);
-    }
+    GeoBox original_geo_box = create_geo_box(osm_file, min_lon, min_lat, max_lon, max_lat);
     
     if (!original_geo_box.is_valid) {
         std::cout << "Erreur lors de la création de la GeoBox" << std::endl;
         return;
+    }
+    
+    if (use_flickr_objectives) {
+        std::cout << "Application des objectifs Flickr..." << std::endl;
+        FlickrConfig adapted_config = flickr_config;
+        adapted_config.bbox = std::to_string(min_lon) + "," + std::to_string(min_lat) + "," + 
+                             std::to_string(max_lon) + "," + std::to_string(max_lat);
+        
+        original_geo_box = apply_objectives(original_geo_box, adapted_config, "flickr_cache.json", true);
     }
     
     std::cout << "Étape 2: Sauvegarde..." << std::endl;
