@@ -6,7 +6,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
-#include <memory>
 #include <map>
 #include <osmium/osm/location.hpp>
 #include <osmium/osm/node.hpp>
@@ -14,16 +13,17 @@
 #include <osmium/osm/box.hpp>
 #include <osmium/handler.hpp>
 
+// Fonctions de validation
 bool is_valid_way_type(const osmium::Way& way);
 
 // Configuration pour l'API Flickr
 struct FlickrConfig {
     std::string api_key;
     std::string search_word;
-    std::string bbox;  // Format "min_lon,min_lat,max_lon,max_lat"
+    std::string bbox;
     std::string min_date;
     std::string max_date;
-    double poi_assignment_radius = 100.0;  // Rayon en mètres pour assigner les POIs
+    double poi_assignment_radius = 100.0;
     
     FlickrConfig() = default;
     FlickrConfig(const std::string& key, const std::string& word, const std::string& bounding_box)
@@ -75,15 +75,15 @@ public:
 // Fonction utilitaire pour calculer la distance haversine
 double calculate_haversine_distance(double lat1, double lon1, double lat2, double lon2);
 
-//Struct de donnees
+// Structure de données principale
 struct MyData {
     struct Point {
         double lat;
         double lon;
         osmium::object_id_type id = 0;
         std::vector<osmium::object_id_type> incident_ways;
-        int groupe = 0;  // 0 = non objectif, 1 = objectif
-        std::string objective_id = "";  // ID du POI Flickr associé
+        int groupe = 0;
+        std::string objective_id = "";
         
         Point() = default;
         Point(double lat, double lon, osmium::object_id_type id = 0) 
@@ -94,7 +94,7 @@ struct MyData {
         osmium::object_id_type id;
         osmium::object_id_type node1_id;
         osmium::object_id_type node2_id;
-        std::vector<Point> points; // AJOUT: Liste des points du way
+        std::vector<Point> points;
         int groupe = 0;
         float distance_meters = 0.0f;
         
@@ -106,25 +106,7 @@ struct MyData {
 
     std::unordered_map<osmium::object_id_type, Point> nodes;
     std::unordered_map<osmium::object_id_type, Way> ways;
-    std::unordered_map<int, ObjectiveGroup> objective_groups;  // Map des groupes d'objectifs
-    
-    std::vector<Point> get_nodes_vector() const {
-        std::vector<Point> result;
-        result.reserve(nodes.size());
-        for (const auto& [id, point] : nodes) {
-            result.push_back(point);
-        }
-        return result;
-    }
-    
-    std::vector<Way> get_ways_vector() const {
-        std::vector<Way> result;
-        result.reserve(ways.size());
-        for (const auto& [id, way] : ways) {
-            result.push_back(way);
-        }
-        return result;
-    }
+    std::unordered_map<int, ObjectiveGroup> objective_groups;
     
     // Méthode pour afficher les groupes d'objectifs
     void print_objective_groups() const {
@@ -137,18 +119,22 @@ struct MyData {
     }
 };
 
-// Handler OSM
+// Handler OSM optimisé
 class MyHandler : public osmium::handler::Handler {
 private:
     bool m_use_bbox_filter = false;
     std::unordered_map<osmium::object_id_type, osmium::Location> m_node_locations;
     
-    // Fonction pour calculer la distance haversine
     double calculate_haversine_distance(double lat1, double lon1, double lat2, double lon2) const;
-
+    
     static osmium::object_id_type generate_new_way_id(osmium::object_id_type base_id, size_t segment_index) {
         return base_id * 1000000 + segment_index;
     }
+    
+    // Helper pour connecter un way à ses nodes
+    void connect_way_to_nodes(osmium::object_id_type way_id, 
+                             osmium::object_id_type node1_id, 
+                             osmium::object_id_type node2_id);
 
 public:
     osmium::Box Map_bbox;
@@ -156,37 +142,14 @@ public:
 
     MyHandler() {}
     
-    void set_bounding_box(double min_lon, double min_lat, double max_lon, double max_lat) {
-        Map_bbox = osmium::Box();
-        Map_bbox.extend(osmium::Location(min_lon, min_lat));
-        Map_bbox.extend(osmium::Location(max_lon, max_lat));
-    }
+    void set_bounding_box(double min_lon, double min_lat, double max_lon, double max_lat);
+    void enable_bounding_box_filter(bool enable = true) { m_use_bbox_filter = enable; }
     
-    void enable_bounding_box_filter(bool enable = true) {
-        m_use_bbox_filter = enable;
-    }
-    
-    void node(const osmium::Node& node) {
-        const osmium::Location node_loc = node.location();
-        if (!node_loc.valid()) return;
-        
-        if (m_use_bbox_filter) {
-            m_node_locations[node.id()] = node_loc;
-            if (!Map_bbox.contains(node_loc)) {
-                return;
-            }
-        }
-        
-        data_collector.nodes[node.id()] = MyData::Point(
-            node_loc.lat(), 
-            node_loc.lon(), 
-            node.id()
-        );
-    }
-    
+    void node(const osmium::Node& node);
     void way(const osmium::Way& way);
 };
 
+// Structure GeoBox
 struct GeoBox {
     MyData data;
     osmium::Box bbox;
@@ -198,15 +161,15 @@ struct GeoBox {
         : data(d), bbox(b), source_file(src), is_valid(true) {}
 };
 
-// Fonction indépendante pour créer une box depuis un fichier OSM
+// Fonctions principales
 GeoBox create_geo_box(const std::string& osm_filename, 
                       double min_lon, double min_lat, 
                       double max_lon, double max_lat);
 
-// Déclaration de la fonction apply_objectives
 GeoBox apply_objectives(GeoBox geo_box, const FlickrConfig& flickr_config, 
-                       const std::string& cache_filename, bool use_cache = true);
+                       const std::string& cache_filename, bool use_cache = true, int group_id = 1);
 
+// Fonctions utilitaires pour les composantes
 void bfs_explore(const MyData& data, osmium::object_id_type start,
                 std::unordered_set<osmium::object_id_type>& visited,
                 std::vector<osmium::object_id_type>& component);

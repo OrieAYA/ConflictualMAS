@@ -5,12 +5,156 @@
 #include <algorithm>
 #include <unordered_map>
 #include <vector>
+#include <limits>
+
+// ADDED: Static member definition
+std::mutex Pathfinder::geobox_modification_mutex;
 
 // Constructeur
 Pathfinder::Pathfinder(GeoBox& box) : geo_box(box) {}
 
+// FIXED: Proper method implementation with correct signature
+void Pathfinder::update_way_group_threadsafe(osmium::object_id_type way_id, int new_group) {
+    std::lock_guard<std::mutex> lock(geobox_modification_mutex);
+    update_way_group(way_id, new_group);
+}
+
+// Version thread-safe de Subgraph_construction
+bool Pathfinder::Subgraph_construction_threadsafe(
+    Pathfinder& PfSystem,
+    std::vector<osmium::object_id_type> objective_nodes,
+    int path_group) {
+
+        if(objective_nodes.size() < 2){
+            return false;
+        }
+
+        osmium::object_id_type start_node = objective_nodes[0];
+        osmium::object_id_type act_n = objective_nodes[0];
+
+        std::unordered_map<osmium::object_id_type, bool> visited;
+
+        for(const auto& init_node : objective_nodes){
+            visited[init_node] = false;
+        }
+
+        while(objective_nodes.size() > 1){
+
+            visited[act_n] = true;
+            auto it = std::find(objective_nodes.begin(), objective_nodes.end(), act_n);
+            if (it != objective_nodes.end()) {
+                objective_nodes.erase(it);
+            }
+
+            float nearest_path_length = std::numeric_limits<float>::max();
+            std::vector<osmium::object_id_type> nearest_path = {};
+            osmium::object_id_type nearest_node = 0;
+
+            for(const auto& tar_n : objective_nodes){
+                if(!visited[tar_n]){
+
+                    // A* Search est thread-safe car il ne modifie que des variables locales
+                    std::vector<osmium::object_id_type> actual_path = PfSystem.A_Star_Search(act_n, tar_n);
+                    float actual_path_length = 0.0f;
+
+                    // Lecture thread-safe des distances (pas de modification)
+                    for(const auto& act_path_way : actual_path){
+                        auto way_it = PfSystem.geo_box.data.ways.find(act_path_way);
+                        if (way_it != PfSystem.geo_box.data.ways.end()) {
+                            actual_path_length += way_it->second.distance_meters;
+                        }
+                    }
+
+                    if(actual_path_length < nearest_path_length){
+                        nearest_path_length = actual_path_length;
+                        nearest_path = actual_path;
+                        nearest_node = tar_n;
+                    }
+                }
+            }
+            
+            // Modification thread-safe des groupes de ways
+            for(const auto& way_id : nearest_path){
+                PfSystem.update_way_group_threadsafe(way_id, path_group);
+            }
+
+            act_n = nearest_node;
+        }
+
+        // Fermeture du cycle avec protection mutex
+        std::vector<osmium::object_id_type> final_path = PfSystem.A_Star_Search(act_n, start_node);
+        for(const auto& way_id : final_path){
+            PfSystem.update_way_group_threadsafe(way_id, path_group);
+        }
+    
+        return true;
+}
+
 bool Pathfinder::Subgraph_construction(
-    Pathfinder PfSystem,
+    Pathfinder& PfSystem,
+    std::vector<osmium::object_id_type> objective_nodes,
+    int path_group) {
+
+        if(objective_nodes.size()<2){
+            return false;
+        }
+
+        osmium::object_id_type start_node = objective_nodes[0];
+        osmium::object_id_type act_n = objective_nodes[0];
+
+        std::unordered_map<osmium::object_id_type, bool> visited;
+
+        for(const auto& init_node : objective_nodes){
+            visited[init_node] = false;
+        }
+
+        while(objective_nodes.size()>1){
+
+            visited[act_n] = true;
+            auto it = std::find(objective_nodes.begin(), objective_nodes.end(), act_n);
+            if (it != objective_nodes.end()) {
+                objective_nodes.erase(it);
+            }
+
+            float nearest_path_length = std::numeric_limits<float>::max();
+            std::vector<osmium::object_id_type> nearest_path = {};
+            osmium::object_id_type nearest_node = 0;
+
+            for(const auto& tar_n : objective_nodes){
+                if(!visited[tar_n]){
+
+                    std::vector<osmium::object_id_type> actual_path = PfSystem.A_Star_Search(act_n, tar_n);
+                    float actual_path_length = 0.0f;
+
+                    for(const auto& act_path_way : actual_path){
+                        actual_path_length = actual_path_length + PfSystem.geo_box.data.ways[act_path_way].distance_meters;
+                    }
+
+                    if(actual_path_length < nearest_path_length){
+                        nearest_path_length = actual_path_length;
+                        nearest_path = actual_path;
+                        nearest_node = tar_n;
+                    }
+                }
+            }
+            
+            for(const auto& way_id : nearest_path){
+                PfSystem.update_way_group(way_id, path_group);
+            }
+
+            act_n = nearest_node;
+        }
+
+        std::vector<osmium::object_id_type> final_path = PfSystem.A_Star_Search(act_n, start_node);
+        for(const auto& way_id : final_path){
+            PfSystem.update_way_group(way_id, path_group);
+        }
+    
+        return true;
+
+    }
+
+bool Pathfinder::Connected_subgraph_methode(Pathfinder& PfSystem,
     const std::vector<osmium::object_id_type>& objective_nodes,
     int path_group) {
 
@@ -33,7 +177,7 @@ bool Pathfinder::Subgraph_construction(
                     float actual_path_length = 0.0f;
 
                     for(const auto& act_path_way : actual_path){
-                        actual_path_length = actual_path_length + geo_box.data.ways[act_path_way].distance_meters;
+                        actual_path_length = actual_path_length + PfSystem.geo_box.data.ways[act_path_way].distance_meters;
                     }
 
                     if(actual_path_length < nearest_path_length){
@@ -45,7 +189,7 @@ bool Pathfinder::Subgraph_construction(
             }
             
             for(const auto& way_id : nearest_path){
-                update_way_group(way_id, path_group);
+                PfSystem.update_way_group(way_id, path_group);
             }
 
             visited[nearest_node] = true;
@@ -120,20 +264,22 @@ std::vector<osmium::object_id_type> Pathfinder::A_Star_Search(
 std::vector<osmium::object_id_type> Pathfinder::reconstruct_path(
     const std::unordered_map<osmium::object_id_type, std::pair<osmium::object_id_type, osmium::object_id_type>>& cameFrom,
     osmium::object_id_type actual_node) {
-
-        std::vector<osmium::object_id_type> path = {actual_node};
-
-        while(cameFrom.count(actual_node)) {
-            
-            auto parent_node = cameFrom.at(actual_node).first;
-            auto way_id = cameFrom.at(actual_node).second;
-            
-            actual_node = parent_node;
-            path.insert(path.begin(), way_id);
-        }
-
-        return path;
-
+    
+    std::vector<osmium::object_id_type> way_path;
+    
+    // Collecter les ways en ordre inverse
+    while(cameFrom.count(actual_node)) {
+        auto parent_node = cameFrom.at(actual_node).first;
+        auto way_id = cameFrom.at(actual_node).second;
+        
+        way_path.push_back(way_id);
+        actual_node = parent_node;
+    }
+    
+    // Inverser pour avoir l'ordre correct (start → end)
+    std::reverse(way_path.begin(), way_path.end());
+    
+    return way_path;
 }
 
 float Pathfinder::heuristic(osmium::object_id_type act_node, osmium::object_id_type end_point) {

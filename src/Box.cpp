@@ -4,7 +4,6 @@
 #include <cmath>
 #include <fstream>
 #include <sstream>
-#include <map>
 #include <filesystem>
 #include <limits>
 #include <queue>
@@ -17,9 +16,12 @@
 
 using json = nlohmann::json;
 
-// Implémentation de la fonction haversine globale
+// ====================================================================
+// FONCTIONS UTILITAIRES
+// ====================================================================
+
 double calculate_haversine_distance(double lat1, double lon1, double lat2, double lon2) {
-    const double R = 6371000.0; // Rayon de la Terre en mètres
+    const double R = 6371000.0;
     const double M_PI = 3.14159265358979323846;
     const double dLat = (lat2 - lat1) * M_PI / 180.0;
     const double dLon = (lon2 - lon1) * M_PI / 180.0;
@@ -30,12 +32,10 @@ double calculate_haversine_distance(double lat1, double lon1, double lat2, doubl
     return R * c;
 }
 
-// Implémentation de la fonction haversine dans MyHandler
 double MyHandler::calculate_haversine_distance(double lat1, double lon1, double lat2, double lon2) const {
     return ::calculate_haversine_distance(lat1, lon1, lat2, lon2);
 }
 
-// Trouver le point le plus proche d'une coordonnée donnée
 osmium::object_id_type find_nearest_point(const MyData& data, double target_lat, double target_lon) {
     double min_distance = std::numeric_limits<double>::max();
     osmium::object_id_type nearest_id = 0;
@@ -51,118 +51,142 @@ osmium::object_id_type find_nearest_point(const MyData& data, double target_lat,
     return nearest_id;
 }
 
-// Fonction pour vérifier si un way est une route/chemin valide (pas piéton)
 bool is_valid_way_type(const osmium::Way& way) {
     bool has_highway = false;
     
-    // Vérifier tous les tags
     for (const auto& tag : way.tags()) {
         std::string key = tag.key();
-        std::string value = tag.value();
         
-        // Marquer qu'on a un tag highway
         if (key == "highway") {
             has_highway = true;
         }
         
-        // EXCLUSIONS strictes (pas des routes)
-        if (key == "building" || 
-            key == "landuse" || 
-            key == "amenity" || 
-            key == "leisure" || 
-            key == "natural" || 
-            key == "area" ||
-            key == "barrier" ||
-            key == "waterway") {
+        if (key == "building" || key == "landuse" || key == "amenity" || 
+            key == "leisure" || key == "natural" || key == "area" ||
+            key == "barrier" || key == "waterway") {
             return false;
         }
     }
     
-    // Si c'est un highway ET pas exclu → accepter
     return has_highway;
 }
 
-// Implémentation de MyHandler::way()
-void MyHandler::way(const osmium::Way& way) {
-    if (way.nodes().empty()) return;
+// ====================================================================
+// MYHANDLER IMPLEMENTATION - AVEC CONNEXION IMMÉDIATE
+// ====================================================================
 
-    if (!is_valid_way_type(way)) {
-        return;
+void MyHandler::set_bounding_box(double min_lon, double min_lat, double max_lon, double max_lat) {
+    Map_bbox = osmium::Box();
+    Map_bbox.extend(osmium::Location(min_lon, min_lat));
+    Map_bbox.extend(osmium::Location(max_lon, max_lat));
+}
+
+void MyHandler::node(const osmium::Node& node) {
+    const osmium::Location node_loc = node.location();
+    if (!node_loc.valid()) return;
+    
+    if (m_use_bbox_filter) {
+        m_node_locations[node.id()] = node_loc;
+        if (!Map_bbox.contains(node_loc)) {
+            return;
+        }
     }
     
-    MyData::Way current_way(way.id());
-    bool has_nodes_in_bbox = false;
+    data_collector.nodes[node.id()] = MyData::Point(
+        node_loc.lat(), 
+        node_loc.lon(), 
+        node.id()
+    );
+}
+
+void MyHandler::connect_way_to_nodes(osmium::object_id_type way_id, 
+                                    osmium::object_id_type node1_id, 
+                                    osmium::object_id_type node2_id) {
+    auto& node1 = data_collector.nodes[node1_id];
+    auto& node2 = data_collector.nodes[node2_id];
+    
+    node1.incident_ways.push_back(way_id);
+    node2.incident_ways.push_back(way_id);
+}
+
+void MyHandler::way(const osmium::Way& way) {
+    if (way.nodes().empty()) return;
+    if (!is_valid_way_type(way)) return;
     
     if (m_use_bbox_filter) {
         bool intersects_bbox = false;
         for (const auto& node_ref : way.nodes()) {
             auto it = m_node_locations.find(node_ref.ref());
-            if (it != m_node_locations.end()) {
-                if (Map_bbox.contains(it->second)) {
-                    intersects_bbox = true;
-                    break;
-                }
+            if (it != m_node_locations.end() && Map_bbox.contains(it->second)) {
+                intersects_bbox = true;
+                break;
             }
         }
         if (!intersects_bbox) return;
     }
 
-    // Collecter les points valides
-    std::vector<MyData::Point> valid_points;
+    // Collecter les IDs des nodes valides
+    std::vector<osmium::object_id_type> valid_node_ids;
     for (const auto& node_ref : way.nodes()) {
         auto it = data_collector.nodes.find(node_ref.ref());
         if (it != data_collector.nodes.end()) {
-            valid_points.push_back(it->second);
-            has_nodes_in_bbox = true;
+            valid_node_ids.push_back(node_ref.ref());
         }
     }
     
-    if (!has_nodes_in_bbox) return;
+    if (valid_node_ids.size() < 2) return;
 
-    if (valid_points.size() == 1) {
-        std::cout << "Way " << way.id() << " ignoré (1 seul point)" << std::endl;
-        return;
+    if (valid_node_ids.size() == 2) {
+        // Way simple avec 2 nodes
+        MyData::Way current_way(way.id());
+        current_way.node1_id = valid_node_ids[0];
+        current_way.node2_id = valid_node_ids[1];
         
-    } else if (valid_points.size() == 2) {
-        current_way.node1_id = valid_points[0].id;
-        current_way.node2_id = valid_points[1].id;
-        current_way.points = valid_points; // Stocker les points
+        // Récupérer les points pour le calcul de distance
+        const auto& node1 = data_collector.nodes[valid_node_ids[0]];
+        const auto& node2 = data_collector.nodes[valid_node_ids[1]];
+        current_way.points = {node1, node2};
         current_way.distance_meters = static_cast<float>(calculate_haversine_distance(
-            valid_points[0].lat, valid_points[0].lon,
-            valid_points[1].lat, valid_points[1].lon
+            node1.lat, node1.lon, node2.lat, node2.lon
         ));
         
+        // Ajouter le way
         data_collector.ways[way.id()] = current_way;
         
-    } else {
-        std::cout << "Way " << way.id() << " divisé en " << (valid_points.size() - 1) << " segments" << std::endl;
+        // CONNEXION IMMÉDIATE
+        connect_way_to_nodes(way.id(), current_way.node1_id, current_way.node2_id);
         
+    } else {
+        // Segmentation pour ways avec 3+ nodes
         osmium::object_id_type base_way_id = way.id();
         
-        for (size_t i = 0; i < valid_points.size() - 1; ++i) {
+        for (size_t i = 0; i < valid_node_ids.size() - 1; ++i) {
             MyData::Way segment_way;
+            segment_way.id = (i == 0) ? base_way_id : generate_new_way_id(base_way_id, i);
+            segment_way.node1_id = valid_node_ids[i];
+            segment_way.node2_id = valid_node_ids[i + 1];
             
-            // ID unique pour chaque segment
-            if (i == 0) {
-                segment_way.id = base_way_id;  // Premier segment garde l'ID original
-            } else {
-                segment_way.id = generate_new_way_id(base_way_id, i);  // IDs dérivés
-            }
-            
-            segment_way.node1_id = valid_points[i].id;
-            segment_way.node2_id = valid_points[i + 1].id;
-            segment_way.points = {valid_points[i], valid_points[i + 1]}; // Stocker les 2 points du segment
+            // Récupérer les points pour le calcul
+            const auto& node1 = data_collector.nodes[valid_node_ids[i]];
+            const auto& node2 = data_collector.nodes[valid_node_ids[i + 1]];
+            segment_way.points = {node1, node2};
             segment_way.distance_meters = static_cast<float>(calculate_haversine_distance(
-                valid_points[i].lat, valid_points[i].lon,
-                valid_points[i + 1].lat, valid_points[i + 1].lon
+                node1.lat, node1.lon, node2.lat, node2.lon
             ));
             
+            // Ajouter le segment
             data_collector.ways[segment_way.id] = segment_way;
+            
+            // CONNEXION IMMÉDIATE
+            connect_way_to_nodes(segment_way.id, segment_way.node1_id, segment_way.node2_id);
         }
     }
 }
 
-// Fonction indépendante pour créer une GeoBox
+// ====================================================================
+// CRÉATION DE GEOBOX SIMPLIFIÉE
+// ====================================================================
+
 GeoBox create_geo_box(const std::string& osm_filename, 
                       double min_lon, double min_lat, 
                       double max_lon, double max_lat) {
@@ -171,31 +195,17 @@ GeoBox create_geo_box(const std::string& osm_filename,
     std::cout << "BBox: (" << min_lon << ", " << min_lat << ") to (" << max_lon << ", " << max_lat << ")" << std::endl;
     
     try {
-        // Créer et configurer le handler
         MyHandler handler;
         handler.set_bounding_box(min_lon, min_lat, max_lon, max_lat);
         handler.enable_bounding_box_filter(true);
         
-        // Traiter le fichier OSM
         osmium::io::Reader reader(osm_filename, osmium::io::read_meta::no);
         osmium::apply(reader, handler);
         reader.close();
         
-        // Ajouter les ways incidents aux points
-        for (const auto& [way_id, way] : handler.data_collector.ways) {
-            // Utiliser node1_id et node2_id au lieu de way.points
-            auto it1 = handler.data_collector.nodes.find(way.node1_id);
-            if (it1 != handler.data_collector.nodes.end()) {
-                it1->second.incident_ways.push_back(way_id);
-            }
-            
-            auto it2 = handler.data_collector.nodes.find(way.node2_id);
-            if (it2 != handler.data_collector.nodes.end()) {
-                it2->second.incident_ways.push_back(way_id);
-            }
-        }
-
-        // Supprimer les points sans ways
+        // NOTE: Plus besoin de boucle de connexion - fait automatiquement dans MyHandler::way()
+        
+        // Nettoyage des nodes orphelins uniquement
         auto nodes_it = handler.data_collector.nodes.begin();
         while (nodes_it != handler.data_collector.nodes.end()) {
             if (nodes_it->second.incident_ways.empty()) {
@@ -204,29 +214,13 @@ GeoBox create_geo_box(const std::string& osm_filename,
                 ++nodes_it;
             }
         }
-
-        // Nettoyer les ways invalides
-        auto ways_it = handler.data_collector.ways.begin();
-        while (ways_it != handler.data_collector.ways.end()) {
-            bool has_valid_nodes = 
-                handler.data_collector.nodes.count(ways_it->second.node1_id) &&
-                handler.data_collector.nodes.count(ways_it->second.node2_id);
-            
-            if (!has_valid_nodes) {
-                ways_it = handler.data_collector.ways.erase(ways_it);
-            } else {
-                ++ways_it;
-            }
-        }
         
         std::cout << "Processing complete:" << std::endl;
         std::cout << "  Nodes found: " << handler.data_collector.nodes.size() << std::endl;
         std::cout << "  Ways found: " << handler.data_collector.ways.size() << std::endl;
 
         GeoBox temp_box(handler.data_collector, handler.Map_bbox, osm_filename);
-        GeoBox final_box = connect_isolated_components(temp_box);
-        
-        return final_box;
+        return connect_isolated_components(temp_box);
         
     } catch (const osmium::io_error& e) {
         std::cerr << "OSM I/O Error: " << e.what() << std::endl;
@@ -237,9 +231,12 @@ GeoBox create_geo_box(const std::string& osm_filename,
     }
 }
 
-// Fonction principale pour appliquer les objectifs
+// ====================================================================
+// APPLICATION DES OBJECTIFS
+// ====================================================================
+
 GeoBox apply_objectives(GeoBox geo_box, const FlickrConfig& flickr_config, 
-                       const std::string& cache_filename, bool use_cache) {
+                       const std::string& cache_filename, bool use_cache, int group_id) {
     
     if (!geo_box.is_valid) {
         std::cerr << "Cannot apply objectives: GeoBox is invalid" << std::endl;
@@ -248,11 +245,9 @@ GeoBox apply_objectives(GeoBox geo_box, const FlickrConfig& flickr_config,
     
     std::cout << "\n=== Application des objectifs Flickr ===" << std::endl;
     
-    // Créer le client API
     FlickrAPIClient client(flickr_config);
     std::vector<FlickrPOI> pois;
     
-    // Charger depuis le cache ou récupérer via API
     if (use_cache && std::filesystem::exists(cache_filename)) {
         pois = client.load_pois_from_file(cache_filename);
     }
@@ -271,18 +266,14 @@ GeoBox apply_objectives(GeoBox geo_box, const FlickrConfig& flickr_config,
         return geo_box;
     }
     
-    // Créer le groupe d'objectifs
-    int group_id = 1;
     ObjectiveGroup group(group_id, flickr_config.search_word, 
                         "Points d'intérêt basés sur les photos Flickr");
-
     geo_box.data.objective_groups[group_id] = group;
     
-    // Affecter chaque POI au point le plus proche
     int assigned_count = 0;
+    std::unordered_set<osmium::object_id_type> assigned_nodes;
     
     for (const auto& poi : pois) {
-        // Trouver le point le plus proche
         osmium::object_id_type nearest_id = find_nearest_point(geo_box.data, poi.latitude, poi.longitude);
         
         if (nearest_id != 0) {
@@ -292,46 +283,37 @@ GeoBox apply_objectives(GeoBox geo_box, const FlickrConfig& flickr_config,
                     it->second.lat, it->second.lon, poi.latitude, poi.longitude
                 );
                 
-                // Vérifier si la distance est acceptable
                 if (distance <= flickr_config.poi_assignment_radius) {
-                    it->second.groupe = group_id;
+                    if (assigned_nodes.count(nearest_id) == 0) {
+                        assigned_nodes.insert(nearest_id);
+                        it->second.groupe = group_id;
+                        geo_box.data.objective_groups[group_id].node_ids.push_back(nearest_id);
+                        assigned_count++;
+                    }
                     it->second.objective_id = poi.id;
-                    geo_box.data.objective_groups[group_id].node_ids.push_back(nearest_id);
-                    assigned_count++;
-                    
-                    std::cout << "POI '" << poi.title << "' assigné au point " << nearest_id 
-                              << " (distance: " << static_cast<int>(distance) << "m)" << std::endl;
-                } else {
-                    std::cout << "POI '" << poi.title << "' trop éloigné du point le plus proche "
-                              << "(distance: " << static_cast<int>(distance) << "m > " 
-                              << flickr_config.poi_assignment_radius << "m)" << std::endl;
                 }
             }
         }
     }
     
-    // Mettre à jour le groupe
     geo_box.data.objective_groups[group_id].point_count = assigned_count;
     
-    std::cout << "\n=== Résumé de l'application des objectifs ===" << std::endl;
     std::cout << "POIs Flickr récupérés: " << pois.size() << std::endl;
     std::cout << "Points assignés: " << assigned_count << std::endl;
-    std::cout << "Rayon d'assignation: " << flickr_config.poi_assignment_radius << "m" << std::endl;
-    
-    // Afficher les statistiques des groupes
-    geo_box.data.print_objective_groups();
     
     return geo_box;
 }
 
-// Callback pour recevoir les données HTTP
+// ====================================================================
+// API FLICKR IMPLEMENTATION
+// ====================================================================
+
 size_t FlickrAPIClient::WriteCallback(void* contents, size_t size, size_t nmemb, std::string* response) {
     size_t total_size = size * nmemb;
     response->append(static_cast<char*>(contents), total_size);
     return total_size;
 }
 
-// Construire l'URL de requête Flickr
 std::string FlickrAPIClient::build_flickr_url(const std::string& method, const std::map<std::string, std::string>& params) const {
     std::string url = "https://api.flickr.com/services/rest/?method=" + method;
     url += "&api_key=" + config.api_key;
@@ -344,7 +326,6 @@ std::string FlickrAPIClient::build_flickr_url(const std::string& method, const s
     return url;
 }
 
-// Faire une requête HTTP GET
 std::string FlickrAPIClient::make_http_request(const std::string& url) const {
     CURL* curl;
     CURLcode res;
@@ -370,13 +351,8 @@ std::string FlickrAPIClient::make_http_request(const std::string& url) const {
     return response;
 }
 
-// Récupérer les POIs depuis Flickr
 std::vector<FlickrPOI> FlickrAPIClient::fetch_pois() const {
     std::vector<FlickrPOI> pois;
-    
-    std::cout << "Fetching POIs from Flickr API..." << std::endl;
-    std::cout << "Search word: " << config.search_word << std::endl;
-    std::cout << "Bounding box: " << config.bbox << std::endl;
     
     std::map<std::string, std::string> params = {
         {"media", "photos"},
@@ -387,13 +363,8 @@ std::vector<FlickrPOI> FlickrAPIClient::fetch_pois() const {
         {"per_page", "500"}
     };
     
-    // Ajouter les dates si spécifiées
-    if (!config.min_date.empty()) {
-        params["min_upload_date"] = config.min_date;
-    }
-    if (!config.max_date.empty()) {
-        params["max_upload_date"] = config.max_date;
-    }
+    if (!config.min_date.empty()) params["min_upload_date"] = config.min_date;
+    if (!config.max_date.empty()) params["max_upload_date"] = config.max_date;
     
     std::string url = build_flickr_url("flickr.photos.search", params);
     std::string response = make_http_request(url);
@@ -423,7 +394,6 @@ std::vector<FlickrPOI> FlickrAPIClient::fetch_pois() const {
                     
                     if (photo.contains("tags")) {
                         std::string tags_str = photo["tags"];
-                        // Séparer les tags par espaces
                         std::istringstream iss(tags_str);
                         std::string tag;
                         while (iss >> tag) {
@@ -434,8 +404,6 @@ std::vector<FlickrPOI> FlickrAPIClient::fetch_pois() const {
                     pois.push_back(poi);
                 }
             }
-        } else {
-            std::cerr << "Flickr API Error: " << j.dump() << std::endl;
         }
     } catch (const json::exception& e) {
         std::cerr << "JSON Parse Error: " << e.what() << std::endl;
@@ -445,7 +413,6 @@ std::vector<FlickrPOI> FlickrAPIClient::fetch_pois() const {
     return pois;
 }
 
-// Sauvegarder les POIs dans un fichier JSON
 void FlickrAPIClient::save_pois_to_file(const std::vector<FlickrPOI>& pois, const std::string& filename) const {
     json j;
     
@@ -471,7 +438,6 @@ void FlickrAPIClient::save_pois_to_file(const std::vector<FlickrPOI>& pois, cons
     }
 }
 
-// Charger les POIs depuis un fichier JSON
 std::vector<FlickrPOI> FlickrAPIClient::load_pois_from_file(const std::string& filename) const {
     std::vector<FlickrPOI> pois;
     
@@ -508,13 +474,15 @@ std::vector<FlickrPOI> FlickrAPIClient::load_pois_from_file(const std::string& f
     return pois;
 }
 
-// Connecter les composantes isolées
+// ====================================================================
+// FONCTIONS DE CONNEXION DES COMPOSANTES
+// ====================================================================
+
 GeoBox connect_isolated_components(GeoBox geo_box) {
     if (!geo_box.is_valid) return geo_box;
     
     std::cout << "\n=== Connexion des composantes isolées ===" << std::endl;
     
-    // 1. Trouver les composantes
     auto components = find_components_simple(geo_box.data);
     
     if (components.size() <= 1) {
@@ -524,7 +492,7 @@ GeoBox connect_isolated_components(GeoBox geo_box) {
     
     std::cout << "Composantes trouvées: " << components.size() << std::endl;
     
-    // 2. Trouver la plus grande composante (composante principale)
+    // Trouver la plus grande composante
     size_t main_component_idx = 0;
     for (size_t i = 1; i < components.size(); ++i) {
         if (components[i].size() > components[main_component_idx].size()) {
@@ -534,26 +502,23 @@ GeoBox connect_isolated_components(GeoBox geo_box) {
     
     std::cout << "Composante principale: " << components[main_component_idx].size() << " nodes" << std::endl;
     
-    // 3. Connecter chaque petite composante à la principale
+    // Connecter chaque petite composante à la principale
     osmium::object_id_type next_way_id = get_max_way_id(geo_box.data) + 1;
     
     for (size_t i = 0; i < components.size(); ++i) {
         if (i == main_component_idx) continue;
         
-        // Trouver les points les plus proches entre les composantes
         auto [main_node, isolated_node, distance] = find_closest_nodes(
             geo_box.data, components[main_component_idx], components[i]);
             
         std::cout << "Connexion composante " << i << " (distance: " << static_cast<int>(distance) << "m)" << std::endl;
         
-        // Créer un way de connexion
         create_connecting_way(geo_box.data, next_way_id++, main_node, isolated_node, distance);
     }
     
     return geo_box;
 }
 
-// Fonctions utilitaires
 std::vector<std::vector<osmium::object_id_type>> find_components_simple(const MyData& data) {
     std::unordered_set<osmium::object_id_type> visited;
     std::vector<std::vector<osmium::object_id_type>> components;
@@ -592,7 +557,6 @@ void bfs_explore(const MyData& data, osmium::object_id_type start,
             auto way_it = data.ways.find(way_id);
             if (way_it == data.ways.end()) continue;
             
-            // Vérifier les deux extrémités du way
             std::vector<osmium::object_id_type> neighbors = {way_it->second.node1_id, way_it->second.node2_id};
             
             for (const auto& neighbor_id : neighbors) {
@@ -615,7 +579,6 @@ osmium::object_id_type get_max_way_id(const MyData& data) {
     return max_id;
 }
 
-// Trouver les nodes les plus proches entre deux composantes
 std::tuple<osmium::object_id_type, osmium::object_id_type, double> 
 find_closest_nodes(const MyData& data, 
                   const std::vector<osmium::object_id_type>& comp1,
@@ -649,7 +612,6 @@ find_closest_nodes(const MyData& data,
     return std::make_tuple(best_node1, best_node2, min_distance);
 }
 
-// Créer un way de connexion entre deux nodes
 void create_connecting_way(MyData& data, osmium::object_id_type way_id, 
                           osmium::object_id_type node1_id, osmium::object_id_type node2_id, 
                           double distance) {
@@ -668,12 +630,12 @@ void create_connecting_way(MyData& data, osmium::object_id_type way_id,
     new_way.node2_id = node2_id;
     new_way.points = {node1_it->second, node2_it->second};
     new_way.distance_meters = static_cast<float>(distance);
-    new_way.groupe = 0;     // Pas un objectif
+    new_way.groupe = 0;
     
     // Ajouter le way aux données
     data.ways[way_id] = new_way;
     
-    // Mettre à jour les incident_ways des nodes
+    // CONNEXION IMMÉDIATE (cohérent avec MyHandler::way())
     node1_it->second.incident_ways.push_back(way_id);
     node2_it->second.incident_ways.push_back(way_id);
     

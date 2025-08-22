@@ -16,7 +16,6 @@
 #include <iostream>
 #include <filesystem>
 #include <map>
-#include <numeric>
 
 // Fonction indépendante : Rendu depuis GeoBox
 bool render_map(const GeoBox& geo_box,
@@ -37,7 +36,7 @@ bool render_map(const GeoBox& geo_box,
     return render_map_from_data(geo_box.data, geo_box.bbox, output_filename, width, height);
 }
 
-// Fonction indépendante : Rendu depuis MyData avec RÉCUPÉRATION CORRECTE DES COORDONNÉES
+// Fonction indépendante : Rendu depuis MyData - CORRIGÉE
 bool render_map_from_data(const MyData& data,
                          const osmium::Box& bbox,
                          const std::string& output_filename,
@@ -91,7 +90,7 @@ bool render_map_from_data(const MyData& data,
         }
         std::cout << "Added " << data.nodes.size() << " nodes to datasource." << std::endl;
 
-        // === CRÉER DATASOURCE POUR LES WAYS - CORRECTION MAJEURE ===
+        // === CRÉER DATASOURCE POUR LES WAYS - AVEC VALIDATION STRICTE ===
         mapnik::parameters way_params;
         way_params["type"] = "memory";
         auto way_ds = std::make_shared<mapnik::memory_datasource>(way_params);
@@ -100,14 +99,29 @@ bool render_map_from_data(const MyData& data,
         int ways_skipped = 0;
         
         for (const auto& [way_id, way_data] : data.ways) {
-            // CORRECTIF: Récupérer les coordonnées depuis data.nodes
+            // VALIDATION STRICTE: Vérifier que les deux nodes existent
             auto node1_it = data.nodes.find(way_data.node1_id);
             auto node2_it = data.nodes.find(way_data.node2_id);
             
-            if (node1_it == data.nodes.end() || node2_it == data.nodes.end()) {
+            if (node1_it == data.nodes.end()) {
                 ways_skipped++;
-                std::cerr << "Way " << way_id << ": nodes introuvables (" 
-                          << way_data.node1_id << ", " << way_data.node2_id << ")" << std::endl;
+                std::cerr << "ERROR: Way " << way_id << " references missing node1: " 
+                          << way_data.node1_id << std::endl;
+                continue;
+            }
+            
+            if (node2_it == data.nodes.end()) {
+                ways_skipped++;
+                std::cerr << "ERROR: Way " << way_id << " references missing node2: " 
+                          << way_data.node2_id << std::endl;
+                continue;
+            }
+            
+            // VALIDATION: Vérifier que les nodes sont différents
+            if (way_data.node1_id == way_data.node2_id) {
+                ways_skipped++;
+                std::cerr << "ERROR: Way " << way_id << " has identical nodes: " 
+                          << way_data.node1_id << std::endl;
                 continue;
             }
             
@@ -116,7 +130,7 @@ bool render_map_from_data(const MyData& data,
             ctx->push("distance");
             auto feature = std::make_shared<mapnik::feature_impl>(ctx, way_id);
             
-            // CORRECTIF: Construire la géométrie avec les vraies coordonnées
+            // Construire la géométrie avec les coordonnées réelles
             mapnik::geometry::line_string<double> line_geom;
             line_geom.emplace_back(node1_it->second.lon, node1_it->second.lat);
             line_geom.emplace_back(node2_it->second.lon, node2_it->second.lat);
@@ -131,24 +145,30 @@ bool render_map_from_data(const MyData& data,
         
         std::cout << "Ways processing results:" << std::endl;
         std::cout << "  Added: " << ways_added << " ways" << std::endl;
-        std::cout << "  Skipped: " << ways_skipped << " ways (missing nodes)" << std::endl;
+        std::cout << "  Skipped: " << ways_skipped << " ways (PROBLEMATIC!)" << std::endl;
+        
+        // ALERTE si trop de ways skip
+        if (ways_skipped > 0) {
+            std::cerr << "WARNING: " << ways_skipped << " ways were skipped due to missing nodes!" << std::endl;
+            std::cerr << "This indicates data integrity problems!" << std::endl;
+        }
 
-        // === DÉFINIR LES STYLES POUR LES NODES ===
+        // === STYLES POUR LES NODES - TAILLES CORRIGÉES ===
         mapnik::feature_type_style node_style;
 
-        // Style pour les nodes non-objectifs (groupe 0)
+        // Style pour les nodes normaux (groupe 0)
         mapnik::rule normal_point_rule;
         normal_point_rule.set_filter(mapnik::parse_expression("[groupe] = 0"));
         mapnik::markers_symbolizer normal_point_sym;
         
         mapnik::put(normal_point_sym, mapnik::keys::fill, mapnik::color("black"));
-        mapnik::put(normal_point_sym, mapnik::keys::width, mapnik::value_double(4.0));
-        mapnik::put(normal_point_sym, mapnik::keys::height, mapnik::value_double(4.0));
+        mapnik::put(normal_point_sym, mapnik::keys::width, mapnik::value_double(3.0));
+        mapnik::put(normal_point_sym, mapnik::keys::height, mapnik::value_double(3.0));
         
         normal_point_rule.append(std::move(normal_point_sym));
         node_style.add_rule(std::move(normal_point_rule));
 
-        // Styles pour les nodes objectifs (groupes 1-5) avec couleurs distinctes
+        // Styles pour les nodes objectifs (groupes 1-5) - PLUS VISIBLES
         std::vector<std::string> objective_colors = {"red", "blue", "green", "orange", "purple"};
         
         for (int group_id = 1; group_id <= 5; ++group_id) {
@@ -158,14 +178,14 @@ bool render_map_from_data(const MyData& data,
             mapnik::markers_symbolizer objective_sym;
             std::string color = objective_colors[(group_id - 1) % objective_colors.size()];
             mapnik::put(objective_sym, mapnik::keys::fill, mapnik::color(color));
-            mapnik::put(objective_sym, mapnik::keys::width, mapnik::value_double(6.0));
-            mapnik::put(objective_sym, mapnik::keys::height, mapnik::value_double(6.0));
+            mapnik::put(objective_sym, mapnik::keys::width, mapnik::value_double(4.0));
+            mapnik::put(objective_sym, mapnik::keys::height, mapnik::value_double(4.0));
             
             objective_rule.append(std::move(objective_sym));
             node_style.add_rule(std::move(objective_rule));
         }
 
-        // === DÉFINIR LES STYLES POUR LES WAYS ===
+        // === STYLES POUR LES WAYS - ÉPAISSEURS CORRIGÉES ===
         mapnik::feature_type_style way_style;
         
         // Style pour les ways normaux (groupe 0)
@@ -174,12 +194,13 @@ bool render_map_from_data(const MyData& data,
         mapnik::line_symbolizer normal_way_sym;
         
         mapnik::put(normal_way_sym, mapnik::keys::stroke, mapnik::color("grey"));
-        mapnik::put(normal_way_sym, mapnik::keys::stroke_width, mapnik::value_double(2.0));
+        mapnik::put(normal_way_sym, mapnik::keys::stroke_width, mapnik::value_double(2.0)); // PLUS FIN
+        mapnik::put(normal_way_sym, mapnik::keys::stroke_opacity, mapnik::value_double(1.0)); // PLUS TRANSPARENT
         
         normal_way_rule.append(std::move(normal_way_sym));
         way_style.add_rule(std::move(normal_way_rule));
         
-        // Styles pour les ways de chemins (groupes 1-5) - Plus épais et colorés
+        // Styles pour les ways de pathfinding (groupes 1-5) - PLUS ÉPAIS ET VISIBLES
         std::vector<std::string> path_colors = {"#FF0066", "#0066FF", "#00CC66", "#FF9900", "#9900CC"};
         
         for (int group_id = 1; group_id <= 5; ++group_id) {
@@ -189,31 +210,29 @@ bool render_map_from_data(const MyData& data,
             mapnik::line_symbolizer path_sym;
             std::string color = path_colors[(group_id - 1) % path_colors.size()];
             mapnik::put(path_sym, mapnik::keys::stroke, mapnik::color(color));
-            mapnik::put(path_sym, mapnik::keys::stroke_width, mapnik::value_double(2.0));
-            mapnik::put(path_sym, mapnik::keys::stroke_opacity, mapnik::value_double(1.0));
+            mapnik::put(path_sym, mapnik::keys::stroke_width, mapnik::value_double(2.0)); // CORRECTION: PLUS ÉPAIS
+            mapnik::put(path_sym, mapnik::keys::stroke_opacity, mapnik::value_double(1.0)); // PLUS OPAQUE
             
             path_rule.append(std::move(path_sym));
             way_style.add_rule(std::move(path_rule));
         }
 
-        // === AJOUTER LES STYLES À LA CARTE ===
+        // === AJOUTER LES STYLES ===
         m.insert_style("nodes_style", std::move(node_style));
         m.insert_style("ways_style", std::move(way_style));
 
-        // === CRÉER ET AJOUTER LES LAYERS ===
-        // Layer ways (en arrière-plan)
+        // === AJOUTER LES LAYERS ===
         mapnik::layer way_layer("ways");
         way_layer.set_datasource(way_ds);
         way_layer.add_style("ways_style");
         m.add_layer(way_layer);
 
-        // Layer nodes (au premier plan)
         mapnik::layer node_layer("nodes");
         node_layer.set_datasource(node_ds);
         node_layer.add_style("nodes_style");
         m.add_layer(node_layer);
 
-        // === DÉFINIR L'ÉTENDUE DE LA CARTE ===
+        // === DÉFINIR L'ÉTENDUE ===
         m.zoom_to_box(mapnik::box2d<double>(
             bbox.bottom_left().lon(),
             bbox.bottom_left().lat(),
@@ -221,12 +240,12 @@ bool render_map_from_data(const MyData& data,
             bbox.top_right().lat()
         ));
 
-        // === RENDU ET SAUVEGARDE ===
+        // === RENDU ===
         mapnik::image_rgba8 im(m.width(), m.height());
         mapnik::agg_renderer<mapnik::image_rgba8> rend(m, im);
         rend.apply();
 
-        // Gestion des noms de fichiers avec numérotation
+        // Sauvegarde avec gestion des doublons
         int counter = 0;
         namespace fs = std::filesystem;
         fs::path dir_path = "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\src\\maps\\";
@@ -247,9 +266,7 @@ bool render_map_from_data(const MyData& data,
         mapnik::save_to_file(im, final_output_filename);
         std::cout << "Map successfully rendered to: " << final_output_filename << std::endl;
         
-        std::cout << "Rendu terminé:" << std::endl;
-        std::cout << "  - Chemins tracés (groupes > 0): ";
-        
+        // Statistiques finales
         int traced_ways = 0;
         int objective_points = 0;
         
@@ -261,7 +278,8 @@ bool render_map_from_data(const MyData& data,
             if (group_id > 0) objective_points += count;
         }
         
-        std::cout << traced_ways << std::endl;
+        std::cout << "Rendu terminé:" << std::endl;
+        std::cout << "  - Ways de pathfinding (groupes > 0): " << traced_ways << std::endl;
         std::cout << "  - Points objectifs (groupes > 0): " << objective_points << std::endl;
         
         return true;

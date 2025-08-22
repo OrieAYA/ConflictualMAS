@@ -2,6 +2,7 @@
 #define UTILITY_HPP
 
 #include "Box.hpp"
+#include "Pathfinding.hpp"
 #include <string>
 
 // Fonction de test original (pas de paramètres)
@@ -29,5 +30,11 @@ void complete_workflow(const std::string& osm_file,
                       int width, int height,
                       const FlickrConfig& flickr_config,
                       bool use_flickr_objectives = true);
+
+void validate_data_integrity(const GeoBox& geo_box);
+
+bool verif_pathfinding(Pathfinder& PfSystem,
+    const std::vector<osmium::object_id_type>& objective_nodes,
+    int path_group);
 
 #endif // UTILITY_HPP

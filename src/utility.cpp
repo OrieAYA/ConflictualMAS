@@ -3,6 +3,7 @@
 #include "Box.hpp"
 #include "MapRenderer.hpp"
 #include "GeoBoxManager.hpp"
+#include "Pathfinding.hpp"
 #include "utility.hpp"
 
 int test() {
@@ -189,7 +190,7 @@ void complete_workflow(const std::string& osm_file,
         adapted_config.bbox = std::to_string(min_lon) + "," + std::to_string(min_lat) + "," + 
                              std::to_string(max_lon) + "," + std::to_string(max_lat);
         
-        original_geo_box = apply_objectives(original_geo_box, adapted_config, "flickr_cache.json", true);
+        original_geo_box = apply_objectives(original_geo_box, adapted_config, "flickr_cache.json", true, 1);
     }
     
     std::cout << "Étape 2: Sauvegarde..." << std::endl;
@@ -212,3 +213,185 @@ void complete_workflow(const std::string& osm_file,
         return;
     }
 }
+
+void validate_data_integrity(const GeoBox& geo_box) {
+    std::cout << "\n=== VALIDATION DE L'INTÉGRITÉ DES DONNÉES ===" << std::endl;
+    
+    int problematic_nodes = 0;
+    int problematic_ways = 0;
+    int total_nodes = geo_box.data.nodes.size();
+    int total_ways = geo_box.data.ways.size();
+    
+    std::cout << "Total nodes: " << total_nodes << std::endl;
+    std::cout << "Total ways: " << total_ways << std::endl;
+    std::cout << "\n--- VÉRIFICATION DES NODES ---" << std::endl;
+    
+    // VÉRIFICATION 1: Tous les nodes ont au moins une way incidente
+    std::vector<osmium::object_id_type> orphan_nodes;
+    
+    for (const auto& [node_id, node] : geo_box.data.nodes) {
+        if (node.incident_ways.empty()) {
+            orphan_nodes.push_back(node_id);
+            problematic_nodes++;
+        }
+    }
+    
+    if (!orphan_nodes.empty()) {
+        std::cout << "❌ NODES ORPHELINS (" << orphan_nodes.size() << " trouvés):" << std::endl;
+        for (size_t i = 0; i < std::min(orphan_nodes.size(), size_t(10)); ++i) {
+            std::cout << "  Node " << orphan_nodes[i] << " (pas de ways incidents)" << std::endl;
+        }
+        if (orphan_nodes.size() > 10) {
+            std::cout << "  ... et " << (orphan_nodes.size() - 10) << " autres" << std::endl;
+        }
+    } else {
+        std::cout << "✓ Tous les nodes ont au moins une way incidente" << std::endl;
+    }
+    
+    // VÉRIFICATION 2: Toutes les ways ont exactement deux nodes valides
+    std::cout << "\n--- VÉRIFICATION DES WAYS ---" << std::endl;
+    
+    std::vector<osmium::object_id_type> invalid_ways;
+    
+    for (const auto& [way_id, way] : geo_box.data.ways) {
+        bool node1_exists = geo_box.data.nodes.count(way.node1_id);
+        bool node2_exists = geo_box.data.nodes.count(way.node2_id);
+        bool nodes_different = (way.node1_id != way.node2_id);
+        
+        if (!node1_exists || !node2_exists || !nodes_different) {
+            invalid_ways.push_back(way_id);
+            problematic_ways++;
+            
+            if (invalid_ways.size() <= 10) {
+                std::cout << "❌ Way " << way_id << ": ";
+                if (!node1_exists) std::cout << "node1(" << way.node1_id << ") manquant ";
+                if (!node2_exists) std::cout << "node2(" << way.node2_id << ") manquant ";
+                if (!nodes_different) std::cout << "nodes identiques ";
+                std::cout << std::endl;
+            }
+        }
+    }
+    
+    if (!invalid_ways.empty()) {
+        std::cout << "❌ WAYS INVALIDES (" << invalid_ways.size() << " trouvées)" << std::endl;
+        if (invalid_ways.size() > 10) {
+            std::cout << "  ... (" << (invalid_ways.size() - 10) << " autres ways invalides)" << std::endl;
+        }
+    } else {
+        std::cout << "✓ Toutes les ways ont exactement deux nodes valides" << std::endl;
+    }
+    
+    // VÉRIFICATION 3: Cohérence bidirectionnelle
+    std::cout << "\n--- VÉRIFICATION DE LA COHÉRENCE BIDIRECTIONNELLE ---" << std::endl;
+    
+    int missing_references = 0;
+    
+    for (const auto& [node_id, node] : geo_box.data.nodes) {
+        for (const auto& way_id : node.incident_ways) {
+            auto way_it = geo_box.data.ways.find(way_id);
+            
+            if (way_it == geo_box.data.ways.end()) {
+                if (missing_references < 10) {
+                    std::cout << "❌ Node " << node_id << " référence way inexistant " << way_id << std::endl;
+                }
+                missing_references++;
+            } else {
+                bool way_references_node = (way_it->second.node1_id == node_id || 
+                                           way_it->second.node2_id == node_id);
+                if (!way_references_node) {
+                    if (missing_references < 10) {
+                        std::cout << "❌ Node " << node_id << " dans way " << way_id 
+                                  << " mais way ne référence pas le node" << std::endl;
+                    }
+                    missing_references++;
+                }
+            }
+        }
+    }
+    
+    if (missing_references == 0) {
+        std::cout << "✓ Cohérence bidirectionnelle parfaite" << std::endl;
+    } else {
+        std::cout << "❌ " << missing_references << " références incohérentes trouvées" << std::endl;
+    }
+    
+    // RÉSUMÉ FINAL
+    std::cout << "\n=== RÉSUMÉ DE LA VALIDATION ===" << std::endl;
+    std::cout << "Nodes problématiques: " << problematic_nodes << "/" << total_nodes 
+              << " (" << (100.0 * problematic_nodes / total_nodes) << "%)" << std::endl;
+    std::cout << "Ways problématiques: " << problematic_ways << "/" << total_ways 
+              << " (" << (100.0 * problematic_ways / total_ways) << "%)" << std::endl;
+    std::cout << "Références incohérentes: " << missing_references << std::endl;
+    
+    if (problematic_nodes == 0 && problematic_ways == 0 && missing_references == 0) {
+        std::cout << "🎉 DONNÉES PARFAITEMENT INTÈGRES !" << std::endl;
+    } else {
+        std::cout << "⚠️  PROBLÈMES D'INTÉGRITÉ DÉTECTÉS" << std::endl;
+    }
+}
+
+bool verif_pathfinding(Pathfinder& PfSystem,
+    const std::vector<osmium::object_id_type>& objective_nodes,
+    int path_group){
+
+        if(objective_nodes.empty()){
+            return false;
+        }
+
+        std::vector<osmium::object_id_type> file = {objective_nodes[0]};
+        std::unordered_set<osmium::object_id_type> visited;
+        std::unordered_set<osmium::object_id_type> objective_set(objective_nodes.begin(), objective_nodes.end());
+
+        int counter = 0;
+
+        while (!file.empty()){
+
+            osmium::object_id_type act_node = file[0];
+            file.erase(file.begin());
+
+            if(visited.count(act_node)) continue;
+            visited.insert(act_node);
+            
+            if(objective_set.count(act_node)){
+                counter++;
+                if(counter==objective_nodes.size()){
+                    return true;
+                }  
+            }
+
+            for(const auto& in_way : PfSystem.geo_box.data.nodes[act_node].incident_ways){
+                auto& act_way = PfSystem.geo_box.data.ways[in_way];
+                if(act_way.groupe == path_group){
+                    if(act_node == act_way.node1_id){
+                        file.push_back(act_way.node2_id);
+                    } else {
+                        file.push_back(act_way.node1_id);
+                    }
+                }
+            }
+        }
+
+        std::vector<osmium::object_id_type> next_check = {};
+        
+        for(const auto& visited_node : objective_nodes){
+            if(!visited.count(visited_node)){
+                next_check.push_back(visited_node);
+            }
+        }
+
+        std::cout << "----------------------" << std::endl;
+        std::cout << "Une des composantes : " << std::endl;
+        std::cout << "----------------------" << std::endl;
+
+        for(const auto& visited_node : objective_nodes){
+            if(visited.count(visited_node)){
+                std::cout << "Deja visite : " << visited_node << std::endl;
+            }
+        }
+
+        if(!next_check.empty()){
+            verif_pathfinding(PfSystem, next_check, path_group);
+        }
+
+        return false;
+    }
