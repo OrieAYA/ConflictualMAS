@@ -22,6 +22,7 @@ include_directories("${LIBOSMIUM_DIR}/include")
 
 find_package(Boost 1.55 COMPONENTS system iostreams REQUIRED)
 find_package(ZLIB REQUIRED)
+find_package(CURL REQUIRED)
 find_package(BZip2 REQUIRED)
 find_package(EXPAT REQUIRED)
 find_package(CURL REQUIRED)
@@ -42,6 +43,11 @@ set(SOURCES
     src/Pathfinding.cpp
     src/GeoBoxManager.cpp
     src/utility.cpp
+    src/MHProcs/ACO.cpp
+    src/MHProcs/GRASP.cpp
+    src/MHProcs/VNS.cpp
+    src/MHProcs/PSO.cpp
+    src/OverpassAPI/OverpassAPI.cpp
 )
 add_executable(main ${SOURCES})
 

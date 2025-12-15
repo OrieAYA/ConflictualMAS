@@ -196,7 +196,10 @@ json GeoBoxManager::serialize_data(const MyData& data) {
         for (const auto& way_id : point.incident_ways) {
             point_json["incident_ways"].push_back(way_id);
         }
-        point_json["groupe"] = point.groupe;
+        point_json["groupes"] = json::array();
+        for (int group : point.groupes) {
+            point_json["groupes"].push_back(group);
+        }
         point_json["objective_id"] = point.objective_id;
         
         nodes_json[std::to_string(node_id)] = point_json;
@@ -210,7 +213,10 @@ json GeoBoxManager::serialize_data(const MyData& data) {
         way_json["id"] = way.id;
         way_json["node1_id"] = way.node1_id;
         way_json["node2_id"] = way.node2_id;
-        way_json["groupe"] = way.groupe;
+        way_json["groupes"] = json::array();
+        for (int group : way.groupes) {
+            way_json["groupes"].push_back(group);
+        }
         way_json["distance_meters"] = way.distance_meters;
         way_json["points"] = json::array();
         
@@ -263,7 +269,24 @@ MyData GeoBoxManager::deserialize_data(const json& j) {
                 }
             }
             
-            point.groupe = point_json["groupe"];
+            // MODIFIÉ: Désérialiser les groupes multiples
+            point.groupes.clear();
+            if (point_json.contains("groupes")) {
+                // Nouveau format avec groupes multiples
+                for (const auto& group : point_json["groupes"]) {
+                    int group_val = group.get<int>();
+                    if (group_val != 0) {
+                        point.groupes.insert(group_val);
+                    }
+                }
+            } else if (point_json.contains("groupe")) {
+                // Compatibilité avec l'ancien format
+                int old_group = point_json["groupe"];
+                if (old_group != 0) {
+                    point.groupes.insert(old_group);
+                }
+            }
+            
             point.objective_id = point_json.value("objective_id", "");
             
             data.nodes[node_id] = point;
@@ -279,14 +302,31 @@ MyData GeoBoxManager::deserialize_data(const json& j) {
             way.id = way_json["id"];
             way.node1_id = way_json["node1_id"];
             way.node2_id = way_json["node2_id"];
-            way.groupe = way_json.value("groupe", 0);
             way.distance_meters = way_json["distance_meters"];
+            
+            // MODIFIÉ: Désérialiser les groupes multiples
+            way.groupes.clear();
+            if (way_json.contains("groupes")) {
+                // Nouveau format avec groupes multiples
+                for (const auto& group : way_json["groupes"]) {
+                    int group_val = group.get<int>();
+                    if (group_val != 0) {
+                        way.groupes.insert(group_val);
+                    }
+                }
+            } else if (way_json.contains("groupe")) {
+                // Compatibilité avec l'ancien format
+                int old_group = way_json.value("groupe", 0);
+                if (old_group != 0) {
+                    way.groupes.insert(old_group);
+                }
+            }
             
             data.ways[way_id] = way;
         }
     }
     
-    // Désérialiser les groupes d'objectifs
+    // Désérialiser les groupes d'objectifs (inchangé)
     if (j.contains("objective_groups")) {
         for (const auto& [group_id_str, group_json] : j["objective_groups"].items()) {
             int group_id = std::stoi(group_id_str);

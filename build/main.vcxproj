@@ -399,6 +399,11 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\Pathfinding.cpp" />
     <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\GeoBoxManager.cpp" />
     <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\utility.cpp" />
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MHProcs\ACO.cpp" />
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MHProcs\GRASP.cpp" />
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MHProcs\VNS.cpp" />
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MHProcs\PSO.cpp" />
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\OverpassAPI\OverpassAPI.cpp" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

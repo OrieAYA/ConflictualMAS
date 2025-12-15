@@ -19,6 +19,21 @@
     <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MHProcs\ACO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MHProcs\GRASP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MHProcs\VNS.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MHProcs\PSO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\OverpassAPI\OverpassAPI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\CMakeLists.txt" />

@@ -2,16 +2,11 @@
 #define PATHFINDING_HPP
 
 #include "Box.hpp"
+#include "Common/Hashes.hpp"
 #include <vector>
 #include <unordered_map>
 #include <memory>
 #include <mutex>
-
-struct PairHash {
-    size_t operator()(const std::pair<osmium::object_id_type, osmium::object_id_type>& p) const {
-        return std::hash<osmium::object_id_type>{}(p.first) ^ std::hash<osmium::object_id_type>{}(p.second);
-    }
-};
 
 // Classe principale pour le pathfinding
 class Pathfinder {
@@ -22,8 +17,14 @@ public:
     GeoBox& geo_box;
     explicit Pathfinder(GeoBox& box);
     
-    // Méthodes principales
+    // Méthodes principales de pathfinding
     bool Subgraph_construction_threadsafe(
+        Pathfinder& PfSystem,
+        std::vector<osmium::object_id_type> objective_nodes,
+        int path_group = 2
+    );
+
+    bool Complete_subgraph_construction(
         Pathfinder& PfSystem,
         std::vector<osmium::object_id_type> objective_nodes,
         int path_group = 2
@@ -35,13 +36,13 @@ public:
         int path_group = 2
     );
 
-    // FIXED: Removed duplicate declaration and default parameter redefinition
     bool Connected_subgraph_methode(
         Pathfinder& PfSystem,
         const std::vector<osmium::object_id_type>& objective_nodes,
         int path_group = 2
     );
 
+    // Algorithmes de recherche de chemin
     std::vector<osmium::object_id_type> A_Star_Search(
         const osmium::object_id_type& start_point,
         const osmium::object_id_type& end_point
@@ -56,7 +57,7 @@ public:
     
     // Méthodes utilitaires
     void update_way_group(osmium::object_id_type way_id, int new_group);
-    void update_way_group_threadsafe(osmium::object_id_type way_id, int new_group); // ADDED: Missing declaration
+    void update_way_group_threadsafe(osmium::object_id_type way_id, int new_group);
     double calculate_distance(osmium::object_id_type node1, osmium::object_id_type node2);
     osmium::object_id_type find_nearest_node(double lat, double lon);
 };

@@ -286,7 +286,7 @@ GeoBox apply_objectives(GeoBox geo_box, const FlickrConfig& flickr_config,
                 if (distance <= flickr_config.poi_assignment_radius) {
                     if (assigned_nodes.count(nearest_id) == 0) {
                         assigned_nodes.insert(nearest_id);
-                        it->second.groupe = group_id;
+                        it->second.add_group(group_id);
                         geo_box.data.objective_groups[group_id].node_ids.push_back(nearest_id);
                         assigned_count++;
                     }
@@ -630,7 +630,6 @@ void create_connecting_way(MyData& data, osmium::object_id_type way_id,
     new_way.node2_id = node2_id;
     new_way.points = {node1_it->second, node2_it->second};
     new_way.distance_meters = static_cast<float>(distance);
-    new_way.groupe = 0;
     
     // Ajouter le way aux données
     data.ways[way_id] = new_way;

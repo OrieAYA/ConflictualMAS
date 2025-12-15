@@ -82,12 +82,35 @@ struct MyData {
         double lon;
         osmium::object_id_type id = 0;
         std::vector<osmium::object_id_type> incident_ways;
-        int groupe = 0;
+        
+        std::unordered_set<int> groupes;  // Remplace int groupe
         std::string objective_id = "";
         
         Point() = default;
         Point(double lat, double lon, osmium::object_id_type id = 0) 
             : lat(lat), lon(lon), id(id) {}
+            
+        // Méthodes utilitaires pour compatibilité
+        int get_primary_group() const {
+            return groupes.empty() ? 0 : *groupes.begin();
+        }
+        
+        void set_group(int group) {
+            groupes.clear();
+            if (group != 0) groupes.insert(group);
+        }
+        
+        void add_group(int group) {
+            if (group != 0) groupes.insert(group);
+        }
+        
+        void remove_group(int group) {
+            groupes.erase(group);
+        }
+        
+        bool has_group(int group) const {
+            return groupes.count(group) > 0;
+        }
     };
     
     struct Way {
@@ -95,13 +118,36 @@ struct MyData {
         osmium::object_id_type node1_id;
         osmium::object_id_type node2_id;
         std::vector<Point> points;
-        int groupe = 0;
         float distance_meters = 0.0f;
+        
+        std::unordered_set<int> groupes;  // Remplace int groupe
         
         Way() : id(0), node1_id(0), node2_id(0) {}
         Way(osmium::object_id_type id) : id(id), node1_id(0), node2_id(0) {}
         Way(osmium::object_id_type id, osmium::object_id_type n1, osmium::object_id_type n2) 
             : id(id), node1_id(n1), node2_id(n2) {}
+            
+        // Méthodes utilitaires pour compatibilité
+        int get_primary_group() const {
+            return groupes.empty() ? 0 : *groupes.begin();
+        }
+        
+        void set_group(int group) {
+            groupes.clear();
+            if (group != 0) groupes.insert(group);
+        }
+        
+        void add_group(int group) {
+            if (group != 0) groupes.insert(group);
+        }
+        
+        void remove_group(int group) {
+            groupes.erase(group);
+        }
+        
+        bool has_group(int group) const {
+            return groupes.count(group) > 0;
+        }
     };
 
     std::unordered_map<osmium::object_id_type, Point> nodes;

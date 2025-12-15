@@ -361,7 +361,7 @@ bool verif_pathfinding(Pathfinder& PfSystem,
 
             for(const auto& in_way : PfSystem.geo_box.data.nodes[act_node].incident_ways){
                 auto& act_way = PfSystem.geo_box.data.ways[in_way];
-                if(act_way.groupe == path_group){
+                if(act_way.has_group(path_group)){
                     if(act_node == act_way.node1_id){
                         file.push_back(act_way.node2_id);
                     } else {

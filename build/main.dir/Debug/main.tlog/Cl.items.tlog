@@ -4,3 +4,8 @@ C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MapRenderer.cpp;C:\
 C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\Pathfinding.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\Pathfinding.obj
 C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\GeoBoxManager.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\GeoBoxManager.obj
 C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\utility.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\utility.obj
+C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MHProcs\ACO.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\ACO.obj
+C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MHProcs\GRASP.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\GRASP.obj
+C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MHProcs\VNS.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\VNS.obj
+C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\MHProcs\PSO.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\PSO.obj
+C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\OverpassAPI\OverpassAPI.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\OverpassAPI.obj

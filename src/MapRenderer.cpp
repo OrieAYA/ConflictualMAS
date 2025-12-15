@@ -50,11 +50,21 @@ bool render_map_from_data(const MyData& data,
     std::map<int, int> way_group_counts;
     
     for (const auto& [node_id, point_data] : data.nodes) {
-        node_group_counts[point_data.groupe]++;
+        for (int group : point_data.groupes) {
+            node_group_counts[group]++;
+        }
+        if (point_data.groupes.empty()) {
+            node_group_counts[0]++;
+        }
     }
     
     for (const auto& [way_id, way_data] : data.ways) {
-        way_group_counts[way_data.groupe]++;
+        for (int group : way_data.groupes) {
+            way_group_counts[group]++;
+        }
+        if (way_data.groupes.empty()) {
+            way_group_counts[0]++;
+        }
     }
 
     std::cout << "Points par groupe:" << std::endl;
@@ -84,13 +94,33 @@ bool render_map_from_data(const MyData& data,
             mapnik::geometry::point<double> point_geom(point_data.lon, point_data.lat);
             feature->set_geometry(std::move(point_geom));
             
-            feature->put("groupe", point_data.groupe);
+            // Logique simplifiée pour déterminer la couleur des POI
+            if (point_data.groupes.empty()) {
+                // Groupe 0 uniquement - noir normal
+                feature->put("groupe", 0);
+            } else if (point_data.groupes.size() == 1) {
+                // Un seul groupe non-zéro - couleur du groupe
+                feature->put("groupe", *point_data.groupes.begin());
+            } else if (point_data.groupes.size() == 2) {
+                // 2 groupes (dont 0) - couleur du groupe non-zéro
+                int non_zero_group = 0;
+                for (int group : point_data.groupes) {
+                    if (group != 0) {
+                        non_zero_group = group;
+                        break;
+                    }
+                }
+                feature->put("groupe", non_zero_group);
+            } else {
+                // 3 groupes ou plus - vert foncé (code spécial 99)
+                feature->put("groupe", 99);
+            }
             
             node_ds->push(feature);
         }
         std::cout << "Added " << data.nodes.size() << " nodes to datasource." << std::endl;
 
-        // === CRÉER DATASOURCE POUR LES WAYS - AVEC VALIDATION STRICTE ===
+        // === CRÉER DATASOURCE POUR LES WAYS ===
         mapnik::parameters way_params;
         way_params["type"] = "memory";
         auto way_ds = std::make_shared<mapnik::memory_datasource>(way_params);
@@ -99,7 +129,6 @@ bool render_map_from_data(const MyData& data,
         int ways_skipped = 0;
         
         for (const auto& [way_id, way_data] : data.ways) {
-            // VALIDATION STRICTE: Vérifier que les deux nodes existent
             auto node1_it = data.nodes.find(way_data.node1_id);
             auto node2_it = data.nodes.find(way_data.node2_id);
             
@@ -117,7 +146,6 @@ bool render_map_from_data(const MyData& data,
                 continue;
             }
             
-            // VALIDATION: Vérifier que les nodes sont différents
             if (way_data.node1_id == way_data.node2_id) {
                 ways_skipped++;
                 std::cerr << "ERROR: Way " << way_id << " has identical nodes: " 
@@ -127,17 +155,34 @@ bool render_map_from_data(const MyData& data,
             
             mapnik::context_ptr ctx = std::make_shared<mapnik::context_type>();
             ctx->push("groupe");
-            ctx->push("distance");
             auto feature = std::make_shared<mapnik::feature_impl>(ctx, way_id);
             
-            // Construire la géométrie avec les coordonnées réelles
             mapnik::geometry::line_string<double> line_geom;
             line_geom.emplace_back(node1_it->second.lon, node1_it->second.lat);
             line_geom.emplace_back(node2_it->second.lon, node2_it->second.lat);
-            
             feature->set_geometry(std::move(line_geom));
-            feature->put("groupe", way_data.groupe);
-            feature->put("distance", way_data.distance_meters);
+            
+            // Logique simplifiée pour déterminer la couleur des ways
+            if (way_data.groupes.empty()) {
+                // Groupe 0 uniquement - gris normal
+                feature->put("groupe", 0);
+            } else if (way_data.groupes.size() == 1) {
+                // Un seul groupe non-zéro - couleur du groupe
+                feature->put("groupe", *way_data.groupes.begin());
+            } else if (way_data.groupes.size() == 2) {
+                // 2 groupes (dont 0) - couleur du groupe non-zéro
+                int non_zero_group = 0;
+                for (int group : way_data.groupes) {
+                    if (group != 0) {
+                        non_zero_group = group;
+                        break;
+                    }
+                }
+                feature->put("groupe", non_zero_group);
+            } else {
+                // 3 groupes ou plus - vert foncé (code spécial 99)
+                feature->put("groupe", 99);
+            }
             
             way_ds->push(feature);
             ways_added++;
@@ -145,15 +190,9 @@ bool render_map_from_data(const MyData& data,
         
         std::cout << "Ways processing results:" << std::endl;
         std::cout << "  Added: " << ways_added << " ways" << std::endl;
-        std::cout << "  Skipped: " << ways_skipped << " ways (PROBLEMATIC!)" << std::endl;
-        
-        // ALERTE si trop de ways skip
-        if (ways_skipped > 0) {
-            std::cerr << "WARNING: " << ways_skipped << " ways were skipped due to missing nodes!" << std::endl;
-            std::cerr << "This indicates data integrity problems!" << std::endl;
-        }
+        std::cout << "  Skipped: " << ways_skipped << " ways" << std::endl;
 
-        // === STYLES POUR LES NODES - TAILLES CORRIGÉES ===
+        // === STYLES POUR LES NODES ===
         mapnik::feature_type_style node_style;
 
         // Style pour les nodes normaux (groupe 0)
@@ -168,24 +207,44 @@ bool render_map_from_data(const MyData& data,
         normal_point_rule.append(std::move(normal_point_sym));
         node_style.add_rule(std::move(normal_point_rule));
 
-        // Styles pour les nodes objectifs (groupes 1-5) - PLUS VISIBLES
-        std::vector<std::string> objective_colors = {"red", "blue", "green", "orange", "purple"};
+        // Style pour les POI avec 3+ groupes (vert foncé)
+        mapnik::rule multi_poi_rule;
+        multi_poi_rule.set_filter(mapnik::parse_expression("[groupe] = 99"));
+        mapnik::markers_symbolizer multi_poi_sym;
         
-        for (int group_id = 1; group_id <= 5; ++group_id) {
-            mapnik::rule objective_rule;
-            objective_rule.set_filter(mapnik::parse_expression("[groupe] = " + std::to_string(group_id)));
+        mapnik::put(multi_poi_sym, mapnik::keys::fill, mapnik::color("#006600")); // Vert foncé
+        mapnik::put(multi_poi_sym, mapnik::keys::stroke, mapnik::color("white"));
+        mapnik::put(multi_poi_sym, mapnik::keys::stroke_width, mapnik::value_double(1.0));
+        mapnik::put(multi_poi_sym, mapnik::keys::width, mapnik::value_double(8.0));
+        mapnik::put(multi_poi_sym, mapnik::keys::height, mapnik::value_double(8.0));
+        
+        multi_poi_rule.append(std::move(multi_poi_sym));
+        node_style.add_rule(std::move(multi_poi_rule));
+
+        // Palette de couleurs
+        std::vector<std::string> poi_colors = {
+            "#E74C3C", "#3498DB", "#2ECC71", "#F39C12", "#9B59B6",  // Rouge, Bleu, Vert, Orange, Violet
+            "#1ABC9C", "#34495E", "#E67E22", "#8E44AD", "#C0392B"   // Turquoise, Gris foncé, Orange foncé, Violet foncé, Rouge foncé
+        };
+
+        // Styles pour les POI par groupe
+        for (int group_id = 1; group_id <= 10; ++group_id) {
+            mapnik::rule poi_rule;
+            poi_rule.set_filter(mapnik::parse_expression("[groupe] = " + std::to_string(group_id)));
             
-            mapnik::markers_symbolizer objective_sym;
-            std::string color = objective_colors[(group_id - 1) % objective_colors.size()];
-            mapnik::put(objective_sym, mapnik::keys::fill, mapnik::color(color));
-            mapnik::put(objective_sym, mapnik::keys::width, mapnik::value_double(4.0));
-            mapnik::put(objective_sym, mapnik::keys::height, mapnik::value_double(4.0));
+            mapnik::markers_symbolizer poi_sym;
+            std::string color = poi_colors[(group_id - 1) % poi_colors.size()];
+            mapnik::put(poi_sym, mapnik::keys::fill, mapnik::color(color));
+            mapnik::put(poi_sym, mapnik::keys::stroke, mapnik::color("white"));
+            mapnik::put(poi_sym, mapnik::keys::stroke_width, mapnik::value_double(1.0));
+            mapnik::put(poi_sym, mapnik::keys::width, mapnik::value_double(8.0));
+            mapnik::put(poi_sym, mapnik::keys::height, mapnik::value_double(8.0));
             
-            objective_rule.append(std::move(objective_sym));
-            node_style.add_rule(std::move(objective_rule));
+            poi_rule.append(std::move(poi_sym));
+            node_style.add_rule(std::move(poi_rule));
         }
 
-        // === STYLES POUR LES WAYS - ÉPAISSEURS CORRIGÉES ===
+        // === STYLES POUR LES WAYS ===
         mapnik::feature_type_style way_style;
         
         // Style pour les ways normaux (groupe 0)
@@ -194,24 +253,41 @@ bool render_map_from_data(const MyData& data,
         mapnik::line_symbolizer normal_way_sym;
         
         mapnik::put(normal_way_sym, mapnik::keys::stroke, mapnik::color("grey"));
-        mapnik::put(normal_way_sym, mapnik::keys::stroke_width, mapnik::value_double(2.0)); // PLUS FIN
-        mapnik::put(normal_way_sym, mapnik::keys::stroke_opacity, mapnik::value_double(1.0)); // PLUS TRANSPARENT
+        mapnik::put(normal_way_sym, mapnik::keys::stroke_width, mapnik::value_double(1.0));
+        mapnik::put(normal_way_sym, mapnik::keys::stroke_opacity, mapnik::value_double(0.8));
         
         normal_way_rule.append(std::move(normal_way_sym));
         way_style.add_rule(std::move(normal_way_rule));
+
+        // Style pour les ways avec 3+ groupes (vert foncé)
+        mapnik::rule multi_way_rule;
+        multi_way_rule.set_filter(mapnik::parse_expression("[groupe] = 99"));
+        mapnik::line_symbolizer multi_way_sym;
         
-        // Styles pour les ways de pathfinding (groupes 1-5) - PLUS ÉPAIS ET VISIBLES
-        std::vector<std::string> path_colors = {"#FF0066", "#0066FF", "#00CC66", "#FF9900", "#9900CC"};
+        mapnik::put(multi_way_sym, mapnik::keys::stroke, mapnik::color("#006600")); // Vert foncé
+        mapnik::put(multi_way_sym, mapnik::keys::stroke_width, mapnik::value_double(4.0));
+        mapnik::put(multi_way_sym, mapnik::keys::stroke_opacity, mapnik::value_double(0.9));
+        mapnik::put(multi_way_sym, mapnik::keys::stroke_linecap, mapnik::line_cap_enum::ROUND_CAP);
         
-        for (int group_id = 1; group_id <= 5; ++group_id) {
+        multi_way_rule.append(std::move(multi_way_sym));
+        way_style.add_rule(std::move(multi_way_rule));
+        
+        // Styles pour les ways de pathfinding (groupes 1-10)
+        std::vector<std::string> path_colors = {
+            "#E74C3C", "#3498DB", "#2ECC71", "#F39C12", "#9B59B6",  // Rouge, Bleu, Vert, Orange, Violet
+            "#1ABC9C", "#34495E", "#E67E22", "#8E44AD", "#C0392B"   // Turquoise, Gris foncé, Orange foncé, Violet foncé, Rouge foncé
+        };
+        
+        for (int group_id = 1; group_id <= 10; ++group_id) {
             mapnik::rule path_rule;
             path_rule.set_filter(mapnik::parse_expression("[groupe] = " + std::to_string(group_id)));
             
             mapnik::line_symbolizer path_sym;
             std::string color = path_colors[(group_id - 1) % path_colors.size()];
             mapnik::put(path_sym, mapnik::keys::stroke, mapnik::color(color));
-            mapnik::put(path_sym, mapnik::keys::stroke_width, mapnik::value_double(2.0)); // CORRECTION: PLUS ÉPAIS
-            mapnik::put(path_sym, mapnik::keys::stroke_opacity, mapnik::value_double(1.0)); // PLUS OPAQUE
+            mapnik::put(path_sym, mapnik::keys::stroke_width, mapnik::value_double(4.0));
+            mapnik::put(path_sym, mapnik::keys::stroke_opacity, mapnik::value_double(0.9));
+            mapnik::put(path_sym, mapnik::keys::stroke_linecap, mapnik::line_cap_enum::ROUND_CAP);
             
             path_rule.append(std::move(path_sym));
             way_style.add_rule(std::move(path_rule));
@@ -265,22 +341,6 @@ bool render_map_from_data(const MyData& data,
 
         mapnik::save_to_file(im, final_output_filename);
         std::cout << "Map successfully rendered to: " << final_output_filename << std::endl;
-        
-        // Statistiques finales
-        int traced_ways = 0;
-        int objective_points = 0;
-        
-        for (const auto& [group_id, count] : way_group_counts) {
-            if (group_id > 0) traced_ways += count;
-        }
-        
-        for (const auto& [group_id, count] : node_group_counts) {
-            if (group_id > 0) objective_points += count;
-        }
-        
-        std::cout << "Rendu terminé:" << std::endl;
-        std::cout << "  - Ways de pathfinding (groupes > 0): " << traced_ways << std::endl;
-        std::cout << "  - Points objectifs (groupes > 0): " << objective_points << std::endl;
         
         return true;
 
