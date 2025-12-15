@@ -26,21 +26,6 @@ BZIP2_LIBRARY_RELEASE:FILEPATH=C:/vcpkg/installed/x64-windows/lib/bz2.lib
 //The directory containing a CMake configuration file for Boost.
 Boost_DIR:PATH=C:/vcpkg/installed/x64-windows/share/boost
 
-//Path to a file.
-Boost_INCLUDE_DIR:PATH=Boost_INCLUDE_DIR-NOTFOUND
-
-//Boost iostreams library (debug)
-Boost_IOSTREAMS_LIBRARY_DEBUG:FILEPATH=Boost_IOSTREAMS_LIBRARY_DEBUG-NOTFOUND
-
-//Boost iostreams library (release)
-Boost_IOSTREAMS_LIBRARY_RELEASE:FILEPATH=Boost_IOSTREAMS_LIBRARY_RELEASE-NOTFOUND
-
-//Boost system library (debug)
-Boost_SYSTEM_LIBRARY_DEBUG:FILEPATH=Boost_SYSTEM_LIBRARY_DEBUG-NOTFOUND
-
-//Boost system library (release)
-Boost_SYSTEM_LIBRARY_RELEASE:FILEPATH=Boost_SYSTEM_LIBRARY_RELEASE-NOTFOUND
-
 //Path to a program.
 CMAKE_AR:FILEPATH=C:/Program Files/Microsoft Visual Studio/18/Insiders/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/lib.exe
 
@@ -206,8 +191,8 @@ CMAKE_STATIC_LINKER_FLAGS_RELEASE:STRING=
 // during RELWITHDEBINFO builds.
 CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO:STRING=
 
-//No help, variable specified on the command line.
-CMAKE_TOOLCHAIN_FILE:UNINITIALIZED=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+//The CMake toolchain file
+CMAKE_TOOLCHAIN_FILE:FILEPATH=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
 //If this value is on, makefiles will be generated without the
 // .SILENT directive, and all commands will be echoed to the console
@@ -251,10 +236,7 @@ LIBLZMA_LIBRARY_RELEASE:FILEPATH=C:/vcpkg/installed/x64-windows/lib/lzma.lib
 PKG_CONFIG_ARGN:STRING=
 
 //pkg-config executable
-PKG_CONFIG_EXECUTABLE:FILEPATH=PKG_CONFIG_EXECUTABLE-NOTFOUND
-
-//Path to a file.
-PROTOZERO_INCLUDE_DIR:PATH=PROTOZERO_INCLUDE_DIR-NOTFOUND
+PKG_CONFIG_EXECUTABLE:FILEPATH=C:/vcpkg/installed/x64-windows/tools/pkgconf/pkgconf.exe
 
 //Automatically copy dependencies into the output directory for
 // executables.
@@ -428,6 +410,12 @@ boost_variant2_DIR:PATH=C:/vcpkg/installed/x64-windows/share/boost_variant2
 //The directory containing a CMake configuration file for boost_winapi.
 boost_winapi_DIR:PATH=C:/vcpkg/installed/x64-windows/share/boost_winapi
 
+//The directory containing a CMake configuration file for libosmium.
+libosmium_DIR:PATH=libosmium_DIR-NOTFOUND
+
+//Path to a library.
+pkgcfg_lib_PC_EXPAT_libexpatd:FILEPATH=C:/vcpkg/installed/x64-windows/debug/lib/libexpatd.lib
+
 //The directory containing a CMake configuration file for zstd.
 zstd_DIR:PATH=C:/vcpkg/installed/x64-windows/share/zstd
 
@@ -444,16 +432,6 @@ BZIP2_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
 BZIP2_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
 //Have symbol BZ2_bzCompressInit
 BZIP2_NEED_PREFIX:INTERNAL=1
-//ADVANCED property for variable: Boost_DIR
-Boost_DIR-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: Boost_IOSTREAMS_LIBRARY_DEBUG
-Boost_IOSTREAMS_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: Boost_IOSTREAMS_LIBRARY_RELEASE
-Boost_IOSTREAMS_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: Boost_SYSTEM_LIBRARY_DEBUG
-Boost_SYSTEM_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: Boost_SYSTEM_LIBRARY_RELEASE
-Boost_SYSTEM_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_AR
 CMAKE_AR-ADVANCED:INTERNAL=1
 //This is the directory where this CMakeCache.txt was created
@@ -613,6 +591,41 @@ LIBLZMA_INCLUDE_DIR-ADVANCED:INTERNAL=1
 LIBLZMA_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: LIBLZMA_LIBRARY_RELEASE
 LIBLZMA_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
+PC_EXPAT_CFLAGS:INTERNAL=-IC:/vcpkg/installed/x64-windows/debug/../include
+PC_EXPAT_CFLAGS_I:INTERNAL=
+PC_EXPAT_CFLAGS_OTHER:INTERNAL=
+PC_EXPAT_FOUND:INTERNAL=1
+PC_EXPAT_INCLUDEDIR:INTERNAL=C:/vcpkg/installed/x64-windows/debug/../include
+PC_EXPAT_INCLUDE_DIRS:INTERNAL=C:/vcpkg/installed/x64-windows/debug/../include
+PC_EXPAT_LDFLAGS:INTERNAL=-LC:/vcpkg/installed/x64-windows/debug/lib;-llibexpatd
+PC_EXPAT_LDFLAGS_OTHER:INTERNAL=
+PC_EXPAT_LIBDIR:INTERNAL=C:/vcpkg/installed/x64-windows/debug/lib
+PC_EXPAT_LIBRARIES:INTERNAL=libexpatd
+PC_EXPAT_LIBRARY_DIRS:INTERNAL=C:/vcpkg/installed/x64-windows/debug/lib
+PC_EXPAT_LIBS:INTERNAL=
+PC_EXPAT_LIBS_L:INTERNAL=
+PC_EXPAT_LIBS_OTHER:INTERNAL=
+PC_EXPAT_LIBS_PATHS:INTERNAL=
+PC_EXPAT_MODULE_NAME:INTERNAL=expat
+PC_EXPAT_PREFIX:INTERNAL=C:/vcpkg/installed/x64-windows/debug
+PC_EXPAT_STATIC_CFLAGS:INTERNAL=-IC:/vcpkg/installed/x64-windows/debug/../include;-DXML_STATIC
+PC_EXPAT_STATIC_CFLAGS_I:INTERNAL=
+PC_EXPAT_STATIC_CFLAGS_OTHER:INTERNAL=-DXML_STATIC
+PC_EXPAT_STATIC_INCLUDE_DIRS:INTERNAL=C:/vcpkg/installed/x64-windows/debug/../include
+PC_EXPAT_STATIC_LDFLAGS:INTERNAL=-LC:/vcpkg/installed/x64-windows/debug/lib;-llibexpatd
+PC_EXPAT_STATIC_LDFLAGS_OTHER:INTERNAL=
+PC_EXPAT_STATIC_LIBDIR:INTERNAL=
+PC_EXPAT_STATIC_LIBRARIES:INTERNAL=libexpatd
+PC_EXPAT_STATIC_LIBRARY_DIRS:INTERNAL=C:/vcpkg/installed/x64-windows/debug/lib
+PC_EXPAT_STATIC_LIBS:INTERNAL=
+PC_EXPAT_STATIC_LIBS_L:INTERNAL=
+PC_EXPAT_STATIC_LIBS_OTHER:INTERNAL=
+PC_EXPAT_STATIC_LIBS_PATHS:INTERNAL=
+PC_EXPAT_VERSION:INTERNAL=2.7.3
+PC_EXPAT_expat_INCLUDEDIR:INTERNAL=
+PC_EXPAT_expat_LIBDIR:INTERNAL=
+PC_EXPAT_expat_PREFIX:INTERNAL=
+PC_EXPAT_expat_VERSION:INTERNAL=
 //ADVANCED property for variable: PKG_CONFIG_ARGN
 PKG_CONFIG_ARGN-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: PKG_CONFIG_EXECUTABLE
@@ -635,4 +648,9 @@ ZLIB_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
 Z_VCPKG_CHECK_MANIFEST_MODE:INTERNAL=OFF
 //Vcpkg root directory
 Z_VCPKG_ROOT_DIR:INTERNAL=C:/vcpkg
+__pkg_config_arguments_PC_EXPAT:INTERNAL=QUIET;expat
+__pkg_config_checked_PC_EXPAT:INTERNAL=1
+//ADVANCED property for variable: pkgcfg_lib_PC_EXPAT_libexpatd
+pkgcfg_lib_PC_EXPAT_libexpatd-ADVANCED:INTERNAL=1
+prefix_result:INTERNAL=C:/vcpkg/installed/x64-windows/debug/lib
 

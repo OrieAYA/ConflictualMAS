@@ -11,8 +11,7 @@ find_package(ZLIB REQUIRED)
 find_package(BZip2 REQUIRED)
 find_package(EXPAT REQUIRED)
 find_package(CURL REQUIRED)
-find_package(protozero CONFIG REQUIRED)
-#find_package(libosmium CONFIG REQUIRED)
+find_package(libosmium CONFIG REQUIRED)
 find_package(Mapnik CONFIG REQUIRED)
 
 set(SOURCES
@@ -38,8 +37,7 @@ target_include_directories(main PRIVATE
 target_link_libraries(main PRIVATE
     Boost::system
     Boost::iostreams
-    protozero::protozero
-    #libosmium::libosmium
+    libosmium::libosmium
     mapnik::mapnik
     mapnik::json
     mapnik::wkt
