@@ -201,6 +201,9 @@ C:/libs/vcpkg/installed/x64-windows/share/mapnik/mapnikPlugins-release.cmake
 C:/libs/vcpkg/installed/x64-windows/share/mapnik/mapnikTargets-debug.cmake
 C:/libs/vcpkg/installed/x64-windows/share/mapnik/mapnikTargets-release.cmake
 C:/libs/vcpkg/installed/x64-windows/share/mapnik/mapnikTargets.cmake
+C:/libs/vcpkg/installed/x64-windows/share/nlohmann_json/nlohmann_jsonConfig.cmake
+C:/libs/vcpkg/installed/x64-windows/share/nlohmann_json/nlohmann_jsonConfigVersion.cmake
+C:/libs/vcpkg/installed/x64-windows/share/nlohmann_json/nlohmann_jsonTargets.cmake
 C:/libs/vcpkg/installed/x64-windows/share/png/vcpkg-cmake-wrapper.cmake
 C:/libs/vcpkg/installed/x64-windows/share/proj/proj-config-version.cmake
 C:/libs/vcpkg/installed/x64-windows/share/proj/proj-config.cmake

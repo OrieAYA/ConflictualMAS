@@ -548,6 +548,9 @@ freetype_DIR:PATH=C:/libs/vcpkg/installed/x64-windows/share/freetype
 //The directory containing a CMake configuration file for harfbuzz.
 harfbuzz_DIR:PATH=C:/libs/vcpkg/installed/x64-windows/share/harfbuzz
 
+//The directory containing a CMake configuration file for nlohmann_json.
+nlohmann_json_DIR:PATH=C:/libs/vcpkg/installed/x64-windows/share/nlohmann_json
+
 //Path to a library.
 pkgcfg_lib_PC_EXPAT_libexpatd:FILEPATH=C:/libs/vcpkg/installed/x64-windows/debug/lib/libexpatd.lib
 
@@ -737,6 +740,8 @@ FIND_PACKAGE_MESSAGE_DETAILS_TIFF:INTERNAL=[optimized;C:/libs/vcpkg/installed/x6
 FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 //Details about finding ZLIB
 FIND_PACKAGE_MESSAGE_DETAILS_ZLIB:INTERNAL=[optimized;C:/libs/vcpkg/installed/x64-windows/lib/zlib.lib;debug;C:/libs/vcpkg/installed/x64-windows/debug/lib/zlibd.lib][C:/libs/vcpkg/installed/x64-windows/include][ ][v1.3.1()]
+//Details about finding nlohmann_json
+FIND_PACKAGE_MESSAGE_DETAILS_nlohmann_json:INTERNAL=[C:/libs/vcpkg/installed/x64-windows/share/nlohmann_json/nlohmann_jsonConfig.cmake][v3.12.0()]
 //ADVANCED property for variable: FREETYPE_LIBRARY_DEBUG
 FREETYPE_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
 //vcpkg

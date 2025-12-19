@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
-project(ConflictualMAS CXX)
+project(ConflictualMAS LANGUAGES CXX)
 
 add_compile_definitions(NOMINMAX)
 
+set(PROJECT_PATH "C:/Users/screp/OneDrive/Bureau/Algorithms/")
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_MODULE_PATH "${PROJECT_PATH}ConflictualMAS/cmake")
 
 list(APPEND CMAKE_MODULE_PATH "C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/cmake")
 
@@ -14,27 +17,17 @@ if(NOT EXISTS "${LIBOSMIUM_DIR}/include/osmium")
 endif()
 include_directories("${LIBOSMIUM_DIR}/include")
 
-#set(MAPNIK_DIR "C:/libs/mapnik")
-#if(NOT EXISTS "${MAPNIK_DIR}/include/osmium")
-#    message(FATAL_ERROR "Mapnik non trouvée à ${MAPNIK_DIR}. Veuillez ajuster MAPNIK_DIR ou la cloner.")
-#endif()
-#include_directories("${MAPNIK_DIR}/include")
-
 find_package(Boost 1.55 COMPONENTS system iostreams REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(CURL REQUIRED)
 find_package(BZip2 REQUIRED)
 find_package(EXPAT REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Protozero REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(Mapnik CONFIG REQUIRED)
 
 include_directories(SYSTEM ${PROTOZERO_INCLUDE_DIR})
-include_directories("C:/Users/screp/OneDrive/Bureau/Algorithms/ConflictualMAS/src")
-
-#find_path(OSMIUM_INCLUDE_DIRS "osmium/version.hpp")
-#target_include_directories(main PRIVATE ${OSMIUM_INCLUDE_DIRS})
-
-find_package(Mapnik CONFIG REQUIRED)
+include_directories("${PROJECT_PATH}ConflictualMAS/src")
 
 set(SOURCES
     src/main.cpp
@@ -48,13 +41,14 @@ set(SOURCES
     src/MHProcs/VNS.cpp
     src/MHProcs/PSO.cpp
     src/OverpassAPI/OverpassAPI.cpp
+    src/Agent/Agent.cpp
+    src/Agent/MetaAgent.cpp
 )
 add_executable(main ${SOURCES})
 
 target_link_libraries(main PRIVATE
     Boost::system
     Boost::iostreams
-    #Libosmium::osmium
     mapnik::mapnik
     mapnik::json
     mapnik::wkt
@@ -64,5 +58,44 @@ target_link_libraries(main PRIVATE
     ${EXPAT_LIBRARIES}
 )
 
+#Be sure to create a new build file and perform commands in it
 #Make : cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake
 #Build / Compile : cmake --build . 
+
+#[[
+In Dev Command
+
+Installation of vcpkg : 
+
+cd C:/
+mkdir libs
+cd libs
+git clone https://github.com/microsoft/vcpkg.git
+cd vcpkg
+.\bootstrap-vcpkg.bat
+
+Installation of Boost :
+
+cd C:/libs/vcpkg
+vcpkg install boost
+(for real long so take time)
+
+Or just
+vcpkg install boost-system
+vcpkg install boost-iostreams
+
+Installation of CURL :
+
+vcpkg install curl
+
+Installation of Libosmium :
+
+vcpkg install libosmium (for protozero install without problems)
+cd C:/libs
+git clone https://github.com/osmcode/libosmium
+
+Integrate vcpkg to CMake Globally :
+
+vcpkg integrate install
+
+]]
