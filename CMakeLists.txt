@@ -3,8 +3,11 @@ project(ConflictualMAS LANGUAGES CXX)
 
 add_compile_definitions(NOMINMAX)
 
+set(PROJECT_PATH "C:/Users/S52504ZrN/Desktop/Algorithm/")
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_MODULE_PATH "${PROJECT_PATH}ConflictualMAS/cmake")
 
 find_package(Boost CONFIG REQUIRED COMPONENTS system iostreams)
 find_package(ZLIB REQUIRED)
@@ -13,6 +16,9 @@ find_package(EXPAT REQUIRED)
 find_package(CURL REQUIRED)
 find_package(libosmium CONFIG REQUIRED)
 find_package(Mapnik CONFIG REQUIRED)
+
+include_directories(SYSTEM ${PROTOZERO_INCLUDE_DIR})
+include_directories("${PROJECT_PATH}ConflictualMAS/src")
 
 set(SOURCES
     src/main.cpp
