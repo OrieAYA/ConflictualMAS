@@ -2,10 +2,12 @@
 #include <iomanip>
 #include <chrono>
 #include <thread>
-#include "Box.hpp"
-#include "MapRenderer.hpp"
-#include "GeoBoxManager.hpp"
-#include "Pathfinding.hpp"
+#include "GeoBox/Box.hpp"
+#include "Render/MapRenderer.hpp"
+#include "GeoBox/GeoBoxManager.hpp"
+#include "Common/Pathfinding.hpp"
+#include "Common/Memory.hpp"
+#include "Agent/Agent.hpp"
 #include "utility.hpp"
 #include <string>
 #include "MHProcs/ACO.hpp"
@@ -13,6 +15,234 @@
 #include "MHProcs/VNS.hpp"
 #include "MHProcs/PSO.hpp"
 #include "OverpassAPI/OverpassAPI.hpp"
+#include <random>
+
+// ====================================================================
+// FONCTION DE TEST POUR UN SEUL AGENT - RECHERCHE TABU
+// ====================================================================
+void test_single_agent(const std::string& cache_dir) {
+    
+    // ========================================
+    // CONFIGURATION MANUELLE - À MODIFIER ICI
+    // ========================================
+    
+    // 1. Configuration du cache
+    const std::string input_cache_name = "asakusa_test_agent_raw";
+    const std::string output_cache_name = "asakusa_test_agent_result";
+    const std::string output_map_name = "agent_tabu_map";
+    
+    // 2. Configuration de la mémoire
+    const float length_constraint = 1000.0f;  // 1 km max
+    const float search_coefficient = 1.4f;     // Pour le neighborhood search
+    
+    // 3. Configuration de l'agent - Caractéristiques/préférences par groupe
+    std::vector<int> agent_characteristics = {
+        0,    // Groupe 0
+        100,  // Groupe 1 - Temples (priorité haute)
+        50,   // Groupe 2 - Restaurants (priorité moyenne)
+        30,   // Groupe 3 - Shops (priorité basse)
+        0,    // Groupe 4
+        0,    // Groupe 5
+        0,    // Groupe 6
+        0,    // Groupe 7
+        0,    // Groupe 8
+        0     // Groupe 9
+    };
+    
+    // 4. Solution initiale - UN SEUL POI
+    const bool random_start = true;  // true = POI aléatoire, false = premier POI
+    
+    // 5. Configuration Tabu Search
+    const int max_iterations = 100;    // Nombre max d'itérations
+    const int tabu_list_size = 15;     // Taille de la liste Tabu
+    
+    // 6. Options de sortie
+    const bool save_result = true;
+    const bool render_map = true;
+    const int path_group_id = 99;  // ID du groupe pour marquer les chemins trouvés
+    
+    // ========================================
+    // EXÉCUTION
+    // ========================================
+    
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "TEST AGENT - RECHERCHE TABU MÉTAHEURISTIQUE\n";
+    std::cout << std::string(80, '=') << "\n\n";
+    
+    const std::string input_cache_path = cache_dir + "//" + input_cache_name + ".json";
+    const std::string output_cache_path = cache_dir + "//" + output_cache_name + ".json";
+    
+    // Affichage configuration
+    std::cout << "--- Configuration ---\n";
+    std::cout << "Cache entrée: " << input_cache_name << "\n";
+    std::cout << "Cache sortie: " << output_cache_name << "\n";
+    std::cout << "Contrainte distance: " << length_constraint << " m\n";
+    std::cout << "Search coefficient: " << search_coefficient << "\n";
+    std::cout << "Max itérations: " << max_iterations << "\n";
+    std::cout << "Taille liste Tabu: " << tabu_list_size << "\n";
+    std::cout << "Départ: " << (random_start ? "POI aléatoire" : "Premier POI") << "\n\n";
+    
+    std::cout << "Préférences de l'agent:\n";
+    for (size_t i = 0; i < agent_characteristics.size(); i++) {
+        if (agent_characteristics[i] > 0) {
+            std::cout << "  - Groupe " << i << ": valeur " << agent_characteristics[i] << "\n";
+        }
+    }
+    std::cout << "\n";
+    
+    // 1. Chargement GeoBox
+    std::cout << "--- Chargement GeoBox ---\n";
+    GeoBox geo_box = GeoBoxManager::load_geobox(input_cache_path);
+    
+    if (!geo_box.is_valid) {
+        std::cerr << "✗ ERREUR: Impossible de charger la GeoBox\n";
+        std::cerr << "  Fichier: " << input_cache_path << "\n";
+        return;
+    }
+    
+    std::cout << "✓ GeoBox chargée\n";
+    std::cout << "  Nœuds: " << geo_box.data.nodes.size() << "\n";
+    std::cout << "  Ways: " << geo_box.data.ways.size() << "\n";
+    std::cout << "  Groupes: " << geo_box.data.objective_groups.size() << "\n\n";
+    
+    // 2. Sélection POI de départ
+    std::cout << "--- Sélection POI de départ ---\n";
+    std::vector<osmium::object_id_type> candidate_pois;
+    
+    for (const auto& [node_id, node_data] : geo_box.data.nodes) {
+        if (!node_data.groupes.empty()) {
+            bool has_relevant_group = false;
+            for (const auto& group_id : node_data.groupes) {
+                if (group_id >= 0 && group_id < static_cast<int>(agent_characteristics.size())) {
+                    if (agent_characteristics[group_id] > 0) {
+                        has_relevant_group = true;
+                        break;
+                    }
+                }
+            }
+            if (has_relevant_group) {
+                candidate_pois.push_back(node_id);
+            }
+        }
+    }
+    
+    if (candidate_pois.empty()) {
+        std::cerr << "✗ ERREUR: Aucun POI trouvé\n";
+        return;
+    }
+    
+    std::cout << "POI candidats: " << candidate_pois.size() << "\n";
+    
+    // Sélection d'UN SEUL POI
+    std::vector<osmium::object_id_type> initial_pois;
+    if (random_start) {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<size_t> dis(0, candidate_pois.size() - 1);  // ← FIX: size_t au lieu de int
+        initial_pois.push_back(candidate_pois[dis(gen)]);
+        std::cout << "Sélection: POI aléatoire\n";
+    } else {
+        initial_pois.push_back(candidate_pois[0]);
+        std::cout << "Sélection: Premier POI\n";
+    }
+    
+    // Affichage POI de départ
+    std::cout << "\nPOI de départ: " << initial_pois[0];
+    auto node_it = geo_box.data.nodes.find(initial_pois[0]);
+    if (node_it != geo_box.data.nodes.end() && !node_it->second.groupes.empty()) {
+        std::cout << " [Groupes: ";
+        int start_value = 0;
+        size_t j = 0;
+        // ← FIX: Utiliser itérateur au lieu d'index car groupes est un unordered_set
+        for (const int& group_id : node_it->second.groupes) {
+            std::cout << "G" << group_id;
+            if (group_id >= 0 && group_id < static_cast<int>(agent_characteristics.size())) {
+                int value = agent_characteristics[group_id];
+                if (value > 0) {
+                    std::cout << "(+" << value << ")";
+                    start_value += value;
+                }
+            }
+            if (j < node_it->second.groupes.size() - 1) std::cout << ", ";
+            j++;
+        }
+        std::cout << "] → Valeur initiale: " << start_value;
+    }
+    std::cout << "\n\n";
+    
+    // 3. Initialisation systèmes
+    std::cout << "--- Initialisation systèmes ---\n";
+    Pathfinder pathfinder(geo_box);
+    GlobalMemory global_memory(geo_box, pathfinder);
+    global_memory.length_constraint = length_constraint;
+    global_memory.search_coefficient = search_coefficient;
+    std::cout << "✓ Pathfinder initialisé\n";
+    std::cout << "✓ Mémoire globale initialisée\n\n";
+    
+    // 4. Création agent
+    std::cout << "--- Création agent ---\n";
+    Agent agent(geo_box, pathfinder, global_memory, agent_characteristics, initial_pois);
+    std::cout << "✓ Agent créé\n\n";
+    
+    // 5. Exécution Tabu Search
+    auto start_time = std::chrono::high_resolution_clock::now();
+    
+    Solution best_solution = agent.tabu_search(max_iterations, tabu_list_size);
+    
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "RÉCAPITULATIF FINAL\n";
+    std::cout << std::string(80, '=') << "\n";
+    std::cout << "Temps total: " << duration.count() << " secondes\n";
+    std::cout << "POIs visités: " << best_solution.POIs.size() << "\n";
+    std::cout << "Distance totale: " << best_solution.cost << " m\n";
+    std::cout << "Fitness: " << agent.objective_function(best_solution) << "\n";
+    std::cout << std::string(80, '=') << "\n\n";
+    
+    // 6. Marquer les chemins dans la GeoBox
+    if (save_result || render_map) {
+        std::cout << "--- Marquage des chemins ---\n";
+        int marked_paths = 0;
+        
+        for (const auto& path : best_solution.paths) {
+            // ← FIX: Path utilise path_edges au lieu de edges
+            for (const auto& way_id : path.path_edges) {
+                auto way_it = geo_box.data.ways.find(way_id);
+                if (way_it != geo_box.data.ways.end()) {
+                    way_it->second.groupes.insert(path_group_id);
+                    marked_paths++;
+                }
+            }
+        }
+        
+        std::cout << "✓ Chemins marqués: " << marked_paths << " ways dans groupe " << path_group_id << "\n\n";
+    }
+    
+    // 7. Sauvegarde
+    if (save_result) {
+        std::cout << "--- Sauvegarde résultat ---\n";
+        GeoBoxManager::save_geobox(geo_box, output_cache_path);
+        std::cout << "✓ GeoBox sauvegardée: " << output_cache_path << "\n\n";
+    }
+    
+    // 8. Rendu carte
+    if (render_map) {
+        std::cout << "--- Génération carte ---\n";
+        bool render_success = GeoBoxManager::render_geobox(geo_box, output_map_name, 2000, 2000);
+        
+        if (render_success) {
+            std::cout << "✓ Carte générée: " << output_map_name << "\n";
+        } else {
+            std::cout << "✗ Erreur lors du rendu\n";
+        }
+    }
+    
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "TEST TERMINÉ\n";
+    std::cout << std::string(80, '=') << "\n\n";
+}
 
 int main() {
     
@@ -72,8 +302,19 @@ int main() {
     const std::string cache_path = cache_dir + "\\" + location_name + ".json";
     std::cout << "=== Fin sélection localisation ===\n" << std::endl;
 
+    // ========== MENU PRINCIPAL ==========
     std::string rep;
-    std::cout << "New Geobox and cache (G/g), Initialize POI (I/i), System Creation and Pathfinding (P/p), Mh procedure (A/a), Verify data (V/v), Verify Pf (F/f), Render only (R/r), Complete Graph (C/c): ";
+    std::cout << "\n=== MENU PRINCIPAL ===" << std::endl;
+    std::cout << "T/t - Test Agent unique (Tabu Search)" << std::endl;
+    std::cout << "G/g - New Geobox and cache" << std::endl;
+    std::cout << "I/i - Initialize POI" << std::endl;
+    std::cout << "P/p - System Creation and Pathfinding" << std::endl;
+    std::cout << "A/a - Metaheuristic procedures" << std::endl;
+    std::cout << "V/v - Verify data" << std::endl;
+    std::cout << "F/f - Verify Pathfinding" << std::endl;
+    std::cout << "R/r - Render only" << std::endl;
+    std::cout << "C/c - Complete Graph" << std::endl;
+    std::cout << "\nChoix: ";
     std::cin >> rep;
 
     FlickrConfig config;
@@ -83,7 +324,10 @@ int main() {
     config.min_date = "2020-01-01";
     config.max_date = "2024-12-31";
     
-    if (rep == "G" || rep == "g"){
+    if (rep == "T" || rep == "t") {
+        test_single_agent(cache_dir);
+        return 0;
+    } else if (rep == "G" || rep == "g"){
 
         complete_workflow(
             osm_file,

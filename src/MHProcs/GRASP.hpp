@@ -1,9 +1,9 @@
 #ifndef GRASP_HPP
 #define GRASP_HPP
 
-#include "../Box.hpp"
+#include "../GeoBox/Box.hpp"
 #include "../Common/Hashes.hpp"
-#include "../Pathfinding.hpp"
+#include "../Common/Pathfinding.hpp"
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>

@@ -1,7 +1,7 @@
 #ifndef ACO_HPP
 #define ACO_HPP
 
-#include "../Box.hpp"
+#include "../GeoBox/Box.hpp"
 #include "../Common/Hashes.hpp"
 #include <vector>
 #include <unordered_map>

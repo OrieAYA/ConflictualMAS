@@ -1,35 +1,54 @@
 #ifndef AGENT_HPP
 #define AGENT_HPP
 
-#include "../Box.hpp"
-#include "../Common/Hashes.hpp"
-#include "../Pathfinding.hpp"
+#include "../Common/Pathfinding.hpp"
+#include "../GeoBox/Box.hpp"
+#include "../Common/Memory.hpp"
 #include <vector>
-#include <random>
+#include <deque>  // ← AJOUTER CETTE LIGNE
 
 class Agent {
-public:
+private:
     GeoBox& geo_box;
+    Pathfinder& PfSystem;
+    GlobalMemory& memory;
     std::vector<int> agent_charact;
-    std::vector<osmium::object_id_type> initial_solution;
+    Solution initial_solution;
+    Solution actual_solution;
+    double fitness;
+    double best_fitness;
 
-    explicit Agent(GeoBox& box, std::vector<int> a_char, std::vector<osmium::object_id_type> init_sol);
+    std::map<Solution, float>* meta_local_memory;
+    std::vector<Solution>* validated_pbest;
+    double similarity_threshold;
 
-    int objective_function(
-        Agent& AgentSys,
-        const std::vector<osmium::object_id_type>& objective_nodes
+    // Fonctions privées pour la recherche Tabu
+    bool is_better_solution(const Solution& sol1, const Solution& sol2);
+    std::vector<Solution> get_add_neighbors(const Solution& sol);
+    std::vector<Solution> get_backtrack_neighbors(const Solution& sol, int backtrack_depth);
+    std::vector<Solution> get_all_neighbors(const Solution& sol, int max_backtrack);
+    bool is_tabu(const Solution& sol, const std::deque<std::vector<osmium::object_id_type>>& tabu_list);
+
+public:
+    Agent(
+        GeoBox& box, 
+        Pathfinder& pf,
+        GlobalMemory& mem,
+        std::vector<int> a_char, 
+        std::vector<osmium::object_id_type> init_sol,
+        std::map<Solution, float>* meta_memory = nullptr,  // Nouveau
+        std::vector<Solution>* pbest_list = nullptr,        // Nouveau
+        double sim_threshold = 1.0                          // Nouveau (1.0 = pas de contrainte)
     );
 
-    std::vector<std::vector<osmium::object_id_type>> get_neighbors(
-        Agent& AgentSys,
-        const std::vector<osmium::object_id_type>& objective_nodes
-    );
-
-    std::vector<osmium::object_id_type> tabu_search(
-        Agent& AgentSys,
-        int max_iterations, 
-        int tabu_list_size
-    );
+    int objective_function(const Solution& sol);
+    Solution tabu_search(int max_iterations, int tabu_list_size);
+    
+    // Getters
+    const Solution& get_initial_solution() const { return initial_solution; }
+    const Solution& get_actual_solution() const { return actual_solution; }
+    double get_fitness() const { return fitness; }
+    double get_best_fitness() const { return best_fitness; }
 };
 
 #endif // AGENT_HPP

@@ -1,8 +1,8 @@
 #ifndef UTILITY_HPP
 #define UTILITY_HPP
 
-#include "Box.hpp"
-#include "Pathfinding.hpp"
+#include "Geobox/Box.hpp"
+#include "Common/Pathfinding.hpp"
 #include <string>
 
 // Fonction de test original (pas de paramètres)

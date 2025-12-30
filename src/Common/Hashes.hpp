@@ -1,7 +1,7 @@
 #ifndef HASHES_HPP
 #define HASHES_HPP
 
-#include "Box.hpp"
+#include "../GeoBox/Box.hpp"
 
 struct PairHash {
     size_t operator()(const std::pair<osmium::object_id_type, osmium::object_id_type>& p) const {

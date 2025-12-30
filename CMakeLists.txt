@@ -3,7 +3,7 @@ project(ConflictualMAS LANGUAGES CXX)
 
 add_compile_definitions(NOMINMAX)
 
-set(PROJECT_PATH "C:/Users/S52504ZrN/Desktop/Algorithm/")
+set(PROJECT_PATH "C:/Users/screp/OneDrive/Bureau/Algorithms/")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -28,11 +28,14 @@ include_directories("${PROJECT_PATH}ConflictualMAS/src")
 
 set(SOURCES
     src/main.cpp
-    src/Box.cpp
-    src/MapRenderer.cpp
-    src/Pathfinding.cpp
-    src/GeoBoxManager.cpp
     src/utility.cpp
+    src/Agent/Agent.cpp
+    src/Agent/MetaAgent.cpp
+    src/GeoBox/Box.cpp
+    src/GeoBox/GeoBoxManager.cpp
+    src/Render/MapRenderer.cpp
+    src/Common/Pathfinding.cpp
+    src/Common/Memory.cpp
     src/MHProcs/ACO.cpp
     src/MHProcs/GRASP.cpp
     src/MHProcs/VNS.cpp

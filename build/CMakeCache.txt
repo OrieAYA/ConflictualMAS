@@ -29,14 +29,6 @@ Boost_DIR:PATH=C:/libs/vcpkg/installed/x64-windows/share/boost
 //Path to a file.
 Boost_INCLUDE_DIR:PATH=C:/libs/vcpkg/installed/x64-windows/include
 
-Boost_IOSTREAMS_LIBRARY_DEBUG:STRING=C:/libs/vcpkg/installed/x64-windows/debug/bin/boost_iostreams-vc143-mt-gd-x64-1_88.dll
-
-Boost_IOSTREAMS_LIBRARY_RELEASE:STRING=C:/libs/vcpkg/installed/x64-windows/bin/boost_iostreams-vc143-mt-x64-1_88.dll
-
-Boost_SYSTEM_LIBRARY_DEBUG:STRING=C:/libs/vcpkg/installed/x64-windows/debug/bin/boost_system-vc143-mt-gd-x64-1_88.dll
-
-Boost_SYSTEM_LIBRARY_RELEASE:STRING=C:/libs/vcpkg/installed/x64-windows/bin/boost_system-vc143-mt-x64-1_88.dll
-
 //Path to a program.
 CMAKE_AR:FILEPATH=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/lib.exe
 
@@ -184,8 +176,8 @@ CMAKE_STATIC_LINKER_FLAGS_RELEASE:STRING=
 // during RELWITHDEBINFO builds.
 CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO:STRING=
 
-//No help, variable specified on the command line.
-CMAKE_TOOLCHAIN_FILE:UNINITIALIZED=C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake
+//The CMake toolchain file
+CMAKE_TOOLCHAIN_FILE:FILEPATH=C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake
 
 //If this value is on, makefiles will be generated without the
 // .SILENT directive, and all commands will be echoed to the console
@@ -348,9 +340,6 @@ PNG_PNG_INCLUDE_DIR:PATH=C:/libs/vcpkg/installed/x64-windows/include
 
 //The directory containing a CMake configuration file for PROJ.
 PROJ_DIR:PATH=C:/libs/vcpkg/installed/x64-windows/share/proj
-
-//Path to a file.
-PROTOZERO_INCLUDE_DIR:PATH=C:/libs/vcpkg/installed/x64-windows/include
 
 //Path to a file.
 TIFF_INCLUDE_DIR:PATH=C:/libs/vcpkg/installed/x64-windows/include
@@ -548,9 +537,6 @@ freetype_DIR:PATH=C:/libs/vcpkg/installed/x64-windows/share/freetype
 //The directory containing a CMake configuration file for harfbuzz.
 harfbuzz_DIR:PATH=C:/libs/vcpkg/installed/x64-windows/share/harfbuzz
 
-//The directory containing a CMake configuration file for nlohmann_json.
-nlohmann_json_DIR:PATH=C:/libs/vcpkg/installed/x64-windows/share/nlohmann_json
-
 //Path to a library.
 pkgcfg_lib_PC_EXPAT_libexpatd:FILEPATH=C:/libs/vcpkg/installed/x64-windows/debug/lib/libexpatd.lib
 
@@ -728,20 +714,18 @@ FIND_PACKAGE_MESSAGE_DETAILS_EXPAT:INTERNAL=[optimized;C:/libs/vcpkg/installed/x
 FIND_PACKAGE_MESSAGE_DETAILS_ICU:INTERNAL=[C:/libs/vcpkg/installed/x64-windows/include][optimized;C:/libs/vcpkg/installed/x64-windows/lib/icuuc.lib;debug;C:/libs/vcpkg/installed/x64-windows/debug/lib/icuucd.lib;optimized;C:/libs/vcpkg/installed/x64-windows/lib/icuin.lib;debug;C:/libs/vcpkg/installed/x64-windows/debug/lib/icuind.lib;optimized;C:/libs/vcpkg/installed/x64-windows/lib/icudt.lib;debug;C:/libs/vcpkg/installed/x64-windows/debug/lib/icudtd.lib][found components: uc i18n data ][v74.2()]
 //Details about finding JPEG
 FIND_PACKAGE_MESSAGE_DETAILS_JPEG:INTERNAL=[optimized;C:/libs/vcpkg/installed/x64-windows/lib/jpeg.lib;debug;C:/libs/vcpkg/installed/x64-windows/debug/lib/jpeg.lib][C:/libs/vcpkg/installed/x64-windows/include][v62()]
+//Details about finding LibLZMA
+FIND_PACKAGE_MESSAGE_DETAILS_LibLZMA:INTERNAL=[optimized;C:/libs/vcpkg/installed/x64-windows/lib/lzma.lib;debug;C:/libs/vcpkg/installed/x64-windows/debug/lib/lzma.lib][C:/libs/vcpkg/installed/x64-windows/include][1][1][1][v5.8.1()]
 //Details about finding PNG
 FIND_PACKAGE_MESSAGE_DETAILS_PNG:INTERNAL=[optimized;C:/libs/vcpkg/installed/x64-windows/lib/libpng16.lib;debug;C:/libs/vcpkg/installed/x64-windows/debug/lib/libpng16d.lib][C:/libs/vcpkg/installed/x64-windows/include][v1.6.48()]
 //Details about finding PkgConfig
 FIND_PACKAGE_MESSAGE_DETAILS_PkgConfig:INTERNAL=[C:/libs/vcpkg/installed/x64-windows/tools/pkgconf/pkgconf.exe][v2.4.3()]
-//Details about finding Protozero
-FIND_PACKAGE_MESSAGE_DETAILS_Protozero:INTERNAL=[C:/libs/vcpkg/installed/x64-windows/include][v()]
 //Details about finding TIFF
 FIND_PACKAGE_MESSAGE_DETAILS_TIFF:INTERNAL=[optimized;C:/libs/vcpkg/installed/x64-windows/lib/tiff.lib;debug;C:/libs/vcpkg/installed/x64-windows/debug/lib/tiffd.lib][C:/libs/vcpkg/installed/x64-windows/include][ ][v4.7.0()]
 //Details about finding Threads
 FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 //Details about finding ZLIB
 FIND_PACKAGE_MESSAGE_DETAILS_ZLIB:INTERNAL=[optimized;C:/libs/vcpkg/installed/x64-windows/lib/zlib.lib;debug;C:/libs/vcpkg/installed/x64-windows/debug/lib/zlibd.lib][C:/libs/vcpkg/installed/x64-windows/include][ ][v1.3.1()]
-//Details about finding nlohmann_json
-FIND_PACKAGE_MESSAGE_DETAILS_nlohmann_json:INTERNAL=[C:/libs/vcpkg/installed/x64-windows/share/nlohmann_json/nlohmann_jsonConfig.cmake][v3.12.0()]
 //ADVANCED property for variable: FREETYPE_LIBRARY_DEBUG
 FREETYPE_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
 //vcpkg

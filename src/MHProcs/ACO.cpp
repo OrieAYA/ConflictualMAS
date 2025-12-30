@@ -1,5 +1,5 @@
 #include "ACO.hpp"
-#include "../Pathfinding.hpp"  // Pour accéder à A_Star_Search
+#include "../Common/Pathfinding.hpp"  // Pour accéder à A_Star_Search
 #include <iostream>
 #include <algorithm>
 #include <limits>
