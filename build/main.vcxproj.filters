@@ -13,6 +13,9 @@
     <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\Agent\MetaAgent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\Agent\GlobalSolutionConstructor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\GeoBox\Box.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

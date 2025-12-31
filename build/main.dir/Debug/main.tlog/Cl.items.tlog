@@ -2,6 +2,7 @@ C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\main.cpp;C:\Users\s
 C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\utility.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\utility.obj
 C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\Agent\Agent.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\Agent.obj
 C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\Agent\MetaAgent.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\MetaAgent.obj
+C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\Agent\GlobalSolutionConstructor.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\GlobalSolutionConstructor.obj
 C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\GeoBox\Box.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\Box.obj
 C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\GeoBox\GeoBoxManager.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\GeoBoxManager.obj
 C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\src\Render\MapRenderer.cpp;C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\main.dir\Debug\MapRenderer.obj

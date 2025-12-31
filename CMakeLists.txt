@@ -31,6 +31,7 @@ set(SOURCES
     src/utility.cpp
     src/Agent/Agent.cpp
     src/Agent/MetaAgent.cpp
+    src/Agent/GlobalSolutionConstructor.cpp
     src/GeoBox/Box.cpp
     src/GeoBox/GeoBoxManager.cpp
     src/Render/MapRenderer.cpp

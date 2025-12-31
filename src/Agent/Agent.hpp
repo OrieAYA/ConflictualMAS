@@ -5,7 +5,8 @@
 #include "../GeoBox/Box.hpp"
 #include "../Common/Memory.hpp"
 #include <vector>
-#include <deque>  // ← AJOUTER CETTE LIGNE
+#include <deque>
+#include <map>
 
 class Agent {
 private:
@@ -21,8 +22,11 @@ private:
     std::map<Solution, float>* meta_local_memory;
     std::vector<Solution>* validated_pbest;
     double similarity_threshold;
+    
+    // NOUVEAU : Gestion exploration voisinage
+    int max_neighbors_per_exploration;  // ← AJOUTER
+    std::map<osmium::object_id_type, int> explored_neighbors_count;  // ← AJOUTER
 
-    // Fonctions privées pour la recherche Tabu
     bool is_better_solution(const Solution& sol1, const Solution& sol2);
     std::vector<Solution> get_add_neighbors(const Solution& sol);
     std::vector<Solution> get_backtrack_neighbors(const Solution& sol, int backtrack_depth);
@@ -36,15 +40,15 @@ public:
         GlobalMemory& mem,
         std::vector<int> a_char, 
         std::vector<osmium::object_id_type> init_sol,
-        std::map<Solution, float>* meta_memory = nullptr,  // Nouveau
-        std::vector<Solution>* pbest_list = nullptr,        // Nouveau
-        double sim_threshold = 1.0                          // Nouveau (1.0 = pas de contrainte)
+        std::map<Solution, float>* meta_memory = nullptr,
+        std::vector<Solution>* pbest_list = nullptr,
+        double sim_threshold = 1.0,
+        int max_neighbors = 10  // ← AJOUTER
     );
 
     int objective_function(const Solution& sol);
     Solution tabu_search(int max_iterations, int tabu_list_size);
     
-    // Getters
     const Solution& get_initial_solution() const { return initial_solution; }
     const Solution& get_actual_solution() const { return actual_solution; }
     double get_fitness() const { return fitness; }

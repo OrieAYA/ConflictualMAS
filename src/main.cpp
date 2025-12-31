@@ -8,6 +8,7 @@
 #include "Common/Pathfinding.hpp"
 #include "Common/Memory.hpp"
 #include "Agent/Agent.hpp"
+#include "Agent/MetaAgent.hpp"
 #include "utility.hpp"
 #include <string>
 #include "MHProcs/ACO.hpp"
@@ -16,6 +17,233 @@
 #include "MHProcs/PSO.hpp"
 #include "OverpassAPI/OverpassAPI.hpp"
 #include <random>
+
+void test_meta_agent(const std::string& cache_dir) {
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "TEST META-AGENT\n";
+    std::cout << std::string(80, '=') << "\n\n";
+
+    // ========================================
+    // CONFIGURATION
+    // ========================================
+    const std::string input_cache_name = "asakusa_test_agent_raw";
+    const std::string output_cache_name = "meta_agent_result";
+    const std::string output_map_name = "meta_agent_map";
+    const int path_group_id = 99;
+    
+    const std::string input_cache_path = cache_dir + "//" + input_cache_name + ".json";
+    const std::string output_cache_path = cache_dir + "//" + output_cache_name + ".json";
+    
+    // ========================================
+    // 1. CHARGEMENT GEOBOX
+    // ========================================
+    std::cout << "--- Chargement GeoBox ---\n";
+    GeoBox geo_box = GeoBoxManager::load_geobox(input_cache_path);
+    
+    if (!geo_box.is_valid) {
+        std::cerr << "✗ ERREUR: Impossible de charger la GeoBox\n";
+        std::cerr << "  Fichier: " << input_cache_path << "\n";
+        return;
+    }
+    
+    std::cout << "✓ GeoBox chargée\n";
+    std::cout << "  Nœuds: " << geo_box.data.nodes.size() << "\n";
+    std::cout << "  Ways: " << geo_box.data.ways.size() << "\n";
+    std::cout << "  Groupes: " << geo_box.data.objective_groups.size() << "\n\n";
+    
+    // ========================================
+    // 2. INITIALISATION SYSTÈMES
+    // ========================================
+    std::cout << "--- Initialisation systèmes ---\n";
+    Pathfinder pathfinder(geo_box);
+    GlobalMemory global_memory(geo_box, pathfinder);
+    
+    float length_constraint = 1000.0f;
+    float search_coefficient = 1.4f;
+    
+    global_memory.length_constraint = length_constraint;
+    global_memory.search_coefficient = search_coefficient;
+    
+    std::cout << "✓ Pathfinder initialisé\n";
+    std::cout << "✓ Mémoire globale initialisée\n";
+    std::cout << "  Contrainte distance: " << length_constraint << " m\n";
+    std::cout << "  Coefficient recherche: " << search_coefficient << "\n\n";
+    
+    // ========================================
+    // 3. CARACTÉRISTIQUES AGENT
+    // ========================================
+    std::vector<int> agent_characteristics(100, 0);
+    agent_characteristics[0] = 100;  // Temples
+    agent_characteristics[1] = 100;  // Restaurants  
+    agent_characteristics[2] = 50;   // Shops
+    
+    std::cout << "--- Caractéristiques agent ---\n";
+    std::cout << "  Groupe 0 (Temples): 100 points\n";
+    std::cout << "  Groupe 1 (Restaurants): 100 points\n";
+    std::cout << "  Groupe 2 (Shops): 50 points\n\n";
+    
+    // ========================================
+    // 4. CONFIGURATION META-AGENT
+    // ========================================
+    MetaAgentParams meta_params;
+    meta_params.admissible_similarity_degree = 0.3;
+    meta_params.coverage_rate = 0.2;
+    meta_params.max_divergence_from_gbest = 0.7;
+    meta_params.max_iterations_per_agent = 100;
+    meta_params.tabu_list_size = 15;
+    meta_params.max_agents = 30;
+    
+    std::cout << "--- Configuration MetaAgent ---\n";
+    std::cout << "Similarité max admissible: " << (meta_params.admissible_similarity_degree * 100) << "%\n";
+    std::cout << "Taux couverture cible: " << (meta_params.coverage_rate * 100) << "%\n";
+    std::cout << "Divergence max avec GBest: " << (meta_params.max_divergence_from_gbest * 100) << "%\n";
+    std::cout << "Itérations par agent: " << meta_params.max_iterations_per_agent << "\n";
+    std::cout << "Taille liste Tabu: " << meta_params.tabu_list_size << "\n";
+    std::cout << "Agents max: " << meta_params.max_agents << "\n\n";
+    
+    // ========================================
+    // 5. CRÉATION ET LANCEMENT META-AGENT
+    // ========================================
+    std::cout << "--- Création MetaAgent ---\n";
+    MetaAgent meta_agent(
+        geo_box,
+        pathfinder,
+        global_memory,
+        agent_characteristics,
+        meta_params
+    );
+    
+    auto start_time = std::chrono::high_resolution_clock::now();
+    Solution best_solution = meta_agent.run_meta_search();
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto total_duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    
+    // ========================================
+    // 6. AFFICHAGE RÉSULTAT DÉTAILLÉ
+    // ========================================
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "RÉSULTAT FINAL META-AGENT\n";
+    std::cout << std::string(80, '=') << "\n";
+    std::cout << "Temps total d'exécution: " << total_duration.count() << " secondes\n";
+    
+    if (best_solution.POIs.empty()) {
+        std::cout << "\n⚠ Aucune solution trouvée\n";
+        std::cout << std::string(80, '=') << "\n";
+        std::cout << "FIN TEST META-AGENT\n";
+        std::cout << std::string(80, '=') << "\n\n";
+        return;
+    }
+    
+    // Calculer fitness totale
+    int total_fitness = 0;
+    std::map<int, int> group_contributions;
+    
+    for (const auto& poi_id : best_solution.POIs) {
+        auto node_it = geo_box.data.nodes.find(poi_id);
+        if (node_it != geo_box.data.nodes.end()) {
+            for (const int group_id : node_it->second.groupes) {
+                if (group_id >= 0 && group_id < static_cast<int>(agent_characteristics.size())) {
+                    int value = agent_characteristics[group_id];
+                    total_fitness += value;
+                    group_contributions[group_id] += value;
+                }
+            }
+        }
+    }
+    
+    std::cout << "\n--- Statistiques globales ---\n";
+    std::cout << "POIs visités: " << best_solution.POIs.size() << "\n";
+    std::cout << "Distance totale: " << best_solution.cost << " m / " 
+              << length_constraint << " m ("
+              << (best_solution.cost / length_constraint * 100.0) << "%)\n";
+    std::cout << "Fitness totale: " << total_fitness << "\n";
+    
+    std::cout << "\n--- Contributions par groupe ---\n";
+    for (const auto& [group_id, contribution] : group_contributions) {
+        std::cout << "  Groupe " << group_id << ": " << contribution << " points\n";
+    }
+    
+    // Parcours détaillé
+    std::cout << "\n--- Parcours optimal (GBest) ---\n";
+    float cumulative = 0.0f;
+    for (size_t i = 0; i < best_solution.POIs.size(); i++) {
+        osmium::object_id_type poi_id = best_solution.POIs[i];
+        
+        std::cout << "  " << (i+1) << ". POI " << poi_id;
+        
+        auto node_it = geo_box.data.nodes.find(poi_id);
+        if (node_it != geo_box.data.nodes.end() && !node_it->second.groupes.empty()) {
+            std::cout << " [";
+            bool first = true;
+            int node_value = 0;
+            for (const int group_id : node_it->second.groupes) {
+                if (!first) std::cout << ", ";
+                std::cout << "G" << group_id;
+                if (group_id >= 0 && group_id < static_cast<int>(agent_characteristics.size())) {
+                    int val = agent_characteristics[group_id];
+                    if (val > 0) {
+                        std::cout << "(+" << val << ")";
+                        node_value += val;
+                    }
+                }
+                first = false;
+            }
+            std::cout << "] → " << node_value << " pts";
+        }
+        
+        if (i < best_solution.paths.size()) {
+            float dist = best_solution.paths[i].cost;
+            cumulative += dist;
+            std::cout << "\n     └→ " << dist << "m (cumulé: " << cumulative << "m)";
+        }
+        std::cout << "\n";
+    }
+    
+    // ========================================
+    // 7. MARQUAGE DES CHEMINS (comme test_single_agent)
+    // ========================================
+    std::cout << "\n--- Marquage des chemins ---\n";
+    int marked_paths = 0;
+    
+    for (const auto& path : best_solution.paths) {
+        for (const auto& way_id : path.path_edges) {
+            auto way_it = geo_box.data.ways.find(way_id);
+            if (way_it != geo_box.data.ways.end()) {
+                way_it->second.groupes.insert(path_group_id);
+                marked_paths++;
+            }
+        }
+    }
+    
+    std::cout << "✓ Chemins marqués: " << marked_paths << " ways dans groupe " << path_group_id << "\n\n";
+    
+    // ========================================
+    // 8. SAUVEGARDE (comme test_single_agent)
+    // ========================================
+    std::cout << "--- Sauvegarde résultat ---\n";
+    GeoBoxManager::save_geobox(geo_box, output_cache_path);
+    std::cout << "✓ GeoBox sauvegardée: " << output_cache_path << "\n\n";
+    
+    // ========================================
+    // 9. RENDU CARTE (comme test_single_agent)
+    // ========================================
+    std::cout << "--- Génération carte ---\n";
+    bool render_success = GeoBoxManager::render_geobox(geo_box, output_map_name, 2000, 2000);
+    
+    if (render_success) {
+        std::cout << "✓ Carte générée: " << output_map_name << "\n";
+    } else {
+        std::cout << "✗ Erreur lors du rendu\n";
+    }
+    
+    std::cout << "\n--- Fichiers générés ---\n";
+    std::cout << "  Cache: " << output_cache_name << ".json\n";
+    std::cout << "  Carte: " << output_map_name << ".png\n";
+    
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "FIN TEST META-AGENT\n";
+    std::cout << std::string(80, '=') << "\n\n";
+}
 
 // ====================================================================
 // FONCTION DE TEST POUR UN SEUL AGENT - RECHERCHE TABU
@@ -181,7 +409,17 @@ void test_single_agent(const std::string& cache_dir) {
     
     // 4. Création agent
     std::cout << "--- Création agent ---\n";
-    Agent agent(geo_box, pathfinder, global_memory, agent_characteristics, initial_pois);
+    Agent agent(
+        geo_box, 
+        pathfinder, 
+        global_memory, 
+        agent_characteristics, 
+        initial_pois,
+        nullptr,  // Pas de meta memory
+        nullptr,  // Pas de pbest validées
+        1.0,      // Pas de contrainte similarité
+        10        // ← Max 10 voisins par exploration
+    );
     std::cout << "✓ Agent créé\n\n";
     
     // 5. Exécution Tabu Search
@@ -306,6 +544,7 @@ int main() {
     std::string rep;
     std::cout << "\n=== MENU PRINCIPAL ===" << std::endl;
     std::cout << "T/t - Test Agent unique (Tabu Search)" << std::endl;
+    std::cout << "M/m - Test Meta-Agent" << std::endl;
     std::cout << "G/g - New Geobox and cache" << std::endl;
     std::cout << "I/i - Initialize POI" << std::endl;
     std::cout << "P/p - System Creation and Pathfinding" << std::endl;
@@ -326,6 +565,9 @@ int main() {
     
     if (rep == "T" || rep == "t") {
         test_single_agent(cache_dir);
+        return 0;
+    } else if (rep == "M" || rep == "m") {
+        test_meta_agent(cache_dir);
         return 0;
     } else if (rep == "G" || rep == "g"){
 

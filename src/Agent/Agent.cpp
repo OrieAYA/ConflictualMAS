@@ -21,7 +21,8 @@ Agent::Agent(
     std::vector<osmium::object_id_type> init_sol,
     std::map<Solution, float>* meta_memory,
     std::vector<Solution>* pbest_list,
-    double sim_threshold
+    double sim_threshold,
+    int max_neighbors
 ) : geo_box(box), 
     PfSystem(pf),
     memory(mem),
@@ -32,7 +33,8 @@ Agent::Agent(
     best_fitness(std::numeric_limits<double>::max()),
     meta_local_memory(meta_memory),
     validated_pbest(pbest_list),
-    similarity_threshold(sim_threshold)
+    similarity_threshold(sim_threshold),
+    max_neighbors_per_exploration(max_neighbors)
 {
     std::vector<Path> paths;
     float cost = 0.0f;
@@ -75,60 +77,170 @@ std::vector<Solution> Agent::get_add_neighbors(const Solution& sol) {
     osmium::object_id_type last_visited = sol.POIs.back();
     float remaining_distance = memory.length_constraint - sol.cost;
     
-    // Créer un set des POIs déjà visités dans cette solution
     std::unordered_set<osmium::object_id_type> visited_pois(sol.POIs.begin(), sol.POIs.end());
     
     std::cout << "  [get_add_neighbors] POI " << last_visited 
-              << " | Restant: " << remaining_distance 
-              << "m | POIs dans solution: " << visited_pois.size() << "\n";
+              << " | Restant: " << remaining_distance << "m\n";
     
-    // PHASE 1 : Chercher les voisins
-    std::vector<osmium::object_id_type> nearby_pois = memory.check_neighborhood(last_visited, visited_pois);
-    
-    // PHASE 2 : Créer les solutions voisines valides
-    int valid_count = 0;
-    for (const auto& potential_neighbor : nearby_pois) {
-        if (visited_pois.count(potential_neighbor)) {
-            continue;
-        }
-        
-        Path to_neighbor = memory.check_path(last_visited, potential_neighbor);
-        float new_total_cost = sol.cost + to_neighbor.cost;
-        
-        if (new_total_cost <= memory.length_constraint) {
-            Solution neighbor = sol;
-            neighbor.add_node(potential_neighbor, to_neighbor);
-            neighbors.push_back(neighbor);
-            valid_count++;
-        }
+    // ✅ FIX : Vérification de distance minimale
+    if (remaining_distance < 10.0f) {
+        std::cout << "    [FIN] Distance insuffisante (<10m)\n";
+        return neighbors;
     }
     
-    std::cout << "    → " << valid_count << " voisins valides\n";
+    // Chercher les voisins
+    std::vector<osmium::object_id_type> nearby_pois = memory.check_neighborhood(last_visited, visited_pois);
     
-    // PHASE 3 : Si aucune solution → CONTINUER jusqu'à trouver un nouveau POI
-    if (neighbors.empty() && remaining_distance > 50.0f) {
-        std::cout << "    [CONTINUE] Aucune solution → Recherche d'un nouveau POI...\n";
+    if (nearby_pois.empty()) {
+        std::cout << "    [FIN] Aucun voisin dans le cache\n";
+        return neighbors;
+    }
+    
+    // Récupérer le compteur d'exploration pour ce POI
+    int& explored_count = explored_neighbors_count[last_visited];
+    
+    std::cout << "    Voisins disponibles: " << nearby_pois.size() 
+              << " | Déjà explorés: " << explored_count << "\n";
+    
+    // ✅ FIX : Limite stricte sur les tentatives (réduit de 5 à 3)
+    const int MAX_ATTEMPTS = 3;
+    const int MAX_EXPANSION_ATTEMPTS = 1;
+    int attempts = 0;
+    int expansion_attempts = 0;
+    
+    while (neighbors.empty() && attempts < MAX_ATTEMPTS) {
+        int start_index = explored_count;
+        int end_index = std::min(start_index + max_neighbors_per_exploration, 
+                                static_cast<int>(nearby_pois.size()));
         
-        // Continue_neighborhood_search va automatiquement chercher jusqu'à trouver un nouveau POI
-        nearby_pois = memory.continue_neighborhood_search(last_visited, visited_pois);
+        // Si on a atteint la fin, vérifier si expansion possible
+        if (start_index >= static_cast<int>(nearby_pois.size())) {
+            if (expansion_attempts >= MAX_EXPANSION_ATTEMPTS) {
+                std::cout << "    [FIN] Limite d'expansions atteinte\n";
+                break;
+            }
+            
+            if (remaining_distance > 100.0f) {
+                std::cout << "    [EXTENSION] Recherche de nouveaux voisins (tentative " 
+                          << (expansion_attempts + 1) << "/" << MAX_EXPANSION_ATTEMPTS << ")...\n";
+                
+                size_t old_size = nearby_pois.size();
+                nearby_pois = memory.continue_neighborhood_search(last_visited, visited_pois);
+                
+                expansion_attempts++;
+                
+                if (nearby_pois.size() <= old_size) {
+                    std::cout << "    [FIN] Aucun nouveau voisin trouvé\n";
+                    break;
+                }
+                
+                std::cout << "    [EXTENSION] " << (nearby_pois.size() - old_size) 
+                          << " nouveaux voisins trouvés\n";
+                
+                explored_count = static_cast<int>(old_size);
+                start_index = explored_count;
+                end_index = std::min(start_index + max_neighbors_per_exploration, 
+                                    static_cast<int>(nearby_pois.size()));
+            } else {
+                std::cout << "    [FIN] Distance insuffisante pour expansion\n";
+                break;
+            }
+        }
         
-        for (const auto& potential_neighbor : nearby_pois) {
+        if (start_index >= end_index) {
+            std::cout << "    [ERREUR] Indices invalides (start=" << start_index 
+                      << ", end=" << end_index << ")\n";
+            break;
+        }
+        
+        int valid_count = 0;
+        int rejected_similarity = 0;
+        int rejected_visited = 0;
+        int rejected_distance = 0;
+        
+        // Explorer le batch actuel
+        for (int i = start_index; i < end_index; i++) {
+            osmium::object_id_type potential_neighbor = nearby_pois[i];
+            
             if (visited_pois.count(potential_neighbor)) {
+                rejected_visited++;
                 continue;
             }
             
             Path to_neighbor = memory.check_path(last_visited, potential_neighbor);
+            
+            if (to_neighbor.cost <= 0.0f || to_neighbor.path_edges.empty()) {
+                continue;
+            }
+            
             float new_total_cost = sol.cost + to_neighbor.cost;
             
-            if (new_total_cost <= memory.length_constraint) {
-                Solution neighbor = sol;
-                neighbor.add_node(potential_neighbor, to_neighbor);
-                neighbors.push_back(neighbor);
+            if (new_total_cost > memory.length_constraint) {
+                rejected_distance++;
+                continue;
+            }
+            
+            Solution candidate = sol;
+            candidate.add_node(potential_neighbor, to_neighbor);
+            
+            // Vérification similarité
+            bool too_similar = false;
+            if (validated_pbest != nullptr && !validated_pbest->empty()) {
+                for (const auto& pbest : *validated_pbest) {
+                    float similarity = memory.calculate_similarity(candidate, pbest);
+                    
+                    if (similarity > similarity_threshold) {
+                        too_similar = true;
+                        rejected_similarity++;
+                        break;
+                    }
+                }
+            }
+            
+            if (!too_similar) {
+                neighbors.push_back(candidate);
                 valid_count++;
+                
+                if (neighbors.size() >= static_cast<size_t>(max_neighbors_per_exploration)) {
+                    std::cout << "    [LIMITE] " << max_neighbors_per_exploration 
+                              << " voisins atteints\n";
+                    break;
+                }
             }
         }
         
-        std::cout << "    → " << valid_count << " voisins après continuation\n";
+        explored_count = end_index;
+        
+        std::cout << "    → Explorés [" << start_index << "-" << end_index << "] "
+                  << "→ " << valid_count << " valides";
+        if (rejected_similarity > 0) {
+            std::cout << ", " << rejected_similarity << " rejetés (similarité)";
+        }
+        if (rejected_visited > 0) {
+            std::cout << ", " << rejected_visited << " déjà visités";
+        }
+        if (rejected_distance > 0) {
+            std::cout << ", " << rejected_distance << " trop loin";
+        }
+        std::cout << "\n";
+        
+        if (!neighbors.empty()) {
+            break;
+        }
+        
+        attempts++;
+        
+        if (explored_count < static_cast<int>(nearby_pois.size())) {
+            std::cout << "    [BATCH SUIVANT] Tentative " << (attempts + 1) 
+                      << "/" << MAX_ATTEMPTS << "\n";
+        } else {
+            std::cout << "    [FIN] Tous les voisins ont été explorés\n";
+            break;
+        }
+    }
+    
+    if (neighbors.empty() && attempts >= MAX_ATTEMPTS) {
+        std::cout << "    [ARRÊT] Limite de tentatives atteinte\n";
     }
     
     return neighbors;
