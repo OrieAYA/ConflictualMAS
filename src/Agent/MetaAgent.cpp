@@ -72,34 +72,6 @@ osmium::object_id_type MetaAgent::select_random_unused_poi() {
     return available[dist(rng)];
 }
 
-float MetaAgent::calculate_similarity(const Solution& sol1, const Solution& sol2) {
-    if (sol1.POIs.size() < 2 || sol2.POIs.size() < 2) {
-        return 0.0f;
-    }
-    
-    std::set<std::pair<osmium::object_id_type, osmium::object_id_type>> edges1, edges2;
-    
-    for (size_t i = 1; i < sol1.POIs.size(); i++) {
-        auto edge = std::minmax(sol1.POIs[i-1], sol1.POIs[i]);
-        edges1.insert(edge);
-    }
-    
-    for (size_t i = 1; i < sol2.POIs.size(); i++) {
-        auto edge = std::minmax(sol2.POIs[i-1], sol2.POIs[i]);
-        edges2.insert(edge);
-    }
-    
-    int common_edges = 0;
-    for (const auto& edge : edges1) {
-        if (edges2.count(edge)) {
-            common_edges++;
-        }
-    }
-    
-    float total_edges = (edges1.size() + edges2.size()) / 2.0f;
-    return static_cast<float>(common_edges) / total_edges;
-}
-
 float MetaAgent::calculate_coverage_rate() {
     if (all_pois.empty()) return 0.0f;
     return static_cast<float>(used_starting_pois.size()) / static_cast<float>(all_pois.size());
@@ -151,7 +123,7 @@ bool MetaAgent::try_add_agent() {
         float max_similarity = 0.0f;
         
         for (const auto& pbest : validated_pbest) {
-            float similarity = calculate_similarity(solution, pbest);
+            float similarity = global_memory.calculate_similarity(solution, pbest);
             max_similarity = std::max(max_similarity, similarity);
             
             if (similarity > params.admissible_similarity_degree) {

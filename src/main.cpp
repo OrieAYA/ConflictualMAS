@@ -9,6 +9,7 @@
 #include "Common/Memory.hpp"
 #include "Agent/Agent.hpp"
 #include "Agent/MetaAgent.hpp"
+#include "Agent/GlobalSolutionConstructor.hpp"
 #include "utility.hpp"
 #include <string>
 #include "MHProcs/ACO.hpp"
@@ -17,6 +18,265 @@
 #include "MHProcs/PSO.hpp"
 #include "OverpassAPI/OverpassAPI.hpp"
 #include <random>
+
+void test_global_solution_constructor(const std::string& cache_dir) {
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "TEST GLOBAL SOLUTION CONSTRUCTOR\n";
+    std::cout << std::string(80, '=') << "\n\n";
+    
+    // ========================================
+    // CONFIGURATION
+    // ========================================
+    const std::string input_cache_name = "asakusa_test_agent_raw";
+    const std::string output_cache_name = "global_solution_result";
+    const std::string output_map_name = "global_solution_map";
+    
+    const std::string input_cache_path = cache_dir + "//" + input_cache_name + ".json";
+    const std::string output_cache_path = cache_dir + "//" + output_cache_name + ".json";
+    
+    // ========================================
+    // 1. CHARGEMENT GEOBOX
+    // ========================================
+    std::cout << "--- Chargement GeoBox ---\n";
+    GeoBox geo_box = GeoBoxManager::load_geobox(input_cache_path);
+    
+    if (!geo_box.is_valid) {
+        std::cerr << "✗ ERREUR: Impossible de charger la GeoBox\n";
+        std::cerr << "  Fichier: " << input_cache_path << "\n";
+        return;
+    }
+    
+    std::cout << "✓ GeoBox chargée\n";
+    std::cout << "  Nœuds: " << geo_box.data.nodes.size() << "\n";
+    std::cout << "  Ways: " << geo_box.data.ways.size() << "\n";
+    std::cout << "  Groupes: " << geo_box.data.objective_groups.size() << "\n\n";
+    
+    // ========================================
+    // 2. INITIALISATION SYSTÈMES
+    // ========================================
+    std::cout << "--- Initialisation systèmes ---\n";
+    Pathfinder pathfinder(geo_box);
+    GlobalMemory global_memory(geo_box, pathfinder);
+    
+    float length_constraint = 1000.0f;
+    float search_coefficient = 1.4f;
+    
+    global_memory.length_constraint = length_constraint;
+    global_memory.search_coefficient = search_coefficient;
+    
+    std::cout << "✓ Pathfinder initialisé\n";
+    std::cout << "✓ Mémoire globale initialisée\n";
+    std::cout << "  Contrainte distance: " << length_constraint << " m\n";
+    std::cout << "  Coefficient recherche: " << search_coefficient << "\n\n";
+    
+    // ========================================
+    // 3. CRÉATION GLOBAL SOLUTION CONSTRUCTOR
+    // ========================================
+    std::cout << "--- Création GlobalSolutionConstructor ---\n";
+    GlobalSolutionConstructor constructor(geo_box, pathfinder, global_memory);
+    std::cout << "\n";
+    
+    // ========================================
+    // 4. CONFIGURATION META-AGENTS
+    // ========================================
+    std::cout << "--- Configuration des Meta-Agents ---\n\n";
+    
+    // Meta-Agent 1 : Focus sur Temples
+    MetaAgentConfig config1("Agent_Temples");
+    config1.characteristics.resize(100, 0);
+    config1.characteristics[0] = 100;  // Temples
+    config1.characteristics[1] = 50;   // Restaurants (secondaire)
+    config1.params.admissible_similarity_degree = 0.3;
+    config1.params.coverage_rate = 0.15;
+    config1.params.max_divergence_from_gbest = 0.7;
+    config1.params.max_iterations_per_agent = 100;
+    config1.params.tabu_list_size = 15;
+    config1.params.max_agents = 20;
+    
+    constructor.add_meta_agent_config(config1);
+    
+    // Meta-Agent 2 : Focus sur Restaurants
+    MetaAgentConfig config2("Agent_Restaurants");
+    config2.characteristics.resize(100, 0);
+    config2.characteristics[1] = 100;  // Restaurants
+    config2.characteristics[2] = 50;   // Shops (secondaire)
+    config2.params.admissible_similarity_degree = 0.3;
+    config2.params.coverage_rate = 0.15;
+    config2.params.max_divergence_from_gbest = 0.7;
+    config2.params.max_iterations_per_agent = 100;
+    config2.params.tabu_list_size = 15;
+    config2.params.max_agents = 20;
+    
+    constructor.add_meta_agent_config(config2);
+    
+    // Meta-Agent 3 : Focus sur Shops
+    MetaAgentConfig config3("Agent_Shops");
+    config3.characteristics.resize(100, 0);
+    config3.characteristics[2] = 100;  // Shops
+    config3.characteristics[0] = 30;   // Temples (tertiaire)
+    config3.params.admissible_similarity_degree = 0.3;
+    config3.params.coverage_rate = 0.15;
+    config3.params.max_divergence_from_gbest = 0.7;
+    config3.params.max_iterations_per_agent = 100;
+    config3.params.tabu_list_size = 15;
+    config3.params.max_agents = 20;
+    
+    constructor.add_meta_agent_config(config3);
+    
+    // ========================================
+    // 5. LANCEMENT DE TOUS LES META-AGENTS
+    // ========================================
+    auto start_time = std::chrono::high_resolution_clock::now();
+    constructor.run_all_meta_agents();  // Initialise automatiquement la solution globale
+    auto meta_agents_end_time = std::chrono::high_resolution_clock::now();
+    auto meta_agents_duration = std::chrono::duration_cast<std::chrono::seconds>(
+        meta_agents_end_time - start_time
+    );
+    
+    // ========================================
+    // 6. OPTIMISATION GLOBALE (TABU SEARCH)
+    // ========================================
+    std::cout << "--- Lancement Tabu Search Global ---\n";
+    GlobalSolution global_best = constructor.tabu_search(50, 10);
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto total_duration = std::chrono::duration_cast<std::chrono::seconds>(
+        end_time - start_time
+    );
+    auto tabu_duration = std::chrono::duration_cast<std::chrono::seconds>(
+        end_time - meta_agents_end_time
+    );
+    
+    // ========================================
+    // 7. AFFICHAGE RÉSULTAT GLOBAL
+    // ========================================
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "RÉSULTAT FINAL GLOBAL\n";
+    std::cout << std::string(80, '=') << "\n";
+    std::cout << "Temps total: " << total_duration.count() << " secondes\n";
+    std::cout << "  - Meta-Agents: " << meta_agents_duration.count() << " secondes\n";
+    std::cout << "  - Tabu Search Global: " << tabu_duration.count() << " secondes\n\n";
+    
+    // Afficher le résumé
+    constructor.print_summary();
+    
+    // ========================================
+    // 8. AFFICHAGE SOLUTION GLOBALE DÉTAILLÉE
+    // ========================================
+    std::cout << "\n--- Solution Globale Optimale ---\n";
+    std::cout << "Reward global: " << global_best.reward << "\n";
+    std::cout << "Cost total: " << global_best.cost << " m\n";
+    std::cout << "Nombre de Meta-Agents: " << global_best.solution_to_meta_agent.size() << "\n\n";
+    
+    int solution_number = 1;
+    for (const auto& [meta_result, solution] : global_best.solution_to_meta_agent) {
+        std::cout << "Solution #" << solution_number << " (" << meta_result.name << "):\n";
+        std::cout << "  POIs: " << solution.POIs.size() << "\n";
+        std::cout << "  Distance: " << solution.cost << " m\n";
+        
+        // Calculer fitness de cette solution
+        int solution_fitness = 0;
+        for (const auto& poi_id : solution.POIs) {
+            auto node_it = geo_box.data.nodes.find(poi_id);
+            if (node_it != geo_box.data.nodes.end()) {
+                for (const int group_id : node_it->second.groupes) {
+                    if (group_id >= 0 && group_id < static_cast<int>(meta_result.gbest.POIs.size())) {
+                        // Utiliser les caractéristiques du config correspondant
+                        const auto& results = constructor.get_results();
+                        for (const auto& result : results) {
+                            if (result.name == meta_result.name) {
+                                // Note: On ne peut pas accéder directement aux characteristics
+                                // On affiche juste les POIs
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        std::cout << "  Parcours: ";
+        for (size_t i = 0; i < std::min(size_t(5), solution.POIs.size()); i++) {
+            std::cout << solution.POIs[i];
+            if (i < std::min(size_t(5), solution.POIs.size()) - 1) std::cout << " → ";
+        }
+        if (solution.POIs.size() > 5) std::cout << " → ... (" << (solution.POIs.size() - 5) << " de plus)";
+        std::cout << "\n\n";
+        
+        solution_number++;
+    }
+    
+    // ========================================
+    // 9. MARQUAGE DES CHEMINS DE TOUTES LES SOLUTIONS
+    // ========================================
+    std::cout << "--- Marquage des chemins ---\n";
+    int path_group = 1;
+    
+    for (const auto& [meta_result, solution] : global_best.solution_to_meta_agent) {
+        for (const auto& path : solution.paths) {
+            for (const auto& way_id : path.path_edges) {
+                auto way_it = geo_box.data.ways.find(way_id);
+                if (way_it != geo_box.data.ways.end()) {
+                    pathfinder.update_way_group(way_id, path_group);
+                }
+            }
+        }
+        path_group++;
+    }
+    
+    std::cout << "✓ Chemins marqués: " << path_group << "\n\n";
+    
+    // ========================================
+    // 10. SAUVEGARDE
+    // ========================================
+    std::cout << "--- Sauvegarde résultat ---\n";
+    GeoBoxManager::save_geobox(geo_box, output_cache_path);
+    std::cout << "✓ GeoBox sauvegardée: " << output_cache_path << "\n\n";
+    
+    // ========================================
+    // 11. RENDU CARTE
+    // ========================================
+    std::cout << "--- Génération carte ---\n";
+    bool render_success = GeoBoxManager::render_geobox(geo_box, output_map_name, 2000, 2000);
+    
+    if (render_success) {
+        std::cout << "✓ Carte générée: " << output_map_name << "\n";
+    } else {
+        std::cout << "✗ Erreur lors du rendu\n";
+    }
+    
+    std::cout << "\n--- Fichiers générés ---\n";
+    std::cout << "  Cache: " << output_cache_name << ".json\n";
+    std::cout << "  Carte: " << output_map_name << ".png\n";
+    
+    // ========================================
+    // 12. STATISTIQUES FINALES
+    // ========================================
+    std::cout << "\n--- Statistiques finales ---\n";
+    std::cout << "Meta-Agents exécutés: " << constructor.get_result_count() << "\n";
+    
+    std::vector<Solution> all_gbest = constructor.get_all_gbest();
+    std::cout << "GBest collectés: " << all_gbest.size() << "\n";
+    
+    std::vector<Solution> all_pbest = constructor.get_all_validated_pbest();
+    std::cout << "PBest validés (total): " << all_pbest.size() << "\n";
+    
+    int total_pois = 0;
+    float total_distance = 0.0f;
+    for (const auto& [meta_result, solution] : global_best.solution_to_meta_agent) {
+        total_pois += solution.POIs.size();
+        total_distance += solution.cost;
+    }
+    
+    std::cout << "POIs totaux visités: " << total_pois << "\n";
+    std::cout << "Distance totale: " << total_distance << " m / " 
+              << (length_constraint * global_best.solution_to_meta_agent.size()) << " m ("
+              << (total_distance / (length_constraint * global_best.solution_to_meta_agent.size()) * 100.0) 
+              << "%)\n";
+    
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "FIN TEST GLOBAL SOLUTION CONSTRUCTOR\n";
+    std::cout << std::string(80, '=') << "\n\n";
+}
 
 void test_meta_agent(const std::string& cache_dir) {
     std::cout << "\n" << std::string(80, '=') << "\n";
@@ -545,7 +805,8 @@ int main() {
     std::cout << "\n=== MENU PRINCIPAL ===" << std::endl;
     std::cout << "T/t - Test Agent unique (Tabu Search)" << std::endl;
     std::cout << "M/m - Test Meta-Agent" << std::endl;
-    std::cout << "G/g - New Geobox and cache" << std::endl;
+    std::cout << "G/g - Test Global" << std::endl;
+    std::cout << "E/e - New Geobox and cache" << std::endl;
     std::cout << "I/i - Initialize POI" << std::endl;
     std::cout << "P/p - System Creation and Pathfinding" << std::endl;
     std::cout << "A/a - Metaheuristic procedures" << std::endl;
@@ -569,7 +830,10 @@ int main() {
     } else if (rep == "M" || rep == "m") {
         test_meta_agent(cache_dir);
         return 0;
-    } else if (rep == "G" || rep == "g"){
+    } else if (rep == "G" || rep == "g") {
+        test_global_solution_constructor(cache_dir);
+        return 0;
+    }else if (rep == "E" || rep == "e"){
 
         complete_workflow(
             osm_file,

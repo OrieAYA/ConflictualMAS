@@ -9,14 +9,91 @@ GlobalSolutionConstructor::GlobalSolutionConstructor(
     GlobalMemory& mem
 ) : geo_box(box),
     pathfinder(pf),
-    global_memory(mem)
-{
-    std::cout << "\n" << std::string(80, '=') << "\n";
-    std::cout << "GLOBAL SOLUTION CONSTRUCTOR INITIALISÉ\n";
-    std::cout << std::string(80, '=') << "\n";
-    std::cout << "GeoBox: " << geo_box.data.nodes.size() << " nœuds\n";
-    std::cout << "GlobalMemory: " << global_memory.length_constraint << "m max\n";
-    std::cout << std::string(80, '=') << "\n\n";
+    global_memory(mem) {}
+
+float GlobalSolutionConstructor::objective_function(const GlobalSolution& solution) {
+    float reward = 0.0f;
+    std::map<MetaAgentResult, Solution> actual_solution = solution.solution_to_meta_agent;
+    
+    for (const auto& [meta_agent_1, local_solution_1] : actual_solution) {
+        for (const auto& [meta_agent_2, local_solution_2] : actual_solution) {
+            if (meta_agent_1 != meta_agent_2) {
+                float similarity = global_memory.calculate_similarity(local_solution_1, local_solution_2);
+                reward = reward + similarity;
+            }
+        }
+    }
+    
+    return reward;
+}
+
+std::vector<GlobalSolution> GlobalSolutionConstructor::get_neighbors(const GlobalSolution& solution) {
+    std::vector<GlobalSolution> neighbors;
+    std::map<MetaAgentResult, Solution> solution_map = solution.solution_to_meta_agent;
+    
+    for (const auto& [meta_agent, local_solution] : solution_map) {
+        for (const auto& best_solutions : meta_agent.validated_pbest) {
+            if(best_solutions != solution.solution_to_meta_agent.at(meta_agent)){
+                GlobalSolution neighbor = solution;
+                neighbor.solution_to_meta_agent[meta_agent] = best_solutions;
+                neighbors.push_back(neighbor);
+            }
+        }
+    }
+    return neighbors;
+}
+
+GlobalSolution GlobalSolutionConstructor::tabu_search(int max_iterations, int tabu_list_size) {
+
+    GlobalSolution best_solution = initialize_global_solution();
+    GlobalSolution current_solution = best_solution;
+    std::vector<GlobalSolution> tabu_list;
+
+    for (int iter = 0; iter < max_iterations; iter++) {
+        std::vector<GlobalSolution> neighbors
+            = get_neighbors(current_solution);
+        GlobalSolution best_neighbor;
+        int best_neighbor_fitness
+            = std::numeric_limits<int>::max();
+
+        for (const GlobalSolution& neighbor : neighbors) {
+            if (std::find(tabu_list.begin(),
+                          tabu_list.end(), neighbor)
+                == tabu_list.end()) {
+                int neighbor_fitness
+                    = objective_function(neighbor);
+                if (neighbor_fitness
+                    < best_neighbor_fitness) {
+                    best_neighbor = neighbor;
+                    best_neighbor_fitness
+                        = neighbor_fitness;
+                }
+            }
+        }
+
+        if (best_neighbor.empty()) {
+            // No non-tabu neighbors found,
+            // terminate the search
+            break;
+        }
+
+        current_solution = best_neighbor;
+        tabu_list.push_back(best_neighbor);
+        if (tabu_list.size() > tabu_list_size) {
+            // Remove the oldest entry from the
+            // tabu list if it exceeds the size
+            tabu_list.erase(tabu_list.begin());
+        }
+
+        if (objective_function(best_neighbor)
+            < objective_function(best_solution)) {
+            // Update the best solution if the
+            // current neighbor is better
+            best_solution = best_neighbor;
+        }
+    }
+
+    return best_solution;
 }
 
 void GlobalSolutionConstructor::add_meta_agent_config(const MetaAgentConfig& config) {
@@ -123,6 +200,43 @@ void GlobalSolutionConstructor::run_all_meta_agents() {
     std::cout << "Solutions validées totales: " << total_validated << "\n";
     
     std::cout << std::string(80, '=') << "\n\n";
+}
+
+GlobalSolution GlobalSolutionConstructor::initialize_global_solution() {
+    if (results.empty()) {
+        std::cerr << "ERREUR: Aucun résultat de MetaAgent disponible!\n";
+        std::cerr << "Appelez run_all_meta_agents() avant initialize_global_solution()\n";
+        return GlobalSolution();
+    }
+    
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "INITIALISATION SOLUTION GLOBALE\n";
+    std::cout << std::string(80, '=') << "\n";
+    
+    // Initialiser avec les GBest de chaque MetaAgent
+    initial_solution.solution_to_meta_agent.clear();
+    
+    for (const auto& result : results) {
+        initial_solution.solution_to_meta_agent[result] = result.gbest;
+        std::cout << "  " << result.name << " → GBest (" 
+                  << result.gbest.POIs.size() << " POIs, fitness=" 
+                  << result.gbest_fitness << ")\n";
+    }
+    
+    // Calculer reward et cost
+    initial_solution.reward = objective_function(initial_solution);
+    initial_solution.cost = 0.0f;
+    for (const auto& [meta_result, solution] : initial_solution.solution_to_meta_agent) {
+        initial_solution.cost += solution.cost;
+    }
+    
+    std::cout << "\n✓ Solution globale initialisée:\n";
+    std::cout << "  Reward: " << initial_solution.reward << "\n";
+    std::cout << "  Cost total: " << initial_solution.cost << " m\n";
+    std::cout << "  Meta-Agents: " << initial_solution.solution_to_meta_agent.size() << "\n";
+    std::cout << std::string(80, '=') << "\n\n";
+
+    return initial_solution;
 }
 
 void GlobalSolutionConstructor::print_summary() const {

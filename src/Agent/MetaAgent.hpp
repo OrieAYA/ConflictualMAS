@@ -48,7 +48,6 @@ private:
     // Méthodes privées
     void collect_all_pois();
     osmium::object_id_type select_random_unused_poi();
-    float calculate_similarity(const Solution& sol1, const Solution& sol2);
     float calculate_coverage_rate();
     bool try_add_agent();
     void print_statistics();

@@ -156,17 +156,14 @@ struct GlobalMemory {
         return neighbors;
     }
     
-    // NOUVEAU : Calculer la similarité entre deux solutions (basée sur les couples de POIs)
     float calculate_similarity(const Solution& sol1, const Solution& sol2){
         if (sol1.POIs.size() < 2 || sol2.POIs.size() < 2) {
             return 0.0f;
         }
         
-        // Créer les couples (arêtes) pour chaque solution
         std::set<std::pair<osmium::object_id_type, osmium::object_id_type>> edges1, edges2;
         
         for (size_t i = 1; i < sol1.POIs.size(); i++) {
-            // Utiliser minmax pour avoir un ordre canonique (A,B) == (B,A)
             auto edge = std::minmax(sol1.POIs[i-1], sol1.POIs[i]);
             edges1.insert(edge);
         }
@@ -176,7 +173,6 @@ struct GlobalMemory {
             edges2.insert(edge);
         }
         
-        // Compter les arêtes communes
         int common_edges = 0;
         for (const auto& edge : edges1) {
             if (edges2.count(edge)) {
@@ -184,7 +180,6 @@ struct GlobalMemory {
             }
         }
         
-        // Similarité = arêtes communes / moyenne des arêtes totales
         float total_edges = (edges1.size() + edges2.size()) / 2.0f;
         return total_edges > 0 ? static_cast<float>(common_edges) / total_edges : 0.0f;
     }
@@ -197,8 +192,6 @@ public:
     GlobalMemory MemoryStructure;
 
     Memory(GeoBox& box, Pathfinder& pf);
-
-    float solutions_similarity(const Solution& a, const Solution& b);
 };
 
 #endif // MEMORY_HPP
