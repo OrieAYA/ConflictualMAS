@@ -309,17 +309,11 @@ std::vector<Path> Pathfinder::Neighbor_Search(
     
     bool is_new_search = cache.found_pois.empty();
     
-    std::cout << "\n[Neighbor_Search] POI " << start_point 
-              << " | Coef: " << search_coefficient 
-              << " | " << (is_new_search ? "NOUVELLE recherche" : "CONTINUATION") 
-              << " | POIs déjà visités: " << already_visited_pois.size() << "\n";
-    
     float length_constraint;
     bool found_new_poi = false;  // NOUVEAU flag
     
     if (is_new_search) {
         // INITIALISATION
-        std::cout << "  [INIT] Initialisation du cache\n";
         
         cache.GScore[start_point] = 0.0f;
         cache.open.push_back(start_point);
@@ -328,17 +322,11 @@ std::vector<Path> Pathfinder::Neighbor_Search(
         length_constraint = std::numeric_limits<float>::max();
     } else {
         // CONTINUATION
-        std::cout << "  [CONTINUE] Reprise depuis le cache\n";
-        std::cout << "    POIs trouvés: " << cache.found_pois.size() << "\n";
-        std::cout << "    Distance max explorée: " << cache.max_explored_distance << "m\n";
-        std::cout << "    Nœuds en attente: " << cache.open.size() << "\n";
         
         // Augmenter la contrainte pour explorer plus loin
         if (!cache.found_pois.empty()) {
             float old_constraint = cache.found_pois[0].cost * search_coefficient;
             length_constraint = old_constraint * 50.0f;  // ×50 pour aller loin
-            std::cout << "    Contrainte étendue: " << old_constraint 
-                      << "m → " << length_constraint << "m (×50)\n";
         } else {
             length_constraint = std::numeric_limits<float>::max();
         }
@@ -375,9 +363,7 @@ std::vector<Path> Pathfinder::Neighbor_Search(
                 cache.open.push_back(node_id);
             }
         }
-        
-        std::cout << "    Nœuds rouverts: " << nodes_to_reopen.size() << "\n";
-        std::cout << "    Nœuds en attente maintenant: " << cache.open.size() << "\n";
+
     }
     
     int nodes_explored = 0;
@@ -387,7 +373,6 @@ std::vector<Path> Pathfinder::Neighbor_Search(
     while (!cache.open.empty()) {
         // Si on a trouvé au moins un nouveau POI ET qu'on est en continuation, on peut arrêter
         if (!is_new_search && found_new_poi) {
-            std::cout << "  [STOP] Au moins un nouveau POI trouvé, arrêt de la recherche\n";
             break;
         }
         
@@ -442,21 +427,13 @@ std::vector<Path> Pathfinder::Neighbor_Search(
                 // IMPORTANT : Vérifier si c'est un NOUVEAU POI (non visité dans la solution)
                 bool is_new_for_solution = (already_visited_pois.find(actual_node) == already_visited_pois.end());
                 
-                std::cout << "  [POI #" << cache.found_pois.size() << "] " 
-                          << actual_node << " à " << path_cost << "m";
-                
                 if (is_new_for_solution) {
-                    std::cout << " ✓ NOUVEAU";
                     found_new_poi = true;
-                } else {
-                    std::cout << " (déjà visité)";
                 }
                 
                 if (cache.found_pois.size() == 1 && is_new_search) {
                     length_constraint = path_cost * search_coefficient;
-                    std::cout << " → CONTRAINTE: " << length_constraint << "m";
                 }
-                std::cout << "\n";
             }
         }
         
@@ -501,11 +478,6 @@ std::vector<Path> Pathfinder::Neighbor_Search(
             }
         }
     }
-    
-    std::cout << "  [FIN] Nœuds explorés: " << nodes_explored 
-              << " | Nouveaux POIs: " << new_pois_found 
-              << " | Total POIs: " << cache.found_pois.size() 
-              << " | Distance max: " << cache.max_explored_distance << "m\n";
     
     return cache.found_pois;
 }

@@ -37,7 +37,6 @@ void test_global_solution_constructor(const std::string& cache_dir) {
     // ========================================
     // 1. CHARGEMENT GEOBOX
     // ========================================
-    std::cout << "--- Chargement GeoBox ---\n";
     GeoBox geo_box = GeoBoxManager::load_geobox(input_cache_path);
     
     if (!geo_box.is_valid) {
@@ -46,82 +45,71 @@ void test_global_solution_constructor(const std::string& cache_dir) {
         return;
     }
     
-    std::cout << "✓ GeoBox chargée\n";
-    std::cout << "  Nœuds: " << geo_box.data.nodes.size() << "\n";
-    std::cout << "  Ways: " << geo_box.data.ways.size() << "\n";
-    std::cout << "  Groupes: " << geo_box.data.objective_groups.size() << "\n\n";
-    
     // ========================================
     // 2. INITIALISATION SYSTÈMES
     // ========================================
-    std::cout << "--- Initialisation systèmes ---\n";
     Pathfinder pathfinder(geo_box);
     GlobalMemory global_memory(geo_box, pathfinder);
     
     float length_constraint = 1000.0f;
-    float search_coefficient = 1.4f;
+    float search_coefficient = 1.2f;
     
     global_memory.length_constraint = length_constraint;
     global_memory.search_coefficient = search_coefficient;
     
-    std::cout << "✓ Pathfinder initialisé\n";
-    std::cout << "✓ Mémoire globale initialisée\n";
-    std::cout << "  Contrainte distance: " << length_constraint << " m\n";
-    std::cout << "  Coefficient recherche: " << search_coefficient << "\n\n";
-    
     // ========================================
     // 3. CRÉATION GLOBAL SOLUTION CONSTRUCTOR
     // ========================================
-    std::cout << "--- Création GlobalSolutionConstructor ---\n";
     GlobalSolutionConstructor constructor(geo_box, pathfinder, global_memory);
-    std::cout << "\n";
     
     // ========================================
     // 4. CONFIGURATION META-AGENTS
     // ========================================
-    std::cout << "--- Configuration des Meta-Agents ---\n\n";
+
+    //Global Params
+    MetaAgentConfig configBase("Agent_Config");
+    configBase.params.admissible_similarity_degree = 0.4;
+    configBase.params.coverage_rate = 0.5;
+    configBase.params.max_divergence_from_gbest = 0.2;
+    configBase.params.max_iterations_per_agent = 100;
+    configBase.params.tabu_list_size = 10;
+    configBase.params.max_agents = 25;
     
-    // Meta-Agent 1 : Focus sur Temples
-    MetaAgentConfig config1("Agent_Temples");
+    MetaAgentConfig config1 = configBase;
+    config1.name = "Agent_Temples";
     config1.characteristics.resize(100, 0);
-    config1.characteristics[0] = 100;  // Temples
-    config1.characteristics[1] = 50;   // Restaurants (secondaire)
-    config1.params.admissible_similarity_degree = 0.3;
-    config1.params.coverage_rate = 0.15;
-    config1.params.max_divergence_from_gbest = 0.7;
-    config1.params.max_iterations_per_agent = 100;
-    config1.params.tabu_list_size = 15;
-    config1.params.max_agents = 20;
+    config1.characteristics[1] = 100;  // Temples
+    config1.characteristics[2] = 0;   // Restaurants
+    config1.characteristics[3] = 0;   // Shops
     
     constructor.add_meta_agent_config(config1);
-    
-    // Meta-Agent 2 : Focus sur Restaurants
-    MetaAgentConfig config2("Agent_Restaurants");
+
+    MetaAgentConfig config2 = configBase;
+    config2.name = "Agent_Restaurants";
     config2.characteristics.resize(100, 0);
-    config2.characteristics[1] = 100;  // Restaurants
-    config2.characteristics[2] = 50;   // Shops (secondaire)
-    config2.params.admissible_similarity_degree = 0.3;
-    config2.params.coverage_rate = 0.15;
-    config2.params.max_divergence_from_gbest = 0.7;
-    config2.params.max_iterations_per_agent = 100;
-    config2.params.tabu_list_size = 15;
-    config2.params.max_agents = 20;
+    config2.characteristics[1] = 0;  // Temples
+    config2.characteristics[2] = 100;  // Restaurants
+    config2.characteristics[3] = 0;   // Shops
     
     constructor.add_meta_agent_config(config2);
     
-    // Meta-Agent 3 : Focus sur Shops
-    MetaAgentConfig config3("Agent_Shops");
+    MetaAgentConfig config3 = configBase;
+    config3.name = "Agent_Shops";
     config3.characteristics.resize(100, 0);
-    config3.characteristics[2] = 100;  // Shops
-    config3.characteristics[0] = 30;   // Temples (tertiaire)
-    config3.params.admissible_similarity_degree = 0.3;
-    config3.params.coverage_rate = 0.15;
-    config3.params.max_divergence_from_gbest = 0.7;
-    config3.params.max_iterations_per_agent = 100;
-    config3.params.tabu_list_size = 15;
-    config3.params.max_agents = 20;
+    config3.characteristics[1] = 0;   // Temples
+    config3.characteristics[2] = 0;  // Restaurants
+    config3.characteristics[3] = 100;  // Shops
     
     constructor.add_meta_agent_config(config3);
+
+    MetaAgentConfig config4 = configBase;
+    config4.name = "Agent_All";
+    config4.characteristics.resize(100, 0);
+    config4.characteristics[1] = 100;   // Temples
+    config4.characteristics[2] = 100;  // Restaurants
+    config4.characteristics[3] = 100;  // Shops
+    
+    constructor.add_meta_agent_config(config4);
     
     // ========================================
     // 5. LANCEMENT DE TOUS LES META-AGENTS
@@ -129,20 +117,19 @@ void test_global_solution_constructor(const std::string& cache_dir) {
     auto start_time = std::chrono::high_resolution_clock::now();
     constructor.run_all_meta_agents();  // Initialise automatiquement la solution globale
     auto meta_agents_end_time = std::chrono::high_resolution_clock::now();
-    auto meta_agents_duration = std::chrono::duration_cast<std::chrono::seconds>(
+    auto meta_agents_duration = std::chrono::duration_cast<std::chrono::milliseconds>(
         meta_agents_end_time - start_time
     );
     
     // ========================================
     // 6. OPTIMISATION GLOBALE (TABU SEARCH)
     // ========================================
-    std::cout << "--- Lancement Tabu Search Global ---\n";
     GlobalSolution global_best = constructor.tabu_search(50, 10);
     auto end_time = std::chrono::high_resolution_clock::now();
-    auto total_duration = std::chrono::duration_cast<std::chrono::seconds>(
+    auto total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(
         end_time - start_time
     );
-    auto tabu_duration = std::chrono::duration_cast<std::chrono::seconds>(
+    auto tabu_duration = std::chrono::duration_cast<std::chrono::milliseconds>(
         end_time - meta_agents_end_time
     );
     
@@ -152,9 +139,9 @@ void test_global_solution_constructor(const std::string& cache_dir) {
     std::cout << "\n" << std::string(80, '=') << "\n";
     std::cout << "RÉSULTAT FINAL GLOBAL\n";
     std::cout << std::string(80, '=') << "\n";
-    std::cout << "Temps total: " << total_duration.count() << " secondes\n";
-    std::cout << "  - Meta-Agents: " << meta_agents_duration.count() << " secondes\n";
-    std::cout << "  - Tabu Search Global: " << tabu_duration.count() << " secondes\n\n";
+    std::cout << "Temps total: " << total_duration.count() << " ms\n";
+    std::cout << "  - Meta-Agents: " << meta_agents_duration.count() << " ms\n";
+    std::cout << "  - Tabu Search Global: " << tabu_duration.count() << " ms\n\n";
     
     // Afficher le résumé
     constructor.print_summary();
@@ -172,6 +159,7 @@ void test_global_solution_constructor(const std::string& cache_dir) {
         std::cout << "Solution #" << solution_number << " (" << meta_result.name << "):\n";
         std::cout << "  POIs: " << solution.POIs.size() << "\n";
         std::cout << "  Distance: " << solution.cost << " m\n";
+        std::cout << "  Fitness: " << meta_result.act_meta_agent->objective_function(solution) << " m\n";
         
         // Calculer fitness de cette solution
         int solution_fitness = 0;
@@ -208,7 +196,31 @@ void test_global_solution_constructor(const std::string& cache_dir) {
     // ========================================
     // 9. MARQUAGE DES CHEMINS DE TOUTES LES SOLUTIONS
     // ========================================
-    std::cout << "--- Marquage des chemins ---\n";
+
+    //All_Meta_Agent_GBests
+    GeoBox geo_box_All_meta_agent = GeoBoxManager::load_geobox(input_cache_path);
+    if (!geo_box.is_valid) {
+        std::cerr << "✗ ERREUR: Impossible de charger la GeoBox\n";
+        std::cerr << "  Fichier: " << input_cache_path << "\n";
+        return;
+    }
+    Pathfinder pathfinder_All_meta_agent(geo_box_All_meta_agent);
+
+    int path_group_meta_agent = 1;
+    
+    for (const auto& [meta_result, solution] : global_best.solution_to_meta_agent) {
+        for (const auto& path : meta_result.gbest.paths) {
+            for (const auto& way_id : path.path_edges) {
+                auto way_it = geo_box.data.ways.find(way_id);
+                if (way_it != geo_box.data.ways.end()) {
+                    pathfinder_All_meta_agent.update_way_group(way_id, path_group_meta_agent);
+                }
+            }
+        }
+        path_group_meta_agent++;
+    }
+
+    //Final_Solution
     int path_group = 1;
     
     for (const auto& [meta_result, solution] : global_best.solution_to_meta_agent) {
@@ -223,8 +235,6 @@ void test_global_solution_constructor(const std::string& cache_dir) {
         path_group++;
     }
     
-    std::cout << "✓ Chemins marqués: " << path_group << "\n\n";
-    
     // ========================================
     // 10. SAUVEGARDE
     // ========================================
@@ -235,7 +245,19 @@ void test_global_solution_constructor(const std::string& cache_dir) {
     // ========================================
     // 11. RENDU CARTE
     // ========================================
-    std::cout << "--- Génération carte ---\n";
+
+    //All Meta Agent
+    std::cout << "--- Génération carte All Meta Agent ---\n";
+    bool render_success_meta_agent = GeoBoxManager::render_geobox(geo_box_All_meta_agent, "All_Meta_Agent_Solutions", 2000, 2000);
+    
+    if (render_success_meta_agent) {
+        std::cout << "✓ Carte générée: All_Meta_Agent_Solutions\n";
+    } else {
+        std::cout << "✗ Erreur lors du rendu\n";
+    }
+
+    //Global Solution
+    std::cout << "--- Génération carte Global Solution ---\n";
     bool render_success = GeoBoxManager::render_geobox(geo_box, output_map_name, 2000, 2000);
     
     if (render_success) {

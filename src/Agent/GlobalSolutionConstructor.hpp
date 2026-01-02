@@ -22,6 +22,7 @@ struct MetaAgentConfig {
 // Structure pour stocker les résultats d'un MetaAgent
 struct MetaAgentResult {
     std::string name;
+    MetaAgent* act_meta_agent;
     Solution gbest;
     std::vector<Solution> validated_pbest;
     int gbest_fitness;
@@ -67,6 +68,7 @@ private:
     GlobalSolution initial_solution;
 
 public:
+
     GlobalSolutionConstructor(
         GeoBox& box,
         Pathfinder& pf,

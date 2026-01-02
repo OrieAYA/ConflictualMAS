@@ -169,16 +169,6 @@ bool render_map_from_data(const MyData& data,
             } else if (way_data.groupes.size() == 1) {
                 // Un seul groupe non-zéro - couleur du groupe
                 feature->put("groupe", *way_data.groupes.begin());
-            } else if (way_data.groupes.size() == 2) {
-                // 2 groupes (dont 0) - couleur du groupe non-zéro
-                int non_zero_group = 0;
-                for (int group : way_data.groupes) {
-                    if (group != 0) {
-                        non_zero_group = group;
-                        break;
-                    }
-                }
-                feature->put("groupe", non_zero_group);
             } else {
                 // 3 groupes ou plus - vert foncé (code spécial 99)
                 feature->put("groupe", 99);

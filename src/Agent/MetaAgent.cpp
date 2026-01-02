@@ -16,27 +16,34 @@ MetaAgent::MetaAgent(
     global_memory(mem),
     characteristics(agent_characteristics),
     params(parameters),
-    gbest_solution(),  // ✅ Initialisation de la solution
+    gbest_solution(),
     gbest_fitness(std::numeric_limits<int>::min())
 {
     std::random_device rd;
     rng.seed(rd());
     
     collect_all_pois();
-    
-    std::cout << "\n" << std::string(70, '=') << "\n";
-    std::cout << "META-AGENT INITIALISÉ\n";
-    std::cout << std::string(70, '=') << "\n";
-    std::cout << "POIs disponibles: " << all_pois.size() << "\n";
-    std::cout << "Couverture cible: " << (params.coverage_rate * 100) << "%\n";
-    std::cout << "Similarité max: " << (params.admissible_similarity_degree * 100) << "%\n";
-    std::cout << std::string(70, '=') << "\n\n";
 }
 
 MetaAgent::~MetaAgent() {
     for (auto* agent : agent_population) {
         delete agent;
     }
+}
+
+int MetaAgent::objective_function(const Solution& sol) {
+    int val = 0;
+
+    for (const auto& node : sol.POIs){
+        auto node_it = geo_box.data.nodes.find(node);
+        if(node_it != geo_box.data.nodes.end()){
+            for (const int& group_id : node_it->second.groupes){
+                val += characteristics[group_id];
+            }
+        }
+    }
+
+    return val;
 }
 
 void MetaAgent::collect_all_pois() {
@@ -78,15 +85,11 @@ float MetaAgent::calculate_coverage_rate() {
 }
 
 bool MetaAgent::try_add_agent() {
-    std::cout << "\n--- AGENT #" << (agent_population.size() + 1) << " ---\n";
     
     osmium::object_id_type starting_poi = select_random_unused_poi();
     if (starting_poi == 0) {
-        std::cout << "  Plus de POIs disponibles\n";
         return false;
     }
-    
-    std::cout << "  POI départ: " << starting_poi << "\n";
     
     // Créer agent
     std::vector<osmium::object_id_type> init_poi = {starting_poi};
@@ -106,13 +109,8 @@ bool MetaAgent::try_add_agent() {
     Solution solution = agent->tabu_search(params.max_iterations_per_agent, params.tabu_list_size);
     int fitness = agent->objective_function(solution);
     
-    std::cout << "  Solution trouvée: " << solution.POIs.size() 
-              << " POIs, fitness=" << fitness 
-              << ", distance=" << solution.cost << "m\n";
-    
     // Validation 1 : Au moins 2 POIs
     if (solution.POIs.size() < 2) {
-        std::cout << "  ✗ REJETÉ (solution triviale: " << solution.POIs.size() << " POI)\n";
         delete agent;
         return false;
     }
@@ -127,9 +125,6 @@ bool MetaAgent::try_add_agent() {
             max_similarity = std::max(max_similarity, similarity);
             
             if (similarity > params.admissible_similarity_degree) {
-                std::cout << "  ✗ REJETÉ (similarité: " << (similarity * 100) 
-                          << "% > " << (params.admissible_similarity_degree * 100) 
-                          << "% max)\n";
                 too_similar = true;
                 break;
             }
@@ -140,48 +135,29 @@ bool MetaAgent::try_add_agent() {
             return false;
         }
         
-        std::cout << "  [Similarité max: " << (max_similarity * 100) << "%]\n";
     }
-    
-    // Validation 3 : Intervalle d'acceptation [max(min_pbest, GBest × divergence), +∞[
+
     if (!validated_pbest.empty()) {
-        int gbest_threshold = static_cast<int>(gbest_fitness * params.max_divergence_from_gbest);
-        
-        int min_pbest_fitness = gbest_fitness;
-        for (const auto& pbest : validated_pbest) {
-            auto it = local_visited_solutions.find(pbest);
-            if (it != local_visited_solutions.end()) {
-                int pbest_fit = static_cast<int>(it->second);
-                min_pbest_fitness = std::min(min_pbest_fitness, pbest_fit);
-            }
-        }
-        
-        int min_acceptable_fitness = std::max(min_pbest_fitness, gbest_threshold);
-        
-        if (fitness < min_acceptable_fitness) {
-            std::cout << "  ✗ REJETÉ (fitness insuffisante: " << fitness 
-                      << " < " << min_acceptable_fitness << ")\n";
+        if (fitness < min_fitness) {
             delete agent;
             return false;
         }
-        
-        std::cout << "  [Fitness OK: " << fitness << " >= " << min_acceptable_fitness << "]\n";
     }
-    
-    // ACCEPTÉ
-    std::cout << "  ✓ ACCEPTÉ\n";
     
     agent_population.push_back(agent);
     used_starting_pois.insert(starting_poi);
     validated_pbest.push_back(solution);
     local_visited_solutions[validated_pbest.back()] = static_cast<float>(fitness);
     
-    // Mettre à jour GBest
     if (fitness > gbest_fitness) {
-        gbest_solution = solution;  // ✅ Copie de la solution
+        gbest_solution = solution;
         gbest_fitness = fitness;
-        std::cout << "  ★★★ NOUVEAU GBEST: " << gbest_fitness 
-                  << " (" << gbest_solution.POIs.size() << " POIs)\n";
+        int gbest_threshold = static_cast<int>(gbest_fitness * (1 - params.max_divergence_from_gbest));
+        if (min_fitness == 0) {
+            min_fitness = gbest_threshold;
+        } else {
+            min_fitness = std::min(min_fitness, gbest_threshold);
+        }
     }
     
     return true;
@@ -195,16 +171,6 @@ void MetaAgent::print_statistics() {
 
 Solution MetaAgent::run_meta_search() {
     auto start = std::chrono::high_resolution_clock::now();
-    
-    std::cout << "\n" << std::string(70, '=') << "\n";
-    std::cout << "DÉBUT RECHERCHE META-AGENT\n";
-    std::cout << std::string(70, '=') << "\n";
-    std::cout << "Paramètres:\n";
-    std::cout << "  - Similarité max: " << (params.admissible_similarity_degree * 100) << "%\n";
-    std::cout << "  - Borne inférieure: max(min_pbest, GBest × " 
-              << params.max_divergence_from_gbest << ")\n";
-    std::cout << "  - Couverture cible: " << (params.coverage_rate * 100) << "%\n";
-    std::cout << std::string(70, '=') << "\n";
     
     int consecutive_failures = 0;
     int max_failures = 10;
@@ -221,7 +187,6 @@ Solution MetaAgent::run_meta_search() {
         } else {
             consecutive_failures++;
             if (consecutive_failures >= max_failures) {
-                std::cout << "\n[STOP] " << max_failures << " échecs consécutifs\n";
                 break;
             }
         }
@@ -230,21 +195,13 @@ Solution MetaAgent::run_meta_search() {
     }
     
     auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - start);
-    
-    std::cout << "\n" << std::string(70, '=') << "\n";
-    std::cout << "RÉSULTAT FINAL META-AGENT\n";
-    std::cout << std::string(70, '=') << "\n";
-    std::cout << "Temps total: " << duration.count() << " secondes\n";
-    std::cout << "Agents dans la population: " << agent_population.size() << "\n";
-    std::cout << "GBest Fitness: " << gbest_fitness << "\n";
-    std::cout << "GBest POIs: " << gbest_solution.POIs.size() << "\n";
-    std::cout << "GBest Distance: " << gbest_solution.cost << " m / " 
-              << global_memory.length_constraint << " m\n";
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+    std::cout << "FIN RECHERCHE META-AGENT\n";
+    std::cout << "Temps d'exécution: " << duration.count() << " ms\n";
     
     // Distribution des fitness
     if (!validated_pbest.empty()) {
-        std::cout << "\nDistribution des fitness dans la population:\n";
         std::vector<std::pair<int, size_t>> fitness_with_index;
         
         for (size_t i = 0; i < validated_pbest.size(); i++) {
@@ -265,22 +222,8 @@ Solution MetaAgent::run_meta_search() {
             int fit = fitness_with_index[i].first;
             size_t agent_idx = fitness_with_index[i].second;
             float percent_of_gbest = (static_cast<float>(fit) / gbest_fitness) * 100.0f;
-            
-            std::cout << "  Agent " << (agent_idx + 1) << ": " << fit 
-                      << " (" << std::fixed << std::setprecision(1) 
-                      << percent_of_gbest << "% de GBest)";
-            
-            if (i == 0) std::cout << " ★ GBest";
-            else if (i == fitness_with_index.size() - 1) std::cout << " ▼ Min";
-            std::cout << "\n";
         }
-        
-        std::cout << "\nIntervalle de fitness: [" << min_fitness << ", " << max_fitness << "]\n";
-        std::cout << "Ratio max/min: " << std::fixed << std::setprecision(2) 
-                  << (static_cast<float>(max_fitness) / min_fitness) << "×\n";
     }
     
-    std::cout << std::string(70, '=') << "\n\n";
-    
-    return gbest_solution;  // ✅ Retourner la copie de la solution
+    return gbest_solution;
 }

@@ -105,12 +105,8 @@ struct GlobalMemory {
     ){
         auto it = visited_Neighborhoods.find(n);
         if(it != visited_Neighborhoods.end()){
-            std::cout << "  [Memory] " << it->second.size() 
-                      << " voisins en cache pour POI " << n << "\n";
             return it->second;
         }
-        
-        std::cout << "  [Memory] Première recherche pour POI " << n << "\n";
         
         std::vector<Path> sol = PfSystem.Neighbor_Search(n, search_coefficient, visited_pois);
         std::vector<osmium::object_id_type> neighbors = {};
@@ -126,7 +122,6 @@ struct GlobalMemory {
         }
         
         visited_Neighborhoods[n] = neighbors;
-        std::cout << "  [Memory] " << neighbors.size() << " voisins découverts\n";
         return neighbors;
     }
 
@@ -134,7 +129,6 @@ struct GlobalMemory {
         osmium::object_id_type n,
         const std::unordered_set<osmium::object_id_type>& visited_pois
     ){
-        std::cout << "  [Memory::continue] Relance recherche pour POI " << n << "\n";
         
         std::vector<Path> extended_paths = PfSystem.Neighbor_Search(n, search_coefficient, visited_pois);
         
@@ -151,8 +145,6 @@ struct GlobalMemory {
         
         visited_Neighborhoods[n] = neighbors;
         
-        std::cout << "  [Memory::continue] " << neighbors.size() 
-                  << " voisins maintenant disponibles\n";
         return neighbors;
     }
     
