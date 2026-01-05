@@ -764,6 +764,184 @@ void test_single_agent(const std::string& cache_dir) {
     std::cout << std::string(80, '=') << "\n\n";
 }
 
+void test_pso_mttds(const std::string& cache_dir) {
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "TEST PSO MTTDS - 4 AGENTS\n";
+    std::cout << std::string(80, '=') << "\n\n";
+    
+    // ========================================
+    // CONFIGURATION
+    // ========================================
+    const std::string input_cache_name = "asakusa_test_agent_raw";
+    const std::string input_cache_path = cache_dir + "/" + input_cache_name + ".json";
+    
+    // ========================================
+    // 1. CHARGEMENT GEOBOX
+    // ========================================
+    std::cout << "Chargement de la GeoBox..." << std::endl;
+    GeoBox geo_box = GeoBoxManager::load_geobox(input_cache_path);
+    
+    if (!geo_box.is_valid) {
+        std::cerr << "✗ ERREUR: Impossible de charger la GeoBox\n";
+        std::cerr << "  Fichier: " << input_cache_path << "\n";
+        return;
+    }
+    
+    std::cout << "✓ GeoBox chargée avec succès\n";
+    std::cout << "  Nodes: " << geo_box.data.nodes.size() << "\n";
+    std::cout << "  Ways: " << geo_box.data.ways.size() << "\n\n";
+    
+    // ========================================
+    // 2. INITIALISATION SYSTÈMES
+    // ========================================
+    Pathfinder pathfinder(geo_box);
+    
+    // ========================================
+    // 3. CONFIGURATION DES 4 AGENTS
+    // ========================================
+    double distance_constraint = 1000.0; // 1000m
+    
+    // Configuration PSO
+    MTTDSPSOParams pso_params;
+    pso_params.num_particles = 30;
+    pso_params.max_iterations = 100;
+    pso_params.w = 0.7;
+    pso_params.c1 = 1.5;
+    pso_params.c2 = 1.5;
+    pso_params.mutation_rate = 0.15;
+    pso_params.use_local_search = true;
+    
+    // Caractéristiques des agents
+    std::vector<int> chars_base(100, 0);
+    
+    struct AgentConfig {
+        std::string name;
+        std::vector<int> characteristics;
+    };
+    
+    std::vector<AgentConfig> agents;
+    
+    // Agent 1: Temples uniquement
+    AgentConfig agent1;
+    agent1.name = "Agent_Temples";
+    agent1.characteristics = chars_base;
+    agent1.characteristics[1] = 100;  // Temples
+    agents.push_back(agent1);
+    
+    // Agent 2: Restaurants uniquement
+    AgentConfig agent2;
+    agent2.name = "Agent_Restaurants";
+    agent2.characteristics = chars_base;
+    agent2.characteristics[2] = 100;  // Restaurants
+    agents.push_back(agent2);
+    
+    // Agent 3: Shops uniquement
+    AgentConfig agent3;
+    agent3.name = "Agent_Shops";
+    agent3.characteristics = chars_base;
+    agent3.characteristics[3] = 100;  // Shops
+    agents.push_back(agent3);
+    
+    // Agent 4: Tous les types
+    AgentConfig agent4;
+    agent4.name = "Agent_All";
+    agent4.characteristics = chars_base;
+    agent4.characteristics[1] = 100;  // Temples
+    agent4.characteristics[2] = 100;  // Restaurants
+    agent4.characteristics[3] = 100;  // Shops
+    agents.push_back(agent4);
+    
+    // ========================================
+    // 4. RÉSOLUTION AVEC PSO POUR CHAQUE AGENT
+    // ========================================
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "RÉSOLUTION PSO - 4 AGENTS\n";
+    std::cout << std::string(80, '=') << "\n\n";
+    
+    std::vector<MTTDSPSOResult> results;
+    
+    for (size_t i = 0; i < agents.size(); ++i) {
+        const auto& agent = agents[i];
+        
+        std::cout << "\n" << std::string(80, '-') << "\n";
+        std::cout << "AGENT #" << (i + 1) << " : " << agent.name << "\n";
+        std::cout << std::string(80, '-') << "\n\n";
+        
+        // Créer le solver PSO
+        MTTDS_PSOSolver pso_solver(geo_box, pathfinder);
+        
+        // Résoudre
+        MTTDSPSOResult result = pso_solver.solve(
+            agent.characteristics,
+            distance_constraint,
+            pso_params
+        );
+        
+        results.push_back(result);
+        
+        std::cout << "\n✓ " << agent.name << " TERMINÉ\n";
+        std::cout << "  Fitness GBest: " << static_cast<int>(result.fitness) << "\n";
+        std::cout << "  POIs: " << result.num_pois << "\n";
+        std::cout << "  Distance: " << static_cast<int>(result.distance) << "m / " 
+                  << static_cast<int>(distance_constraint) << "m ("
+                  << std::fixed << std::setprecision(1)
+                  << (result.distance / distance_constraint * 100.0) << "%)\n";
+        std::cout << "  Temps: " << result.execution_time_ms << " ms\n";
+        std::cout << "  Valide: " << (result.is_valid ? "✓" : "✗") << "\n\n";
+    }
+    
+    // ========================================
+    // 5. RÉSUMÉ GLOBAL
+    // ========================================
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "RÉSUMÉ GLOBAL PSO\n";
+    std::cout << std::string(80, '=') << "\n\n";
+    
+    std::cout << std::left << std::setw(20) << "Agent" 
+              << std::right << std::setw(15) << "Fitness GBest"
+              << std::setw(10) << "POIs"
+              << std::setw(15) << "Distance (m)"
+              << std::setw(15) << "Temps (ms)"
+              << std::setw(10) << "Valide"
+              << "\n";
+    std::cout << std::string(80, '-') << "\n";
+    
+    long long total_time = 0;
+    int best_fitness = 0;
+    std::string best_agent_name;
+    
+    for (size_t i = 0; i < agents.size(); ++i) {
+        const auto& result = results[i];
+        const auto& agent = agents[i];
+        
+        std::cout << std::left << std::setw(20) << agent.name
+                  << std::right << std::setw(15) << static_cast<int>(result.fitness)
+                  << std::setw(10) << result.num_pois
+                  << std::setw(15) << static_cast<int>(result.distance)
+                  << std::setw(15) << result.execution_time_ms
+                  << std::setw(10) << (result.is_valid ? "✓" : "✗")
+                  << "\n";
+        
+        total_time += result.execution_time_ms;
+        
+        if (static_cast<int>(result.fitness) > best_fitness) {
+            best_fitness = static_cast<int>(result.fitness);
+            best_agent_name = agent.name;
+        }
+    }
+    
+    std::cout << std::string(80, '-') << "\n";
+    std::cout << "\nTemps total: " << total_time << " ms (" 
+              << std::fixed << std::setprecision(2) 
+              << (total_time / 1000.0) << " s)\n";
+    std::cout << "Meilleur agent: " << best_agent_name 
+              << " (fitness=" << best_fitness << ")\n";
+    
+    std::cout << "\n" << std::string(80, '=') << "\n";
+    std::cout << "TEST PSO TERMINÉ\n";
+    std::cout << std::string(80, '=') << "\n\n";
+}
+
 int main() {
     
     const std::string osm_file = "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\src\\maps\\kanto-latest.osm.pbf";
@@ -828,6 +1006,7 @@ int main() {
     std::cout << "T/t - Test Agent unique (Tabu Search)" << std::endl;
     std::cout << "M/m - Test Meta-Agent" << std::endl;
     std::cout << "G/g - Test Global" << std::endl;
+    std::cout << "B/b - Test PSO" << std::endl;
     std::cout << "E/e - New Geobox and cache" << std::endl;
     std::cout << "I/i - Initialize POI" << std::endl;
     std::cout << "P/p - System Creation and Pathfinding" << std::endl;
@@ -855,7 +1034,10 @@ int main() {
     } else if (rep == "G" || rep == "g") {
         test_global_solution_constructor(cache_dir);
         return 0;
-    }else if (rep == "E" || rep == "e"){
+    } else if (rep == "B" || rep == "b") {
+        test_pso_mttds(cache_dir);
+        return 0;
+    } else if (rep == "E" || rep == "e"){
 
         complete_workflow(
             osm_file,
@@ -1220,7 +1402,6 @@ int main() {
         std::cout << "1. ACO (Ant Colony Optimization)" << std::endl;
         std::cout << "2. GRASP (Greedy Randomized Adaptive Search)" << std::endl;
         std::cout << "3. VNS (Variable Neighborhood Search)" << std::endl;
-        std::cout << "4. PSO (Particle Swarm Optimization)" << std::endl;
         std::cout << "Choisissez une méthode (1-4) : ";
         
         int metaheuristic_choice;
@@ -1432,76 +1613,6 @@ int main() {
                         group_info.node_ids, 
                         group_id, 
                         vns_params
-                    );
-
-                    if (group_success) {
-                        std::cout << "Groupe " << group_id << ": SUCCÈS" << std::endl;
-                        processed_groups++;
-                    } else {
-                        std::cout << "Groupe " << group_id << ": ÉCHEC" << std::endl;
-                        overall_success = false;
-                    }
-                }
-                break;
-            }
-            
-            case 4: { // PSO
-                std::cout << "\n=== PATHFINDING PSO POUR TOUS LES GROUPES ===" << std::endl;
-                
-                // Configuration des paramètres PSO
-                PSOParams pso_params;
-                
-                std::cout << "\n=== Configuration PSO ===" << std::endl;
-                std::cout << "Utiliser les paramètres par défaut? (y/n): ";
-                char use_default;
-                std::cin >> use_default;
-                
-                if (use_default != 'y' && use_default != 'Y') {
-                    std::cout << "Nombre de particules [" << pso_params.num_particles << "]: ";
-                    std::string input;
-                    std::cin >> input;
-                    if (!input.empty()) pso_params.num_particles = std::stoi(input);
-                    
-                    std::cout << "Nombre d'itérations [" << pso_params.max_iterations << "]: ";
-                    std::cin >> input;
-                    if (!input.empty()) pso_params.max_iterations = std::stoi(input);
-                    
-                    std::cout << "Inertie (w) [" << pso_params.w << "]: ";
-                    std::cin >> input;
-                    if (!input.empty()) pso_params.w = std::stod(input);
-                    
-                    std::cout << "Coefficient cognitif (c1) [" << pso_params.c1 << "]: ";
-                    std::cin >> input;
-                    if (!input.empty()) pso_params.c1 = std::stod(input);
-                    
-                    std::cout << "Coefficient social (c2) [" << pso_params.c2 << "]: ";
-                    std::cin >> input;
-                    if (!input.empty()) pso_params.c2 = std::stod(input);
-                }
-
-                std::cout << "\nParamètres PSO utilisés:" << std::endl;
-                std::cout << "  Particules: " << pso_params.num_particles << std::endl;
-                std::cout << "  Itérations: " << pso_params.max_iterations << std::endl;
-                std::cout << "  Inertie (w): " << pso_params.w << std::endl;
-                std::cout << "  Cognitif (c1): " << pso_params.c1 << std::endl;
-                std::cout << "  Social (c2): " << pso_params.c2 << std::endl;
-
-                // Exécution PSO
-                PSOSolver pso_solver(geo_box);
-                for (auto& [group_id, group_info] : geo_box.data.objective_groups) {
-                    if (group_info.node_ids.size() < 2) {
-                        std::cout << "Groupe " << group_id << " ignoré (moins de 2 POI)" << std::endl;
-                        continue;
-                    }
-
-                    std::cout << "\n--- TRAITEMENT PSO GROUPE " << group_id << " ---" << std::endl;
-                    std::cout << "Nom: " << group_info.name << std::endl;
-                    std::cout << "POI: " << group_info.node_ids.size() << std::endl;
-
-                    bool group_success = pso_solver.solve_single_group(
-                        group_info.node_ids, 
-                        group_id, 
-                        pso_params
                     );
 
                     if (group_success) {

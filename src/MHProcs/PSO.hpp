@@ -8,160 +8,131 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <random>
+#include <chrono>
 
-// Structure pour représenter une particule (solution)
-struct Particle {
-    std::vector<osmium::object_id_type> position;    // Tour actuel
-    std::vector<osmium::object_id_type> velocity;    // "Vitesse" (changements à appliquer)
+// Structure pour représenter une particule (solution MTTDS)
+struct MTTDSParticle {
+    std::vector<osmium::object_id_type> position;      // POIs visités
     std::vector<osmium::object_id_type> best_position; // Meilleure position personnelle
-    double fitness;                                   // Distance du tour actuel
-    double best_fitness;                             // Meilleure distance personnelle
+    double fitness;                                     // Récompense actuelle
+    double best_fitness;                               // Meilleure récompense personnelle
+    double distance;                                    // Distance actuelle
     
-    Particle() : fitness(std::numeric_limits<double>::max()), 
-                 best_fitness(std::numeric_limits<double>::max()) {}
-    
-    void reset() {
-        position.clear();
-        velocity.clear();
-        best_position.clear();
-        fitness = std::numeric_limits<double>::max();
-        best_fitness = std::numeric_limits<double>::max();
-    }
+    MTTDSParticle() : fitness(0.0), best_fitness(0.0), distance(0.0) {}
 };
 
-// Structure pour stocker une solution PSO
-struct PSOSolution {
-    std::vector<osmium::object_id_type> tour;
-    double total_distance;
+// Paramètres de configuration PSO pour MTTDS
+struct MTTDSPSOParams {
+    int num_particles = 30;        // Nombre de particules dans l'essaim
+    int max_iterations = 100;      // Nombre maximum d'itérations
+    double w = 0.7;               // Coefficient d'inertie
+    double c1 = 1.5;              // Coefficient cognitif
+    double c2 = 1.5;              // Coefficient social
+    double mutation_rate = 0.15;  // Taux de mutation
+    bool use_local_search = true; // Utiliser recherche locale
+    
+    MTTDSPSOParams() = default;
+};
+
+// Résultat d'une résolution PSO MTTDS
+struct MTTDSPSOResult {
+    std::vector<osmium::object_id_type> solution;
+    double fitness;
+    double distance;
+    int num_pois;
+    long long execution_time_ms;
     bool is_valid;
     
-    PSOSolution() : total_distance(0.0), is_valid(false) {}
-    
-    void reset() {
-        tour.clear();
-        total_distance = 0.0;
-        is_valid = false;
-    }
+    MTTDSPSOResult() : fitness(0.0), distance(0.0), num_pois(0), 
+                       execution_time_ms(0), is_valid(false) {}
 };
 
-// Paramètres de configuration PSO
-struct PSOParams {
-    int num_particles = 30;        // Nombre de particules dans l'essaim
-    int max_iterations = 150;      // Nombre maximum d'itérations
-    double w = 0.7;               // Coefficient d'inertie
-    double c1 = 1.5;              // Coefficient cognitif (attraction vers meilleur personnel)
-    double c2 = 1.5;              // Coefficient social (attraction vers meilleur global)
-    double mutation_rate = 0.1;   // Taux de mutation pour diversification
-    bool use_local_search = true; // Utiliser une recherche locale
-    
-    PSOParams() = default;
-};
-
-// Classe dédiée aux algorithmes PSO
-class PSOSolver {
+// Classe PSO adaptée pour MTTDS
+class MTTDS_PSOSolver {
 private:
     GeoBox& geo_box;
+    Pathfinder& pathfinder;
     std::mt19937 rng;
     
-    // Cache des distances
+    // Cache des distances et chemins
     std::unordered_map<std::pair<osmium::object_id_type, osmium::object_id_type>, double, PairHash> distance_cache;
+    std::unordered_map<std::pair<osmium::object_id_type, osmium::object_id_type>, std::vector<osmium::object_id_type>, PairHash> path_cache;
     
     // Essaim de particules
-    std::vector<Particle> swarm;
+    std::vector<MTTDSParticle> swarm;
     std::vector<osmium::object_id_type> global_best_position;
     double global_best_fitness;
+    double global_best_distance;
+    
+    // Contraintes et paramètres du problème
+    double max_distance_constraint;
+    std::vector<int> characteristics;
+    std::vector<osmium::object_id_type> all_pois;
 
 public:
-    explicit PSOSolver(GeoBox& box);
+    MTTDS_PSOSolver(GeoBox& box, Pathfinder& pf);
     
-    // Méthode principale PSO pour un groupe
-    bool solve_single_group(
-        const std::vector<osmium::object_id_type>& objective_nodes,
-        int group_id,
-        const PSOParams& params = PSOParams{}
+    // Méthode principale de résolution
+    MTTDSPSOResult solve(
+        const std::vector<int>& agent_characteristics,
+        double distance_constraint,
+        const MTTDSPSOParams& params = MTTDSPSOParams{}
     );
 
 private:
-    // Initialisation de l'essaim
-    void initialize_swarm(
-        const std::vector<osmium::object_id_type>& nodes,
-        const PSOParams& params
-    );
+    // Initialisation
+    void collect_rewardable_pois(const std::vector<int>& chars);
+    void build_distance_cache();
+    void initialize_swarm(const MTTDSPSOParams& params);
     
-    // Génération de positions initiales
-    std::vector<osmium::object_id_type> generate_random_tour(
-        const std::vector<osmium::object_id_type>& nodes
-    );
-    
-    std::vector<osmium::object_id_type> nearest_neighbor_tour(
-        const std::vector<osmium::object_id_type>& nodes,
-        osmium::object_id_type start_node
-    );
+    // Génération de solutions initiales
+    std::vector<osmium::object_id_type> generate_random_solution();
+    std::vector<osmium::object_id_type> generate_greedy_solution();
+    std::vector<osmium::object_id_type> generate_greedy_solution_from(osmium::object_id_type start);
     
     // Mise à jour des particules
-    void update_particle_velocity(
-        Particle& particle,
-        const PSOParams& params
+    void update_particle(MTTDSParticle& particle, const MTTDSPSOParams& params);
+    std::vector<osmium::object_id_type> apply_moves(
+        const std::vector<osmium::object_id_type>& position,
+        double cognitive_weight,
+        double social_weight
     );
     
-    void update_particle_position(
-        Particle& particle,
-        const std::vector<osmium::object_id_type>& nodes
+    // Opérateurs de voisinage
+    std::vector<osmium::object_id_type> add_poi_operator(
+        const std::vector<osmium::object_id_type>& solution
+    );
+    std::vector<osmium::object_id_type> remove_poi_operator(
+        const std::vector<osmium::object_id_type>& solution
+    );
+    std::vector<osmium::object_id_type> swap_poi_operator(
+        const std::vector<osmium::object_id_type>& solution
     );
     
-    // Opérateurs pour TSP adapté à PSO
-    std::vector<osmium::object_id_type> apply_swap_sequence(
-        const std::vector<osmium::object_id_type>& tour,
-        const std::vector<osmium::object_id_type>& swaps
+    // Recherche locale
+    std::vector<osmium::object_id_type> local_search(
+        const std::vector<osmium::object_id_type>& solution
     );
     
-    std::vector<osmium::object_id_type> compute_swap_sequence(
-        const std::vector<osmium::object_id_type>& from_tour,
-        const std::vector<osmium::object_id_type>& to_tour
-    );
-    
-    std::vector<osmium::object_id_type> combine_swap_sequences(
-        const std::vector<osmium::object_id_type>& seq1,
-        const std::vector<osmium::object_id_type>& seq2,
-        double weight1,
-        double weight2
-    );
-    
-    // Amélioration locale
-    std::vector<osmium::object_id_type> local_search_2opt(
-        const std::vector<osmium::object_id_type>& tour
-    );
-    
-    // Mutation pour diversification
-    std::vector<osmium::object_id_type> mutate_tour(
-        const std::vector<osmium::object_id_type>& tour,
+    // Mutation
+    std::vector<osmium::object_id_type> mutate_solution(
+        const std::vector<osmium::object_id_type>& solution,
         double mutation_rate
     );
     
-    // Évaluation des solutions
-    double evaluate_fitness(const std::vector<osmium::object_id_type>& tour);
+    // Évaluation
+    double calculate_fitness(const std::vector<osmium::object_id_type>& solution);
+    double calculate_distance(const std::vector<osmium::object_id_type>& solution);
+    bool is_feasible(const std::vector<osmium::object_id_type>& solution);
     
-    // Méthodes utilitaires
-    void build_distance_cache(const std::vector<osmium::object_id_type>& nodes);
+    // Utilitaires
     double get_distance(osmium::object_id_type node1, osmium::object_id_type node2);
-    double calculate_tour_distance(const std::vector<osmium::object_id_type>& tour);
+    std::vector<osmium::object_id_type> get_path(osmium::object_id_type node1, osmium::object_id_type node2);
+    int get_poi_reward(osmium::object_id_type poi_id);
     
-    std::vector<osmium::object_id_type> find_shortest_path(
-        osmium::object_id_type start, 
-        osmium::object_id_type end
-    );
-    
-    void apply_tour_to_ways(
-        const std::vector<osmium::object_id_type>& tour,
-        int group_id
-    );
-    
-    void update_way_group(osmium::object_id_type way_id, int new_group);
-    
-    // Validation
-    bool is_valid_tour(
-        const std::vector<osmium::object_id_type>& tour,
-        const std::vector<osmium::object_id_type>& original_nodes
+    // Réparation de solutions infaisables
+    std::vector<osmium::object_id_type> repair_solution(
+        const std::vector<osmium::object_id_type>& solution
     );
 };
 
