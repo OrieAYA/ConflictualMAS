@@ -159,7 +159,7 @@ void test_global_solution_constructor(const std::string& cache_dir) {
         std::cout << "Solution #" << solution_number << " (" << meta_result.name << "):\n";
         std::cout << "  POIs: " << solution.POIs.size() << "\n";
         std::cout << "  Distance: " << solution.cost << " m\n";
-        std::cout << "  Fitness: " << meta_result.act_meta_agent->objective_function(solution) << " m\n";
+        std::cout << "  Fitness: " << meta_result.act_meta_agent->objective_function(solution) << "\n";
         
         // Calculer fitness de cette solution
         int solution_fitness = 0;

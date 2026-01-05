@@ -2,6 +2,7 @@
 #include <iostream>
 #include <chrono>
 #include <iomanip>
+#include <cmath>
 
 GlobalSolutionConstructor::GlobalSolutionConstructor(
     GeoBox& box,
@@ -50,23 +51,16 @@ GlobalSolution GlobalSolutionConstructor::tabu_search(int max_iterations, int ta
     std::vector<GlobalSolution> tabu_list;
 
     for (int iter = 0; iter < max_iterations; iter++) {
-        std::vector<GlobalSolution> neighbors
-            = get_neighbors(current_solution);
+        std::vector<GlobalSolution> neighbors = get_neighbors(current_solution);
         GlobalSolution best_neighbor;
-        int best_neighbor_fitness
-            = std::numeric_limits<int>::max();
+        float best_neighbor_fitness = std::numeric_limits<float>::max();
 
         for (const GlobalSolution& neighbor : neighbors) {
-            if (std::find(tabu_list.begin(),
-                          tabu_list.end(), neighbor)
-                == tabu_list.end()) {
-                int neighbor_fitness
-                    = objective_function(neighbor);
-                if (neighbor_fitness
-                    < best_neighbor_fitness) {
+            if (std::find(tabu_list.begin(), tabu_list.end(), neighbor) == tabu_list.end()) {
+                float neighbor_fitness = objective_function(neighbor);
+                if (neighbor_fitness < best_neighbor_fitness) {
                     best_neighbor = neighbor;
-                    best_neighbor_fitness
-                        = neighbor_fitness;
+                    best_neighbor_fitness = neighbor_fitness;
                 }
             }
         }
@@ -77,12 +71,15 @@ GlobalSolution GlobalSolutionConstructor::tabu_search(int max_iterations, int ta
 
         current_solution = best_neighbor;
         tabu_list.push_back(best_neighbor);
-        if (tabu_list.size() > tabu_list_size) {
+
+        if (static_cast<int>(tabu_list.size()) > tabu_list_size) {
             tabu_list.erase(tabu_list.begin());
         }
 
-        if (objective_function(best_neighbor)
-            < objective_function(best_solution)) {
+        float current_reward = objective_function(current_solution);
+        float best_reward = objective_function(best_solution);
+
+        if (current_reward < best_reward) {
             best_solution = best_neighbor;
         }
     }

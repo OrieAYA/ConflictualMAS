@@ -149,32 +149,31 @@ struct GlobalMemory {
     }
     
     float calculate_similarity(const Solution& sol1, const Solution& sol2){
-        if (sol1.POIs.size() < 2 || sol2.POIs.size() < 2) {
+        if (sol1.paths.empty() || sol2.paths.empty()) {
             return 0.0f;
         }
-        
-        std::set<std::pair<osmium::object_id_type, osmium::object_id_type>> edges1, edges2;
-        
-        for (size_t i = 1; i < sol1.POIs.size(); i++) {
-            auto edge = std::minmax(sol1.POIs[i-1], sol1.POIs[i]);
-            edges1.insert(edge);
+
+        std::set<osmium::object_id_type> ways_sol1;
+        for (const auto& path : sol1.paths) {
+            for (const auto& way_id : path.path_edges) {
+                ways_sol1.insert(way_id);
+            }
         }
+
+        int common_ways = 0;
+        int total_ways_sol2 = 0;
         
-        for (size_t i = 1; i < sol2.POIs.size(); i++) {
-            auto edge = std::minmax(sol2.POIs[i-1], sol2.POIs[i]);
-            edges2.insert(edge);
-        }
-        
-        int common_edges = 0;
-        for (const auto& edge : edges1) {
-            if (edges2.count(edge)) {
-                common_edges++;
+        for (const auto& path : sol2.paths) {
+            for (const auto& way_id : path.path_edges) {
+                total_ways_sol2++;
+                if (ways_sol1.count(way_id)) {
+                    common_ways++;
+                }
             }
         }
         
-        float total_edges = (edges1.size() + edges2.size()) / 2.0f;
-        return total_edges > 0 ? static_cast<float>(common_edges) / total_edges : 0.0f;
-    }
+        return total_ways_sol2 > 0 ? static_cast<float>(common_ways) / static_cast<float>(total_ways_sol2) : 0.0f;
+}
 };
 
 class Memory {
