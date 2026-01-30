@@ -14,10 +14,9 @@ GlobalSolutionConstructor::GlobalSolutionConstructor(
 
 float GlobalSolutionConstructor::objective_function(const GlobalSolution& solution) {
     float reward = 0.0f;
-    std::map<MetaAgentResult, Solution> actual_solution = solution.solution_to_meta_agent;
     
-    for (const auto& [meta_agent_1, local_solution_1] : actual_solution) {
-        for (const auto& [meta_agent_2, local_solution_2] : actual_solution) {
+    for (const auto& [meta_agent_1, local_solution_1] : solution.solution_to_meta_agent) {
+        for (const auto& [meta_agent_2, local_solution_2] : solution.solution_to_meta_agent) {
             if (meta_agent_1 != meta_agent_2) {
                 float similarity = global_memory.calculate_similarity(local_solution_1, local_solution_2);
                 reward = reward + similarity;
@@ -30,10 +29,9 @@ float GlobalSolutionConstructor::objective_function(const GlobalSolution& soluti
 
 std::vector<GlobalSolution> GlobalSolutionConstructor::get_neighbors(const GlobalSolution& solution) {
     std::vector<GlobalSolution> neighbors;
-    std::map<MetaAgentResult, Solution> solution_map = solution.solution_to_meta_agent;
     
-    for (const auto& [meta_agent, local_solution] : solution_map) {
-        for (const auto& best_solutions : meta_agent.validated_pbest) {
+    for (const auto& [meta_agent, local_solution] : solution.solution_to_meta_agent) {
+        for (const auto& best_solutions : meta_agent->validated_pbest) {
             if(best_solutions != solution.solution_to_meta_agent.at(meta_agent)){
                 GlobalSolution neighbor = solution;
                 neighbor.solution_to_meta_agent[meta_agent] = best_solutions;
@@ -51,7 +49,9 @@ GlobalSolution GlobalSolutionConstructor::tabu_search(int max_iterations, int ta
     std::vector<GlobalSolution> tabu_list;
 
     for (int iter = 0; iter < max_iterations; iter++) {
+        std::cout << "On est ok ici 1." << iter << std::endl;
         std::vector<GlobalSolution> neighbors = get_neighbors(current_solution);
+        std::cout << "On est ok ici 2." << iter << std::endl;
         GlobalSolution best_neighbor;
         float best_neighbor_fitness = std::numeric_limits<float>::max();
 
@@ -65,6 +65,8 @@ GlobalSolution GlobalSolutionConstructor::tabu_search(int max_iterations, int ta
             }
         }
 
+        std::cout << "On est ok ici 3." << iter << std::endl;
+
         if (best_neighbor.empty()) {
             break;
         }
@@ -72,17 +74,25 @@ GlobalSolution GlobalSolutionConstructor::tabu_search(int max_iterations, int ta
         current_solution = best_neighbor;
         tabu_list.push_back(best_neighbor);
 
+        std::cout << "On est ok ici 4." << iter << std::endl;
+
         if (static_cast<int>(tabu_list.size()) > tabu_list_size) {
             tabu_list.erase(tabu_list.begin());
         }
 
+        std::cout << "On est ok ici 5." << iter << std::endl;
+
         float current_reward = objective_function(current_solution);
         float best_reward = objective_function(best_solution);
+
+        std::cout << "On est ok ici 6." << iter << std::endl;
 
         if (current_reward < best_reward) {
             best_solution = best_neighbor;
         }
     }
+
+    std::cout << "On est ok ici final search" << std::endl;
 
     return best_solution;
 }
@@ -92,7 +102,8 @@ void GlobalSolutionConstructor::add_meta_agent_config(const MetaAgentConfig& con
 }
 
 void GlobalSolutionConstructor::run_all_meta_agents() {
-    results.clear();
+    MetaAgents.clear();
+    meta_agent_configurations.clear();
     
     std::cout << "\n" << std::string(80, '=') << "\n";
     std::cout << "LANCEMENT DE " << meta_agent_configs.size() << " META-AGENT(S)\n";
@@ -123,37 +134,16 @@ void GlobalSolutionConstructor::run_all_meta_agents() {
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - start);
         
-        int gbest_fitness = 0;
-        for (const auto& poi_id : gbest.POIs) {
-            auto node_it = geo_box.data.nodes.find(poi_id);
-            if (node_it != geo_box.data.nodes.end()) {
-                for (const int group_id : node_it->second.groupes) {
-                    if (group_id >= 0 && group_id < static_cast<int>(config.characteristics.size())) {
-                        gbest_fitness += config.characteristics[group_id];
-                    }
-                }
-            }
-        }
-        
-        MetaAgentResult result;
-        result.name = config.name;
-        result.act_meta_agent = meta_agent;
-        result.gbest = gbest;
-        result.validated_pbest = meta_agent->get_validated_pbest();
-        result.gbest_fitness = gbest_fitness;
-        result.agent_count = static_cast<int>(meta_agent->get_agent_count());
-        result.coverage_rate = meta_agent->get_coverage_rate();
-        
-        results.push_back(result);
+        MetaAgents.push_back(meta_agent);
+        meta_agent_configurations[meta_agent] = config;
         
         std::cout << "\n✓ META-AGENT #" << (i + 1) << " TERMINÉ\n";
         std::cout << "  Temps: " << duration.count() << " secondes\n";
-        std::cout << "  GBest Fitness: " << gbest_fitness << "\n";
+        std::cout << "  GBest Fitness: " << meta_agent->local_visited_solutions[gbest] << "\n";
         std::cout << "  GBest POIs: " << gbest.POIs.size() << "\n";
         std::cout << "  GBest Distance: " << gbest.cost << " m\n";
-        std::cout << "  Agents créés: " << result.agent_count << "\n";
-        std::cout << "  Solutions validées: " << result.validated_pbest.size() << "\n";
-        std::cout << "  Couverture: " << (result.coverage_rate * 100) << "%\n\n";
+        std::cout << "  Agents créés: " << static_cast<int>(meta_agent->get_agent_count()) << "\n";
+        std::cout << "  Solutions validées: " << meta_agent->get_validated_pbest().size() << "\n";
     }
     
     auto global_end = std::chrono::high_resolution_clock::now();
@@ -163,11 +153,11 @@ void GlobalSolutionConstructor::run_all_meta_agents() {
     std::cout << "TOUS LES META-AGENTS TERMINÉS\n";
     std::cout << std::string(80, '=') << "\n";
     std::cout << "Temps total: " << total_duration.count() << " secondes\n";
-    std::cout << "Meta-Agents exécutés: " << results.size() << "\n";
+    std::cout << "Meta-Agents exécutés: " << MetaAgents.size() << "\n";
     
     int total_validated = 0;
-    for (const auto& result : results) {
-        total_validated += static_cast<int>(result.validated_pbest.size());
+    for (const auto& meta_agent : MetaAgents) {
+        total_validated += static_cast<int>(meta_agent->validated_pbest.size());
     }
     std::cout << "Solutions validées totales: " << total_validated << "\n";
     
@@ -175,7 +165,7 @@ void GlobalSolutionConstructor::run_all_meta_agents() {
 }
 
 GlobalSolution GlobalSolutionConstructor::initialize_global_solution() {
-    if (results.empty()) {
+    if (MetaAgents.empty()) {
         std::cerr << "ERREUR: Aucun résultat de MetaAgent disponible!\n";
         std::cerr << "Appelez run_all_meta_agents() avant initialize_global_solution()\n";
         return GlobalSolution();
@@ -183,11 +173,11 @@ GlobalSolution GlobalSolutionConstructor::initialize_global_solution() {
     
     initial_solution.solution_to_meta_agent.clear();
     
-    for (const auto& result : results) {
-        initial_solution.solution_to_meta_agent[result] = result.gbest;
-        std::cout << "  " << result.name << " → GBest (" 
-                  << result.gbest.POIs.size() << " POIs, fitness=" 
-                  << result.gbest_fitness << ")\n";
+    for (const auto& meta_agent : MetaAgents) {
+        initial_solution.solution_to_meta_agent[meta_agent] = meta_agent->gbest_solution;
+        std::cout << "  " << meta_agent_configurations[meta_agent].name << " → GBest (" 
+                  << meta_agent->gbest_solution.POIs.size() << " POIs, fitness=" 
+                  << meta_agent->local_visited_solutions[meta_agent->gbest_solution] << ")\n";
     }
     
     // Calculer reward et cost
@@ -205,57 +195,37 @@ void GlobalSolutionConstructor::print_summary() const {
     std::cout << "RÉSUMÉ GLOBAL\n";
     std::cout << std::string(80, '=') << "\n\n";
     
-    if (results.empty()) {
+    if (MetaAgents.empty()) {
         std::cout << "Aucun résultat disponible.\n";
         return;
     }
     
-    for (size_t i = 0; i < results.size(); i++) {
-        const auto& result = results[i];
+    for (size_t i = 0; i < MetaAgents.size(); i++) {
+        MetaAgent* meta_agent = MetaAgents[i];
+
+        auto config_it = meta_agent_configurations.find(meta_agent);
         
-        std::cout << "Meta-Agent #" << (i + 1) << ": " << result.name << "\n";
+        std::cout << "Meta-Agent #" << (i + 1) << ": " << config_it->second.name << "\n";
         std::cout << std::string(60, '-') << "\n";
-        std::cout << "  GBest Fitness: " << result.gbest_fitness << "\n";
-        std::cout << "  GBest POIs: " << result.gbest.POIs.size() << "\n";
-        std::cout << "  GBest Distance: " << result.gbest.cost << " m / " 
+        std::cout << "  GBest Fitness: " << meta_agent->local_visited_solutions[meta_agent->gbest_solution] << "\n";
+        std::cout << "  GBest POIs: " << meta_agent->gbest_solution.POIs.size() << "\n";
+        std::cout << "  GBest Distance: " << meta_agent->gbest_solution.cost << " m / " 
                   << global_memory.length_constraint << " m ";
         std::cout << "(" << std::fixed << std::setprecision(1)
-                  << (result.gbest.cost / global_memory.length_constraint * 100.0) << "%)\n";
+                  << (meta_agent->gbest_solution.cost / global_memory.length_constraint * 100.0) << "%)\n";
         std::cout << "\n";
     }
     
-    int best_fitness = 0;
+    double best_fitness = 0;
     size_t best_index = 0;
-    for (size_t i = 0; i < results.size(); i++) {
-        if (results[i].gbest_fitness > best_fitness) {
-            best_fitness = results[i].gbest_fitness;
+    for (size_t i = 0; i < MetaAgents.size(); i++) {
+        if (MetaAgents[i]->local_visited_solutions[MetaAgents[i]->gbest_solution] > best_fitness) {
+            best_fitness = MetaAgents[i]->local_visited_solutions[MetaAgents[i]->gbest_solution];
             best_index = i;
         }
     }
     
-    std::cout << "MEILLEUR OVERALL: " << results[best_index].name 
+    std::cout << "MEILLEUR OVERALL: " << meta_agent_configurations.find(MetaAgents[best_index])->second.name 
               << " (fitness=" << best_fitness << ")\n";
     std::cout << std::string(80, '=') << "\n\n";
-}
-
-std::vector<Solution> GlobalSolutionConstructor::get_all_validated_pbest() const {
-    std::vector<Solution> all_pbest;
-    
-    for (const auto& result : results) {
-        all_pbest.insert(all_pbest.end(), 
-                        result.validated_pbest.begin(), 
-                        result.validated_pbest.end());
-    }
-    
-    return all_pbest;
-}
-
-std::vector<Solution> GlobalSolutionConstructor::get_all_gbest() const {
-    std::vector<Solution> all_gbest;
-    
-    for (const auto& result : results) {
-        all_gbest.push_back(result.gbest);
-    }
-    
-    return all_gbest;
 }

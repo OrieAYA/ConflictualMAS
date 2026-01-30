@@ -4,55 +4,68 @@
 #include "../Common/Pathfinding.hpp"
 #include "../GeoBox/Box.hpp"
 #include "../Common/Memory.hpp"
+#include "MetaAgent.hpp"
 #include <vector>
 #include <deque>
 #include <map>
+#include <set>
+
+class MetaAgent;
+
+struct DecomposedSolution {
+    Solution base;
+    osmium::object_id_type forbidden_next;
+};
 
 class Agent {
 private:
     GeoBox& geo_box;
     Pathfinder& PfSystem;
     GlobalMemory& memory;
-    std::vector<int> agent_charact;
     Solution initial_solution;
-    Solution actual_solution;
-    double fitness;
-    double best_fitness;
+    MetaAgent* parent;
+    std::unordered_set<int> characteristics;
+    float max_reward_per_meter;
+    int visited_POIs;
+    std::unordered_map<Solution, std::unordered_set<osmium::object_id_type>> explored_solutions_cache;
 
-    std::map<Solution, float>* meta_local_memory;
-    std::vector<Solution>* validated_pbest;
-    double similarity_threshold;
+    // Méthodes privées VNS Multi-Branch
+    void calculate_max_reward_density();
+    double estimate_upper_bound(const Solution& solution);
+    int get_poi_reward(osmium::object_id_type poi);
     
-    // NOUVEAU : Gestion exploration voisinage
-    int max_neighbors_per_exploration;  // ← AJOUTER
-    std::map<osmium::object_id_type, int> explored_neighbors_count;  // ← AJOUTER
-
-    bool is_better_solution(const Solution& sol1, const Solution& sol2);
-    std::vector<Solution> get_add_neighbors(const Solution& sol);
-    std::vector<Solution> get_backtrack_neighbors(const Solution& sol, int backtrack_depth);
-    std::vector<Solution> get_all_neighbors(const Solution& sol, int max_backtrack);
-    bool is_tabu(const Solution& sol, const std::deque<std::vector<osmium::object_id_type>>& tabu_list);
+    Solution greedy_construction(Solution& start_solution);
+    Solution greedy_extend_from(const Solution& base, osmium::object_id_type forbidden_first);
+    
+    std::vector<DecomposedSolution> decompose_with_forbidden(const Solution& solution);
+    
+    std::vector<Solution> explore_multibranch(
+        const Solution& base_solution,
+        osmium::object_id_type forbidden_first,
+        double threshold
+    );
+    
+    Solution vnd_local_search(const Solution& solution);
 
 public:
+    Solution pbest;
+    double pbest_fitness;
+
+    // Constructeur - SIGNATURE IDENTIQUE
     Agent(
         GeoBox& box, 
         Pathfinder& pf,
         GlobalMemory& mem,
-        std::vector<int> a_char, 
         std::vector<osmium::object_id_type> init_sol,
-        std::map<Solution, float>* meta_memory = nullptr,
-        std::vector<Solution>* pbest_list = nullptr,
-        double sim_threshold = 1.0,
-        int max_neighbors = 10  // ← AJOUTER
+        MetaAgent* meta_agent
     );
 
-    int objective_function(const Solution& sol);
-    Solution tabu_search(int max_iterations, int tabu_list_size);
+    // Méthodes publiques - SIGNATURES IDENTIQUES
+    bool evaluate_upper_bound(const Solution& solution);
+    Solution agent_search(int max_iterations, int tabu_list_size);
     
     const Solution& get_initial_solution() const { return initial_solution; }
-    const Solution& get_actual_solution() const { return actual_solution; }
-    double get_fitness() const { return fitness; }
-    double get_best_fitness() const { return best_fitness; }
+    const Solution& get_pbest() const { return pbest; }
 };
 
 #endif // AGENT_HPP

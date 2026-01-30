@@ -2,6 +2,7 @@
 #define HASHES_HPP
 
 #include "../GeoBox/Box.hpp"
+#include "../Common/Memory.hpp"
 
 struct PairHash {
     size_t operator()(const std::pair<osmium::object_id_type, osmium::object_id_type>& p) const {

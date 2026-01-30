@@ -1,4 +1,5 @@
 #include "Agent.hpp"
+#include "MetaAgent.hpp"
 #include "../GeoBox/Box.hpp"
 #include "../Common/Hashes.hpp"
 #include "../Common/Memory.hpp"
@@ -8,357 +9,497 @@
 #include <vector>
 #include <chrono>
 #include <limits>
-#include <deque>
 #include <random>
 #include <tuple>
 
-// Constructeur
+// Constructeur - INCHANGÉ
 Agent::Agent(
     GeoBox& box, 
     Pathfinder& pf,
     GlobalMemory& mem,
-    std::vector<int> a_char, 
     std::vector<osmium::object_id_type> init_sol,
-    std::map<Solution, float>* meta_memory,
-    std::vector<Solution>* pbest_list,
-    double sim_threshold,
-    int max_neighbors
+    MetaAgent* meta_agent
 ) : geo_box(box), 
     PfSystem(pf),
     memory(mem),
-    agent_charact(a_char), 
-    initial_solution(),
-    actual_solution(),
-    fitness(std::numeric_limits<double>::max()),
-    best_fitness(std::numeric_limits<double>::max()),
-    meta_local_memory(meta_memory),
-    validated_pbest(pbest_list),
-    similarity_threshold(sim_threshold),
-    max_neighbors_per_exploration(max_neighbors)
+    parent(meta_agent)
 {
     std::vector<Path> paths;
-    float cost = 0.0f;
+    initial_solution = Solution(init_sol, paths, 0.0f);
+    pbest = initial_solution;
+    pbest_fitness = 0.0;
+    max_reward_per_meter = 0.0f;
+    visited_POIs = 0;
+    for(auto it = parent->characteristics.begin(); it != parent->characteristics.end(); ++it){
+        characteristics.insert(it->first);
+    }
     
-    initial_solution = Solution(init_sol, paths, cost);
-    actual_solution = initial_solution;
+    calculate_max_reward_density();
 }
 
-int Agent::objective_function(const Solution& sol) {
-    int val = 0;
+void Agent::calculate_max_reward_density() {
+    max_reward_per_meter = 0.0f;
+    
+    for(const auto& group_id : characteristics) {
+        auto char_it = parent->characteristics.find(group_id);
+        if(char_it == parent->characteristics.end()) continue;
+        
+        double reward = char_it->second;
+        float min_distance = 50.0f;
+        
+        float density = static_cast<float>(reward) / min_distance;
+        max_reward_per_meter = std::max(max_reward_per_meter, density);
+    }
+}
 
-    for (const auto& node : sol.POIs){
-        auto node_it = geo_box.data.nodes.find(node);
+bool Agent::evaluate_upper_bound(const Solution& solution){
+    double current_fitness = parent->objective_function(solution);
+    float remaining_distance = memory.length_constraint - solution.cost;
+
+    double max_additional_reward = remaining_distance * max_reward_per_meter;
+
+    if((current_fitness + max_additional_reward) < static_cast<float>(parent->min_fitness)) return false;
+
+    return true;
+}
+
+double Agent::estimate_upper_bound(const Solution& solution){
+    double current_fitness = parent->objective_function(solution);
+    float remaining_distance = memory.length_constraint - solution.cost;
+    double max_additional_reward = remaining_distance * max_reward_per_meter;
+    return current_fitness + max_additional_reward;
+}
+
+int Agent::get_poi_reward(osmium::object_id_type poi){
+    auto node_it = geo_box.data.nodes.find(poi);
+    if(node_it == geo_box.data.nodes.end()) return 0;
+    
+    int total_reward = 0;
+    for(const int& group_id : node_it->second.groupes){
+        auto char_it = parent->characteristics.find(group_id);
+        if(char_it != parent->characteristics.end()){
+            total_reward += static_cast<int>(char_it->second);
+        }
+    }
+    return total_reward;
+}
+
+// ============================================================================
+// GREEDY CONSTRUCTION
+// ============================================================================
+Solution Agent::greedy_construction(Solution& start_solution){
+    if(start_solution.POIs.empty()) return start_solution;
+    
+    Solution current = start_solution;
+    std::unordered_set<osmium::object_id_type> visited_nodes;
+    
+    for(const auto& poi : current.POIs){
+        visited_nodes.insert(poi);
+    }
+
+    double current_fitness = parent->objective_function(current);
+    
+    int max_pois = 50;
+    int consecutive_failures = 0;
+    
+    std::cout << "  [Agent] Starting greedy from POI " << current.POIs[0] << std::endl;
+
+    while(current.cost < memory.length_constraint && current.POIs.size() < max_pois){
+        if(current.POIs.empty()) break;
+        
+        if(consecutive_failures >= 10){
+            std::cout << "  [Agent] Greedy: 10 consecutive failures, stopping" << std::endl;
+            break;
+        }
+        
+        osmium::object_id_type last_poi = current.POIs.back();
+        
+        osmium::object_id_type nearest_neighbor = memory.check_neighborhood(
+            last_poi, 
+            this->characteristics, 
+            visited_nodes
+        );
+        
+        if(nearest_neighbor == 0){
+            consecutive_failures++;
+            break;
+        }
+        
+        consecutive_failures = 0;
+        
+        std::vector<Path> paths = memory.check_path(last_poi, nearest_neighbor);
+        if(paths.empty()){
+            visited_nodes.insert(nearest_neighbor);
+            consecutive_failures++;
+            continue;
+        }
+        
+        Path path_to_neighbor = paths[0];
+        
+        if(current.cost + path_to_neighbor.cost >= memory.length_constraint){
+            visited_nodes.insert(nearest_neighbor);
+            consecutive_failures++;
+            continue;
+        }
+        
+        Solution test_solution = current;
+        test_solution.add_node(nearest_neighbor, path_to_neighbor);
+        
+        if(!evaluate_upper_bound(test_solution)){
+            visited_nodes.insert(nearest_neighbor);
+            consecutive_failures++;
+            continue;
+        }
+        
+        // Calcul incrémental de fitness
+        auto node_it = geo_box.data.nodes.find(nearest_neighbor);
+        double added_fitness = 0.0;
         if(node_it != geo_box.data.nodes.end()){
-            for (const int& group_id : node_it->second.groupes){
-                val += agent_charact[group_id];
-            }
-        }
-    }
-
-    return val;
-}
-
-bool Agent::is_better_solution(const Solution& sol1, const Solution& sol2) {
-    if(sol1.POIs.size() > sol2.POIs.size()) return true;
-    if(sol1.POIs.size() < sol2.POIs.size()) return false;
-    return objective_function(sol1) > objective_function(sol2);
-}
-
-std::vector<Solution> Agent::get_add_neighbors(const Solution& sol) {
-    std::vector<Solution> neighbors;
-    
-    if(sol.POIs.empty()) return neighbors;
-    
-    osmium::object_id_type last_visited = sol.POIs.back();
-    float remaining_distance = memory.length_constraint - sol.cost;
-    
-    std::unordered_set<osmium::object_id_type> visited_pois(sol.POIs.begin(), sol.POIs.end());
-    
-    if (remaining_distance < 10.0f) {
-        return neighbors;
-    }
-    
-    std::vector<osmium::object_id_type> nearby_pois = memory.check_neighborhood(last_visited, visited_pois);
-    
-    if (nearby_pois.empty()) {
-        return neighbors;
-    }
-    
-    int& explored_count = explored_neighbors_count[last_visited];
-    
-    //Param
-    const int MAX_ATTEMPTS = 3;
-    const int MAX_EXPANSION_ATTEMPTS = 1;
-    int attempts = 0;
-    int expansion_attempts = 0;
-    
-    while (neighbors.empty() && attempts < MAX_ATTEMPTS) {
-        int start_index = explored_count;
-        int end_index = std::min(start_index + max_neighbors_per_exploration, 
-                                static_cast<int>(nearby_pois.size()));
-        
-        if (start_index >= static_cast<int>(nearby_pois.size())) {
-            if (expansion_attempts >= MAX_EXPANSION_ATTEMPTS) {
-                break;
-            }
-            
-            if (remaining_distance > 100.0f) {
-                
-                size_t old_size = nearby_pois.size();
-                nearby_pois = memory.continue_neighborhood_search(last_visited, visited_pois);
-                
-                expansion_attempts++;
-                
-                if (nearby_pois.size() <= old_size) {
-                    break;
+            for(const int& group_id : node_it->second.groupes){
+                auto char_it = parent->characteristics.find(group_id);
+                if(char_it != parent->characteristics.end()){
+                    added_fitness += char_it->second;
                 }
-                
-                explored_count = static_cast<int>(old_size);
-                start_index = explored_count;
-                end_index = std::min(start_index + max_neighbors_per_exploration, 
-                                    static_cast<int>(nearby_pois.size()));
-            } else {
-                break;
             }
         }
         
-        if (start_index >= end_index) {
-            std::cout << "    [ERREUR] Indices invalides (start=" << start_index 
-                      << ", end=" << end_index << ")\n";
-            break;
+        current = test_solution;
+        current_fitness += added_fitness;
+        visited_nodes.insert(nearest_neighbor);
+        
+        if(current.POIs.size() % 5 == 0){
+            std::cout << "  [Agent] Greedy: " << current.POIs.size() << " POIs, cost: " 
+                      << current.cost << "/" << memory.length_constraint << std::endl;
         }
         
-        int valid_count = 0;
-        int rejected_similarity = 0;
-        int rejected_visited = 0;
-        int rejected_distance = 0;
+        visited_POIs++;
+        if(path_to_neighbor.cost > 0){
+            float reward_density = static_cast<float>(added_fitness) / path_to_neighbor.cost;
+            max_reward_per_meter = (max_reward_per_meter * (visited_POIs - 1) + reward_density) / visited_POIs;
+        }
+    }
+
+    return current;
+}
+
+// ============================================================================
+// GREEDY EXTEND (avec POI interdit)
+// ============================================================================
+Solution Agent::greedy_extend_from(
+    const Solution& base,
+    osmium::object_id_type forbidden_first
+){
+    Solution current = base;
+    std::unordered_set<osmium::object_id_type> visited(
+        current.POIs.begin(), 
+        current.POIs.end()
+    );
+    
+    bool first_addition = true;
+    int max_additions = 20;
+    int additions = 0;
+    
+    while(current.cost < memory.length_constraint && additions < max_additions){
+        if(current.POIs.empty()) break;
         
-        // Explorer le batch actuel
-        for (int i = start_index; i < end_index; i++) {
-            osmium::object_id_type potential_neighbor = nearby_pois[i];
+        osmium::object_id_type last = current.POIs.back();
+        
+        osmium::object_id_type best_neighbor = 0;
+        double best_ratio = -1.0;
+        Path best_path;
+        
+        // Chercher dans le voisinage
+        osmium::object_id_type candidate = memory.check_neighborhood(last, characteristics, visited);
+        
+        if(candidate == 0) break;
+        
+        // Si premier ajout, interdire forbidden
+        if(first_addition && candidate == forbidden_first){
+            visited.insert(candidate);
+            continue;
+        }
+        
+        std::vector<Path> paths = memory.check_path(last, candidate);
+        if(paths.empty()) break;
+        
+        Path to_candidate = paths[0];
+        
+        if(current.cost + to_candidate.cost >= memory.length_constraint){
+            visited.insert(candidate);
+            continue;
+        }
+        
+        int reward = get_poi_reward(candidate);
+        if(reward <= 0){
+            visited.insert(candidate);
+            continue;
+        }
+        
+        current.add_node(candidate, to_candidate);
+        visited.insert(candidate);
+        first_addition = false;
+        additions++;
+    }
+    
+    return current;
+}
+
+// ============================================================================
+// DÉCOMPOSITION avec POI interdit
+// ============================================================================
+
+std::vector<DecomposedSolution> Agent::decompose_with_forbidden(const Solution& solution){
+    std::vector<DecomposedSolution> decompositions;
+    
+    if(solution.POIs.size() <= 1) return decompositions;
+    
+    Solution current = solution;
+    
+    while(current.POIs.size() > 1){
+        osmium::object_id_type last = current.POIs.back();
+        
+        DecomposedSolution decomp;
+        decomp.base = current;
+        decomp.forbidden_next = last;
+        
+        decompositions.push_back(decomp);
+        
+        current.remove_node();
+    }
+    
+    return decompositions;
+}
+
+// ============================================================================
+// MULTI-BRANCH EXPLORATION
+// ============================================================================
+std::vector<Solution> Agent::explore_multibranch(
+    const Solution& base_solution,
+    osmium::object_id_type forbidden_first,
+    double threshold
+){
+    std::vector<Solution> promising_branches;
+    
+    if(base_solution.POIs.empty()) return promising_branches;
+    
+    osmium::object_id_type last_poi = base_solution.POIs.back();
+    std::unordered_set<osmium::object_id_type> visited(
+        base_solution.POIs.begin(), 
+        base_solution.POIs.end()
+    );
+    
+    int max_branches = 5;
+    int pruned_neighbors = 0;
+    int explored = 0;
+    
+    // Explorer plusieurs voisins
+    for(int branch = 0; branch < max_branches && explored < 3; branch++){
+        
+        osmium::object_id_type neighbor = memory.check_neighborhood(last_poi, characteristics, visited);
+        
+        if(neighbor == 0) break;
+        
+        // Skip le POI interdit
+        if(neighbor == forbidden_first){
+            visited.insert(neighbor);
+            continue;
+        }
+        
+        // PRUNING: Upper bound par voisin
+        std::vector<Path> paths = memory.check_path(last_poi, neighbor);
+        if(paths.empty()){
+            visited.insert(neighbor);
+            continue;
+        }
+        
+        Path to_neighbor = paths[0];
+        
+        if(base_solution.cost + to_neighbor.cost >= memory.length_constraint){
+            visited.insert(neighbor);
+            continue;
+        }
+        
+        Solution temp = base_solution;
+        temp.add_node(neighbor, to_neighbor);
+        
+        double neighbor_upper_bound = estimate_upper_bound(temp);
+        
+        if(neighbor_upper_bound < threshold){
+            pruned_neighbors++;
+            visited.insert(neighbor);
+            continue;
+        }
+        
+        // Greedy rebuild depuis ce voisin
+        Solution rebuilt = greedy_extend_from(temp, forbidden_first);
+        promising_branches.push_back(rebuilt);
+        explored++;
+        
+        visited.insert(neighbor);
+    }
+    
+    std::cout << "    [MULTI-BRANCH] explored=" << explored
+              << " pruned=" << pruned_neighbors << std::endl;
+    
+    return promising_branches;
+}
+
+// ============================================================================
+// VND LOCAL SEARCH (simple swap)
+// ============================================================================
+Solution Agent::vnd_local_search(const Solution& solution){
+    if(solution.POIs.size() < 3) return solution;
+    
+    Solution best = solution;
+    double best_fitness = parent->objective_function(best);
+    
+    bool improved = true;
+    int iterations = 0;
+    
+    while(improved && iterations < 5){
+        improved = false;
+        iterations++;
+        
+        // Essayer des swaps sur les 3 derniers POIs
+        size_t start = std::max(1, static_cast<int>(best.POIs.size()) - 3);
+        
+        for(size_t i = start; i < best.POIs.size() - 1; i++){
+            for(size_t j = i + 1; j < best.POIs.size(); j++){
+                Solution neighbor = best;
+                std::swap(neighbor.POIs[i], neighbor.POIs[j]);
+                
+                Solution rebuilt = memory.check_solution(neighbor.POIs);
+                if(rebuilt.cost >= memory.length_constraint) continue;
+                
+                double fitness = parent->objective_function(rebuilt);
+                
+                if(fitness > best_fitness){
+                    best = rebuilt;
+                    best_fitness = fitness;
+                    improved = true;
+                }
+            }
+        }
+    }
+    
+    return best;
+}
+
+// ============================================================================
+// AGENT SEARCH - VNS avec Multi-Branch et Décomposition
+// ============================================================================
+Solution Agent::agent_search(int max_iterations, int tabu_list_size) {
+    
+    // 1. Construction initiale Greedy
+    Solution current = greedy_construction(initial_solution);
+    double initial_fitness = parent->objective_function(current);
+    
+    std::cout << "  [Agent] Greedy initial: " << current.POIs.size() 
+              << " POIs, fitness: " << initial_fitness << std::endl;
+    
+    // Early stopping
+    double meta_threshold = parent->min_fitness;
+    if(initial_fitness < meta_threshold * 0.5){
+        std::cout << "  [Agent] Initial solution too weak, DISCARD" << std::endl;
+        this->pbest = current;
+        this->pbest_fitness = initial_fitness;
+        return current;
+    }
+    
+    // 2. VNS avec Multi-Branch
+    Solution best = current;
+    double best_fitness = initial_fitness;
+    
+    int k = 1;
+    const int k_max = std::min(5, static_cast<int>(current.POIs.size()) / 2);
+    int iter = 0;
+    
+    this->pbest = best;
+    this->pbest_fitness = best_fitness;
+    
+    while(iter < max_iterations && k <= k_max){
+        
+        // A. SHAKE: Retirer k POIs
+        Solution shaken = best;
+        for(int i = 0; i < k && shaken.POIs.size() > 1; i++){
+            shaken.remove_node();
+        }
+        
+        // B. DÉCOMPOSITION
+        std::vector<DecomposedSolution> decomposed = decompose_with_forbidden(shaken);
+        
+        // C. POUR CHAQUE DÉCOMPOSITION
+        Solution best_from_decompositions;
+        double best_decomp_fitness = -1.0;
+        int pruned_decompositions = 0;
+        
+        for(const auto& decomp : decomposed){
             
-            if (visited_pois.count(potential_neighbor)) {
-                rejected_visited++;
+            // PRUNING NIVEAU 1: Upper bound décomposition
+            double decomp_upper_bound = estimate_upper_bound(decomp.base);
+            double local_threshold = best_fitness * 0.7;
+            
+            if(decomp_upper_bound < local_threshold){
+                pruned_decompositions++;
                 continue;
             }
             
-            Path to_neighbor = memory.check_path(last_visited, potential_neighbor);
+            // D. MULTI-BRANCH depuis cette décomposition
+            std::vector<Solution> branches = explore_multibranch(
+                decomp.base, 
+                decomp.forbidden_next,
+                local_threshold
+            );
             
-            if (to_neighbor.cost <= 0.0f || to_neighbor.path_edges.empty()) {
-                continue;
-            }
+            if(branches.empty()) continue;
             
-            float new_total_cost = sol.cost + to_neighbor.cost;
+            // E. LOCAL SEARCH sur meilleure branche
+            Solution best_branch;
+            double best_branch_fitness = -1.0;
             
-            if (new_total_cost > memory.length_constraint) {
-                rejected_distance++;
-                continue;
-            }
-            
-            Solution candidate = sol;
-            candidate.add_node(potential_neighbor, to_neighbor);
-            
-            // Vérification similarité
-            bool too_similar = false;
-            if (validated_pbest != nullptr && !validated_pbest->empty()) {
-                for (const auto& pbest : *validated_pbest) {
-                    float similarity = memory.calculate_similarity(candidate, pbest);
-                    
-                    if (similarity > similarity_threshold) {
-                        too_similar = true;
-                        rejected_similarity++;
-                        break;
-                    }
+            for(const auto& branch : branches){
+                double fitness = parent->objective_function(branch);
+                if(fitness > best_branch_fitness){
+                    best_branch_fitness = fitness;
+                    best_branch = branch;
                 }
             }
             
-            if (!too_similar) {
-                neighbors.push_back(candidate);
-                valid_count++;
-                
-                if (neighbors.size() >= static_cast<size_t>(max_neighbors_per_exploration)) {
-                    break;
-                }
-            }
-        }
-        
-        explored_count = end_index;
-        
-        if (!neighbors.empty()) {
-            break;
-        }
-        
-        attempts++;
-        
-        if (!(explored_count < static_cast<int>(nearby_pois.size()))) {
-            break;
-        }
-    }
-    
-    return neighbors;
-}
-
-std::vector<Solution> Agent::get_backtrack_neighbors(const Solution& sol, int backtrack_depth) {
-    std::vector<Solution> neighbors;
-    
-    if(sol.POIs.size() <= static_cast<size_t>(backtrack_depth)) return neighbors;
-    
-    // Créer une solution avec les N derniers POIs retirés
-    Solution truncated = sol;
-    for(int i = 0; i < backtrack_depth; i++){
-        if(!truncated.POIs.empty()){
-            truncated.POIs.pop_back();
-            if(!truncated.paths.empty()){
-                truncated.cost -= truncated.paths.back().cost;
-                truncated.paths.pop_back();
-            }
-        }
-    }
-    
-    // Depuis cette solution tronquée, ajouter de nouveaux POIs
-    std::vector<Solution> add_neighbors = get_add_neighbors(truncated);
-    
-    // Ne garder que ceux qui sont différents de la solution originale
-    for(const auto& neighbor : add_neighbors){
-        if(neighbor.POIs != sol.POIs){
-            neighbors.push_back(neighbor);
-        }
-    }
-    
-    return neighbors;
-}
-
-// Générer tous les voisins (ADD + BACKTRACK à différentes profondeurs)
-std::vector<Solution> Agent::get_all_neighbors(const Solution& sol, int max_backtrack) {
-    std::vector<Solution> all_neighbors;
-    
-    // Type 1: ADD (ajouter un POI)
-    std::vector<Solution> add_neighbors = get_add_neighbors(sol);
-    all_neighbors.insert(all_neighbors.end(), add_neighbors.begin(), add_neighbors.end());
-    
-    // Type 2: BACKTRACK (retirer 1, 2, ..., max_backtrack POIs et ajouter un nouveau)
-    for(int depth = 1; depth <= max_backtrack && depth < static_cast<int>(sol.POIs.size()); depth++){
-        std::vector<Solution> backtrack_neighbors = get_backtrack_neighbors(sol, depth);
-        all_neighbors.insert(all_neighbors.end(), backtrack_neighbors.begin(), backtrack_neighbors.end());
-    }
-    
-    return all_neighbors;
-}
-
-// Vérifier si une solution est dans la liste tabu
-bool Agent::is_tabu(const Solution& sol, const std::deque<std::vector<osmium::object_id_type>>& tabu_list) {
-    for(const auto& tabu_state : tabu_list){
-        if(tabu_state == sol.POIs){
-            return true;
-        }
-    }
-    return false;
-}
-
-// Recherche Tabu métaheuristique
-Solution Agent::tabu_search(int max_iterations, int tabu_list_size) {
-    Solution best_solution = initial_solution;
-    Solution current_solution = initial_solution;
-    
-    std::deque<std::vector<osmium::object_id_type>> tabu_list;
-    
-    int best_fitness = objective_function(best_solution);
-    size_t best_poi_count = best_solution.POIs.size();
-    
-    int iterations_without_improvement = 0;
-    int max_backtrack_depth = 2;  // Param : Profondeur de backtrack initiale
-    
-    auto start_time = std::chrono::high_resolution_clock::now();
-    
-    for(int iter = 0; iter < max_iterations; iter++){
-        // Augmenter la profondeur de backtrack si pas d'amélioration
-        if(iterations_without_improvement > 10){
-            max_backtrack_depth = std::min(max_backtrack_depth + 1, 5);
-            iterations_without_improvement = 0;
-        }
-        
-        // Générer tous les voisins (ADD + BACKTRACK)
-        std::vector<Solution> neighbors = get_all_neighbors(current_solution, max_backtrack_depth);
-        
-        if(neighbors.empty()){
-            break;
-        }
-        
-        // Chercher le meilleur voisin non-tabu ou satisfaisant le critère d'aspiration
-        Solution best_neighbor;
-        bool found_valid = false;
-        bool used_aspiration = false;
-        
-        for(const Solution& neighbor : neighbors){
-            bool is_tabu_solution = is_tabu(neighbor, tabu_list);
+            Solution improved = vnd_local_search(best_branch);
+            double improved_fitness = parent->objective_function(improved);
             
-            // Critère d'aspiration : accepter une solution tabu si elle est meilleure que best_solution
-            bool aspiration = is_tabu_solution && is_better_solution(neighbor, best_solution);
-            
-            if(!is_tabu_solution || aspiration){
-                if(!found_valid || is_better_solution(neighbor, best_neighbor)){
-                    best_neighbor = neighbor;
-                    found_valid = true;
-                    if(aspiration) used_aspiration = true;
-                }
+            if(improved_fitness > best_decomp_fitness){
+                best_decomp_fitness = improved_fitness;
+                best_from_decompositions = improved;
             }
         }
         
-        if(!found_valid){
-            break;
-        }
+        std::cout << "  [VNS] k=" << k 
+                  << " decompositions=" << decomposed.size()
+                  << " pruned=" << pruned_decompositions << std::endl;
         
-        // Mise à jour
-        current_solution = best_neighbor;
-        tabu_list.push_back(best_neighbor.POIs);
-        
-        if(static_cast<int>(tabu_list.size()) > tabu_list_size){
-            tabu_list.pop_front();
-        }
-        
-        int current_fitness = objective_function(current_solution);
-        size_t current_poi_count = current_solution.POIs.size();
-        
-        // Mettre à jour la meilleure solution
-        if(is_better_solution(current_solution, best_solution)){
-            best_solution = current_solution;
-            best_fitness = current_fitness;
-            best_poi_count = current_poi_count;
-            iterations_without_improvement = 0;
-            max_backtrack_depth = 2;  // Reset backtrack
+        // F. MOVE OR NOT
+        if(best_decomp_fitness > best_fitness){
+            best = best_from_decompositions;
+            best_fitness = best_decomp_fitness;
+            current = best;
+            k = 1;
+            
+            std::cout << "  [VNS] ✓ Amélioration fitness=" << static_cast<int>(best_fitness) << std::endl;
+            
+            this->pbest = best;
+            this->pbest_fitness = best_fitness;
         } else {
-            iterations_without_improvement++;
-        }
-    }
-    
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-    
-    std::cout << "FIN RECHERCHE TABU\n";
-    std::cout << "Temps d'exécution: " << duration.count() << " ms\n";
-    
-    float cumulative_distance = 0.0f;
-    for (size_t i = 0; i < best_solution.POIs.size(); i++) {
-        osmium::object_id_type poi_id = best_solution.POIs[i];
-        
-        auto node_it = geo_box.data.nodes.find(poi_id);
-        if (node_it != geo_box.data.nodes.end() && !node_it->second.groupes.empty()) {
-            int node_value = 0;
-            bool first = true;
-            for (const auto& group_id : node_it->second.groupes) {
-                int value = agent_charact[group_id];
-                if (value > 0) {
-                    node_value += value;
-                }
-                first = false;
-            }
+            k++;
         }
         
-        if (i < best_solution.paths.size()) {
-            float segment_distance = best_solution.paths[i].cost;
-            cumulative_distance += segment_distance;
-        }
+        iter++;
     }
-
-    return best_solution;
+    
+    // G. CHECK META-AGENT THRESHOLD
+    if(best_fitness < meta_threshold){
+        std::cout << "  [Agent] Final solution below threshold, DISCARD" << std::endl;
+    }
+    
+    return this->pbest;
 }

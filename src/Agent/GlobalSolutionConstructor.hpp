@@ -12,40 +12,17 @@
 // Structure pour configurer un MetaAgent
 struct MetaAgentConfig {
     std::string name;
-    std::vector<int> characteristics;
+    std::map<int,double> characteristics;
     MetaAgentParams params;
     
     MetaAgentConfig(const std::string& agent_name = "Agent")
-        : name(agent_name), characteristics(100, 0) {}
-};
-
-// Structure pour stocker les résultats d'un MetaAgent
-struct MetaAgentResult {
-    std::string name;
-    MetaAgent* act_meta_agent;
-    Solution gbest;
-    std::vector<Solution> validated_pbest;
-    int gbest_fitness;
-    int agent_count;
-    float coverage_rate;
-    
-    bool operator==(const MetaAgentResult& other) const {
-        return name == other.name;
-    }
-    
-    bool operator!=(const MetaAgentResult& other) const {
-        return !(*this == other);
-    }
-
-    bool operator<(const MetaAgentResult& other) const {
-        return name < other.name;
-    }
+        : name(agent_name) {}
 };
 
 struct GlobalSolution {
     float reward;
     float cost;
-    std::map<MetaAgentResult, Solution> solution_to_meta_agent;
+    std::map<MetaAgent*, Solution> solution_to_meta_agent;
     
     bool empty() const {
         return solution_to_meta_agent.empty();
@@ -63,11 +40,12 @@ private:
     GlobalMemory& global_memory;
     
     std::vector<MetaAgentConfig> meta_agent_configs;
-    std::vector<MetaAgentResult> results;
     
     GlobalSolution initial_solution;
 
 public:
+    std::vector<MetaAgent*> MetaAgents;
+    std::map<MetaAgent*, MetaAgentConfig> meta_agent_configurations;
 
     GlobalSolutionConstructor(
         GeoBox& box,
@@ -85,14 +63,8 @@ public:
 
     GlobalSolution initialize_global_solution();
     
-    const std::vector<MetaAgentResult>& get_results() const { return results; }
-    const MetaAgentResult& get_result(size_t index) const { return results[index]; }
-    size_t get_result_count() const { return results.size(); }
-    
     void print_summary() const;
     
-    std::vector<Solution> get_all_validated_pbest() const;
-    std::vector<Solution> get_all_gbest() const;
 };
 
 #endif // GLOBAL_SOLUTION_CONSTRUCTOR_HPP

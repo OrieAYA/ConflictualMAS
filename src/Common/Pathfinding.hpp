@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <memory>
 #include <mutex>
+#include <functional>
 
 class Pathfinder;
 
@@ -28,6 +29,34 @@ struct Path {
           node_extremity_left(left), 
           node_extremity_right(right),
           cost(c) {}
+    
+    bool operator==(const Path& other) const {
+        return node_extremity_left == other.node_extremity_left && 
+               node_extremity_right == other.node_extremity_right && 
+               cost == other.cost && 
+               path_edges == other.path_edges &&
+               path_nodes == other.path_nodes;
+    }
+};
+
+struct PathHash {
+    std::size_t operator()(const Path& p) const {
+        std::size_t h = 0;
+
+        auto hash_combine = [&h](auto const& v) {
+            std::hash<std::decay_t<decltype(v)>> hasher;
+            h ^= hasher(v) + 0x9e3779b9 + (h << 6) + (h >> 2);
+        };
+
+        hash_combine(p.node_extremity_left);
+        hash_combine(p.node_extremity_right);
+        hash_combine(p.cost);
+
+        for(auto e : p.path_edges) hash_combine(e);
+        for(auto n : p.path_nodes) hash_combine(n);
+
+        return h;
+    }
 };
 
 class Pathfinder {
@@ -84,7 +113,7 @@ public:
     // Algorithmes de recherche de chemin
     std::vector<Path> Neighbor_Search(
         const osmium::object_id_type& start_point,
-        float search_coefficient,
+        const std::unordered_set<int>& available_groups,
         const std::unordered_set<osmium::object_id_type>& already_visited_pois = {}  // Optionnel
     );
 

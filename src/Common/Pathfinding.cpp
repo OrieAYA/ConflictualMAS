@@ -301,40 +301,25 @@ std::vector<osmium::object_id_type> Pathfinder::A_Star_Search(
 
 std::vector<Path> Pathfinder::Neighbor_Search(
     const osmium::object_id_type& start_point,
-    float search_coefficient,
-    const std::unordered_set<osmium::object_id_type>& already_visited_pois) {  // NOUVEAU paramètre
+    const std::unordered_set<int>& available_groups,
+    const std::unordered_set<osmium::object_id_type>& already_visited_pois) {
     
     // Récupérer ou créer le cache pour ce POI
     SearchCache& cache = search_caches[start_point];
     
     bool is_new_search = cache.found_pois.empty();
     
-    float length_constraint;
-    bool found_new_poi = false;  // NOUVEAU flag
+    bool found_new_poi = false;
     
-    if (is_new_search) {
-        // INITIALISATION
-        
+    if (is_new_search) {//Init
         cache.GScore[start_point] = 0.0f;
         cache.open.push_back(start_point);
         cache.max_explored_distance = 0.0f;
-        
-        length_constraint = std::numeric_limits<float>::max();
     } else {
-        // CONTINUATION
         
-        // Augmenter la contrainte pour explorer plus loin
-        if (!cache.found_pois.empty()) {
-            float old_constraint = cache.found_pois[0].cost * search_coefficient;
-            length_constraint = old_constraint * 50.0f;  // ×50 pour aller loin
-        } else {
-            length_constraint = std::numeric_limits<float>::max();
-        }
-        
-        // Rouvrir les nœuds fermés qui sont maintenant dans la contrainte
         std::vector<osmium::object_id_type> nodes_to_reopen;
         for (const auto& [node_id, gscore] : cache.GScore) {
-            if (cache.closed.count(node_id) && gscore < length_constraint) {
+            if (cache.closed.count(node_id)) {
                 auto node_it = geo_box.data.nodes.find(node_id);
                 if (node_it != geo_box.data.nodes.end()) {
                     for (const auto& way_id : node_it->second.incident_ways) {
@@ -347,8 +332,7 @@ std::vector<Path> Pathfinder::Neighbor_Search(
                         
                         float tentative_score = gscore + way.distance_meters;
                         
-                        if (tentative_score < length_constraint && 
-                            (!cache.GScore.count(neighbor) || tentative_score < cache.GScore[neighbor])) {
+                        if (!cache.GScore.count(neighbor) || tentative_score < cache.GScore[neighbor]) {
                             nodes_to_reopen.push_back(node_id);
                             break;
                         }
@@ -367,16 +351,14 @@ std::vector<Path> Pathfinder::Neighbor_Search(
     }
     
     int nodes_explored = 0;
-    int new_pois_found = 0;
     
-    // DIJKSTRA - Continue jusqu'à trouver au moins UN nouveau POI
+    // DIJKSTRA - Continue jusqu'à trouver un nouveau POI
     while (!cache.open.empty()) {
-        // Si on a trouvé au moins un nouveau POI ET qu'on est en continuation, on peut arrêter
-        if (!is_new_search && found_new_poi) {
+        if (found_new_poi) {
             break;
         }
         
-        // Trouver le nœud avec le plus petit GScore
+        // Trouver le noeud avec le plus petit GScore
         osmium::object_id_type actual_node = cache.open[0];
         size_t best_index = 0;
         
@@ -407,39 +389,23 @@ std::vector<Path> Pathfinder::Neighbor_Search(
         
         // Vérifier si c'est un POI
         if (!node_it->second.groupes.empty() && actual_node != start_point) {
-            // Vérifier si ce POI n'a pas déjà été trouvé dans ce cache
-            bool already_in_cache = false;
-            for (const auto& path : cache.found_pois) {
-                if (path.node_extremity_right == actual_node) {
-                    already_in_cache = true;
-                    break;
-                }
-            }
             
-            if (!already_in_cache) {
-                std::vector<osmium::object_id_type> path_edges = reconstruct_path(cache.cameFrom, actual_node);
-                float path_cost = cache.GScore[actual_node];
-                
-                Path new_path(path_edges, start_point, actual_node, path_cost);
-                cache.found_pois.push_back(new_path);
-                new_pois_found++;
-                
-                // IMPORTANT : Vérifier si c'est un NOUVEAU POI (non visité dans la solution)
-                bool is_new_for_solution = (already_visited_pois.find(actual_node) == already_visited_pois.end());
-                
-                if (is_new_for_solution) {
-                    found_new_poi = true;
-                }
-                
-                if (cache.found_pois.size() == 1 && is_new_search) {
-                    length_constraint = path_cost * search_coefficient;
+            std::vector<osmium::object_id_type> path_edges = reconstruct_path(cache.cameFrom, actual_node);
+            float path_cost = cache.GScore[actual_node];
+            
+            Path new_path(path_edges, start_point, actual_node, path_cost);
+            cache.found_pois.push_back(new_path);
+            
+            // IMPORTANT : Vérifier si c'est un NOUVEAU POI (non visité dans la solution)
+            bool is_new_for_solution = (already_visited_pois.find(actual_node) == already_visited_pois.end());
+            
+            if (is_new_for_solution) {
+                for(const auto& i : available_groups){
+                    if(node_it->second.groupes.find(i) != node_it->second.groupes.end()){
+                        found_new_poi = true;
+                    }
                 }
             }
-        }
-        
-        // Ne pas explorer au-delà de la contrainte
-        if (cache.GScore[actual_node] >= length_constraint) {
-            continue;
         }
         
         // Explorer les voisins
@@ -466,14 +432,12 @@ std::vector<Path> Pathfinder::Neighbor_Search(
             
             float tentative_gScore = cache.GScore[actual_node] + way.distance_meters;
             
-            if (tentative_gScore < length_constraint) {
-                if (!cache.GScore.count(neighbor) || tentative_gScore < cache.GScore[neighbor]) {
-                    cache.cameFrom[neighbor] = std::make_pair(actual_node, way_id);
-                    cache.GScore[neighbor] = tentative_gScore;
-                    
-                    if (std::find(cache.open.begin(), cache.open.end(), neighbor) == cache.open.end()) {
-                        cache.open.push_back(neighbor);
-                    }
+            if (!cache.GScore.count(neighbor) || tentative_gScore < cache.GScore[neighbor]) {
+                cache.cameFrom[neighbor] = std::make_pair(actual_node, way_id);
+                cache.GScore[neighbor] = tentative_gScore;
+                
+                if (std::find(cache.open.begin(), cache.open.end(), neighbor) == cache.open.end()) {
+                    cache.open.push_back(neighbor);
                 }
             }
         }

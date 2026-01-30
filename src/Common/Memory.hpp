@@ -25,6 +25,17 @@ struct Solution {
         this->paths.push_back(path_to_add);
         this->cost += path_to_add.cost;
     }
+
+    void remove_node(){
+        if(POIs.empty()) return;
+        
+        this->POIs.pop_back();
+        
+        if(!this->paths.empty()){
+            this->cost -= this->paths.back().cost;
+            this->paths.pop_back();
+        }
+    }
     
     bool empty() const {
         return POIs.empty();
@@ -44,116 +55,108 @@ struct Solution {
     }
 };
 
+namespace std {
+    template<>
+    struct hash<Solution> {
+        size_t operator()(const Solution& sol) const {
+            size_t h = 0;
+            for(const auto& poi : sol.POIs){
+                h ^= std::hash<osmium::object_id_type>{}(poi) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            }
+            return h;
+        }
+    };
+}
+
 struct GlobalMemory {
     GeoBox& geo_box;
     Pathfinder& PfSystem;
-    std::map<std::vector<osmium::object_id_type>, Solution> visited_Solutions;
-    std::map<osmium::object_id_type, std::map<osmium::object_id_type, Path>> visited_Paths;
+    std::map<osmium::object_id_type, std::map<osmium::object_id_type, std::vector<Path>>> visited_Paths;
+    std::unordered_map<Path, std::unordered_map<Path, float, PathHash>, PathHash> Path_similarities;
     std::map<osmium::object_id_type, std::vector<osmium::object_id_type>> visited_Neighborhoods;
 
-    float length_constraint = 5000.0f;
-    float search_coefficient = 0.2f;
+    float length_constraint;
+    float search_coefficient;
 
     GlobalMemory() = delete;
     GlobalMemory(GeoBox& box, Pathfinder& pf) 
         : geo_box(box), PfSystem(pf) {}
 
-    Solution check_solution(std::vector<osmium::object_id_type> s){
-        auto it = visited_Solutions.find(s);
-        if(it != visited_Solutions.end()){
-            return it->second;
-        }
-        std::vector<Path> path;
-        float cost = 0.0;
-        for (size_t i = 1; i < s.size(); i++) {
-            Path p = check_path(s[i-1], s[i]);
-            path.push_back(p);
-            cost = cost + p.cost;
-        }
-        Solution sol = Solution(s, path, cost);
-        visited_Solutions[s] = sol;
-        return sol;
-    }
-
-    Path check_path(osmium::object_id_type A, osmium::object_id_type B){
-        auto it_a = visited_Paths.find(A);
-        if(it_a != visited_Paths.end()){
-            auto it_b = it_a->second.find(B);
+    // OPTIMISÉ: utilise unordered_set au lieu de std::find
+    float check_path_similarity(const Path& path1, const Path& path2){
+        auto it_a = Path_similarities.find(path1);
+        if(it_a != Path_similarities.end()){
+            auto it_b = it_a->second.find(path2);
             if(it_b != it_a->second.end()){
                 return it_b->second;
             }
         }
+
+        if ((path1.path_edges.empty() && path1.path_nodes.empty()) || 
+            (path2.path_edges.empty() && path2.path_nodes.empty())) {
+            Path_similarities[path1][path2] = 0.0f;
+            Path_similarities[path2][path1] = 0.0f;
+            return 0.0f;
+        }
+
+        // OPTIMISATION: unordered_set pour recherche O(1)
+        std::unordered_set<osmium::object_id_type> edges1(
+            path1.path_edges.begin(), 
+            path1.path_edges.end()
+        );
         
-        std::vector<osmium::object_id_type> edges = PfSystem.A_Star_Search(A, B);
-        float cost = 0.0f;
-        for(const auto& e : edges){
-            auto way_it = geo_box.data.ways.find(e);
-            if(way_it != geo_box.data.ways.end()){
-                cost += way_it->second.distance_meters;
+        int common_ways = 0;
+        for (const auto& way : path2.path_edges) {
+            if (edges1.count(way) > 0) {
+                common_ways++;
             }
         }
+
+        std::unordered_set<osmium::object_id_type> nodes1(
+            path1.path_nodes.begin(), 
+            path1.path_nodes.end()
+        );
         
-        Path A_to_B = Path(edges, A, B, cost);
-        this->visited_Paths[A][B] = A_to_B;
-        this->visited_Paths[B][A] = A_to_B;
-        return A_to_B;
+        int common_edges = 0;
+        for (const auto& edge : path2.path_nodes) {
+            if (nodes1.count(edge) > 0) {
+                common_edges++;
+            }
+        }
+
+        float similarity_degree = (path2.path_nodes.size() + path2.path_edges.size()) > 0 
+            ? static_cast<float>(common_ways + common_edges) / static_cast<float>(path2.path_nodes.size() + path2.path_edges.size()) 
+            : 0.0f;
+
+        Path_similarities[path1][path2] = similarity_degree;
+        Path_similarities[path2][path1] = similarity_degree;
+        return similarity_degree;
     }
 
-    std::vector<osmium::object_id_type> check_neighborhood(
-        osmium::object_id_type n,
-        const std::unordered_set<osmium::object_id_type>& visited_pois = {}
-    ){
-        auto it = visited_Neighborhoods.find(n);
-        if(it != visited_Neighborhoods.end()){
-            return it->second;
+    float calculate_solution_similarity(const Solution& sol1, const Solution& sol2){
+        float similarity_degree = 0.0f;
+        int similarity_count = 0;
+
+        // OPTIMISÉ: utilise min pour éviter out of bounds
+        size_t min_size = std::min(sol1.POIs.size(), sol2.POIs.size());
+        for(size_t i = 0; i < min_size; ++i){
+            if(sol1.POIs[i] == sol2.POIs[i]) similarity_count++;
         }
-        
-        std::vector<Path> sol = PfSystem.Neighbor_Search(n, search_coefficient, visited_pois);
-        std::vector<osmium::object_id_type> neighbors = {};
-        
-        for(const auto& p : sol){
-            osmium::object_id_type neighbor_id = (p.node_extremity_left != n) 
-                ? p.node_extremity_left 
-                : p.node_extremity_right;
-            
-            neighbors.push_back(neighbor_id);
-            this->visited_Paths[neighbor_id][n] = p;
-            this->visited_Paths[n][neighbor_id] = p;
+
+        size_t max_size = std::max(sol1.POIs.size(), sol2.POIs.size());
+        if(max_size != 0){
+            similarity_degree = static_cast<float>(similarity_count) / static_cast<float>(max_size);
         }
-        
-        visited_Neighborhoods[n] = neighbors;
-        return neighbors;
+
+        return similarity_degree;
     }
 
-    std::vector<osmium::object_id_type> continue_neighborhood_search(
-        osmium::object_id_type n,
-        const std::unordered_set<osmium::object_id_type>& visited_pois
-    ){
-        
-        std::vector<Path> extended_paths = PfSystem.Neighbor_Search(n, search_coefficient, visited_pois);
-        
-        std::vector<osmium::object_id_type> neighbors = {};
-        for(const auto& p : extended_paths){
-            osmium::object_id_type neighbor_id = (p.node_extremity_left != n) 
-                ? p.node_extremity_left 
-                : p.node_extremity_right;
-            
-            neighbors.push_back(neighbor_id);
-            this->visited_Paths[neighbor_id][n] = p;
-            this->visited_Paths[n][neighbor_id] = p;
-        }
-        
-        visited_Neighborhoods[n] = neighbors;
-        
-        return neighbors;
-    }
-    
     float calculate_similarity(const Solution& sol1, const Solution& sol2){
         if (sol1.paths.empty() || sol2.paths.empty()) {
             return 0.0f;
         }
 
-        std::set<osmium::object_id_type> ways_sol1;
+        std::unordered_set<osmium::object_id_type> ways_sol1;
         for (const auto& path : sol1.paths) {
             for (const auto& way_id : path.path_edges) {
                 ways_sol1.insert(way_id);
@@ -172,8 +175,148 @@ struct GlobalMemory {
             }
         }
         
-        return total_ways_sol2 > 0 ? static_cast<float>(common_ways) / static_cast<float>(total_ways_sol2) : 0.0f;
-}
+        float similarity_degree = total_ways_sol2 > 0 
+            ? static_cast<float>(common_ways) / static_cast<float>(total_ways_sol2) 
+            : 0.0f;
+
+        return similarity_degree;
+    }
+    
+    // OPTIMISÉ: comparaison limitée aux 3 derniers chemins
+    Solution check_solution(std::vector<osmium::object_id_type> s){
+        if(s.size() < 2){
+            return Solution(s, {}, 0.0f);
+        }
+        
+        std::vector<Path> paths;
+        float cost = 0.0;
+        
+        for (size_t i = 1; i < s.size(); i++) {
+            std::vector<Path> p = check_path(s[i-1], s[i]);
+            
+            if(p.empty() || p[0].cost == std::numeric_limits<float>::max()){
+                return Solution({}, {}, std::numeric_limits<float>::max());
+            }
+            
+            Path path_to_insert = p[0];
+            
+            // OPTIMISATION: comparer seulement avec les 3 derniers chemins
+            if(p.size() > 1 && !paths.empty()){
+                float lowest_similarity = std::numeric_limits<float>::max();
+                
+                size_t start = paths.size() > 3 ? paths.size() - 3 : 0;
+                
+                for(const auto& insertable_path : p){
+                    float total_similarity = 0.0f;
+                    
+                    for(size_t j = start; j < paths.size(); j++){
+                        total_similarity += check_path_similarity(insertable_path, paths[j]);
+                    }
+                    
+                    if(total_similarity < lowest_similarity){
+                        path_to_insert = insertable_path;
+                        lowest_similarity = total_similarity;
+                    }
+                }
+            }
+            
+            paths.push_back(path_to_insert);
+            cost += path_to_insert.cost;
+        }
+        
+        return Solution(s, paths, cost);
+    }
+
+    std::vector<Path> check_path(osmium::object_id_type A, osmium::object_id_type B){
+        auto it_a = visited_Paths.find(A);
+        if(it_a != visited_Paths.end()){
+            auto it_b = it_a->second.find(B);
+            if(it_b != it_a->second.end() && !it_b->second.empty()){
+                return it_b->second;
+            }
+        }
+        
+        std::vector<osmium::object_id_type> edges = PfSystem.A_Star_Search(A, B);
+        
+        if(edges.empty()){
+            Path empty_path;
+            empty_path.cost = std::numeric_limits<float>::max();
+            return {empty_path};
+        }
+        
+        float cost = 0.0f;
+        for(const auto& e : edges){
+            auto way_it = geo_box.data.ways.find(e);
+            if(way_it != geo_box.data.ways.end()){
+                cost += way_it->second.distance_meters;
+            }
+        }
+        
+        Path A_to_B = Path(edges, A, B, cost);
+        this->visited_Paths[A][B].push_back(A_to_B);
+        this->visited_Paths[B][A].push_back(A_to_B);
+        return this->visited_Paths[A][B];
+    }
+
+    // OPTIMISÉ: cache limité + early return
+    osmium::object_id_type check_neighborhood(
+        osmium::object_id_type n,
+        std::unordered_set<int>& available_groups,
+        const std::unordered_set<osmium::object_id_type>& visited_pois = {}
+    ){
+        static const size_t MAX_CACHE_SIZE = 1000;
+        
+        // Check if available neighbor in cache
+        auto it = visited_Neighborhoods.find(n);
+        if(it != visited_Neighborhoods.end()){
+            for(const auto& neighbor : it->second){
+                if(visited_pois.find(neighbor) == visited_pois.end()){
+                    auto node_it = geo_box.data.nodes.find(neighbor);
+                    if(node_it != geo_box.data.nodes.end()){
+                        for(const int i : available_groups){
+                            if(node_it->second.groupes.count(i) > 0){
+                                return neighbor;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        std::vector<Path> sol = PfSystem.Neighbor_Search(n, available_groups, visited_pois);
+
+        std::vector<osmium::object_id_type> neighbors;
+        osmium::object_id_type nearest_available_neighbor = 0;
+        
+        for(const auto& p : sol){
+            osmium::object_id_type neighbor_id = (p.node_extremity_left != n) 
+                ? p.node_extremity_left 
+                : p.node_extremity_right;
+            
+            if(nearest_available_neighbor == 0){
+                for(const int i : available_groups){
+                    auto neighbor = geo_box.data.nodes.find(neighbor_id);
+                    if(neighbor != geo_box.data.nodes.end() && 
+                       neighbor->second.groupes.count(i) > 0){
+                        nearest_available_neighbor = neighbor_id;
+                        break;
+                    }
+                }
+            }
+
+            neighbors.push_back(neighbor_id);
+            this->visited_Paths[neighbor_id][n].push_back(p);
+            this->visited_Paths[n][neighbor_id].push_back(p);
+        }
+        
+        // OPTIMISATION: limiter la taille du cache
+        if(visited_Neighborhoods.size() < MAX_CACHE_SIZE){
+            visited_Neighborhoods[n] = neighbors;
+        }
+
+        return nearest_available_neighbor;
+    }
+    
 };
 
 class Memory {
