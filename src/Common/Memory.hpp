@@ -264,7 +264,6 @@ struct GlobalMemory {
         std::unordered_set<int>& available_groups,
         const std::unordered_set<osmium::object_id_type>& visited_pois = {}
     ){
-        static const size_t MAX_CACHE_SIZE = 1000;
         
         // Check if available neighbor in cache
         auto it = visited_Neighborhoods.find(n);
@@ -309,10 +308,7 @@ struct GlobalMemory {
             this->visited_Paths[n][neighbor_id].push_back(p);
         }
         
-        // OPTIMISATION: limiter la taille du cache
-        if(visited_Neighborhoods.size() < MAX_CACHE_SIZE){
-            visited_Neighborhoods[n] = neighbors;
-        }
+        visited_Neighborhoods[n] = neighbors;
 
         return nearest_available_neighbor;
     }

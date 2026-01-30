@@ -314,7 +314,7 @@ bool render_map_from_data(const MyData& data,
         // Sauvegarde avec gestion des doublons
         int counter = 0;
         namespace fs = std::filesystem;
-        fs::path dir_path = "C:\\Users\\screp\\OneDrive\\Bureau\\Algorithms\\ConflictualMAS\\src\\maps\\";
+        fs::path dir_path = "C:\\ConflictualMAS\\src\\maps\\";
         fs::path base_path = output_filename;
         std::string ext = ".png";
 

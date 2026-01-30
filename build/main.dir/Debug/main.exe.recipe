@@ -2,10 +2,10 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\x64\Debug\ZERO_CHECK</FullPath>
+      <FullPath>C:\ConflictualMAS\build\x64\Debug\ZERO_CHECK</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>C:\Users\screp\OneDrive\Bureau\Algorithms\ConflictualMAS\build\Debug\main.exe</FullPath>
+      <FullPath>C:\ConflictualMAS\build\Debug\main.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

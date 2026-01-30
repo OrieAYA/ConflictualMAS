@@ -40,7 +40,7 @@ void test_global_solution_constructor(const std::string& cache_dir) {
     GeoBox geo_box = GeoBoxManager::load_geobox(input_cache_path);
     
     if (!geo_box.is_valid) {
-        std::cerr << "✗ ERREUR: Impossible de charger la GeoBox\n";
+        std::cerr << "x ERREUR: Impossible de charger la GeoBox\n";
         std::cerr << "  Fichier: " << input_cache_path << "\n";
         return;
     }
@@ -194,7 +194,7 @@ void test_global_solution_constructor(const std::string& cache_dir) {
     //All_Meta_Agent_GBests
     GeoBox geo_box_All_meta_agent = GeoBoxManager::load_geobox(input_cache_path);
     if (!geo_box.is_valid) {
-        std::cerr << "✗ ERREUR: Impossible de charger la GeoBox\n";
+        std::cerr << "ERREUR: Impossible de charger la GeoBox\n";
         std::cerr << "  Fichier: " << input_cache_path << "\n";
         return;
     }
@@ -234,7 +234,7 @@ void test_global_solution_constructor(const std::string& cache_dir) {
     // ========================================
     std::cout << "--- Sauvegarde résultat ---\n";
     GeoBoxManager::save_geobox(geo_box, output_cache_path);
-    std::cout << "✓ GeoBox sauvegardée: " << output_cache_path << "\n\n";
+    std::cout << "GeoBox sauvegardée: " << output_cache_path << "\n\n";
     
     // ========================================
     // 11. RENDU CARTE
@@ -245,9 +245,9 @@ void test_global_solution_constructor(const std::string& cache_dir) {
     bool render_success_meta_agent = GeoBoxManager::render_geobox(geo_box_All_meta_agent, "All_Meta_Agent_Solutions", 2000, 2000);
     
     if (render_success_meta_agent) {
-        std::cout << "✓ Carte générée: All_Meta_Agent_Solutions\n";
+        std::cout << "Carte générée: All_Meta_Agent_Solutions\n";
     } else {
-        std::cout << "✗ Erreur lors du rendu\n";
+        std::cout << "Erreur lors du rendu\n";
     }
 
     //Global Solution
@@ -255,9 +255,9 @@ void test_global_solution_constructor(const std::string& cache_dir) {
     bool render_success = GeoBoxManager::render_geobox(geo_box, output_map_name, 2000, 2000);
     
     if (render_success) {
-        std::cout << "✓ Carte générée: " << output_map_name << "\n";
+        std::cout << "Carte générée: " << output_map_name << "\n";
     } else {
-        std::cout << "✗ Erreur lors du rendu\n";
+        std::cout << "Erreur lors du rendu\n";
     }
     
     std::cout << "\n--- Fichiers générés ---\n";
@@ -299,12 +299,12 @@ void test_pso_mttds(const std::string& cache_dir) {
     GeoBox geo_box = GeoBoxManager::load_geobox(input_cache_path);
     
     if (!geo_box.is_valid) {
-        std::cerr << "✗ ERREUR: Impossible de charger la GeoBox\n";
+        std::cerr << "ERREUR: Impossible de charger la GeoBox\n";
         std::cerr << "  Fichier: " << input_cache_path << "\n";
         return;
     }
     
-    std::cout << "✓ GeoBox chargée avec succès\n";
+    std::cout << "GeoBox chargée avec succès\n";
     std::cout << "  Nodes: " << geo_box.data.nodes.size() << "\n";
     std::cout << "  Ways: " << geo_box.data.ways.size() << "\n\n";
     
@@ -382,7 +382,7 @@ void test_pso_mttds(const std::string& cache_dir) {
         
         results.push_back(result);
         
-        std::cout << "\n✓ " << agent.name << " TERMINÉ\n";
+        std::cout << "\n " << agent.name << " TERMINÉ\n";
         std::cout << "  Fitness GBest: " << static_cast<int>(result.fitness) << "\n";
         std::cout << "  POIs: " << result.num_pois << "\n";
         std::cout << "  Distance: " << static_cast<int>(result.distance) << "m / " 
@@ -390,7 +390,7 @@ void test_pso_mttds(const std::string& cache_dir) {
                   << std::fixed << std::setprecision(1)
                   << (result.distance / distance_constraint * 100.0) << "%)\n";
         std::cout << "  Temps: " << result.execution_time_ms << " ms\n";
-        std::cout << "  Valide: " << (result.is_valid ? "✓" : "✗") << "\n\n";
+        std::cout << "  Valide: " << (result.is_valid ? "v" : "x") << "\n\n";
     }
     
     std::cout << "\n" << std::string(80, '=') << "\n";
@@ -419,7 +419,7 @@ void test_pso_mttds(const std::string& cache_dir) {
                   << std::setw(10) << result.num_pois
                   << std::setw(15) << static_cast<int>(result.distance)
                   << std::setw(15) << result.execution_time_ms
-                  << std::setw(10) << (result.is_valid ? "✓" : "✗")
+                  << std::setw(10) << (result.is_valid ? "v" : "x")
                   << "\n";
         
         total_time += result.execution_time_ms;
@@ -445,7 +445,7 @@ void test_pso_mttds(const std::string& cache_dir) {
 int main() {
     
     const std::string osm_file = "..\\src\\maps\\kanto-latest.osm.pbf";
-    const std::string cache_dir = "..\\src\\geobox_cache_folder";
+    const std::string cache_dir = "..\\src\\    ";
 
     // ========== SELECTION DE LA LOCALISATION ==========
     std::cout << "\n=== Sélection de la localisation ===" << std::endl;

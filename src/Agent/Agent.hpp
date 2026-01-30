@@ -63,6 +63,12 @@ public:
     // Méthodes publiques - SIGNATURES IDENTIQUES
     bool evaluate_upper_bound(const Solution& solution);
     Solution agent_search(int max_iterations, int tabu_list_size);
+    std::vector<Solution> explore_multibranch_adaptive(
+        const Solution& base_solution,
+        osmium::object_id_type forbidden_first,
+        double threshold,
+        int max_neighbors
+    );
     
     const Solution& get_initial_solution() const { return initial_solution; }
     const Solution& get_pbest() const { return pbest; }
