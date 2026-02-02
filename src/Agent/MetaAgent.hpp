@@ -53,7 +53,7 @@ public:
 
     MetaAgentParams params;
     double min_fitness = 0;
-    float max_reward_per_meter = 0.0f;  // Mis à jour dynamiquement
+    float max_reward_per_meter = 1.0f;  // Mis à jour dynamiquement
     Solution gbest_solution;
     std::map<int,double> characteristics;
     std::vector<Solution> validated_pbest;

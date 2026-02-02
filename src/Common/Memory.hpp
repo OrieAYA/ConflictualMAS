@@ -267,6 +267,8 @@ struct GlobalMemory {
             }
         }
         
+        std::cout << "Started a PF non neighbooring search" << std::endl;
+
         std::vector<osmium::object_id_type> edges = PfSystem.A_Star_Search(A, B);
         
         if(edges.empty()){

@@ -29,9 +29,8 @@ private:
 
     double estimate_upper_bound(const Solution& solution);
     int get_poi_reward(osmium::object_id_type poi);
-    
-    Solution greedy_construction(Solution& start_solution);
-    Solution greedy_extend_from(const Solution& base, osmium::object_id_type forbidden_first);
+
+    Solution greedy_construction(const Solution& base, osmium::object_id_type forbidden_first);
     
     std::vector<DecomposedSolution> decompose_with_forbidden(const Solution& solution);
     
@@ -54,7 +53,6 @@ public:
         MetaAgent* meta_agent
     );
 
-    bool evaluate_upper_bound(const Solution& solution);
     Solution agent_search(int max_iterations, int tabu_list_size);
     
     const Solution& get_initial_solution() const { return initial_solution; }

@@ -104,7 +104,6 @@ osmium::object_id_type MetaAgent::select_random_unused_poi() {
 
 bool MetaAgent::try_add_agent() {
     
-    // Mettre à jour max_reward_per_meter avec les dernières avg_distance
     update_max_reward_per_meter();
     
     osmium::object_id_type starting_poi = select_random_unused_poi();
