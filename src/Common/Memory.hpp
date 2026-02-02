@@ -77,10 +77,41 @@ struct GlobalMemory {
 
     float length_constraint;
     float search_coefficient;
+    
+    std::vector<double> total_distance_by_group;
+    std::vector<int> count_by_group;
+    std::vector<double> avg_distance_by_group;
 
     GlobalMemory() = delete;
     GlobalMemory(GeoBox& box, Pathfinder& pf) 
         : geo_box(box), PfSystem(pf) {}
+    
+    void initialize_group_stats() {
+
+        total_distance_by_group.clear();
+        count_by_group.clear();
+        avg_distance_by_group.clear();
+
+        int max_group_id = 0;
+
+        for (const auto& [gid, _] : geo_box.data.objective_groups) {
+            if (gid > max_group_id)
+                max_group_id = gid;
+        }
+
+        if (max_group_id == 0) {
+            std::cout << "[Memory] Aucun groupe trouvé\n";
+            return;
+        }
+
+        total_distance_by_group.resize(max_group_id + 1, 0.0);
+        count_by_group.resize(max_group_id + 1, 0);
+        avg_distance_by_group.resize(max_group_id + 1, 0.0);
+
+        std::cout << "[Memory] Group stats initialised for "
+                << max_group_id << " groups\n";
+    }
+
 
     // OPTIMISÉ: utilise unordered_set au lieu de std::find
     float check_path_similarity(const Path& path1, const Path& path2){
@@ -258,57 +289,64 @@ struct GlobalMemory {
         return this->visited_Paths[A][B];
     }
 
-    // OPTIMISÉ: cache limité + early return
+    // check_neighborhood : Retourne POI le plus proche du groupe demandé
+    // Stocke TOUS les voisins, met à jour avg_distance pour le groupe demandé
     osmium::object_id_type check_neighborhood(
         osmium::object_id_type n,
         std::unordered_set<int>& available_groups,
         const std::unordered_set<osmium::object_id_type>& visited_pois = {}
     ){
-        
-        // Check if available neighbor in cache
-        auto it = visited_Neighborhoods.find(n);
-        if(it != visited_Neighborhoods.end()){
-            for(const auto& neighbor : it->second){
-                if(visited_pois.find(neighbor) == visited_pois.end()){
-                    auto node_it = geo_box.data.nodes.find(neighbor);
-                    if(node_it != geo_box.data.nodes.end()){
-                        for(const int i : available_groups){
-                            if(node_it->second.groupes.count(i) > 0){
-                                return neighbor;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
         std::vector<Path> sol = PfSystem.Neighbor_Search(n, available_groups, visited_pois);
 
-        std::vector<osmium::object_id_type> neighbors;
         osmium::object_id_type nearest_available_neighbor = 0;
+        float nearest_distance = std::numeric_limits<float>::max();
         
-        for(const auto& p : sol){
+        for (const auto& p : sol) {
             osmium::object_id_type neighbor_id = (p.node_extremity_left != n) 
                 ? p.node_extremity_left 
                 : p.node_extremity_right;
             
-            if(nearest_available_neighbor == 0){
-                for(const int i : available_groups){
-                    auto neighbor = geo_box.data.nodes.find(neighbor_id);
-                    if(neighbor != geo_box.data.nodes.end() && 
-                       neighbor->second.groupes.count(i) > 0){
-                        nearest_available_neighbor = neighbor_id;
-                        break;
+            auto neighbor_node = geo_box.data.nodes.find(neighbor_id);
+            if (neighbor_node == geo_box.data.nodes.end()) continue;
+            
+            // Stocker path (tous groupes)
+            if (visited_Paths[n][neighbor_id].empty()) {
+                visited_Paths[n][neighbor_id].push_back(p);
+                visited_Paths[neighbor_id][n].push_back(p);
+            }
+            
+            // Stocker dans visited_Neighborhoods (tous groupes)
+            auto& neighborhood = visited_Neighborhoods[n];
+            if (std::find(neighborhood.begin(), neighborhood.end(), neighbor_id) == neighborhood.end()) {
+                neighborhood.push_back(neighbor_id);
+            }
+
+            // Vérifier si ce voisin appartient au groupe demandé
+            bool is_in_requested_group = false;
+            for (const int group_id : available_groups) {
+
+                if (neighbor_node->second.groupes.count(group_id) > 0) {
+                    is_in_requested_group = true;
+                    
+                    if (group_id >= 0 && group_id < total_distance_by_group.size()) {
+                        total_distance_by_group[group_id] += p.cost;
+                        count_by_group[group_id]++;
+                        avg_distance_by_group[group_id] =
+                            total_distance_by_group[group_id] / count_by_group[group_id];
                     }
+                    
+                    break;
                 }
             }
 
-            neighbors.push_back(neighbor_id);
-            this->visited_Paths[neighbor_id][n].push_back(p);
-            this->visited_Paths[n][neighbor_id].push_back(p);
+            // Trouver le POI le plus proche du groupe demandé ET non-visité
+            if (is_in_requested_group && visited_pois.count(neighbor_id) == 0) {
+                if (p.cost < nearest_distance) {
+                    nearest_distance = p.cost;
+                    nearest_available_neighbor = neighbor_id;
+                }
+            }
         }
-        
-        visited_Neighborhoods[n] = neighbors;
 
         return nearest_available_neighbor;
     }

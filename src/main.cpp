@@ -50,6 +50,7 @@ void test_global_solution_constructor(const std::string& cache_dir) {
     // ========================================
     Pathfinder pathfinder(geo_box);
     GlobalMemory global_memory(geo_box, pathfinder);
+    global_memory.initialize_group_stats();
     
     float length_constraint = 1000.0f;
     float search_coefficient = 1.4f;
@@ -68,7 +69,7 @@ void test_global_solution_constructor(const std::string& cache_dir) {
 
     //Global Params
     MetaAgentConfig configBase("Agent_Config");
-    configBase.params.max_divergence_from_gbest = 0.2;
+    configBase.params.max_divergence_from_gbest = 0.3;
     configBase.params.max_iterations_per_agent = 100;
     configBase.params.tabu_list_size = 20;
     
@@ -108,7 +109,9 @@ void test_global_solution_constructor(const std::string& cache_dir) {
     // 5. LANCEMENT DE TOUS LES META-AGENTS
     // ========================================
     auto start_time = std::chrono::high_resolution_clock::now();
-    constructor.run_all_meta_agents();  // Initialise automatiquement la solution globale
+    constructor.initialize_reward_densities();
+
+    constructor.run_all_meta_agents();
     auto meta_agents_end_time = std::chrono::high_resolution_clock::now();
     auto meta_agents_duration = std::chrono::duration_cast<std::chrono::milliseconds>(
         start_time - meta_agents_end_time
@@ -313,7 +316,7 @@ void test_pso_mttds(const std::string& cache_dir) {
     
     double distance_constraint = 1000.0;
     global_memory.length_constraint = distance_constraint;
-    global_memory.search_coefficient = 1.2f;
+    global_memory.search_coefficient = 1.5f;
     
     MTTDSPSOParams pso_params;
     pso_params.num_particles = 30;
@@ -444,8 +447,8 @@ void test_pso_mttds(const std::string& cache_dir) {
 
 int main() {
     
-    const std::string osm_file = "..\\src\\maps\\kanto-latest.osm.pbf";
-    const std::string cache_dir = "..\\src\\    ";
+    const std::string osm_file = "C:\\ConflictualMAS\\src\\maps\\kanto-latest.osm.pbf";
+    const std::string cache_dir = "C:\\ConflictualMAS\\src\\geobox_cache_folder";
 
     // ========== SELECTION DE LA LOCALISATION ==========
     std::cout << "\n=== Sélection de la localisation ===" << std::endl;

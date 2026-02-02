@@ -21,6 +21,34 @@ MetaAgent::MetaAgent(
     rng.seed(rd());
     
     collect_all_pois();
+    update_max_reward_per_meter();  // Initialisation
+}
+
+void MetaAgent::update_max_reward_per_meter() {
+    max_reward_per_meter = 0.0f;
+    
+    // Calculer reward_per_meter adaptatif selon characteristics de CET agent
+    for (const auto& [group_id, reward] : characteristics) {
+        if (reward <= 0.0) continue;
+
+        if (group_id < global_memory.avg_distance_by_group.size() &&
+            global_memory.count_by_group[group_id] > 0)
+        {
+            float avg_distance =
+                static_cast<float>(global_memory.avg_distance_by_group[group_id]);
+
+            // Sécurité anti division par 0
+            if (avg_distance > 0.0f) {
+                float density = reward / avg_distance;
+                max_reward_per_meter = std::max(max_reward_per_meter, density);
+            }
+        }
+    }
+    
+    // Fallback
+    if(max_reward_per_meter == 0.0f) {
+        max_reward_per_meter = 2.0f;
+    }
 }
 
 MetaAgent::~MetaAgent() {
@@ -45,9 +73,17 @@ double MetaAgent::objective_function(const Solution& sol) const {
 }
 
 void MetaAgent::collect_all_pois() {
+    std::unordered_set<osmium::object_id_type> seen;
     for (const auto& [group_id, reward] : characteristics) {
-        for (const auto& node_id : geo_box.data.objective_groups[group_id].node_ids) {
-            all_pois.push_back(node_id);
+        if (reward <= 0.0) continue;  // Ignorer les groupes sans reward
+        
+        auto group_it = geo_box.data.objective_groups.find(group_id);
+        if (group_it == geo_box.data.objective_groups.end()) continue;
+        
+        for (const auto& node_id : group_it->second.node_ids) {
+            if (seen.insert(node_id).second) {  // Insérer seulement si pas déjà présent
+                all_pois.push_back(node_id);
+            }
         }
     }
 }
@@ -67,6 +103,9 @@ osmium::object_id_type MetaAgent::select_random_unused_poi() {
 }
 
 bool MetaAgent::try_add_agent() {
+    
+    // Mettre à jour max_reward_per_meter avec les dernières avg_distance
+    update_max_reward_per_meter();
     
     osmium::object_id_type starting_poi = select_random_unused_poi();
     used_starting_pois.insert(starting_poi);
@@ -92,7 +131,7 @@ bool MetaAgent::try_add_agent() {
 
     if (!validated_pbest.empty()) {
         if (fitness < min_fitness) {
-            //delete agent;
+            delete agent;
             return false;
         }
     }
@@ -138,45 +177,13 @@ Solution MetaAgent::run_meta_search() {
         print_statistics();
     }
 
-    for(Agent* a : agent_population){
-        std::cout << "Agent best fitness : " << objective_function(a->pbest) << std::endl;
-        if (objective_function(a->pbest) < min_fitness) {
-            agent_population.erase(find(agent_population.begin(), agent_population.end(), a));
-            std::cout << "Agent discarded : " << a << std::endl;
-            delete a;
-        }
-    }
-    
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
     std::cout << "FIN RECHERCHE META-AGENT\n";
     std::cout << "Temps d'exécution: " << duration.count() << " ms\n";
-    
-    // Distribution des fitness
-    if (!validated_pbest.empty()) {
-        std::vector<std::pair<double, size_t>> fitness_with_index;
-        
-        for (size_t i = 0; i < validated_pbest.size(); i++) {
-            const auto& pbest = validated_pbest[i];
-            auto it = local_visited_solutions.find(pbest);
-            if (it != local_visited_solutions.end()) {
-                fitness_with_index.push_back({static_cast<double>(it->second), i});
-            }
-        }
-        
-        std::sort(fitness_with_index.begin(), fitness_with_index.end(), 
-                  [](const auto& a, const auto& b) { return a.first > b.first; });
-        
-        double min_fitness = fitness_with_index.back().first;
-        double max_fitness = fitness_with_index.front().first;
-        
-        for (size_t i = 0; i < fitness_with_index.size(); i++) {
-            double fit = fitness_with_index[i].first;
-            size_t agent_idx = fitness_with_index[i].second;
-            double percent_of_gbest = (fit / local_visited_solutions[gbest_solution]) * 100.0f;
-        }
-    }
+    std::cout << "Agents créés: " << agent_population.size() << "\n";
+    std::cout << "Solutions validées: " << validated_pbest.size() << "\n";
     
     return gbest_solution;
 }

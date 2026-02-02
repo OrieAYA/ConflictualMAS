@@ -8,5 +8,9 @@
 #include <vector>
 #include <limits>
 
-Memory::Memory(GeoBox& box, Pathfinder& pf) 
-    : geo_box(box), PfSystem(pf), MemoryStructure(box, pf) {}
+Memory::Memory(GeoBox& box, Pathfinder& pf)
+    : geo_box(box),
+      PfSystem(pf),
+      MemoryStructure(box, pf)
+{
+}

@@ -53,6 +53,9 @@ public:
         GlobalMemory& mem
     );
 
+    // Initialisation des densitÃ©s de reward (Ã  appeler AVANT run_all_meta_agents)
+    void initialize_reward_densities();
+
     // Recherche TABU
     float objective_function(const GlobalSolution& solution);
     std::vector<GlobalSolution> get_neighbors(const GlobalSolution& solution);

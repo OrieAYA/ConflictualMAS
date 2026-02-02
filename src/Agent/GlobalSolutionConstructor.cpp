@@ -12,6 +12,44 @@ GlobalSolutionConstructor::GlobalSolutionConstructor(
     pathfinder(pf),
     global_memory(mem) {}
 
+void GlobalSolutionConstructor::initialize_reward_densities() {
+    std::cout << "\n[GlobalConstructor] Préchauffage - appel check_neighborhood pour TOUS les POIs...\n";
+    
+    for(const auto& [group_id, group_data] : geo_box.data.objective_groups) {
+        const auto& pois = group_data.node_ids;
+        if(pois.empty()) continue;
+        
+        std::cout << "  Groupe " << group_id << ": " << pois.size() << " POIs...\n";
+        
+        std::unordered_set<int> available_groups = {group_id};
+        
+        int processed = 0;
+        for(const auto& poi : pois) {
+            std::cout << "    POI #" << processed << " (ID=" << poi << ")..." << std::flush;
+            
+            std::unordered_set<osmium::object_id_type> empty_visited = {};
+            global_memory.check_neighborhood(poi, available_groups, empty_visited);
+            
+            std::cout << " OK\n" << std::flush;
+            
+            processed++;
+        }
+        
+        if (group_id < global_memory.avg_distance_by_group.size() &&
+            global_memory.count_by_group[group_id] > 0)
+        {
+            std::cout << "    avg_distance="
+                    << global_memory.avg_distance_by_group[group_id]
+                    << "m\n";
+        }
+        else {
+            std::cout << "    (aucune distance calculée)\n";
+        }
+    }
+    
+    std::cout << "[GlobalConstructor] Préchauffage terminé\n\n";
+}
+
 float GlobalSolutionConstructor::objective_function(const GlobalSolution& solution) {
     float reward = 0.0f;
     
@@ -49,9 +87,7 @@ GlobalSolution GlobalSolutionConstructor::tabu_search(int max_iterations, int ta
     std::vector<GlobalSolution> tabu_list;
 
     for (int iter = 0; iter < max_iterations; iter++) {
-        std::cout << "On est ok ici 1." << iter << std::endl;
         std::vector<GlobalSolution> neighbors = get_neighbors(current_solution);
-        std::cout << "On est ok ici 2." << iter << std::endl;
         GlobalSolution best_neighbor;
         float best_neighbor_fitness = std::numeric_limits<float>::max();
 
@@ -65,8 +101,6 @@ GlobalSolution GlobalSolutionConstructor::tabu_search(int max_iterations, int ta
             }
         }
 
-        std::cout << "On est ok ici 3." << iter << std::endl;
-
         if (best_neighbor.empty()) {
             break;
         }
@@ -74,25 +108,17 @@ GlobalSolution GlobalSolutionConstructor::tabu_search(int max_iterations, int ta
         current_solution = best_neighbor;
         tabu_list.push_back(best_neighbor);
 
-        std::cout << "On est ok ici 4." << iter << std::endl;
-
         if (static_cast<int>(tabu_list.size()) > tabu_list_size) {
             tabu_list.erase(tabu_list.begin());
         }
 
-        std::cout << "On est ok ici 5." << iter << std::endl;
-
         float current_reward = objective_function(current_solution);
         float best_reward = objective_function(best_solution);
-
-        std::cout << "On est ok ici 6." << iter << std::endl;
 
         if (current_reward < best_reward) {
             best_solution = best_neighbor;
         }
     }
-
-    std::cout << "On est ok ici final search" << std::endl;
 
     return best_solution;
 }

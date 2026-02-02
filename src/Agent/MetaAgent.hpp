@@ -40,18 +40,20 @@ private:
     std::unordered_set<osmium::object_id_type> used_starting_pois;
     std::vector<osmium::object_id_type> all_pois;
     
-    MetaAgentParams params;
     std::mt19937 rng;
 
     // Méthodes privées
     void collect_all_pois();
+    void update_max_reward_per_meter();  // Met à jour selon avg_distance dans memory
     osmium::object_id_type select_random_unused_poi();
     bool try_add_agent();
     void print_statistics();
 
 public:
 
+    MetaAgentParams params;
     double min_fitness = 0;
+    float max_reward_per_meter = 0.0f;  // Mis à jour dynamiquement
     Solution gbest_solution;
     std::map<int,double> characteristics;
     std::vector<Solution> validated_pbest;
