@@ -231,7 +231,7 @@ struct GlobalMemory {
             
             Path path_to_insert = p[0];
             
-            // OPTIMISATION: comparer seulement avec les 3 derniers chemins
+            /* OPTIMISATION: comparer seulement avec les 3 derniers chemins
             if(p.size() > 1 && !paths.empty()){
                 float lowest_similarity = std::numeric_limits<float>::max();
                 
@@ -250,7 +250,8 @@ struct GlobalMemory {
                     }
                 }
             }
-            
+            */
+           
             paths.push_back(path_to_insert);
             cost += path_to_insert.cost;
         }
@@ -266,8 +267,6 @@ struct GlobalMemory {
                 return it_b->second;
             }
         }
-        
-        std::cout << "Started a PF non neighbooring search" << std::endl;
 
         std::vector<osmium::object_id_type> edges = PfSystem.A_Star_Search(A, B);
         
@@ -298,6 +297,16 @@ struct GlobalMemory {
         std::unordered_set<int>& available_groups,
         const std::unordered_set<osmium::object_id_type>& visited_pois = {}
     ){
+        for(const auto& neighbor : visited_Neighborhoods[n]){
+            if(visited_pois.find(neighbor) == visited_pois.end()){
+                for(const auto& groupe : geo_box.data.nodes[neighbor].groupes){
+                    if(available_groups.find(groupe) != available_groups.end()){
+                        return neighbor;
+                    }
+                }
+            }
+        }
+
         std::vector<Path> sol = PfSystem.Neighbor_Search(n, available_groups, visited_pois);
 
         osmium::object_id_type nearest_available_neighbor = 0;

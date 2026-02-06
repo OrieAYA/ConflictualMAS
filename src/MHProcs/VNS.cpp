@@ -3,435 +3,1178 @@
 #include <algorithm>
 #include <limits>
 #include <chrono>
+#include <cmath>
+#include <iomanip>
 
-// Constructeur
-VNSSolver::VNSSolver(GeoBox& box) : geo_box(box) {
-    // Initialiser le générateur de nombres aléatoires
+// ============================================================================
+// CONSTRUCTEUR
+// ============================================================================
+VNSSolver::VNSSolver(GeoBox& box, Pathfinder& pf, GlobalMemory& mem) 
+    : geo_box(box), pathfinder(pf), global_memory(mem), best_fitness(0.0) {
     rng.seed(std::chrono::steady_clock::now().time_since_epoch().count());
 }
 
-// Méthode principale VNS pour un groupe
-bool VNSSolver::solve_single_group(
-    const std::vector<osmium::object_id_type>& objective_nodes,
-    int group_id,
-    const VNSParams& params) {
-
-    if (objective_nodes.size() < 2) {
-        std::cout << "VNS Groupe " << group_id << ": Pas assez de POI (minimum 2)" << std::endl;
-        return false;
+void VNSSolver::diagnose_vns_behavior(
+    const std::vector<osmium::object_id_type>& initial_sol,
+    const std::vector<osmium::object_id_type>& final_sol,
+    int total_iterations,
+    int improvements_count) {
+    
+    std::cout << "\n======================================================" << std::endl;
+    std::cout << "|              DIAGNOSTIC VNS                        |" << std::endl;
+    std::cout << "======================================================" << std::endl;
+    
+    // ========================================
+    // TEST 1 : COMPARAISON INITIAL VS FINAL
+    // ========================================
+    std::cout << "\n[TEST 1] Evolution de la solution:" << std::endl;
+    
+    double initial_fitness = calculate_fitness(initial_sol);
+    double final_fitness = calculate_fitness(final_sol);
+    double improvement_pct = ((final_fitness - initial_fitness) / initial_fitness) * 100.0;
+    
+    std::cout << "  Solution initiale:" << std::endl;
+    std::cout << "    - Fitness: " << static_cast<int>(initial_fitness) << std::endl;
+    std::cout << "    - POIs: " << initial_sol.size() << std::endl;
+    std::cout << "    - Distance: " << static_cast<int>(calculate_distance(initial_sol)) << "m" << std::endl;
+    
+    std::cout << "\n  Solution finale:" << std::endl;
+    std::cout << "    - Fitness: " << static_cast<int>(final_fitness) << std::endl;
+    std::cout << "    - POIs: " << final_sol.size() << std::endl;
+    std::cout << "    - Distance: " << static_cast<int>(calculate_distance(final_sol)) << "m" << std::endl;
+    
+    std::cout << "\n  Amelioration: " << std::fixed << std::setprecision(2) 
+              << improvement_pct << "%" << std::endl;
+    
+    if (improvement_pct < 1.0) {
+        std::cout << "  [WARN]  PROBLEME: Amelioration < 1% - VNS n'a presque rien fait !" << std::endl;
+    } else if (improvement_pct < 5.0) {
+        std::cout << "  [WARN]  Amelioration faible (< 5%)" << std::endl;
+    } else {
+        std::cout << "  [OK] Amelioration significative" << std::endl;
     }
-
-    std::cout << "\n=== VNS GROUPE " << group_id << " ===" << std::endl;
-    std::cout << "POI à optimiser: " << objective_nodes.size() << std::endl;
-
-    // 1. Construire le cache des distances
-    std::cout << "Construction du cache des distances..." << std::endl;
-    build_distance_cache(objective_nodes);
-
-    // 2. Générer une solution initiale
-    VNSSolution current_solution = generate_initial_solution(objective_nodes);
-    if (!current_solution.is_valid) {
-        std::cout << "VNS: Impossible de générer une solution initiale" << std::endl;
-        return false;
+    
+    std::cout << "\n  Iterations totales: " << total_iterations << std::endl;
+    std::cout << "  Ameliorations acceptees: " << improvements_count << std::endl;
+    
+    if (improvements_count == 0) {
+        std::cout << "  [WARN]  PROBLEME CRITIQUE: AUCUNE amelioration acceptee !" << std::endl;
+        std::cout << "      -> La solution initiale est DEJA un optimum local" << std::endl;
+        std::cout << "      -> OU les operateurs VND ne fonctionnent pas" << std::endl;
+    } else if (improvements_count < 5) {
+        std::cout << "  [WARN]  Tres peu d'ameliorations (< 5)" << std::endl;
     }
-
-    VNSSolution best_solution = current_solution;
-    std::cout << "Solution initiale: " << static_cast<int>(current_solution.total_distance) << "m" << std::endl;
-
-    // 3. Algorithme VNS principal
-    for (int iteration = 0; iteration < params.max_iterations; ++iteration) {
+    
+    // ========================================
+    // TEST 2 : TESTER SHAKE MANUELLEMENT
+    // ========================================
+    std::cout << "\n[TEST 2] Test des operateurs SHAKE:" << std::endl;
+    
+    for (int k = 1; k <= 5; k++) {
+        std::vector<osmium::object_id_type> shaken = shake(final_sol, k);
+        double shaken_fitness = calculate_fitness(shaken);
+        double diff = final_fitness - shaken_fitness;
         
-        // Boucle sur les structures de voisinage
-        for (int k = 0; k < params.max_neighborhoods; ++k) {
-            
-            // Phase de secousse (shaking)
-            VNSSolution shaken_solution = shaking(current_solution, k, params);
-            
-            // Recherche locale
-            NeighborhoodType neighborhood = static_cast<NeighborhoodType>(k % 4);
-            VNSSolution local_optimum = local_search(shaken_solution, neighborhood, params);
-            
-            // Mouvement ou non
-            if (local_optimum.is_valid && local_optimum.total_distance < current_solution.total_distance) {
-                current_solution = local_optimum;
-                
-                // Mise à jour du meilleur
-                if (current_solution.total_distance < best_solution.total_distance) {
-                    best_solution = current_solution;
-                }
-                
-                // Redémarrer depuis le premier voisinage
-                k = -1; // Sera incrémenté à 0 par la boucle for
+        std::cout << "  k=" << k << " | Fitness apres shake: " 
+                  << static_cast<int>(shaken_fitness) 
+                  << " | Delta = " << static_cast<int>(diff)
+                  << " | POIs: " << shaken.size() << std::endl;
+        
+        if (diff < 10) {
+            std::cout << "      [WARN]  Shake trop faible (Delta < 10) - perturbation insuffisante !" << std::endl;
+        }
+    }
+    
+    // ========================================
+    // TEST 3 : TESTER VND MANUELLEMENT
+    // ========================================
+    std::cout << "\n[TEST 3] Test des operateurs VND:" << std::endl;
+    
+    VNSParams test_params;
+    test_params.max_iterations_vnd = 10;
+    test_params.use_add_remove = true;
+    test_params.use_swap = true;
+    test_params.use_insertion = true;
+    test_params.use_two_opt = true;
+    
+    // Test add_best_poi
+    std::vector<osmium::object_id_type> with_add = add_best_poi(final_sol);
+    double add_fitness = calculate_fitness(with_add);
+    std::cout << "  add_best_poi: " << static_cast<int>(final_fitness) 
+              << " -> " << static_cast<int>(add_fitness)
+              << " (Delta=" << static_cast<int>(add_fitness - final_fitness) << ")" << std::endl;
+    
+    if (add_fitness <= final_fitness) {
+        std::cout << "      [WARN]  add_best_poi n'ameliore PAS !" << std::endl;
+        
+        // Verifier pourquoi
+        std::unordered_set<osmium::object_id_type> in_sol(final_sol.begin(), final_sol.end());
+        int candidates = 0;
+        for (const auto& poi : all_pois) {
+            if (in_sol.count(poi) == 0) {
+                candidates++;
             }
         }
         
-        // Diversification si pas d'amélioration
-        if (params.diversification && iteration > 0 && iteration % 50 == 0) {
-            current_solution = shaking(best_solution, params.max_neighborhoods / 2, params);
-        }
-        
-        // Affichage du progrès
-        if (iteration % 40 == 0 || iteration == params.max_iterations - 1) {
-            std::cout << "Itération " << iteration << " - Distance actuelle: " 
-                      << static_cast<int>(current_solution.total_distance) 
-                      << "m, Meilleure: " << static_cast<int>(best_solution.total_distance) << "m" << std::endl;
-        }
-    }
-
-    std::cout << "Solution VNS trouvée - Distance totale: " << static_cast<int>(best_solution.total_distance) << "m" << std::endl;
-    
-    // Appliquer le tour optimal aux ways
-    apply_tour_to_ways(best_solution.tour, group_id);
-
-    return true;
-}
-
-// Génération de solution initiale
-VNSSolution VNSSolver::generate_initial_solution(const std::vector<osmium::object_id_type>& nodes) {
-    // Utiliser l'heuristique du plus proche voisin
-    return nearest_neighbor_heuristic(nodes);
-}
-
-VNSSolution VNSSolver::nearest_neighbor_heuristic(const std::vector<osmium::object_id_type>& nodes) {
-    VNSSolution solution;
-    
-    if (nodes.empty()) return solution;
-    
-    // Commencer par le premier nœud
-    osmium::object_id_type current = nodes[0];
-    solution.tour.push_back(current);
-    
-    std::unordered_set<osmium::object_id_type> unvisited(nodes.begin() + 1, nodes.end());
-    
-    // Construire le tour avec l'heuristique du plus proche voisin
-    while (!unvisited.empty()) {
-        osmium::object_id_type nearest = 0;
-        double min_distance = std::numeric_limits<double>::max();
-        
-        for (const auto& candidate : unvisited) {
-            double distance = get_distance(current, candidate);
-            if (distance < min_distance) {
-                min_distance = distance;
-                nearest = candidate;
-            }
-        }
-        
-        if (nearest != 0) {
-            solution.tour.push_back(nearest);
-            unvisited.erase(nearest);
-            current = nearest;
+        if (candidates == 0) {
+            std::cout << "         Raison: TOUS les POIs sont deja dans la solution !" << std::endl;
         } else {
-            break;
+            std::cout << "         POIs disponibles: " << candidates << std::endl;
+            std::cout << "         Raison: Contrainte distance trop stricte ?" << std::endl;
         }
     }
     
-    if (solution.tour.size() == nodes.size()) {
-        solution.total_distance = calculate_tour_distance(solution.tour);
-        solution.is_valid = true;
+    // Test best_swap
+    std::vector<osmium::object_id_type> with_swap = best_swap(final_sol);
+    double swap_fitness = calculate_fitness(with_swap);
+    std::cout << "  best_swap: " << static_cast<int>(final_fitness) 
+              << " -> " << static_cast<int>(swap_fitness)
+              << " (Delta=" << static_cast<int>(swap_fitness - final_fitness) << ")" << std::endl;
+    
+    if (swap_fitness <= final_fitness) {
+        std::cout << "      [WARN]  best_swap n'ameliore PAS !" << std::endl;
+    }
+    
+    // Test best_insertion
+    std::vector<osmium::object_id_type> with_insert = best_insertion(final_sol);
+    double insert_fitness = calculate_fitness(with_insert);
+    std::cout << "  best_insertion: " << static_cast<int>(final_fitness) 
+              << " -> " << static_cast<int>(insert_fitness)
+              << " (Delta=" << static_cast<int>(insert_fitness - final_fitness) << ")" << std::endl;
+    
+    if (insert_fitness <= final_fitness) {
+        std::cout << "      [WARN]  best_insertion n'ameliore PAS !" << std::endl;
+    }
+    
+    // Test two_opt
+    std::vector<osmium::object_id_type> with_2opt = two_opt(final_sol);
+    double opt_fitness = calculate_fitness(with_2opt);
+    double opt_dist = calculate_distance(with_2opt);
+    double orig_dist = calculate_distance(final_sol);
+    
+    std::cout << "  two_opt: distance " << static_cast<int>(orig_dist) 
+              << " -> " << static_cast<int>(opt_dist)
+              << " (Delta=" << static_cast<int>(orig_dist - opt_dist) << "m)" << std::endl;
+    
+    if (opt_dist >= orig_dist) {
+        std::cout << "      [WARN]  two_opt ne reduit PAS la distance !" << std::endl;
+    }
+    
+    // ========================================
+    // TEST 4 : SATURATION DE LA SOLUTION
+    // ========================================
+    std::cout << "\n[TEST 4] Saturation:" << std::endl;
+    
+    double current_dist = calculate_distance(final_sol);
+    double remaining_dist = max_distance_constraint - current_dist;
+    double usage_pct = (current_dist / max_distance_constraint) * 100.0;
+    
+    std::cout << "  Distance utilisee: " << static_cast<int>(current_dist) << "m / "
+              << static_cast<int>(max_distance_constraint) << "m ("
+              << std::fixed << std::setprecision(1) << usage_pct << "%)" << std::endl;
+    std::cout << "  Distance restante: " << static_cast<int>(remaining_dist) << "m" << std::endl;
+    
+    std::unordered_set<osmium::object_id_type> in_sol(final_sol.begin(), final_sol.end());
+    int pois_used = final_sol.size();
+    int pois_available = all_pois.size() - pois_used;
+    
+    std::cout << "  POIs utilises: " << pois_used << " / " << all_pois.size() 
+              << " (" << static_cast<int>((pois_used * 100.0) / all_pois.size()) << "%)" << std::endl;
+    std::cout << "  POIs disponibles: " << pois_available << std::endl;
+    
+    if (pois_available == 0) {
+        std::cout << "  [OK] Solution SATUREE - tous les POIs sont utilises" << std::endl;
+        std::cout << "    -> Normal que VNS ne bouge plus" << std::endl;
+    } else if (usage_pct > 98.0) {
+        std::cout << "  [OK] Contrainte distance saturee (> 98%)" << std::endl;
+        std::cout << "    -> Peu de marge pour ajouter des POIs" << std::endl;
+    } else if (usage_pct < 70.0) {
+        std::cout << "  [WARN]  Utilisation faible (< 70%)" << std::endl;
+        std::cout << "      -> VNS devrait pouvoir ajouter plus de POIs !" << std::endl;
+    }
+    
+    // ========================================
+    // TEST 5 : VERIFIER GREEDY_REPAIR
+    // ========================================
+    std::cout << "\n[TEST 5] Test greedy_repair:" << std::endl;
+    
+    // Retirer 5 POIs et essayer de reparer
+    std::vector<osmium::object_id_type> damaged = random_remove(final_sol, 5);
+    double damaged_fitness = calculate_fitness(damaged);
+    
+    std::vector<osmium::object_id_type> repaired = greedy_repair(damaged);
+    double repaired_fitness = calculate_fitness(repaired);
+    
+    std::cout << "  Solution degradee: " << static_cast<int>(damaged_fitness) 
+              << " (" << damaged.size() << " POIs)" << std::endl;
+    std::cout << "  Apres greedy_repair: " << static_cast<int>(repaired_fitness)
+              << " (" << repaired.size() << " POIs)" << std::endl;
+    std::cout << "  Recuperation: " << static_cast<int>(repaired_fitness - damaged_fitness) << std::endl;
+    
+    if (repaired_fitness < final_fitness * 0.9) {
+        std::cout << "  [WARN]  greedy_repair ne reconstruit PAS bien !" << std::endl;
+        std::cout << "      -> Probleme dans l'algorithme greedy" << std::endl;
+    }
+    
+    // ========================================
+    // CONCLUSION
+    // ========================================
+    std::cout << "\n[CONCLUSION]" << std::endl;
+    
+    if (pois_available == 0 || usage_pct > 98.0) {
+        std::cout << "  [OK] NORMAL: Solution deja optimale/saturee des le depart" << std::endl;
+        std::cout << "    -> Greedy construction est tres efficace" << std::endl;
+        std::cout << "    -> VNS n'a rien a ameliorer" << std::endl;
+    } else if (improvements_count == 0) {
+        std::cout << "  [ERREUR] PROBLEME: VNS ne fonctionne PAS" << std::endl;
+        std::cout << "    Causes possibles:" << std::endl;
+        std::cout << "    1. Shake trop faible (ne perturbe pas assez)" << std::endl;
+        std::cout << "    2. VND bloque (operateurs n'ameliorent pas)" << std::endl;
+        std::cout << "    3. Condition d'acceptation trop stricte" << std::endl;
+    } else if (improvement_pct < 5.0 && pois_available > 10) {
+        std::cout << "  [WARN]  SOUS-OPTIMAL: VNS ameliore peu" << std::endl;
+        std::cout << "    -> Augmenter k_max ou max_iterations" << std::endl;
+        std::cout << "    -> Shake plus agressif (retirer plus de POIs)" << std::endl;
+    } else {
+        std::cout << "  [OK] VNS fonctionne correctement" << std::endl;
+    }
+    
+    std::cout << "\n======================================================" << std::endl;
+}
+
+// ============================================================================
+// COLLECTE DES POIs RECOMPENSABLES
+// ============================================================================
+void VNSSolver::collect_rewardable_pois(const std::vector<int>& chars) {
+    all_pois.clear();
+    std::unordered_set<osmium::object_id_type> seen;
+    
+    std::cout << "[VNS] Collecte POIs avec characteristics:" << std::endl;
+    for(size_t i = 0; i < chars.size(); i++) {
+        if(chars[i] > 0) {
+            std::cout << "  Groupe " << i << " = " << chars[i] << std::endl;
+        }
+    }
+
+    for (const auto& [node_id, node_data] : geo_box.data.nodes) {
+        if (node_data.groupes.empty()) continue;
+        
+        // ✓ CORRECTION : Vérifier si ce POI appartient à UN groupe valorisé
+        bool is_rewardable = false;
+        for (const int group_id : node_data.groupes) {
+            // ✓ Vérifier si characteristics[group_id] > 0
+            if (group_id >= 0 && group_id < static_cast<int>(chars.size())) {
+                if (chars[group_id] > 0) {  // ← BONNE VÉRIFICATION
+                    is_rewardable = true;
+                    break;
+                }
+            }
+        }
+        
+        if (is_rewardable && seen.insert(node_id).second) {
+            all_pois.push_back(node_id);
+        }
+    }
+    
+    std::cout << "[VNS] POIs récompensables trouvés: " << all_pois.size() << std::endl;
+}
+
+// ============================================================================
+// GENERATION SOLUTION INITIALE
+// ============================================================================
+std::vector<osmium::object_id_type> VNSSolver::generate_initial_solution() {
+    
+    std::cout << "\n[DIAGNOSTIC] generate_initial_solution:" << std::endl;
+    std::cout << "  all_pois.size() = " << all_pois.size() << std::endl;
+    
+    // Essayer plusieurs solutions greedy
+    std::vector<osmium::object_id_type> best;
+    double best_fit = 0.0;
+    
+    int num_tries = std::min(5, static_cast<int>(all_pois.size()));
+    
+    for (int i = 0; i < num_tries; i++) {
+        std::vector<osmium::object_id_type> candidate = greedy_construction();
+        
+        double fit = calculate_fitness(candidate);
+        if (fit > best_fit) {
+            best_fit = fit;
+            best = candidate;
+        }
+    }
+    
+    return best;
+}
+
+std::vector<osmium::object_id_type> VNSSolver::greedy_construction() {
+    
+    if (all_pois.empty()) {
+        std::cout << "[VNS] all_pois est vide !" << std::endl;
+        return {};
+    }
+    
+    // Choisir un POI de départ aléatoire
+    std::uniform_int_distribution<size_t> dist(0, all_pois.size() - 1);
+    osmium::object_id_type start_poi = all_pois[dist(rng)];
+    
+    std::vector<osmium::object_id_type> solution;
+    std::unordered_set<osmium::object_id_type> used;
+    
+    solution.push_back(start_poi);
+    used.insert(start_poi);
+    
+    double current_distance = 0.0;
+    
+    std::cout << "[VNS] Greedy start depuis POI " << start_poi << std::endl;
+    
+    // ========================================
+    // GREEDY LOOP
+    // ========================================
+    bool added = true;
+    int iteration = 0;
+    
+    while (added && used.size() < all_pois.size() && iteration < 100) {
+        added = false;
+        iteration++;
+        
+        osmium::object_id_type best_next = 0;
+        double best_ratio = -1.0;
+        double best_edge_distance = 0.0;
+        
+        osmium::object_id_type last_poi = solution.back();
+        
+        int candidates_tested = 0;
+        int candidates_feasible = 0;
+        
+        // Tester tous les POIs non-utilisés
+        for (const auto& candidate : all_pois) {
+            if (used.count(candidate)) continue;
+            
+            candidates_tested++;
+            
+            // Calculer distance
+            std::vector<Path> paths = global_memory.check_path(last_poi, candidate);
+            
+            if (paths.empty() || paths[0].cost == std::numeric_limits<float>::max()) {
+                continue;
+            }
+            
+            double edge_distance = static_cast<double>(paths[0].cost);
+            double new_total = current_distance + edge_distance;
+            
+            // Vérifier contrainte distance
+            if (new_total > max_distance_constraint) {
+                continue;
+            }
+            
+            candidates_feasible++;
+            
+            // Calculer ratio reward/distance
+            int reward = get_poi_reward(candidate);
+            
+            if (edge_distance > 0 && reward > 0) {
+                double ratio = static_cast<double>(reward) / edge_distance;
+                
+                if (ratio > best_ratio) {
+                    best_ratio = ratio;
+                    best_next = candidate;
+                    best_edge_distance = edge_distance;
+                }
+            }
+        }
+        
+        // Debug toutes les 5 itérations
+        if (iteration % 5 == 0 || iteration == 1) {
+            std::cout << "  Iter " << iteration 
+                      << ": tested=" << candidates_tested 
+                      << ", feasible=" << candidates_feasible;
+        }
+        
+        // Ajouter le meilleur POI trouvé
+        if (best_next != 0) {
+            solution.push_back(best_next);
+            used.insert(best_next);
+            current_distance += best_edge_distance;
+            added = true;
+            
+            if (iteration % 5 == 0 || iteration == 1) {
+                std::cout << " -> Added POI " << best_next 
+                          << " (ratio=" << std::fixed << std::setprecision(2) << best_ratio 
+                          << ", total_dist=" << static_cast<int>(current_distance) << "m)" 
+                          << std::endl;
+            }
+        } else {
+            if (iteration % 5 == 0 || iteration == 1) {
+                std::cout << " -> No feasible POI" << std::endl;
+            }
+            break;  // Arrêter si aucun POI n'est faisable
+        }
+    }
+    
+    double final_fitness = calculate_fitness(solution);
+    double final_distance = calculate_distance(solution);
+    
+    std::cout << "[VNS] Greedy final: " 
+              << solution.size() << " POIs, "
+              << "fitness=" << static_cast<int>(final_fitness) 
+              << ", distance=" << static_cast<int>(final_distance) << "m"
+              << std::endl;
+    
+    return solution;
+}
+// ============================================================================
+// SHAKE (Perturbation)
+// ============================================================================
+std::vector<osmium::object_id_type> VNSSolver::shake(
+    const std::vector<osmium::object_id_type>& solution,
+    int k) {
+    
+    if (solution.size() <= 2) return solution;
+    
+    std::vector<osmium::object_id_type> shaken = solution;
+    
+    // [OK] SHAKE PLUS AGRESSIF
+    switch(k) {
+        case 1:
+            // k=1 : Retirer 20% (minimum 2)
+            {
+                int num = std::max(2, static_cast<int>(shaken.size() * 0.2));
+                shaken = random_remove(shaken, num);
+            }
+            break;
+            
+        case 2:
+            // k=2 : Retirer 30%
+            {
+                int num = std::max(3, static_cast<int>(shaken.size() * 0.3));
+                shaken = random_remove(shaken, num);
+            }
+            break;
+            
+        case 3:
+            // k=3 : Retirer 40%
+            {
+                int num = std::max(4, static_cast<int>(shaken.size() * 0.4));
+                shaken = random_remove(shaken, num);
+            }
+            break;
+            
+        case 4:
+            // k=4 : Retirer 50%
+            {
+                int num = std::max(5, static_cast<int>(shaken.size() * 0.5));
+                shaken = random_remove(shaken, num);
+            }
+            break;
+            
+        case 5:
+            // k=5 : Retirer 60% + swaps
+            {
+                int num = std::max(6, static_cast<int>(shaken.size() * 0.6));
+                shaken = random_remove(shaken, num);
+                shaken = random_swap(shaken, 3);
+            }
+            break;
+            
+        default:
+            // k > 5 : Retirer 70%
+            {
+                int num = std::max(7, static_cast<int>(shaken.size() * 0.7));
+                shaken = random_remove(shaken, num);
+            }
+            break;
+    }
+    
+    // Reparer avec greedy
+    shaken = greedy_repair(shaken);
+    
+    return shaken;
+}
+
+std::vector<osmium::object_id_type> VNSSolver::random_remove(
+    const std::vector<osmium::object_id_type>& solution,
+    int num_to_remove) {
+    
+    if (solution.size() <= 2) return solution;
+    
+    std::vector<osmium::object_id_type> result = solution;
+    num_to_remove = std::min(num_to_remove, static_cast<int>(result.size()) - 1);
+    
+    for (int i = 0; i < num_to_remove; i++) {
+        if (result.size() <= 1) break;
+        
+        std::uniform_int_distribution<size_t> dist(0, result.size() - 1);
+        size_t pos = dist(rng);
+        result.erase(result.begin() + pos);
+    }
+    
+    return result;
+}
+
+std::vector<osmium::object_id_type> VNSSolver::random_swap(
+    const std::vector<osmium::object_id_type>& solution,
+    int num_swaps) {
+    
+    if (solution.size() < 2) return solution;
+    
+    std::vector<osmium::object_id_type> result = solution;
+    
+    for (int i = 0; i < num_swaps; i++) {
+        std::uniform_int_distribution<size_t> dist(0, result.size() - 1);
+        size_t pos1 = dist(rng);
+        size_t pos2 = dist(rng);
+        
+        if (pos1 != pos2) {
+            std::swap(result[pos1], result[pos2]);
+        }
+    }
+    
+    return result;
+}
+
+std::vector<osmium::object_id_type> VNSSolver::random_insert(
+    const std::vector<osmium::object_id_type>& solution,
+    int num_inserts) {
+    
+    if (solution.size() < 2) return solution;
+    
+    std::vector<osmium::object_id_type> result = solution;
+    
+    for (int i = 0; i < num_inserts; i++) {
+        if (result.size() <= 1) break;
+        
+        std::uniform_int_distribution<size_t> dist(0, result.size() - 1);
+        size_t from = dist(rng);
+        size_t to = dist(rng);
+        
+        osmium::object_id_type poi = result[from];
+        result.erase(result.begin() + from);
+        
+        if (to > from) to--;
+        if (to < result.size()) {
+            result.insert(result.begin() + to, poi);
+        } else {
+            result.push_back(poi);
+        }
+    }
+    
+    return result;
+}
+
+// ============================================================================
+// VND (Variable Neighborhood Descent)
+// ============================================================================
+std::vector<osmium::object_id_type> VNSSolver::variable_neighborhood_descent(
+    const std::vector<osmium::object_id_type>& solution,
+    const VNSParams& params) {
+    
+    std::vector<osmium::object_id_type> current = solution;
+    double current_fitness = calculate_fitness(current);
+    
+    int l = 1;
+    const int l_max = 4;
+    int iterations = 0;
+    
+    while (l <= l_max && iterations < params.max_iterations_vnd) {
+        iterations++;
+        
+        std::vector<osmium::object_id_type> neighbor;
+        
+        switch(l) {
+            case 1:
+                // N1 : Ajouter meilleur POI
+                if (params.use_add_remove) {
+                    neighbor = add_best_poi(current);
+                }
+                break;
+                
+            case 2:
+                // N2 : Best swap
+                if (params.use_swap) {
+                    neighbor = best_swap(current);
+                }
+                break;
+                
+            case 3:
+                // N3 : Best insertion
+                if (params.use_insertion) {
+                    neighbor = best_insertion(current);
+                }
+                break;
+                
+            case 4:
+                // N4 : 2-opt
+                if (params.use_two_opt) {
+                    neighbor = two_opt(current);
+                }
+                break;
+        }
+        
+        if (neighbor.empty()) {
+            l++;
+            continue;
+        }
+        
+        double neighbor_fitness = calculate_fitness(neighbor);
+        
+        if (neighbor_fitness > current_fitness && is_feasible(neighbor)) {
+            current = neighbor;
+            current_fitness = neighbor_fitness;
+            l = 1;  // Recommencer avec le premier voisinage
+        } else {
+            l++;  // Passer au voisinage suivant
+        }
+    }
+    
+    return current;
+}
+
+// ============================================================================
+// VOISINAGES
+// ============================================================================
+std::vector<osmium::object_id_type> VNSSolver::two_opt(
+    const std::vector<osmium::object_id_type>& solution) {
+    
+    if (solution.size() < 4) return solution;
+    
+    std::vector<osmium::object_id_type> best = solution;
+    double best_distance = calculate_distance(solution);
+    bool improved = false;
+    
+    for (size_t i = 0; i < solution.size() - 1; i++) {
+        for (size_t j = i + 2; j < solution.size(); j++) {
+            std::vector<osmium::object_id_type> candidate = solution;
+            std::reverse(candidate.begin() + i + 1, candidate.begin() + j + 1);
+            
+            double dist = calculate_distance(candidate);
+            if (dist < best_distance && dist <= max_distance_constraint) {
+                best = candidate;
+                best_distance = dist;
+                improved = true;
+            }
+        }
+    }
+    
+    return improved ? best : solution;
+}
+
+std::vector<osmium::object_id_type> VNSSolver::best_insertion(
+    const std::vector<osmium::object_id_type>& solution) {
+    
+    if (solution.size() < 2) return solution;
+    
+    std::vector<osmium::object_id_type> best = solution;
+    double best_fitness = calculate_fitness(solution);
+    
+    for (size_t i = 0; i < solution.size(); i++) {
+        for (size_t j = 0; j < solution.size(); j++) {
+            if (i == j) continue;
+            
+            std::vector<osmium::object_id_type> candidate = solution;
+            osmium::object_id_type poi = candidate[i];
+            candidate.erase(candidate.begin() + i);
+            
+            size_t insert_pos = (j > i) ? j - 1 : j;
+            candidate.insert(candidate.begin() + insert_pos, poi);
+            
+            if (is_feasible(candidate)) {
+                double fitness = calculate_fitness(candidate);
+                if (fitness > best_fitness) {
+                    best = candidate;
+                    best_fitness = fitness;
+                }
+            }
+        }
+    }
+    
+    return best;
+}
+
+std::vector<osmium::object_id_type> VNSSolver::best_swap(
+    const std::vector<osmium::object_id_type>& solution) {
+    
+    if (solution.size() < 2) return solution;
+    
+    std::vector<osmium::object_id_type> best = solution;
+    double best_fitness = calculate_fitness(solution);
+    
+    for (size_t i = 0; i < solution.size(); i++) {
+        for (size_t j = i + 1; j < solution.size(); j++) {
+            std::vector<osmium::object_id_type> candidate = solution;
+            std::swap(candidate[i], candidate[j]);
+            
+            if (is_feasible(candidate)) {
+                double fitness = calculate_fitness(candidate);
+                if (fitness > best_fitness) {
+                    best = candidate;
+                    best_fitness = fitness;
+                }
+            }
+        }
+    }
+    
+    return best;
+}
+
+std::vector<osmium::object_id_type> VNSSolver::add_best_poi(
+    const std::vector<osmium::object_id_type>& solution) {
+    
+    std::unordered_set<osmium::object_id_type> in_solution(solution.begin(), solution.end());
+    
+    osmium::object_id_type best_poi = 0;
+    double best_improvement = 0.0;
+    
+    for (const auto& poi : all_pois) {
+        if (in_solution.count(poi)) continue;
+        
+        std::vector<osmium::object_id_type> temp = solution;
+        temp.push_back(poi);
+        
+        if (calculate_distance(temp) > max_distance_constraint) continue;
+        
+        double improvement = calculate_fitness(temp) - calculate_fitness(solution);
+        
+        if (improvement > best_improvement) {
+            best_improvement = improvement;
+            best_poi = poi;
+        }
+    }
+    
+    if (best_poi != 0) {
+        std::vector<osmium::object_id_type> result = solution;
+        result.push_back(best_poi);
+        return result;
     }
     
     return solution;
 }
 
-// Phase de secousse (shaking)
-VNSSolution VNSSolver::shaking(
-    const VNSSolution& solution, 
-    int neighborhood_index, 
-    const VNSParams& params) {
-
-    VNSSolution shaken = solution;
+std::vector<osmium::object_id_type> VNSSolver::remove_worst_poi(
+    const std::vector<osmium::object_id_type>& solution) {
     
-    // Intensité de la perturbation basée sur l'index du voisinage
-    int perturbation_size = 1 + neighborhood_index;
+    if (solution.size() <= 2) return solution;
     
-    switch (neighborhood_index % 3) {
-        case 0:
-            // k-opt aléatoire
-            shaken = random_k_opt(solution, perturbation_size);
-            break;
-            
-        case 1:
-            // Relocations aléatoires
-            shaken = random_relocations(solution, perturbation_size);
-            break;
-            
-        case 2:
-            // Échanges aléatoires
-            shaken = random_swaps(solution, perturbation_size);
-            break;
-    }
+    size_t worst_idx = 0;
+    double worst_ratio = std::numeric_limits<double>::max();
     
-    return shaken;
-}
-
-// Recherche locale
-VNSSolution VNSSolver::local_search(
-    const VNSSolution& solution, 
-    NeighborhoodType neighborhood_type,
-    const VNSParams& params) {
-
-    switch (neighborhood_type) {
-        case NeighborhoodType::TWO_OPT:
-            return two_opt_neighborhood(solution, params.use_first_improvement);
-            
-        case NeighborhoodType::THREE_OPT:
-            return three_opt_neighborhood(solution, params.use_first_improvement);
-            
-        case NeighborhoodType::RELOCATE:
-            return relocate_neighborhood(solution, params.use_first_improvement);
-            
-        case NeighborhoodType::SWAP:
-            return swap_neighborhood(solution, params.use_first_improvement);
-            
-        default:
-            return solution;
-    }
-}
-
-// Structure de voisinage 2-opt
-VNSSolution VNSSolver::two_opt_neighborhood(const VNSSolution& solution, bool first_improvement) {
-    VNSSolution best = solution;
-    
-    for (size_t i = 1; i < solution.tour.size() - 1; ++i) {
-        for (size_t j = i + 1; j < solution.tour.size(); ++j) {
-            // Créer nouveau tour en inversant le segment [i, j]
-            std::vector<osmium::object_id_type> new_tour = solution.tour;
-            std::reverse(new_tour.begin() + i, new_tour.begin() + j + 1);
-            
-            double new_distance = calculate_tour_distance(new_tour);
-            if (new_distance < best.total_distance) {
-                best.tour = new_tour;
-                best.total_distance = new_distance;
-                
-                if (first_improvement) {
-                    return best;
-                }
-            }
-        }
-    }
-    
-    return best;
-}
-
-// Structure de voisinage 3-opt (version simplifiée)
-VNSSolution VNSSolver::three_opt_neighborhood(const VNSSolution& solution, bool first_improvement) {
-    VNSSolution best = solution;
-    
-    for (size_t i = 0; i < solution.tour.size() - 2; ++i) {
-        for (size_t j = i + 2; j < solution.tour.size(); ++j) {
-            // Version simplifiée: juste inverser un segment
-            std::vector<osmium::object_id_type> new_tour = solution.tour;
-            std::reverse(new_tour.begin() + i, new_tour.begin() + j + 1);
-            
-            double new_distance = calculate_tour_distance(new_tour);
-            if (new_distance < best.total_distance) {
-                best.tour = new_tour;
-                best.total_distance = new_distance;
-                
-                if (first_improvement) {
-                    return best;
-                }
-            }
-        }
-    }
-    
-    return best;
-}
-
-// Structure de voisinage relocate
-VNSSolution VNSSolver::relocate_neighborhood(const VNSSolution& solution, bool first_improvement) {
-    VNSSolution best = solution;
-    
-    for (size_t i = 0; i < solution.tour.size(); ++i) {
-        for (size_t j = 0; j < solution.tour.size(); ++j) {
-            if (i == j) continue;
-            
-            // Déplacer l'élément i vers la position j
-            std::vector<osmium::object_id_type> new_tour = solution.tour;
-            osmium::object_id_type element = new_tour[i];
-            new_tour.erase(new_tour.begin() + i);
-            new_tour.insert(new_tour.begin() + (j > i ? j - 1 : j), element);
-            
-            double new_distance = calculate_tour_distance(new_tour);
-            if (new_distance < best.total_distance) {
-                best.tour = new_tour;
-                best.total_distance = new_distance;
-                
-                if (first_improvement) {
-                    return best;
-                }
-            }
-        }
-    }
-    
-    return best;
-}
-
-// Structure de voisinage swap
-VNSSolution VNSSolver::swap_neighborhood(const VNSSolution& solution, bool first_improvement) {
-    VNSSolution best = solution;
-    
-    for (size_t i = 0; i < solution.tour.size(); ++i) {
-        for (size_t j = i + 1; j < solution.tour.size(); ++j) {
-            // Échanger les éléments i et j
-            std::vector<osmium::object_id_type> new_tour = solution.tour;
-            std::swap(new_tour[i], new_tour[j]);
-            
-            double new_distance = calculate_tour_distance(new_tour);
-            if (new_distance < best.total_distance) {
-                best.tour = new_tour;
-                best.total_distance = new_distance;
-                
-                if (first_improvement) {
-                    return best;
-                }
-            }
-        }
-    }
-    
-    return best;
-}
-
-// Perturbations pour la phase de secousse
-VNSSolution VNSSolver::random_k_opt(const VNSSolution& solution, int k) {
-    VNSSolution result = solution;
-    
-    for (int i = 0; i < k && result.tour.size() > 3; ++i) {
-        std::uniform_int_distribution<size_t> dist(1, result.tour.size() - 2);
-        size_t pos1 = dist(rng);
-        size_t pos2 = dist(rng);
+    for (size_t i = 0; i < solution.size(); i++) {
+        double reward = get_poi_reward(solution[i]);
+        double distance = 0.0;
         
-        if (pos1 > pos2) std::swap(pos1, pos2);
-        if (pos2 - pos1 > 1) {
-            std::reverse(result.tour.begin() + pos1, result.tour.begin() + pos2);
+        if (i > 0) distance += get_distance(solution[i-1], solution[i]);
+        if (i < solution.size() - 1) distance += get_distance(solution[i], solution[i+1]);
+        
+        if (distance > 0) {
+            double ratio = reward / distance;
+            if (ratio < worst_ratio) {
+                worst_ratio = ratio;
+                worst_idx = i;
+            }
         }
     }
     
-    result.total_distance = calculate_tour_distance(result.tour);
+    std::vector<osmium::object_id_type> result = solution;
+    result.erase(result.begin() + worst_idx);
+    
     return result;
 }
 
-VNSSolution VNSSolver::random_relocations(const VNSSolution& solution, int num_relocations) {
-    VNSSolution result = solution;
+std::vector<osmium::object_id_type> VNSSolver::or_opt(
+    const std::vector<osmium::object_id_type>& solution,
+    int segment_size) {
     
-    for (int i = 0; i < num_relocations && result.tour.size() > 2; ++i) {
-        std::uniform_int_distribution<size_t> dist(0, result.tour.size() - 1);
-        size_t from = dist(rng);
-        size_t to = dist(rng);
-        
-        if (from != to) {
-            osmium::object_id_type element = result.tour[from];
-            result.tour.erase(result.tour.begin() + from);
-            result.tour.insert(result.tour.begin() + (to > from ? to - 1 : to), element);
-        }
-    }
+    if (solution.size() < segment_size + 2) return solution;
     
-    result.total_distance = calculate_tour_distance(result.tour);
-    return result;
-}
-
-VNSSolution VNSSolver::random_swaps(const VNSSolution& solution, int num_swaps) {
-    VNSSolution result = solution;
+    std::vector<osmium::object_id_type> best = solution;
+    double best_distance = calculate_distance(solution);
     
-    for (int i = 0; i < num_swaps && result.tour.size() > 1; ++i) {
-        std::uniform_int_distribution<size_t> dist(0, result.tour.size() - 1);
-        size_t pos1 = dist(rng);
-        size_t pos2 = dist(rng);
-        
-        std::swap(result.tour[pos1], result.tour[pos2]);
-    }
-    
-    result.total_distance = calculate_tour_distance(result.tour);
-    return result;
-}
-
-// Méthodes utilitaires (similaires à GRASP et ACO)
-void VNSSolver::build_distance_cache(const std::vector<osmium::object_id_type>& nodes) {
-    distance_cache.clear();
-    
-    for (size_t i = 0; i < nodes.size(); ++i) {
-        for (size_t j = i + 1; j < nodes.size(); ++j) {
-            osmium::object_id_type node1 = nodes[i];
-            osmium::object_id_type node2 = nodes[j];
+    for (size_t i = 0; i + segment_size <= solution.size(); i++) {
+        for (size_t j = 0; j <= solution.size(); j++) {
+            if (j >= i && j <= i + segment_size) continue;
             
-            std::vector<osmium::object_id_type> path = find_shortest_path(node1, node2);
+            std::vector<osmium::object_id_type> candidate = solution;
             
-            double distance = 0.0;
-            if (!path.empty()) {
-                for (const auto& way_id : path) {
-                    auto way_it = geo_box.data.ways.find(way_id);
-                    if (way_it != geo_box.data.ways.end()) {
-                        distance += way_it->second.distance_meters;
-                    }
-                }
-            } else {
-                distance = std::numeric_limits<double>::max();
+            // Extraire le segment
+            std::vector<osmium::object_id_type> segment(
+                candidate.begin() + i, 
+                candidate.begin() + i + segment_size
+            );
+            
+            // Supprimer le segment
+            candidate.erase(
+                candidate.begin() + i, 
+                candidate.begin() + i + segment_size
+            );
+            
+            // Inserer ailleurs
+            size_t insert_pos = (j > i) ? j - segment_size : j;
+            candidate.insert(
+                candidate.begin() + insert_pos, 
+                segment.begin(), 
+                segment.end()
+            );
+            
+            double dist = calculate_distance(candidate);
+            if (dist < best_distance && dist <= max_distance_constraint) {
+                best = candidate;
+                best_distance = dist;
             }
-            
-            auto key = std::make_pair(std::min(node1, node2), std::max(node1, node2));
-            distance_cache[key] = distance;
         }
     }
+    
+    return best;
+}
+
+// ============================================================================
+// REPARATION
+// ============================================================================
+std::vector<osmium::object_id_type> VNSSolver::repair_solution(
+    const std::vector<osmium::object_id_type>& solution) {
+    
+    std::vector<osmium::object_id_type> repaired = solution;
+    
+    while (!repaired.empty() && calculate_distance(repaired) > max_distance_constraint) {
+        repaired = remove_worst_poi(repaired);
+    }
+    
+    return repaired;
+}
+
+std::vector<osmium::object_id_type> VNSSolver::greedy_repair(
+    const std::vector<osmium::object_id_type>& solution) {
+    
+    std::vector<osmium::object_id_type> repaired = solution;
+    
+    // D'abord reparer si trop long
+    while (!repaired.empty() && calculate_distance(repaired) > max_distance_constraint) {
+        repaired = remove_worst_poi(repaired);
+    }
+    
+    // Ensuite essayer d'ajouter greedy
+    std::unordered_set<osmium::object_id_type> in_solution(repaired.begin(), repaired.end());
+    
+    bool added = true;
+    while (added) {
+        added = false;
+        
+        osmium::object_id_type best_poi = 0;
+        double best_ratio = -1.0;
+        
+        for (const auto& poi : all_pois) {
+            if (in_solution.count(poi)) continue;
+            
+            std::vector<osmium::object_id_type> temp = repaired;
+            temp.push_back(poi);
+            
+            double new_distance = calculate_distance(temp);
+            if (new_distance > max_distance_constraint) continue;
+            
+            double added_distance = new_distance - calculate_distance(repaired);
+            int added_reward = get_poi_reward(poi);
+            
+            if (added_distance > 0) {
+                double ratio = static_cast<double>(added_reward) / added_distance;
+                if (ratio > best_ratio) {
+                    best_ratio = ratio;
+                    best_poi = poi;
+                }
+            }
+        }
+        
+        if (best_poi != 0) {
+            repaired.push_back(best_poi);
+            in_solution.insert(best_poi);
+            added = true;
+        }
+    }
+    
+    return repaired;
+}
+
+// ============================================================================
+// EVALUATION
+// ============================================================================
+double VNSSolver::calculate_fitness(const std::vector<osmium::object_id_type>& solution) {
+    double fitness = 0.0;
+    for (const auto& poi : solution) {
+        fitness += get_poi_reward(poi);
+    }
+    return fitness;
+}
+
+double VNSSolver::calculate_distance(const std::vector<osmium::object_id_type>& solution) {
+    if (solution.size() < 2) return 0.0;
+    
+    double total = 0.0;
+    for (size_t i = 0; i < solution.size() - 1; ++i) {
+        total += get_distance(solution[i], solution[i + 1]);
+    }
+    return total;
+}
+
+bool VNSSolver::is_feasible(const std::vector<osmium::object_id_type>& solution) {
+    return calculate_distance(solution) <= max_distance_constraint;
 }
 
 double VNSSolver::get_distance(osmium::object_id_type node1, osmium::object_id_type node2) {
-    auto key = std::make_pair(std::min(node1, node2), std::max(node1, node2));
-    auto it = distance_cache.find(key);
-    return (it != distance_cache.end()) ? it->second : std::numeric_limits<double>::max();
+    std::vector<Path> paths = global_memory.check_path(node1, node2);
+    if (paths.empty() || paths[0].cost == std::numeric_limits<float>::max()) {
+        return std::numeric_limits<double>::max();
+    }
+    return static_cast<double>(paths[0].cost);
 }
 
-double VNSSolver::calculate_tour_distance(const std::vector<osmium::object_id_type>& tour) {
-    double total_distance = 0.0;
+int VNSSolver::get_poi_reward(osmium::object_id_type poi_id) {
+    auto node_it = geo_box.data.nodes.find(poi_id);
+    if (node_it == geo_box.data.nodes.end()) return 0;
     
-    for (size_t i = 0; i < tour.size(); ++i) {
-        size_t next_i = (i + 1) % tour.size();
-        total_distance += get_distance(tour[i], tour[next_i]);
+    int reward = 0;
+    for (const int group_id : node_it->second.groupes) {
+        // ✓ CORRECTION : Accéder à characteristics[group_id]
+        if (group_id >= 0 && group_id < static_cast<int>(characteristics.size())) {
+            reward += characteristics[group_id];  // ← ACCÈS PAR INDEX, pas find()
+        }
     }
     
-    return total_distance;
+    return reward;
 }
 
-std::vector<osmium::object_id_type> VNSSolver::find_shortest_path(
-    osmium::object_id_type start, 
-    osmium::object_id_type end) {
+// ============================================================================
+// AFFICHAGE
+// ============================================================================
+void VNSSolver::print_iteration(int iteration, int k, double fitness, int num_pois, double distance) {
+    std::cout << "Iter " << std::setw(3) << iteration 
+              << " | k=" << k 
+              << " | Fitness: " << std::setw(6) << static_cast<int>(fitness)
+              << " | POIs: " << std::setw(3) << num_pois
+              << " | Dist: " << std::setw(5) << static_cast<int>(distance) << "m"
+              << std::endl;
+}
+
+void VNSSolver::print_improvement(const std::string& operator_name, double old_fitness, double new_fitness) {
+    double improvement = ((new_fitness - old_fitness) / old_fitness) * 100.0;
+    std::cout << "  [OK] " << operator_name << ": " 
+              << static_cast<int>(old_fitness) << " -> " 
+              << static_cast<int>(new_fitness) 
+              << " (+" << std::fixed << std::setprecision(1) << improvement << "%)"
+              << std::endl;
+}
+
+// ============================================================================
+// SOLVE - ALGORITHME PRINCIPAL VNS
+// ============================================================================
+VNSResult VNSSolver::solve(
+    const std::vector<int>& agent_characteristics,
+    double distance_constraint,
+    const VNSParams& params) {
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    VNSResult result;
+    characteristics = agent_characteristics;
+    max_distance_constraint = distance_constraint;
+
+    std::cout << "\n======================================================" << std::endl;
+    std::cout << "|         VNS AGGRESSIVE - DEBUG MODE                |" << std::endl;
+    std::cout << "======================================================" << std::endl;
+
+    collect_rewardable_pois(agent_characteristics);
+
+    if (all_pois.size() < 2) {
+        std::cout << "[WARN] Pas assez de POIs" << std::endl;
+        result.is_valid = false;
+        return result;
+    }
+
+    std::cout << "\nCONFIG: " << all_pois.size() << " POIs, " 
+              << static_cast<int>(distance_constraint) << "m max" << std::endl;
+
+    // ========================================
+    // SOLUTION INITIALE
+    // ========================================
+    std::cout << "\n--- CONSTRUCTION INITIALE ---" << std::endl;
+    current_solution = generate_initial_solution();
+    best_solution = current_solution;
+    best_fitness = calculate_fitness(best_solution);
     
-    Pathfinder temp_pathfinder(geo_box);
-    return temp_pathfinder.A_Star_Search(start, end);
-}
+    std::cout << "[OK] Solution initiale: Fitness=" << static_cast<int>(best_fitness) 
+              << " | POIs=" << best_solution.size() 
+              << " | Dist=" << static_cast<int>(calculate_distance(best_solution)) << "m"
+              << std::endl;
+    
+    // [OK] BACKUP pour diagnostic
+    std::vector<osmium::object_id_type> initial_backup = best_solution;
 
-void VNSSolver::apply_tour_to_ways(
-    const std::vector<osmium::object_id_type>& tour,
-    int group_id) {
+    std::cout << "\n--- DEBUT VNS ---" << std::endl;
+    std::cout << "Format: Iter | k | Action -> Fitness (POIs) | Distance" << std::endl;
+    std::cout << std::string(80, '-') << std::endl;
 
-    std::cout << "Application du tour VNS aux ways du groupe " << group_id << "..." << std::endl;
-    int ways_marked = 0;
-
-    for (size_t i = 0; i < tour.size(); ++i) {
-        size_t next_i = (i + 1) % tour.size();
-        osmium::object_id_type node1 = tour[i];
-        osmium::object_id_type node2 = tour[next_i];
-
-        std::vector<osmium::object_id_type> path = find_shortest_path(node1, node2);
+    int k = 1;
+    int iteration = 0;
+    int improvements = 0;
+    int consecutive_no_improve = 0;
+    
+    while (iteration < params.max_iterations) {
+        iteration++;
         
-        for (const auto& way_id : path) {
-            update_way_group(way_id, group_id);
-            ways_marked++;
+        double old_fitness = best_fitness;
+        
+        // ========================================
+        // SHAKE
+        // ========================================
+        std::vector<osmium::object_id_type> shaken = shake(best_solution, k);
+        double shaken_fitness = calculate_fitness(shaken);
+        
+        // [OK] LOG SHAKE
+        std::cout << "Iter " << std::setw(3) << iteration 
+                  << " | k=" << k 
+                  << " | SHAKE -> " << static_cast<int>(shaken_fitness)
+                  << " (" << shaken.size() << " POIs)"
+                  << " | Delta=" << static_cast<int>(best_fitness - shaken_fitness)
+                  << std::endl;
+        
+        // ========================================
+        // VND
+        // ========================================
+        std::vector<osmium::object_id_type> improved = variable_neighborhood_descent(shaken, params);
+        double improved_fitness = calculate_fitness(improved);
+        
+        // [OK] LOG VND
+        std::cout << "        |    | VND   -> " << static_cast<int>(improved_fitness)
+                  << " (" << improved.size() << " POIs)"
+                  << " | " << static_cast<int>(calculate_distance(improved)) << "m"
+                  << std::endl;
+        
+        // ========================================
+        // ACCEPTATION
+        // ========================================
+        if (improved_fitness > best_fitness) {
+            improvements++;
+            consecutive_no_improve = 0;
+            
+            double gain = improved_fitness - best_fitness;
+            double gain_pct = (gain / best_fitness) * 100.0;
+            
+            best_solution = improved;
+            best_fitness = improved_fitness;
+            k = 1;
+            
+            // [OK] LOG AMELIORATION
+            std::cout << "        |    | [OK] ACCEPT +" << static_cast<int>(gain)
+                      << " (+" << std::fixed << std::setprecision(2) << gain_pct << "%)"
+                      << " | NEW BEST = " << static_cast<int>(best_fitness)
+                      << std::endl;
+            std::cout << std::string(80, '-') << std::endl;
+            
+        } else {
+            consecutive_no_improve++;
+            k++;
+            
+            if (k > params.k_max) {
+                k = 1;
+            }
+            
+            // [OK] LOG REJET (seulement si verbose)
+            if (iteration % 20 == 0) {
+                std::cout << "        |    | [X] Reject (no improve x " 
+                          << consecutive_no_improve << ")" << std::endl;
+            }
+        }
+        
+        // ========================================
+        // AFFICHAGE PERIODIQUE
+        // ========================================
+        if (iteration % 20 == 0) {
+            std::cout << "\n[Iter " << iteration << "] Best=" 
+                      << static_cast<int>(best_fitness)
+                      << " | Improvements=" << improvements
+                      << " | No-improve=" << consecutive_no_improve
+                      << std::endl;
+            std::cout << std::string(80, '-') << std::endl;
         }
     }
 
-    std::cout << "Ways marqués pour le groupe " << group_id << ": " << ways_marked << std::endl;
-}
-
-void VNSSolver::update_way_group(osmium::object_id_type way_id, int new_group) {
-    auto it = geo_box.data.ways.find(way_id);
-    if (it != geo_box.data.ways.end()) {
-        it->second.add_group(new_group);
+    std::cout << "\n--- FIN VNS ---" << std::endl;
+    std::cout << "Raison arret: ";
+    if (iteration >= params.max_iterations) {
+        std::cout << "Max iterations atteintes" << std::endl;
     } else {
-        std::cerr << "Warning: Way " << way_id << " not found" << std::endl;
+        std::cout << consecutive_no_improve << " iterations sans amelioration" << std::endl;
     }
-}
 
-bool VNSSolver::is_valid_tour(const std::vector<osmium::object_id_type>& tour, 
-                             const std::vector<osmium::object_id_type>& original_nodes) {
-    return tour.size() == original_nodes.size();
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+
+    // ========================================
+    // RESULTAT
+    // ========================================
+    result.solution = best_solution;
+    result.fitness = best_fitness;
+    result.distance = calculate_distance(best_solution);
+    result.num_pois = best_solution.size();
+    result.execution_time_ms = duration.count();
+    result.is_valid = !best_solution.empty() && result.distance <= max_distance_constraint;
+
+    // ========================================
+    // STATISTIQUES FINALES
+    // ========================================
+    double initial_fitness = calculate_fitness(initial_backup);
+    double improvement_pct = ((best_fitness - initial_fitness) / initial_fitness) * 100.0;
+
+    std::cout << "\n======================================================" << std::endl;
+    std::cout << "|               RESULTAT FINAL VNS                   |" << std::endl;
+    std::cout << "======================================================" << std::endl;
+    std::cout << "|  Initiale: " << std::setw(37) << static_cast<int>(initial_fitness) << " |" << std::endl;
+    std::cout << "|  Finale:   " << std::setw(37) << static_cast<int>(result.fitness) << " |" << std::endl;
+    std::cout << "|  Amelioration: " << std::setw(27) << std::fixed << std::setprecision(2) 
+              << improvement_pct << "% |" << std::endl;
+    std::cout << "======================================================" << std::endl;
+    std::cout << "|  POIs: " << std::setw(41) << result.num_pois << " |" << std::endl;
+    std::cout << "|  Distance: " << std::setw(31) << static_cast<int>(result.distance) << "m |" << std::endl;
+    std::cout << "|  Temps: " << std::setw(36) << result.execution_time_ms << " ms |" << std::endl;
+    std::cout << "|  Iterations: " << std::setw(33) << iteration << " |" << std::endl;
+    std::cout << "|  Ameliorations: " << std::setw(30) << improvements << " |" << std::endl;
+    std::cout << "======================================================" << std::endl;
+
+    // ========================================
+    // ANALYSE
+    // ========================================
+    std::cout << "\n--- ANALYSE ---" << std::endl;
+    
+    if (improvements == 0) {
+        std::cout << "[ERREUR] PROBLEME: Aucune amelioration !" << std::endl;
+        std::cout << "   Causes possibles:" << std::endl;
+        std::cout << "   1. Solution initiale deja optimale" << std::endl;
+        std::cout << "   2. Shake trop faible" << std::endl;
+        std::cout << "   3. VND ne trouve pas de voisins meilleurs" << std::endl;
+    } else if (improvement_pct < 1.0) {
+        std::cout << "[WARN] Amelioration minime (< 1%)" << std::endl;
+        std::cout << "   -> Solution initiale deja tres bonne" << std::endl;
+    } else if (improvement_pct < 5.0) {
+        std::cout << "[OK] Amelioration faible mais acceptable" << std::endl;
+    } else {
+        std::cout << "[OK][OK] Amelioration significative !" << std::endl;
+    }
+    
+    // Usage distance
+    double usage = (result.distance / max_distance_constraint) * 100.0;
+    std::cout << "\nUtilisation distance: " << std::fixed << std::setprecision(1) 
+              << usage << "%" << std::endl;
+    
+    if (usage > 98.0) {
+        std::cout << "   [OK] Solution SATUREE (contrainte distance)" << std::endl;
+    } else if (usage < 70.0) {
+        std::cout << "   [WARN] Utilisation faible - peut ajouter plus de POIs ?" << std::endl;
+    }
+    
+    // Usage POIs
+    double poi_usage = (result.num_pois * 100.0) / all_pois.size();
+    std::cout << "Utilisation POIs: " << std::fixed << std::setprecision(1) 
+              << poi_usage << "% (" << result.num_pois << "/" << all_pois.size() << ")" << std::endl;
+    
+    if (poi_usage == 100.0) {
+        std::cout << "   [OK] TOUS les POIs utilises !" << std::endl;
+    }
+
+    return result;
 }

@@ -60,7 +60,7 @@ MTTDSPSOResult MTTDS_PSOSolver::solve(
             }
         }
         
-        if (params.use_local_search && iteration % 10 == 0) {
+        if (params.use_local_search && iteration % 5 == 0) {
             std::vector<osmium::object_id_type> improved = local_search(global_best_position);
             double improved_fitness = calculate_fitness(improved);
             double improved_distance = calculate_distance(improved);
@@ -72,9 +72,9 @@ MTTDSPSOResult MTTDS_PSOSolver::solve(
             }
         }
         
-        if (iteration % 20 == 0) {
+        if (iteration % 10 == 0) {
             for (auto& particle : swarm) {
-                if (std::uniform_real_distribution<double>(0.0, 1.0)(rng) < params.mutation_rate) {
+                if (std::uniform_real_distribution<double>(0.0, 1.0)(rng) < 0.4) {
                     particle.position = mutate_solution(particle.position, 0.3);
                     particle.fitness = calculate_fitness(particle.position);
                     particle.distance = calculate_distance(particle.position);
@@ -245,21 +245,41 @@ std::vector<osmium::object_id_type> MTTDS_PSOSolver::generate_greedy_solution_fr
 void MTTDS_PSOSolver::update_particle(MTTDSParticle& particle, const MTTDSPSOParams& params) {
     double r1 = std::uniform_real_distribution<double>(0.0, 1.0)(rng);
     double r2 = std::uniform_real_distribution<double>(0.0, 1.0)(rng);
-    
+
     std::vector<osmium::object_id_type> new_position = apply_moves(
         particle.position,
         params.c1 * r1,
         params.c2 * r2
     );
+
+    // ========================================
+    // ANCIEN CODE (BUGUÉ) :
+    // if (std::uniform_real_distribution<double>(0.0, 1.0)(rng) > params.w) {
+    //     particle.position = new_position;
+    // }
+    // → 70% du temps, la particule IGNORE le mouvement !
+    // ========================================
     
-    if (std::uniform_real_distribution<double>(0.0, 1.0)(rng) > params.w) {
+    // ========================================
+    // NOUVEAU CODE (CORRECT) :
+    // ========================================
+    // w = inertie = probabilité de GARDER la vélocité (continuer dans la même direction)
+    // Pour OP, on interprète w comme : probabilité d'ACCEPTER le nouveau mouvement
+    
+    if (std::uniform_real_distribution<double>(0.0, 1.0)(rng) < params.w) {
+        // Accepter le mouvement avec probabilité w
         particle.position = new_position;
+    } else {
+        // Avec probabilité (1-w), faire un mouvement EXPLORATOIRE
+        particle.position = mutate_solution(particle.position, 0.5);
     }
-    
+
+    // Réparer si non-faisable
     if (!is_feasible(particle.position)) {
         particle.position = repair_solution(particle.position);
     }
-    
+
+    // Mettre à jour fitness et distance
     particle.fitness = calculate_fitness(particle.position);
     particle.distance = calculate_distance(particle.position);
 }
@@ -268,27 +288,124 @@ std::vector<osmium::object_id_type> MTTDS_PSOSolver::apply_moves(
     const std::vector<osmium::object_id_type>& position,
     double cognitive_weight,
     double social_weight) {
-    
+
     std::vector<osmium::object_id_type> result = position;
     
+    // ========================================
+    // A. COGNITIVE COMPONENT (vers pbest)
+    // ========================================
+    // Cognitive = apprendre de SA PROPRE meilleure solution
+    // Pour le OP, on ne peut pas vraiment avoir de pbest différent de position
+    // → On utilise cognitive_weight comme probabilité de LOCAL SEARCH
+    
     if (std::uniform_real_distribution<double>(0.0, 1.0)(rng) < cognitive_weight) {
+        // Essayer d'AJOUTER un POI rentable
         result = add_poi_operator(result);
     }
     
+    // ========================================
+    // B. SOCIAL COMPONENT (vers gbest)
+    // ========================================
+    // Social = apprendre du MEILLEUR global
+    
     if (std::uniform_real_distribution<double>(0.0, 1.0)(rng) < social_weight) {
-        for (const auto& poi : global_best_position) {
-            if (std::find(result.begin(), result.end(), poi) == result.end()) {
-                std::vector<osmium::object_id_type> temp = result;
-                temp.push_back(poi);
-                if (calculate_distance(temp) <= max_distance_constraint) {
-                    result = temp;
-                    break;
-                }
-            }
+        // NOUVEAU : Au lieu d'ajouter UN POI, on fait un CROSSOVER partiel
+        result = crossover_with_gbest(result, global_best_position);
+    }
+    
+    // ========================================
+    // C. DIVERSIFICATION FORCÉE
+    // ========================================
+    // CRITIQUE : Forcer une modification même si cognitive + social n'ont rien fait
+    
+    bool modified = (result != position);
+    
+    if (!modified) {
+        // Aucun mouvement effectué → FORCER un changement
+        double rand = std::uniform_real_distribution<double>(0.0, 1.0)(rng);
+        
+        if (rand < 0.4) {
+            // 40% : Ajouter un POI aléatoire
+            result = add_random_poi(result);
+        } else if (rand < 0.7) {
+            // 30% : Retirer un POI
+            result = remove_poi_operator(result);
+        } else {
+            // 30% : Swap deux POIs
+            result = swap_poi_operator(result);
+        }
+    }
+
+    return result;
+}
+
+std::vector<osmium::object_id_type> MTTDS_PSOSolver::crossover_with_gbest(
+    const std::vector<osmium::object_id_type>& position,
+    const std::vector<osmium::object_id_type>& gbest) {
+    
+    if (gbest.empty()) return position;
+    
+    std::vector<osmium::object_id_type> result = position;
+    std::unordered_set<osmium::object_id_type> in_result(result.begin(), result.end());
+    
+    // Prendre 30-50% des POIs de gbest qui ne sont pas déjà dans position
+    std::vector<osmium::object_id_type> candidates;
+    for (const auto& poi : gbest) {
+        if (in_result.find(poi) == in_result.end()) {
+            candidates.push_back(poi);
+        }
+    }
+    
+    if (candidates.empty()) return result;
+    
+    // Shuffle et prendre les N premiers
+    std::shuffle(candidates.begin(), candidates.end(), rng);
+    int num_to_add = std::min(
+        static_cast<int>(candidates.size()), 
+        std::max(1, static_cast<int>(candidates.size() * 0.4))
+    );
+    
+    for (int i = 0; i < num_to_add; i++) {
+        std::vector<osmium::object_id_type> temp = result;
+        temp.push_back(candidates[i]);
+        
+        if (calculate_distance(temp) <= max_distance_constraint) {
+            result = temp;
         }
     }
     
     return result;
+}
+
+std::vector<osmium::object_id_type> MTTDS_PSOSolver::add_random_poi(
+    const std::vector<osmium::object_id_type>& solution) {
+    
+    std::unordered_set<osmium::object_id_type> in_solution(solution.begin(), solution.end());
+    std::vector<osmium::object_id_type> candidates;
+    
+    for (const auto& poi : all_pois) {
+        if (in_solution.find(poi) == in_solution.end()) {
+            candidates.push_back(poi);
+        }
+    }
+    
+    if (candidates.empty()) return solution;
+    
+    // Essayer d'ajouter un POI aléatoire
+    std::uniform_int_distribution<size_t> dist(0, candidates.size() - 1);
+    
+    for (int attempts = 0; attempts < 5; attempts++) {
+        osmium::object_id_type random_poi = candidates[dist(rng)];
+        
+        std::vector<osmium::object_id_type> temp = solution;
+        temp.push_back(random_poi);
+        
+        if (calculate_distance(temp) <= max_distance_constraint) {
+            return temp;
+        }
+    }
+    
+    return solution;
 }
 
 std::vector<osmium::object_id_type> MTTDS_PSOSolver::add_poi_operator(

@@ -58,6 +58,15 @@ private:
     std::vector<int> characteristics;
     std::vector<osmium::object_id_type> all_pois;
 
+    std::vector<osmium::object_id_type> crossover_with_gbest(
+        const std::vector<osmium::object_id_type>& position,
+        const std::vector<osmium::object_id_type>& gbest
+    );
+
+    std::vector<osmium::object_id_type> add_random_poi(
+        const std::vector<osmium::object_id_type>& solution
+    );
+
 public:
     MTTDS_PSOSolver(GeoBox& box, Pathfinder& pf, GlobalMemory& mem);
     
