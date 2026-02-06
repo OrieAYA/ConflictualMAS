@@ -287,6 +287,11 @@ std::vector<osmium::object_id_type> VNSSolver::generate_initial_solution() {
     std::cout << "\n[DIAGNOSTIC] generate_initial_solution:" << std::endl;
     std::cout << "  all_pois.size() = " << all_pois.size() << std::endl;
     
+    // ✓ NOUVEAU : Diagnostiquer la connectivité
+    if (all_pois.size() >= 2 && all_pois.size() <= 20) {
+        diagnose_poi_connectivity();
+    }
+    
     // Essayer plusieurs solutions greedy
     std::vector<osmium::object_id_type> best;
     double best_fit = 0.0;
@@ -304,6 +309,53 @@ std::vector<osmium::object_id_type> VNSSolver::generate_initial_solution() {
     }
     
     return best;
+}
+
+void VNSSolver::diagnose_poi_connectivity() {
+    
+    std::cout << "\n[DIAGNOSTIC] Connectivité des POIs:" << std::endl;
+    std::cout << "Total POIs: " << all_pois.size() << std::endl;
+    
+    int total_pairs = 0;
+    int connected_pairs = 0;
+    int disconnected_pairs = 0;
+    
+    for (size_t i = 0; i < all_pois.size(); i++) {
+        for (size_t j = i + 1; j < all_pois.size(); j++) {
+            total_pairs++;
+            
+            std::vector<Path> paths = global_memory.check_path(all_pois[i], all_pois[j]);
+            
+            if (!paths.empty() && paths[0].cost != std::numeric_limits<float>::max()) {
+                connected_pairs++;
+            } else {
+                disconnected_pairs++;
+                
+                // Afficher les 5 premières paires déconnectées
+                if (disconnected_pairs <= 5) {
+                    std::cout << "  ⚠️  Pas de chemin: POI " << all_pois[i] 
+                              << " ↔ POI " << all_pois[j] << std::endl;
+                }
+            }
+        }
+    }
+    
+    double connectivity_pct = (connected_pairs * 100.0) / total_pairs;
+    
+    std::cout << "\nRÉSULTAT:" << std::endl;
+    std::cout << "  Paires totales: " << total_pairs << std::endl;
+    std::cout << "  Paires connectées: " << connected_pairs 
+              << " (" << std::fixed << std::setprecision(1) << connectivity_pct << "%)" << std::endl;
+    std::cout << "  Paires déconnectées: " << disconnected_pairs << std::endl;
+    
+    if (connectivity_pct < 50.0) {
+        std::cout << "\n⚠️  PROBLÈME GRAVE: Graphe très peu connexe (<50%) !" << std::endl;
+        std::cout << "   → Vérifier Neighbor_Search et check_path" << std::endl;
+    } else if (connectivity_pct < 90.0) {
+        std::cout << "\n⚠️  Graphe partiellement connexe" << std::endl;
+    } else {
+        std::cout << "\n✓ Graphe bien connexe" << std::endl;
+    }
 }
 
 std::vector<osmium::object_id_type> VNSSolver::greedy_construction() {
@@ -328,7 +380,7 @@ std::vector<osmium::object_id_type> VNSSolver::greedy_construction() {
     std::cout << "[VNS] Greedy start depuis POI " << start_poi << std::endl;
     
     // ========================================
-    // GREEDY LOOP
+    // GREEDY LOOP AVEC VÉRIFICATION STRICTE
     // ========================================
     bool added = true;
     int iteration = 0;
@@ -344,32 +396,44 @@ std::vector<osmium::object_id_type> VNSSolver::greedy_construction() {
         osmium::object_id_type last_poi = solution.back();
         
         int candidates_tested = 0;
+        int candidates_no_path = 0;
+        int candidates_too_far = 0;
         int candidates_feasible = 0;
         
-        // Tester tous les POIs non-utilisés
+        // ========================================
+        // TESTER TOUS LES POIs NON-UTILISÉS
+        // ========================================
         for (const auto& candidate : all_pois) {
             if (used.count(candidate)) continue;
             
             candidates_tested++;
             
-            // Calculer distance
+            // ✓ VÉRIFICATION 1 : Existe-t-il un CHEMIN last_poi → candidate ?
             std::vector<Path> paths = global_memory.check_path(last_poi, candidate);
             
-            if (paths.empty() || paths[0].cost == std::numeric_limits<float>::max()) {
-                continue;
+            if (paths.empty()) {
+                candidates_no_path++;
+                continue;  // Pas de chemin trouvé
+            }
+            
+            // ✓ VÉRIFICATION 2 : Le chemin est-il valide (cost != infinity) ?
+            if (paths[0].cost == std::numeric_limits<float>::max()) {
+                candidates_no_path++;
+                continue;  // Chemin invalide
             }
             
             double edge_distance = static_cast<double>(paths[0].cost);
             double new_total = current_distance + edge_distance;
             
-            // Vérifier contrainte distance
+            // ✓ VÉRIFICATION 3 : Contrainte distance
             if (new_total > max_distance_constraint) {
+                candidates_too_far++;
                 continue;
             }
             
             candidates_feasible++;
             
-            // Calculer ratio reward/distance
+            // ✓ VÉRIFICATION 4 : Calculer ratio reward/distance
             int reward = get_poi_reward(candidate);
             
             if (edge_distance > 0 && reward > 0) {
@@ -383,14 +447,20 @@ std::vector<osmium::object_id_type> VNSSolver::greedy_construction() {
             }
         }
         
-        // Debug toutes les 5 itérations
-        if (iteration % 5 == 0 || iteration == 1) {
+        // ========================================
+        // DEBUG : Afficher statistiques
+        // ========================================
+        if (iteration % 5 == 0 || iteration == 1 || best_next == 0) {
             std::cout << "  Iter " << iteration 
                       << ": tested=" << candidates_tested 
+                      << ", no_path=" << candidates_no_path
+                      << ", too_far=" << candidates_too_far
                       << ", feasible=" << candidates_feasible;
         }
         
-        // Ajouter le meilleur POI trouvé
+        // ========================================
+        // AJOUTER LE MEILLEUR POI TROUVÉ
+        // ========================================
         if (best_next != 0) {
             solution.push_back(best_next);
             used.insert(best_next);
@@ -407,7 +477,17 @@ std::vector<osmium::object_id_type> VNSSolver::greedy_construction() {
             if (iteration % 5 == 0 || iteration == 1) {
                 std::cout << " -> No feasible POI" << std::endl;
             }
-            break;  // Arrêter si aucun POI n'est faisable
+            
+            // ✓ DIAGNOSTIC : Pourquoi aucun POI n'est faisable ?
+            if (candidates_no_path == candidates_tested) {
+                std::cout << "  ⚠️  PROBLÈME: TOUS les POIs restants sont INACCESSIBLES !" << std::endl;
+                std::cout << "      → Graphe non-connexe ou Neighbor_Search défaillant" << std::endl;
+            } else if (candidates_too_far == candidates_tested) {
+                std::cout << "  ℹ️  Contrainte distance saturée (tous POIs > " 
+                          << static_cast<int>(max_distance_constraint) << "m)" << std::endl;
+            }
+            
+            break;
         }
     }
     
@@ -420,8 +500,16 @@ std::vector<osmium::object_id_type> VNSSolver::greedy_construction() {
               << ", distance=" << static_cast<int>(final_distance) << "m"
               << std::endl;
     
+    // ========================================
+    // VÉRIFICATION FINALE DE LA SÉQUENCE
+    // ========================================
+    if (!verify_solution_sequence(solution)) {
+        std::cout << "[ERREUR] Solution invalide : séquence non continue !" << std::endl;
+    }
+    
     return solution;
 }
+
 // ============================================================================
 // SHAKE (Perturbation)
 // ============================================================================
@@ -719,18 +807,35 @@ std::vector<osmium::object_id_type> VNSSolver::best_swap(
 std::vector<osmium::object_id_type> VNSSolver::add_best_poi(
     const std::vector<osmium::object_id_type>& solution) {
     
+    if (solution.empty()) return solution;
+    
     std::unordered_set<osmium::object_id_type> in_solution(solution.begin(), solution.end());
     
     osmium::object_id_type best_poi = 0;
     double best_improvement = 0.0;
     
+    osmium::object_id_type last_poi = solution.back();
+    
     for (const auto& poi : all_pois) {
         if (in_solution.count(poi)) continue;
+        
+        // ✓ VÉRIFICATION : Existe-t-il un chemin last_poi → poi ?
+        std::vector<Path> paths = global_memory.check_path(last_poi, poi);
+        
+        if (paths.empty() || paths[0].cost == std::numeric_limits<float>::max()) {
+            continue;  // Pas de chemin valide
+        }
         
         std::vector<osmium::object_id_type> temp = solution;
         temp.push_back(poi);
         
-        if (calculate_distance(temp) > max_distance_constraint) continue;
+        double new_distance = calculate_distance(temp);
+        
+        // Vérifier distance ET validité
+        if (new_distance > max_distance_constraint || 
+            new_distance == std::numeric_limits<double>::max()) {
+            continue;
+        }
         
         double improvement = calculate_fitness(temp) - calculate_fitness(solution);
         
@@ -906,14 +1011,91 @@ double VNSSolver::calculate_distance(const std::vector<osmium::object_id_type>& 
     if (solution.size() < 2) return 0.0;
     
     double total = 0.0;
+    
     for (size_t i = 0; i < solution.size() - 1; ++i) {
-        total += get_distance(solution[i], solution[i + 1]);
+        std::vector<Path> paths = global_memory.check_path(solution[i], solution[i + 1]);
+        
+        // ✓ VÉRIFICATION : Le chemin existe-t-il vraiment ?
+        if (paths.empty() || paths[0].cost == std::numeric_limits<float>::max()) {
+            // Chemin invalide → distance infinie
+            return std::numeric_limits<double>::max();
+        }
+        
+        total += static_cast<double>(paths[0].cost);
     }
+    
     return total;
 }
 
+bool VNSSolver::verify_solution_sequence(const std::vector<osmium::object_id_type>& solution) {
+    
+    if (solution.size() < 2) return true;
+    
+    std::cout << "\n[VERIFICATION] Vérification séquence solution:" << std::endl;
+    
+    bool all_valid = true;
+    double total_distance = 0.0;
+    
+    for (size_t i = 0; i < solution.size() - 1; i++) {
+        osmium::object_id_type from = solution[i];
+        osmium::object_id_type to = solution[i + 1];
+        
+        // Vérifier qu'il existe un chemin
+        std::vector<Path> paths = global_memory.check_path(from, to);
+        
+        if (paths.empty() || paths[0].cost == std::numeric_limits<float>::max()) {
+            std::cout << "  ✗ Segment " << i << " (" << from << " → " << to << "): PAS DE CHEMIN" << std::endl;
+            all_valid = false;
+        } else {
+            double dist = static_cast<double>(paths[0].cost);
+            total_distance += dist;
+            
+            std::cout << "  ✓ Segment " << i << " (" << from << " → " << to 
+                      << "): " << static_cast<int>(dist) << "m" << std::endl;
+        }
+    }
+    
+    std::cout << "  Distance totale: " << static_cast<int>(total_distance) << "m" << std::endl;
+    std::cout << "  Contrainte: " << static_cast<int>(max_distance_constraint) << "m" << std::endl;
+    
+    if (total_distance > max_distance_constraint) {
+        std::cout << "  ✗ CONTRAINTE VIOLÉE !" << std::endl;
+        all_valid = false;
+    } else {
+        std::cout << "  ✓ Contrainte respectée" << std::endl;
+    }
+    
+    if (all_valid) {
+        std::cout << "[OK] Solution valide : séquence continue POI→POI" << std::endl;
+    } else {
+        std::cout << "[ERREUR] Solution INVALIDE !" << std::endl;
+    }
+    
+    return all_valid;
+}
+
 bool VNSSolver::is_feasible(const std::vector<osmium::object_id_type>& solution) {
-    return calculate_distance(solution) <= max_distance_constraint;
+    
+    if (solution.empty()) return true;
+    if (solution.size() == 1) return true;
+    
+    // ✓ VÉRIFICATION 1 : Tous les segments POI→POI ont un chemin
+    for (size_t i = 0; i < solution.size() - 1; i++) {
+        std::vector<Path> paths = global_memory.check_path(solution[i], solution[i + 1]);
+        
+        if (paths.empty() || paths[0].cost == std::numeric_limits<float>::max()) {
+            return false;  // Segment invalide
+        }
+    }
+    
+    // ✓ VÉRIFICATION 2 : Distance totale ≤ contrainte
+    double dist = calculate_distance(solution);
+    
+    if (dist == std::numeric_limits<double>::max()) {
+        return false;  // Chemin invalide détecté
+    }
+    
+    return dist <= max_distance_constraint;
 }
 
 double VNSSolver::get_distance(osmium::object_id_type node1, osmium::object_id_type node2) {
