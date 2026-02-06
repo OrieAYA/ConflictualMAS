@@ -51,7 +51,6 @@ private:
 
     bool verify_solution_sequence(const std::vector<osmium::object_id_type>& solution);
     void diagnose_poi_connectivity();
-    bool verify_solution_sequence(const std::vector<osmium::object_id_type>& solution);
     
     std::vector<int> characteristics;
     double max_distance_constraint;

@@ -148,15 +148,15 @@ struct GlobalMemory {
             path1.path_nodes.end()
         );
         
-        int common_edges = 0;
-        for (const auto& edge : path2.path_nodes) {
-            if (nodes1.count(edge) > 0) {
-                common_edges++;
+        int common_nodes = 0;
+        for (const auto& node : path2.path_nodes) {
+            if (nodes1.count(node) > 0) {
+                common_nodes++;
             }
         }
 
         float similarity_degree = (path2.path_nodes.size() + path2.path_edges.size()) > 0 
-            ? static_cast<float>(common_ways + common_edges) / static_cast<float>(path2.path_nodes.size() + path2.path_edges.size()) 
+            ? static_cast<float>(common_ways + common_nodes) / static_cast<float>(path2.path_nodes.size() + path2.path_edges.size()) 
             : 0.0f;
 
         Path_similarities[path1][path2] = similarity_degree;
@@ -188,14 +188,26 @@ struct GlobalMemory {
         }
 
         std::unordered_set<osmium::object_id_type> ways_sol1;
+        std::unordered_set<osmium::object_id_type> nodes_sol1;
+        int total_ways_sol1 = 0;
+        int total_nodes_sol1 = 0;
         for (const auto& path : sol1.paths) {
             for (const auto& way_id : path.path_edges) {
                 ways_sol1.insert(way_id);
+                total_ways_sol1++;
+            }
+            for (const auto& node_id : path.path_nodes) {
+                nodes_sol1.insert(node_id);
+                total_nodes_sol1++;
             }
         }
 
+
         int common_ways = 0;
         int total_ways_sol2 = 0;
+
+        int common_nodes = 0;
+        int total_nodes_sol2 = 0;
         
         for (const auto& path : sol2.paths) {
             for (const auto& way_id : path.path_edges) {
@@ -204,10 +216,16 @@ struct GlobalMemory {
                     common_ways++;
                 }
             }
+            for (const auto& node_id : path.path_nodes) {
+                total_nodes_sol2++;
+                if (nodes_sol1.count(node_id)) {
+                    common_nodes++;
+                }
+            }
         }
         
-        float similarity_degree = total_ways_sol2 > 0 
-            ? static_cast<float>(common_ways) / static_cast<float>(total_ways_sol2) 
+        float similarity_degree = total_ways_sol2 + total_nodes_sol2 > 0 
+            ? static_cast<float>(common_ways + common_nodes) / static_cast<float>(std::max(total_ways_sol2 + total_nodes_sol2,total_ways_sol1 + total_nodes_sol1))
             : 0.0f;
 
         return similarity_degree;

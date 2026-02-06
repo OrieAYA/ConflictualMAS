@@ -89,12 +89,12 @@ GlobalSolution GlobalSolutionConstructor::tabu_search(int max_iterations, int ta
     for (int iter = 0; iter < max_iterations; iter++) {
         std::vector<GlobalSolution> neighbors = get_neighbors(current_solution);
         GlobalSolution best_neighbor;
-        float best_neighbor_fitness = std::numeric_limits<float>::max();
+        float best_neighbor_fitness = -1.0f; //-1.0f Maximize; std::numeric_limits<float>::max() Minimize
 
         for (const GlobalSolution& neighbor : neighbors) {
             if (std::find(tabu_list.begin(), tabu_list.end(), neighbor) == tabu_list.end()) {
                 float neighbor_fitness = objective_function(neighbor);
-                if (neighbor_fitness < best_neighbor_fitness) {
+                if (neighbor_fitness > best_neighbor_fitness) { // > Maximize; < Minimize
                     best_neighbor = neighbor;
                     best_neighbor_fitness = neighbor_fitness;
                 }
@@ -115,7 +115,7 @@ GlobalSolution GlobalSolutionConstructor::tabu_search(int max_iterations, int ta
         float current_reward = objective_function(current_solution);
         float best_reward = objective_function(best_solution);
 
-        if (current_reward < best_reward) {
+        if (current_reward > best_reward) { // > Maximize; < Minimize
             best_solution = best_neighbor;
         }
     }
