@@ -50,19 +50,53 @@ void GlobalSolutionConstructor::initialize_reward_densities() {
     std::cout << "[GlobalConstructor] Préchauffage terminé\n\n";
 }
 
-float GlobalSolutionConstructor::objective_function(const GlobalSolution& solution) {
-    float reward = 0.0f;
+float GlobalSolutionConstructor::objective_function(const GlobalSolution& solution) {  
+    float delta1 = 0.8;
+    float delta2 = 0.2;
+
+
+    float Similarity_Reward = 0.0f;
+    float Difference_Reward = 0.0f;
+
+    int count = 0;
     
     for (const auto& [meta_agent_1, local_solution_1] : solution.solution_to_meta_agent) {
         for (const auto& [meta_agent_2, local_solution_2] : solution.solution_to_meta_agent) {
             if (meta_agent_1 != meta_agent_2) {
                 float similarity = global_memory.calculate_similarity(local_solution_1, local_solution_2);
-                reward = reward + similarity;
+                Similarity_Reward = Similarity_Reward + similarity;
+                count += 1;
             }
         }
     }
+
+    Similarity_Reward = count == 0 
+        ? 0.0f 
+        : Similarity_Reward / count;
+
+    count = 0;
+
+    for (const auto& [meta_agent_1, local_solution_1] : solution.solution_to_meta_agent) {
+        float gbest_fitness = meta_agent_1->objective_function(meta_agent_1->gbest_solution);
+        float local_fitness = meta_agent_1->objective_function(local_solution_1);
+        float relative_diff = 0.0f;
+        
+        if (gbest_fitness > 0.0f) {
+            relative_diff = local_fitness / gbest_fitness; // local_fitness / gbest_fitness Maximize; 1 - local_fitness / gbest_fitness Minimize
+
+        } else {
+            relative_diff = (local_fitness > 0.0f) ? 1.0f : 0.0f;
+        }
+
+        Difference_Reward += relative_diff;
+        count += 1;
+    }
+
+    Difference_Reward = count == 0 
+        ? 0.0f 
+        : Difference_Reward / count;
     
-    return reward;
+    return delta1 * Similarity_Reward + delta2 * Difference_Reward;
 }
 
 std::vector<GlobalSolution> GlobalSolutionConstructor::get_neighbors(const GlobalSolution& solution) {
@@ -85,6 +119,34 @@ GlobalSolution GlobalSolutionConstructor::tabu_search(int max_iterations, int ta
     GlobalSolution best_solution = initialize_global_solution();
     GlobalSolution current_solution = best_solution;
     std::vector<GlobalSolution> tabu_list;
+
+    float best_objective = objective_function(best_solution);
+    
+    // ========================================
+    // CALCUL SIMILARITE INITIALE (full gbest)
+    // ========================================
+    float initial_similarity = 0.0f;
+    int initial_count = 0;
+    
+    for (const auto& [meta_agent_1, local_solution_1] : best_solution.solution_to_meta_agent) {
+        for (const auto& [meta_agent_2, local_solution_2] : best_solution.solution_to_meta_agent) {
+            if (meta_agent_1 != meta_agent_2) {
+                float sim = global_memory.calculate_similarity(local_solution_1, local_solution_2);
+                initial_similarity += sim;
+                initial_count++;
+            }
+        }
+    }
+    initial_similarity = initial_count > 0 ? initial_similarity / initial_count : 0.0f;
+    
+    std::cout << "\n========================================\n";
+    std::cout << "TABU SEARCH - OPTIMISATION GLOBALE\n";
+    std::cout << "========================================\n";
+    std::cout << "Solution initiale (full gbest):\n";
+    std::cout << "  Objectif: " << best_objective << "\n";
+    std::cout << "  Similarite moyenne: " << (initial_similarity * 100.0f) << "%\n";
+    std::cout << "  Nombre de solutions: " << best_solution.solution_to_meta_agent.size() << "\n";
+    std::cout << "----------------------------------------\n\n";
 
     for (int iter = 0; iter < max_iterations; iter++) {
         std::vector<GlobalSolution> neighbors = get_neighbors(current_solution);
@@ -119,6 +181,49 @@ GlobalSolution GlobalSolutionConstructor::tabu_search(int max_iterations, int ta
             best_solution = best_neighbor;
         }
     }
+
+    // ========================================
+    // CALCUL SIMILARITE FINALE
+    // ========================================
+    float final_similarity = 0.0f;
+    int final_count = 0;
+    
+    for (const auto& [meta_agent_1, local_solution_1] : best_solution.solution_to_meta_agent) {
+        for (const auto& [meta_agent_2, local_solution_2] : best_solution.solution_to_meta_agent) {
+            if (meta_agent_1 != meta_agent_2) {
+                float sim = global_memory.calculate_similarity(local_solution_1, local_solution_2);
+                final_similarity += sim;
+                final_count++;
+            }
+        }
+    }
+    final_similarity = final_count > 0 ? final_similarity / final_count : 0.0f;
+    
+    float delta_similarity = final_similarity - initial_similarity;
+    
+    std::cout << "\n========================================\n";
+    std::cout << "RESULTATS TABU SEARCH\n";
+    std::cout << "========================================\n";
+    std::cout << "Solution INITIALE (full gbest):\n";
+    std::cout << "  Objectif: " << objective_function(initialize_global_solution()) << "\n";
+    std::cout << "  Similarite: " << (initial_similarity * 100.0f) << "%\n";
+    std::cout << "\n";
+    std::cout << "Solution FINALE (apres optimisation):\n";
+    std::cout << "  Objectif: " << best_objective << "\n";
+    std::cout << "  Similarite: " << (final_similarity * 100.0f) << "%\n";
+    std::cout << "\n";
+    std::cout << "EVOLUTION:\n";
+    std::cout << "  Delta similarite: " << (delta_similarity > 0 ? "+" : "") 
+              << (delta_similarity * 100.0f) << "%\n";
+    
+    if (delta_similarity > 0) {
+        std::cout << "  -> Solutions plus SIMILAIRES (+ groupees)\n";
+    } else if (delta_similarity < 0) {
+        std::cout << "  -> Solutions plus DIFFERENTES (+ diversifiees)\n";
+    } else {
+        std::cout << "  -> Aucun changement\n";
+    }
+    std::cout << "========================================\n\n";
 
     return best_solution;
 }
