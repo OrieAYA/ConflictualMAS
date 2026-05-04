@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="C:\ConflictualMAS\src\main.cpp">
       <Filter>Source Files</Filter>
@@ -7,43 +7,58 @@
     <ClCompile Include="C:\ConflictualMAS\src\utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Agent\Agent.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\Agent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Agent\MetaAgent.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Agent\GlobalSolutionConstructor.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\GeoBox\Box.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\GeoBox\Box.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\GeoBox\GeoBoxManager.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\GeoBox\GeoBoxManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Render\MapRenderer.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Render\MapRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Common\Pathfinding.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Common\Pathfinding.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Common\Memory.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Common\Memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\MHProcs\ACO.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\ACO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\MHProcs\GRASP.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\MHProcs\VNS.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\MHProcs\PSO.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\OverpassAPI\OverpassAPI.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\OverpassAPI\OverpassAPI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Congestion\CongestionMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\GlobalMemory\ObjectiveCache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\GlobalMemory\GlobalMemory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Utility\AgentSolution.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\DeliveryAgent\DeliveryAgent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,9 +1,9 @@
 #include <iostream>
 #include <iomanip>
-#include "GeoBox/Box.hpp"
-#include "Render/MapRenderer.hpp"
-#include "GeoBox/GeoBoxManager.hpp"
-#include "Common/Pathfinding.hpp"
+#include "Environment/GeoBox/Box.hpp"
+#include "Environment/Render/MapRenderer.hpp"
+#include "Environment/GeoBox/GeoBoxManager.hpp"
+#include "Legacy/Common/Pathfinding.hpp"
 #include "utility.hpp"
 
 int test() {

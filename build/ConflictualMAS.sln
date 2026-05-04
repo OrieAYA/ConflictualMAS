@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
+# Visual Studio Version 18
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ALL_BUILD", "ALL_BUILD.vcxproj", "{A16A9046-6B67-3870-B3DE-ADFEA86EA3D5}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C480F810-60FE-3276-890A-F882868D4240} = {C480F810-60FE-3276-890A-F882868D4240}

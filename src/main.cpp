@@ -2,21 +2,21 @@
 #include <iomanip>
 #include <chrono>
 #include <thread>
-#include "GeoBox/Box.hpp"
-#include "Render/MapRenderer.hpp"
-#include "GeoBox/GeoBoxManager.hpp"
-#include "Common/Pathfinding.hpp"
-#include "Common/Memory.hpp"
-#include "Agent/Agent.hpp"
-#include "Agent/MetaAgent.hpp"
-#include "Agent/GlobalSolutionConstructor.hpp"
+#include "Environment/GeoBox/Box.hpp"
+#include "Environment/Render/MapRenderer.hpp"
+#include "Environment/GeoBox/GeoBoxManager.hpp"
+#include "Legacy/Common/Pathfinding.hpp"
+#include "Legacy/Common/Memory.hpp"
+#include "Legacy/Agent/Agent.hpp"
+#include "Legacy/Agent/MetaAgent.hpp"
+#include "Legacy/Agent/GlobalSolutionConstructor.hpp"
 #include "utility.hpp"
 #include <string>
-#include "MHProcs/ACO.hpp"
-#include "MHProcs/GRASP.hpp"
-#include "MHProcs/VNS.hpp"
-#include "MHProcs/PSO.hpp"
-#include "OverpassAPI/OverpassAPI.hpp"
+#include "Legacy/MHProcs/ACO.hpp"
+#include "Legacy/MHProcs/GRASP.hpp"
+#include "Legacy/MHProcs/VNS.hpp"
+#include "Legacy/MHProcs/PSO.hpp"
+#include "Environment/OverpassAPI/OverpassAPI.hpp"
 #include <random>
 
 //====================================================================================================================================================
@@ -331,7 +331,7 @@ void test_vns_orienteering(const std::string& cache_dir) {
     VNSParams vns_params;
     vns_params.max_iterations = 100;
     vns_params.k_max = 5;
-    vns_params.max_iterations_vnd = 50;
+    vns_params.max_iterations_vnd = 30;
     vns_params.use_two_opt = true;
     vns_params.use_insertion = true;
     vns_params.use_swap = true;
@@ -517,7 +517,7 @@ void test_pso_mttds(const std::string& cache_dir) {
     std::cout << std::string(80, '=') << "\n\n";
     
     const std::string input_cache_name = "asakusa_test_agent_raw";
-    const std::string input_cache_path = cache_dir + "/" + input_cache_name + ".json";
+    const std::string input_cache_path = cache_dir + "\\" + input_cache_name + ".json";
     
     std::cout << "Chargement de la GeoBox..." << std::endl;
     GeoBox geo_box = GeoBoxManager::load_geobox(input_cache_path);

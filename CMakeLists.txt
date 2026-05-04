@@ -25,24 +25,33 @@ find_path(OSMIUM_INCLUDE_DIRS "osmium/version.hpp")
 find_package(Mapnik CONFIG REQUIRED)
 
 include_directories(SYSTEM ${PROTOZERO_INCLUDE_DIR})
-include_directories("${PROJECT_PATH}ConflictualMAS/src")
 
 set(SOURCES
     src/main.cpp
     src/utility.cpp
-    src/Agent/Agent.cpp
-    src/Agent/MetaAgent.cpp
-    src/Agent/GlobalSolutionConstructor.cpp
-    src/GeoBox/Box.cpp
-    src/GeoBox/GeoBoxManager.cpp
-    src/Render/MapRenderer.cpp
-    src/Common/Pathfinding.cpp
-    src/Common/Memory.cpp
-    src/MHProcs/ACO.cpp
-    src/MHProcs/GRASP.cpp
-    src/MHProcs/VNS.cpp
-    src/MHProcs/PSO.cpp
-    src/OverpassAPI/OverpassAPI.cpp
+    src/Legacy/Agent/Agent.cpp
+    src/Legacy/Agent/MetaAgent.cpp
+    src/Legacy/Agent/GlobalSolutionConstructor.cpp
+    src/Environment/GeoBox/Box.cpp
+    src/Environment/GeoBox/GeoBoxManager.cpp
+    src/Environment/Render/MapRenderer.cpp
+    src/Legacy/Common/Pathfinding.cpp
+    src/Legacy/Common/Memory.cpp
+    src/Legacy/MHProcs/ACO.cpp
+    src/Legacy/MHProcs/GRASP.cpp
+    src/Legacy/MHProcs/VNS.cpp
+    src/Legacy/MHProcs/PSO.cpp
+    src/Environment/OverpassAPI/OverpassAPI.cpp
+    src/Environment/Congestion/CongestionMap.cpp
+    src/DMASforPD/GlobalMemory/ObjectiveCache.cpp
+    src/DMASforPD/GlobalMemory/GlobalMemory.cpp
+    src/DMASforPD/Utility/AgentSolution.cpp
+    src/DMASforPD/DeliveryAgent/DeliveryAgent.cpp
+    src/DMASforPD/DeliveryAgent/OperableEnvironment.cpp
+    src/DMASforPD/DeliveryAgent/LocalSolutionAgent.cpp
+    src/DMASforPD/TaskAgent/TaskAgent.cpp
+    src/DMASforPD/Utility/TimedPath.cpp
+    src/DMASforPD/TaskAgent/TaskAllocationModule.cpp
 )
 
 add_executable(main ${SOURCES})
