@@ -69,7 +69,7 @@ public:
     PDPTask* get_task_for_node(osmium::object_id_type node_id);
 
     // Filter allocated_tasks by agent.
-    std::vector<PDPTask*> tasks_for_agent(int agent_id) const;
+    std::vector<const PDPTask*> tasks_for_agent(int agent_id) const;
 
     // ---- Delivery agent registry ----------------------------------------
 

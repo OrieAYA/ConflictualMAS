@@ -72,8 +72,8 @@ void TaskAgent::on_task_event(int task_id, TaskEvent event, PDPGlobalMemory& mem
 
     case TaskEvent::Finished:
         memory.complete_task(task_id);
-        // Release agent so it can accept new tasks.
         if (DeliveryAgent* agent = memory.get_agent_for_task(task_id)) {
+            agent->remove_completed_task(task_id);
             agent->status = AgentStatus::Idle;
         }
         break;

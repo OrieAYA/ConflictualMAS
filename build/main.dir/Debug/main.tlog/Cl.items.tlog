@@ -18,3 +18,8 @@ C:\ConflictualMAS\src\DMASforPD\GlobalMemory\ObjectiveCache.cpp;C:\ConflictualMA
 C:\ConflictualMAS\src\DMASforPD\GlobalMemory\GlobalMemory.cpp;C:\ConflictualMAS\build\main.dir\Debug\GlobalMemory.obj
 C:\ConflictualMAS\src\DMASforPD\Utility\AgentSolution.cpp;C:\ConflictualMAS\build\main.dir\Debug\AgentSolution.obj
 C:\ConflictualMAS\src\DMASforPD\DeliveryAgent\DeliveryAgent.cpp;C:\ConflictualMAS\build\main.dir\Debug\DeliveryAgent.obj
+C:\ConflictualMAS\src\DMASforPD\DeliveryAgent\OperableEnvironment.cpp;C:\ConflictualMAS\build\main.dir\Debug\OperableEnvironment.obj
+C:\ConflictualMAS\src\DMASforPD\DeliveryAgent\LocalSolutionAgent.cpp;C:\ConflictualMAS\build\main.dir\Debug\LocalSolutionAgent.obj
+C:\ConflictualMAS\src\DMASforPD\TaskAgent\TaskAgent.cpp;C:\ConflictualMAS\build\main.dir\Debug\TaskAgent.obj
+C:\ConflictualMAS\src\DMASforPD\Utility\TimedPath.cpp;C:\ConflictualMAS\build\main.dir\Debug\TimedPath.obj
+C:\ConflictualMAS\src\DMASforPD\TaskAgent\TaskAllocationModule.cpp;C:\ConflictualMAS\build\main.dir\Debug\TaskAllocationModule.obj

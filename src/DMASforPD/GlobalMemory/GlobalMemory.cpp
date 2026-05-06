@@ -87,9 +87,9 @@ PDPTask* PDPGlobalMemory::get_task_for_node(osmium::object_id_type node_id) {
     return get_task(it->second);
 }
 
-std::vector<PDPTask*> PDPGlobalMemory::tasks_for_agent(int agent_id) const {
-    std::vector<PDPTask*> result;
-    for (auto* t : allocated_tasks)
+std::vector<const PDPTask*> PDPGlobalMemory::tasks_for_agent(int agent_id) const {
+    std::vector<const PDPTask*> result;
+    for (const auto* t : allocated_tasks)
         if (t->agent_id == agent_id) result.push_back(t);
     return result;
 }

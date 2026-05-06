@@ -30,7 +30,7 @@ void ObjectiveGroupCache::build_objective_set() {
 
 bool ObjectiveGroupCache::is_complete() const {
     const std::size_t n = objective_nodes.size();
-    return paths_.size() >= n * (n - 1) / 2;
+    return static_cast<std::size_t>(obj_pair_count_) >= n * (n - 1) / 2;
 }
 
 bool ObjectiveGroupCache::has_path(osmium::object_id_type a, osmium::object_id_type b) const {
@@ -52,6 +52,8 @@ ObjectivePath* ObjectiveGroupCache::get_path_mutable(
 }
 
 void ObjectiveGroupCache::store_path(const ObjectivePath& path) {
+    if (objective_ids_.count(path.node_a) && objective_ids_.count(path.node_b))
+        ++obj_pair_count_;
     paths_.emplace(make_key(path.node_a, path.node_b), path);
 }
 
@@ -67,11 +69,18 @@ void ObjectiveGroupCache::remove_node(osmium::object_id_type node_id) {
         objective_nodes.end()
     );
     // Remove all cached paths that touch this node.
+    // Decrement obj_pair_count_ only for paths where the other endpoint is still
+    // an objective (meaning both were objectives when the path was stored and counted).
     for (auto it = paths_.begin(); it != paths_.end(); ) {
-        if (it->first.first == node_id || it->first.second == node_id)
+        if (it->first.first == node_id || it->first.second == node_id) {
+            const osmium::object_id_type other =
+                (it->first.first == node_id) ? it->first.second : it->first.first;
+            if (objective_ids_.count(other))
+                --obj_pair_count_;
             it = paths_.erase(it);
-        else
+        } else {
             ++it;
+        }
     }
     // Invalidate search states originating from this node.
     search_states_.erase(node_id);

@@ -2,6 +2,7 @@
 #include "DMASforPD/GlobalMemory/GlobalMemory.hpp"
 #include "DMASforPD/TaskAgent/TaskAllocationModule.hpp"
 #include <algorithm>
+#include <limits>
 
 // ---- Construction -------------------------------------------------------
 
@@ -87,18 +88,46 @@ void DeliveryAgent::plan(PDPGlobalMemory& memory, float speed_mps) {
 
     if (local_memory.local_agents.empty()) return;
 
-    // 2. Collect candidate sequences from each LocalSolutionAgent.
-    //    DbVNS-PDP selection among candidates not yet implemented —
-    //    use the first agent's output as the plan.
-    const std::vector<ObjectiveNode> best =
-        local_memory.local_agents[0].plan(local_memory.operable_env);
+    // 2. Build pickup/delivery pairings from the assigned task list.
+    PairingMap pickup_of, delivery_of;
+    for (const PDPTask* t : local_memory.tasks) {
+        pickup_of [t->delivery.id] = t->pickup.id;
+        delivery_of[t->pickup.id]  = t->delivery.id;
+    }
 
-    // 3. Rebuild solution sequence.
+    // 3. Run all LocalSolutionAgents; keep the lowest-cost sequence.
+    std::vector<ObjectiveNode> best_seq;
+    float                      best_cost = std::numeric_limits<float>::max();
+
+    for (const LocalSolutionAgent& la : local_memory.local_agents) {
+        std::vector<ObjectiveNode> candidate =
+            la.plan(local_memory.operable_env, pickup_of, delivery_of, current_node);
+        if (candidate.empty()) continue;
+
+        float cost = 0.0f;
+        for (std::size_t i = 0; i + 1 < candidate.size(); ++i) {
+            int ai = local_memory.operable_env.find_index(candidate[i].id);
+            int bi = local_memory.operable_env.find_index(candidate[i + 1].id);
+            if (ai < 0 || bi < 0) { cost = std::numeric_limits<float>::max(); break; }
+            float c = local_memory.operable_env.get_cost(ai, bi);
+            if (c < 0.0f)         { cost = std::numeric_limits<float>::max(); break; }
+            cost += c;
+        }
+
+        if (cost < best_cost) {
+            best_cost = cost;
+            best_seq  = std::move(candidate);
+        }
+    }
+
+    if (best_seq.empty()) return;
+
+    // 4. Rebuild solution sequence with the best candidate.
     solution.sequence.clear();
-    for (const auto& node : best)
+    for (const auto& node : best_seq)
         solution.push_back(node);
 
-    // 4. Commit the plan to GlobalMemory (updates congestion + estimated arrivals).
+    // 5. Commit the plan to GlobalMemory (updates congestion + estimated arrivals).
     memory.commit_plan(agent_id, speed_mps);
 }
 

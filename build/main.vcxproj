@@ -441,6 +441,11 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\GlobalMemory\GlobalMemory.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Utility\AgentSolution.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\DeliveryAgent\DeliveryAgent.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\DeliveryAgent\OperableEnvironment.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\DeliveryAgent\LocalSolutionAgent.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\TaskAgent\TaskAgent.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Utility\TimedPath.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\TaskAgent\TaskAllocationModule.cpp" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

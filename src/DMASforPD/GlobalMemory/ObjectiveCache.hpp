@@ -92,6 +92,7 @@ public:
 private:
     std::unordered_map<PathKey, ObjectivePath, ObjPairHash> paths_;
     std::unordered_set<osmium::object_id_type>              objective_ids_;
+    int                                                      obj_pair_count_ = 0; // paths where both endpoints are objectives
 
     struct SearchState {
         using OpenEntry = std::pair<float, osmium::object_id_type>;
