@@ -1,5 +1,10 @@
 C:\ConflictualMAS\src\main.cpp;C:\ConflictualMAS\build\main.dir\Debug\main.obj
 C:\ConflictualMAS\src\utility.cpp;C:\ConflictualMAS\build\main.dir\Debug\utility.obj
+C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\LKHSolver.cpp;C:\ConflictualMAS\build\main.dir\Debug\LKHSolver.obj
+C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\ComparisonTest.cpp;C:\ConflictualMAS\build\main.dir\Debug\ComparisonTest.obj
+C:\ConflictualMAS\src\Legacy\Tests\LegacyTests.cpp;C:\ConflictualMAS\build\main.dir\Debug\LegacyTests.obj
+C:\ConflictualMAS\src\DMASforPD\Tests\PDPTests.cpp;C:\ConflictualMAS\build\main.dir\Debug\PDPTests.obj
+C:\ConflictualMAS\src\AmazonDataset\AmazonTest.cpp;C:\ConflictualMAS\build\main.dir\Debug\AmazonTest.obj
 C:\ConflictualMAS\src\Legacy\Agent\Agent.cpp;C:\ConflictualMAS\build\main.dir\Debug\Agent.obj
 C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.cpp;C:\ConflictualMAS\build\main.dir\Debug\MetaAgent.obj
 C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp;C:\ConflictualMAS\build\main.dir\Debug\GlobalSolutionConstructor.obj

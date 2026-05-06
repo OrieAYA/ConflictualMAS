@@ -29,6 +29,11 @@ include_directories(SYSTEM ${PROTOZERO_INCLUDE_DIR})
 set(SOURCES
     src/main.cpp
     src/utility.cpp
+    src/Comparisons/DbVNS_vs_LKH/LKHSolver.cpp
+    src/Comparisons/DbVNS_vs_LKH/ComparisonTest.cpp
+    src/Legacy/Tests/LegacyTests.cpp
+    src/DMASforPD/Tests/PDPTests.cpp
+    src/AmazonDataset/AmazonTest.cpp
     src/Legacy/Agent/Agent.cpp
     src/Legacy/Agent/MetaAgent.cpp
     src/Legacy/Agent/GlobalSolutionConstructor.cpp

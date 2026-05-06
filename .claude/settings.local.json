@@ -1,7 +1,25 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cmake --build . --target ConflictualMAS --config Debug)"
+      "Bash(cmake --build . --target ConflictualMAS --config Debug)",
+      "Bash(Get-ChildItem -Recurse \"C:\\\\ConflictualMAS\\\\src\\\\AmazonDataset\" -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Sort-Object FullName)",
+      "Bash(Format-List)",
+      "PowerShell($result = Get-ChildItem -Recurse \"C:\\\\ConflictualMAS\\\\src\\\\AmazonDataset\" -Force | Where-Object { $_.Name -ne '~' }; $result | ForEach-Object { if \\($_.PSIsContainer\\) { \"DIR: $\\($_.FullName\\)\" } else { \"FILE: $\\($_.FullName\\) \\($\\($_.Length\\) bytes\\)\" } } | Sort-Object)",
+      "Bash(python -c ' *)",
+      "Bash(python3 -c ' *)",
+      "Bash(where python *)",
+      "Bash(where python3 *)",
+      "Bash(powershell -Command \"Get-Content 'C:\\\\ConflictualMAS\\\\src\\\\AmazonDataset\\\\~\\\\.rc-cli\\\\data\\\\model_build_inputs\\\\route_data.json' -TotalCount 80\")",
+      "Bash(powershell -Command \"Get-Content 'C:\\\\ConflictualMAS\\\\src\\\\AmazonDataset\\\\~\\\\.rc-cli\\\\data\\\\model_build_inputs\\\\actual_sequences.json' -TotalCount 30\")",
+      "Bash(cmd /c \"type C:\\\\ConflictualMAS\\\\src\\\\AmazonDataset\\\\~\\\\.rc-cli\\\\data\\\\model_build_inputs\\\\travel_times.json\")",
+      "Bash(cmd /c \"findstr /i \\\\\"Station\\\\\" C:\\\\ConflictualMAS\\\\src\\\\AmazonDataset\\\\~\\\\.rc-cli\\\\data\\\\model_build_inputs\\\\route_data.json\")",
+      "Bash(Bash -c 'head -c 600 \"/c/ConflictualMAS/src/AmazonDataset/~/.rc-cli/data/model_build_inputs/travel_times.json\"')",
+      "Bash(cmake --build . --config Debug)",
+      "Bash(\"C:\\\\ConflictualMAS\\\\build\\\\Debug\\\\main.exe\")",
+      "Bash(.\\\\main.exe)",
+      "PowerShell(cmd /c \"echo A | C:\\\\ConflictualMAS\\\\build\\\\Debug\\\\main.exe\")"
     ]
   }
 }

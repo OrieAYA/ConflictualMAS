@@ -7,6 +7,21 @@
     <ClCompile Include="C:\ConflictualMAS\src\utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\LKHSolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\ComparisonTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Tests\LegacyTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Tests\PDPTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\AmazonDataset\AmazonTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\Agent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

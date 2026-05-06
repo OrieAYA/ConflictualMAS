@@ -9,6 +9,9 @@ void OperableEnvironment::add_task(const PDPTask& task) {
     nodes.push_back(task.delivery);
     int new_n = static_cast<int>(nodes.size());
 
+    index_map_[task.pickup.id]   = old_n;
+    index_map_[task.delivery.id] = old_n + 1;
+
     std::vector<float> new_costs(new_n * new_n, -1.0f);
     for (int i = 0; i < old_n; ++i)
         for (int j = 0; j < old_n; ++j)
@@ -38,14 +41,18 @@ void OperableEnvironment::remove_task(osmium::object_id_type pickup_id,
 
     nodes  = std::move(new_nodes);
     costs_ = std::move(new_costs);
+
+    // Rebuild index map from the new nodes vector.
+    index_map_.clear();
+    for (int i = 0; i < static_cast<int>(nodes.size()); ++i)
+        index_map_[nodes[i].id] = i;
 }
 
 // ---- Lookup ------------------------------------------------------------
 
 int OperableEnvironment::find_index(osmium::object_id_type node_id) const {
-    for (int i = 0; i < static_cast<int>(nodes.size()); ++i)
-        if (nodes[i].id == node_id) return i;
-    return -1;
+    auto it = index_map_.find(node_id);
+    return it != index_map_.end() ? it->second : -1;
 }
 
 int OperableEnvironment::size() const {

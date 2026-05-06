@@ -423,6 +423,11 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   <ItemGroup>
     <ClCompile Include="C:\ConflictualMAS\src\main.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\utility.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\LKHSolver.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\ComparisonTest.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Tests\LegacyTests.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Tests\PDPTests.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\AmazonDataset\AmazonTest.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\Agent.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp" />

@@ -2,6 +2,7 @@
 #define OPERABLE_ENVIRONMENT_HPP
 
 #include "DMASforPD/Utility/PDPTask.hpp"
+#include <unordered_map>
 #include <vector>
 
 class PDPGlobalMemory;
@@ -42,6 +43,8 @@ struct OperableEnvironment {
 
 private:
     std::vector<float> costs_;   // flat N×N row-major; -1 = not computed
+    // O(1) lookup maintained in sync with nodes[].
+    std::unordered_map<osmium::object_id_type, int> index_map_;
 };
 
 #endif // OPERABLE_ENVIRONMENT_HPP
