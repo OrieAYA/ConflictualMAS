@@ -129,6 +129,10 @@ public:
 
     void initialize_from_geobox();
 
+    // Create an empty group cache if it doesn't already exist.
+    // Needed for synthetic training tasks that don't come from a GeoBox objective group.
+    void ensure_group(int group_id);
+
     // Direct A*-based path lookup (lazy, stores on miss).
     const ObjectivePath* get_or_compute_path(
         osmium::object_id_type from,

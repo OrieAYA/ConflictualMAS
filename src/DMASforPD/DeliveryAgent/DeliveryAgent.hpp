@@ -5,17 +5,16 @@
 #include "DMASforPD/Utility/PDPTask.hpp"
 #include "DMASforPD/DeliveryAgent/OperableEnvironment.hpp"
 #include "DMASforPD/DeliveryAgent/LocalSolutionAgent.hpp"
+#include "DMASforPD/GlobalMemory/ObjectiveCache.hpp"
 #include <optional>
 #include <vector>
 
-struct TaskOffer;    // defined in TaskAllocationModule.hpp
+struct TaskOffer;
 class PDPGlobalMemory;
 
-// Status of a delivery agent at the task level.
 enum class AgentStatus { Idle, Active, Done };
 
-// State describing an agent currently traversing an edge (link-transmission model).
-// While in transit, the agent is "on the edge" — not yet at to_node.
+// State of a single edge traversal (link-transmission model).
 struct EdgeTransit {
     osmium::object_id_type edge_id;
     osmium::object_id_type from_node;
@@ -23,41 +22,73 @@ struct EdgeTransit {
     int                    arrival_step = -1;
 };
 
-// Local memory of a delivery agent — independent of GlobalMemory.
+// ════════════════════════════════════════════════════════════════════════════
+// EdgeCursor — tracks position within a multi-edge path traversal
+// ════════════════════════════════════════════════════════════════════════════
 //
-// Holds the agent's task list, operable environment (cost matrix), planning
-// agents (one per delivery node), and the two pre-fetched paths.
+// When an agent starts a leg (current_node → objective), it loads the
+// ObjectivePath's node and edge sequences into an EdgeCursor.
 //
-// Update policy:
-//   - tasks / operable_env / local_agents: updated on task assignment and completion.
-//   - current_path / next_path: fetched once from GlobalMemory per leg.
-//   - current_time: updated by the simulation each step.
-//   - Cost matrix: refreshed from GlobalMemory only during planning.
-struct DeliveryLocalMemory {
-    std::vector<PDPTask*>          tasks;          // assigned tasks (non-owning pointers)
-    const ObjectivePath*           current_path = nullptr; // path currently being traversed
-    const ObjectivePath*           next_path    = nullptr; // queued for after current_path
-    int                            current_time = 0;
-    OperableEnvironment            operable_env;
-    std::vector<LocalSolutionAgent> local_agents;  // one per delivery node
+// Invariant: agent is currently at nodes[next_idx].
+//   - edges[next_idx] is the next edge to traverse.
+//   - When next_idx == edges.size(), the agent is at the objective (last node).
+//
+// Fallback (no cached path): edges is empty, nodes = {from, to}.  The
+// simulator schedules one synthetic hop to cover the full distance.
+struct EdgeCursor {
+    std::vector<osmium::object_id_type> nodes;     // path nodes (incl. start and end)
+    std::vector<osmium::object_id_type> edges;     // way IDs between consecutive nodes
+    int  next_idx  = 0;    // index of next edge to traverse; agent is at nodes[next_idx]
+    int  task_id   = -1;
+    bool is_pickup = true;
+
+    // True while there are still edges to traverse before reaching the objective.
+    bool has_more_edges() const { return next_idx < static_cast<int>(edges.size()); }
+
+    // True when the agent is one edge away from the objective.
+    bool is_last_edge()   const { return next_idx + 1 == static_cast<int>(edges.size())
+                                      || edges.empty(); }
+
+    // The node the agent will arrive at after completing the current edge.
+    osmium::object_id_type next_node() const {
+        int dest_idx = next_idx + 1;
+        return (dest_idx < static_cast<int>(nodes.size())) ? nodes[dest_idx] : 0;
+    }
+
+    // The way ID of the current edge (0 if fallback/no real edge).
+    osmium::object_id_type current_edge_id() const {
+        return (next_idx < static_cast<int>(edges.size())) ? edges[next_idx] : 0;
+    }
 };
 
-// Delivery agent — executes tasks assigned by the TaskAgent coordinator.
+// Local agent memory — independent of GlobalMemory.
 //
-// Spatial state (link-transmission model):
-//   - AtNode  : agent is at current_node, ready to move or make decisions.
-//   - OnEdge  : agent is traversing in_transit.edge_id toward in_transit.to_node,
-//               arrives at in_transit.arrival_step.
+// current_path : path being traversed right now (set at leg start, updated on
+//                congestion-push from GlobalMemory).
+// next_path    : pre-fetched path for the leg after the current objective
+//                (promoted to current_path when the current objective is reached).
 //
-// Planning model (legacy MetaAgent pattern adapted for PDP):
-//   - local_memory.local_agents run DbVNS-PDP from their delivery node.
-//   - plan() collects candidates, selects best, rebuilds solution, commits to GlobalMemory.
+// The two-path lookahead means GlobalMemory can push an updated current_path
+// mid-traversal without the agent losing its upcoming route.
+struct DeliveryLocalMemory {
+    std::vector<PDPTask*>           tasks;
+    const ObjectivePath*            current_path = nullptr;
+    const ObjectivePath*            next_path    = nullptr;
+    int                             current_time = 0;
+    OperableEnvironment             operable_env;
+    std::vector<LocalSolutionAgent> local_agents;
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// DeliveryAgent
+// ════════════════════════════════════════════════════════════════════════════
 class DeliveryAgent {
 public:
     int                        agent_id     = 0;
     AgentStatus                status       = AgentStatus::Idle;
     osmium::object_id_type     current_node = 0;
     std::optional<EdgeTransit> in_transit;
+    std::optional<EdgeCursor>  edge_cursor;    // active path traversal state
     AgentSolution              solution;
     DeliveryLocalMemory        local_memory;
 
@@ -69,16 +100,15 @@ public:
 
     // ---- Spatial state --------------------------------------------------
 
-    bool is_at_node() const { return !in_transit.has_value(); }
-    bool is_on_edge() const { return  in_transit.has_value(); }
+    bool is_at_node()    const { return !in_transit.has_value(); }
+    bool is_on_edge()    const { return  in_transit.has_value(); }
+    bool is_traversing() const { return  edge_cursor.has_value(); }
 
-    // Start traversing an edge. Sets in_transit; current_node stays at from_node.
     void start_edge(osmium::object_id_type edge_id,
                     osmium::object_id_type to_node,
                     int arrival_step);
 
-    // Call when the simulation step reaches in_transit.arrival_step.
-    // Clears in_transit and advances current_node to the destination.
+    // Advance current_node to the destination of the completed edge; clear in_transit.
     void arrive_at_node();
 
     // ---- GlobalMemory interface -----------------------------------------
@@ -86,36 +116,39 @@ public:
     void connect   (PDPGlobalMemory& memory);
     void disconnect(PDPGlobalMemory& memory);
 
-    // Accept a task: register in local memory, push pickup/delivery into solution.
-    // Does NOT call commit_plan — TAM does so immediately after.
-    void receive_task(PDPTask& task, PDPGlobalMemory& memory);
+    void  receive_task        (PDPTask& task, PDPGlobalMemory& memory);
+    void  remove_completed_task(int task_id);
+    float try_accept_task     (const TaskOffer& offer, PDPGlobalMemory& memory);
 
-    // Remove a completed task from local memory and the operable environment.
-    // Called after a task's Finished event has been processed.
-    void remove_completed_task(int task_id);
+    // ---- Path management (two-path lookahead) ---------------------------
 
-    // Called by TAM with a task offer. Returns score in [0,1]; >= 0.5 = accept.
-    float try_accept_task(const TaskOffer& offer, PDPGlobalMemory& memory);
+    // Load the path for the current leg into local_memory.current_path and
+    // initialise edge_cursor.  Call at the start of each new leg.
+    // Returns false if no valid path is available.
+    bool begin_leg(const ObjectivePath* path, int task_id, bool is_pickup);
 
-    // ---- Path management ------------------------------------------------
+    // Promote next_path → current_path; reset next_path.
+    // Called automatically when arriving at an objective.
+    void promote_next_path();
 
-    // Fetch path to the next objective; store in local_memory.current_path.
-    // Call once per leg (not on every step).
+    // Fetch the path from sequence[0] → sequence[1] into local_memory.next_path.
+    // No-op if fewer than 2 objectives remain.
+    void prefetch_next_path(PDPGlobalMemory& memory);
+
+    // Push an updated path from GlobalMemory (congestion reroute).
+    // Replaces current_path and rebuilds the edge cursor from the agent's
+    // current position within the new path.
+    void push_updated_path(const ObjectivePath* new_path);
+
+    // Legacy helpers (kept for TAM / planning compatibility).
     void fetch_current_path(PDPGlobalMemory& memory);
-
-    // Fetch path from next objective to the one after; store in local_memory.next_path.
-    // Call once per leg (not on every step).
-    void fetch_next_path(PDPGlobalMemory& memory);
+    void fetch_next_path   (PDPGlobalMemory& memory);
 
     // ---- Planning -------------------------------------------------------
 
-    // Refresh operable environment costs, run all LocalSolutionAgents, select
-    // the best candidate sequence, rebuild solution, and commit_plan to GlobalMemory.
     void plan(PDPGlobalMemory& memory, float speed_mps);
 
 private:
-    // Register task in local_memory: add to task list, expand operable environment,
-    // create a LocalSolutionAgent anchored at the delivery node.
     void add_task_to_memory(PDPTask& task);
 };
 

@@ -1,5 +1,6 @@
 #include "ComparisonTest.hpp"
 #include "LKHSolver.hpp"
+#include "IVNSSolver.hpp"
 #include "DMASforPD/DeliveryAgent/LocalSolutionAgent.hpp"
 #include "DMASforPD/DeliveryAgent/OperableEnvironment.hpp"
 #include "DMASforPD/Utility/PDPTask.hpp"
@@ -33,12 +34,13 @@ using AllCoords  = std::unordered_map<std::string, StopCoords>;
 
 struct SolverResult {
     std::vector<ObjectiveNode> sequence;
-    float     cost      = std::numeric_limits<float>::max();
-    float     dist_km   = -1.f;
-    float     t_ratio   = -1.f;
-    float     d_ratio   = -1.f;
-    long long exec_ms   = 0;
-    bool      valid     = false;
+    float     cost        = std::numeric_limits<float>::max();
+    float     dist_km     = -1.f;
+    float     t_ratio     = -1.f;
+    float     d_ratio     = -1.f;
+    float     local_eff   = -1.f; // avg(min_edge / chosen_edge) ∈ (0,1]
+    long long exec_ms     = 0;
+    bool      valid       = false;
     int       pdp_violations = 0;
     int       unreachable    = 0;
 };
@@ -52,6 +54,7 @@ struct CompResult {
     std::string depot_code;
     SolverResult dbvns;
     SolverResult lkh;
+    SolverResult ivns;
     // DbVNS-specific agent metrics
     int         anchors_tried = 0;
     int         anchors_valid = 0;
@@ -188,6 +191,36 @@ static float cmp_actual_dist(
     return static_cast<float>(total);
 }
 
+// ── Local efficiency metric ──────────────────────────────────────────────────
+// For each route edge (u→v): ratio = min_finite_cost_from_u / chosen_cost.
+// Average over all edges ∈ (0,1].  1.0 = every step was the cheapest possible.
+static float cmp_local_efficiency(
+    const std::vector<ObjectiveNode>& seq,
+    const OperableEnvironment&        env)
+{
+    if (seq.size() < 2) return 0.f;
+    int n = env.size();
+    double sum = 0.0;
+    int count = 0;
+    for (size_t i = 0; i + 1 < seq.size(); ++i) {
+        int from = env.find_index(seq[i].id);
+        int to   = env.find_index(seq[i + 1].id);
+        if (from < 0 || to < 0) continue;
+        float chosen = env.get_cost(from, to);
+        if (chosen <= 0.f || chosen >= 1e8f) continue;
+        float min_c = std::numeric_limits<float>::max();
+        for (int j = 0; j < n; ++j) {
+            if (j == from) continue;
+            float c = env.get_cost(from, j);
+            if (c > 0.f && c < 1e8f && c < min_c) min_c = c;
+        }
+        if (min_c == std::numeric_limits<float>::max()) continue;
+        sum += static_cast<double>(min_c) / static_cast<double>(chosen);
+        ++count;
+    }
+    return count > 0 ? static_cast<float>(sum / count) : 0.f;
+}
+
 // ============================================================================
 // COORDINATE LOADING (NaN -> null preprocessing)
 // ============================================================================
@@ -317,24 +350,15 @@ static std::vector<ObjectiveNode> cmp_run_dbvns(
     const PairingMap&          delivery_of,
     osmium::object_id_type     depot_id,
     const DbVNSParams&         params,
-    int                        max_anchors,
     DbVNSAgentStats&           stats)
 {
     stats = {};
+    // One LocalSolutionAgent per delivery node — no cap.
     std::vector<const ObjectiveNode*> anchors;
     anchors.reserve(env.nodes.size());
     for (const auto& node : env.nodes)
         if (pickup_of.find(node.id) != pickup_of.end())
             anchors.push_back(&node);
-
-    if (static_cast<int>(anchors.size()) > max_anchors) {
-        std::vector<const ObjectiveNode*> sampled;
-        sampled.reserve(max_anchors);
-        double step = static_cast<double>(anchors.size()) / max_anchors;
-        for (int i = 0; i < max_anchors; ++i)
-            sampled.push_back(anchors[static_cast<size_t>(i * step)]);
-        anchors = std::move(sampled);
-    }
     stats.anchors_tried = static_cast<int>(anchors.size());
 
     std::vector<ObjectiveNode> best;
@@ -519,11 +543,11 @@ void test_comparison(const std::string& data_dir)
     std::string results_dir;
     {
         std::string d = data_dir;
-        for (int i = 0; i < 3; ++i) {
+        // data_dir = .../src/AmazonDataset/~/.rc-cli/data  (4 pops → src/)
+        for (int i = 0; i < 4; ++i) {
             size_t p = d.find_last_of("/\\");
             if (p != std::string::npos) d = d.substr(0, p);
         }
-        // d is now the AmazonDataset parent (= src/)
         results_dir = d + sep + "Comparisons" + sep + "DbVNS_vs_LKH" + sep + "results";
     }
     fs::create_directories(results_dir);
@@ -534,19 +558,23 @@ void test_comparison(const std::string& data_dir)
 
     // DbVNS parameters (same as standalone test for fair comparison).
     DbVNSParams params;
-    params.max_iterations     = 15;
-    params.k_max              = 3;
-    params.max_decompositions = 2;
+    params.max_iterations     = 30;
+    params.k_max              = 4;
+    params.max_decompositions = 3;
     params.max_divergence     = 0.5;
-    const int max_anchors  = 15;
     const int lkh_restarts = 10;
 
     std::cout << "DbVNS : max_iter=" << params.max_iterations
               << "  k_max=" << params.k_max
               << "  max_decomps=" << params.max_decompositions
-              << "  max_anchors=" << max_anchors << "\n";
+              << "  (1 agent/delivery)\n";
     std::cout << "LKH   : max_restarts=" << lkh_restarts
-              << "  (NN + 2-opt + or-opt  per restart)\n\n";
+              << "  (NN + 2-opt + or-opt  per restart)\n";
+    const int ivns_iters = 50;
+    const int ivns_k     = 4;
+    std::cout << "IVNS  : max_iter=" << ivns_iters
+              << "  max_k=" << ivns_k
+              << "  (cheapest-insertion + free-zone 2-opt + PDP 2-opt)\n\n";
 
     // Load data
     json jtt, jactual;
@@ -563,8 +591,8 @@ void test_comparison(const std::string& data_dir)
 
     std::cout << "Loading stop coords...  "; std::cout.flush();
     AllCoords all_coords = cmp_load_coords(coords_path);
-    std::cout << (all_coords.empty() ? "unavailable\n" : "ok\n");
-    std::cout << "Results dir: " << results_dir << "\n\n";
+    std::cout << (all_coords.empty() ? "unavailable\n" : "ok\n") << std::flush;
+    std::cout << "Results dir: " << results_dir << "\n\n" << std::flush;
 
     // Route selection (same as standalone: seed=42, up to 10).
     std::vector<std::string> all_ids;
@@ -574,7 +602,7 @@ void test_comparison(const std::string& data_dir)
     const int max_routes = std::min(10, static_cast<int>(all_ids.size()));
     all_ids.resize(max_routes);
 
-    std::cout << "Testing " << max_routes << " routes:\n\n";
+    std::cout << "Testing " << max_routes << " routes:\n\n" << std::flush;
 
     std::vector<CompResult> results;
 
@@ -587,7 +615,7 @@ void test_comparison(const std::string& data_dir)
         std::string depot_code;
         for (auto& [s, p] : aseq) if (p == 0) { depot_code = s; break; }
         if (depot_code.empty()) {
-            std::cout << "[" << short_id << "] No depot - skip\n"; continue;
+            std::cout << "[" << short_id << "] No depot - skip\n" << std::flush; continue;
         }
 
         std::vector<std::string> stops;
@@ -597,7 +625,7 @@ void test_comparison(const std::string& data_dir)
         int n_stops = static_cast<int>(stops.size());
         int n_tasks = n_stops / 2;
         if (n_tasks == 0) {
-            std::cout << "[" << short_id << "] Too few stops - skip\n"; continue;
+            std::cout << "[" << short_id << "] Too few stops - skip\n" << std::flush; continue;
         }
 
         float actual_cost = cmp_actual_cost(aseq, tt);
@@ -623,15 +651,17 @@ void test_comparison(const std::string& data_dir)
         std::cout << "[" << short_id << "] "
                   << std::setw(3) << n_stops << " stops, "
                   << std::setw(3) << n_tasks << " tasks"
-                  << "  |  actual: " << cmp_fmt_time(actual_cost) << "\n";
+                  << "  |  actual: " << cmp_fmt_time(actual_cost) << "\n" << std::flush;
 
         // ── Run DbVNS ────────────────────────────────────────────────────────
+        std::cout << "  DbVNS running...  " << std::flush;
         DbVNSAgentStats vns_stats;
         auto vt0 = std::chrono::high_resolution_clock::now();
         auto vseq = cmp_run_dbvns(env, pickup_of, delivery_of, depot_id,
-                                   params, max_anchors, vns_stats);
+                                   params, vns_stats);
         auto vt1 = std::chrono::high_resolution_clock::now();
         long long v_ms = std::chrono::duration_cast<std::chrono::milliseconds>(vt1 - vt0).count();
+        std::cout << "done (" << v_ms << " ms)\n" << std::flush;
 
         SolverResult dbvns_r;
         dbvns_r.valid    = !vseq.empty() && static_cast<int>(vseq.size()) == n_stops;
@@ -648,6 +678,31 @@ void test_comparison(const std::string& data_dir)
             auto au = cmp_audit(dbvns_r.sequence, pickup_of, id_to_code, tt);
             dbvns_r.pdp_violations = au.pdp;
             dbvns_r.unreachable    = au.unreachable;
+            dbvns_r.local_eff = cmp_local_efficiency(dbvns_r.sequence, env);
+        }
+
+        // ── Run IVNS ─────────────────────────────────────────────────────────
+        std::cout << "  IVNS  running...  " << std::flush;
+        auto ivns_res = IVNSSolver::solve(env, pickup_of, ivns_iters, ivns_k);
+        std::cout << "done (" << ivns_res.exec_ms << " ms)\n" << std::flush;
+
+        SolverResult ivns_r;
+        ivns_r.valid    = !ivns_res.sequence.empty()
+                        && static_cast<int>(ivns_res.sequence.size()) == n_stops;
+        ivns_r.exec_ms  = ivns_res.exec_ms;
+        ivns_r.sequence = std::move(ivns_res.sequence);
+        if (ivns_r.valid) {
+            ivns_r.cost    = cmp_seq_full_cost(ivns_r.sequence, id_to_code, depot_code, tt);
+            ivns_r.t_ratio = (actual_cost > 0.f) ? ivns_r.cost / actual_cost : -1.f;
+            if (rc) {
+                ivns_r.dist_km = cmp_seq_dist(ivns_r.sequence, id_to_code, *rc);
+                if (ivns_r.dist_km > 0.f && actual_km > 0.f)
+                    ivns_r.d_ratio = ivns_r.dist_km / actual_km;
+            }
+            auto au = cmp_audit(ivns_r.sequence, pickup_of, id_to_code, tt);
+            ivns_r.pdp_violations = au.pdp;
+            ivns_r.unreachable    = au.unreachable;
+            ivns_r.local_eff = cmp_local_efficiency(ivns_r.sequence, env);
         }
 
         // ── Run LKH ─────────────────────────────────────────────────────────
@@ -669,6 +724,7 @@ void test_comparison(const std::string& data_dir)
             auto au = cmp_audit(lkh_r.sequence, pickup_of, id_to_code, tt);
             lkh_r.pdp_violations = au.pdp;
             lkh_r.unreachable    = au.unreachable;
+            lkh_r.local_eff = cmp_local_efficiency(lkh_r.sequence, env);
         }
 
         // ── Per-route print ──────────────────────────────────────────────────
@@ -681,6 +737,8 @@ void test_comparison(const std::string& data_dir)
                 if (sr.dist_km >= 0.f)
                     std::cout << "  dist=" << std::setprecision(1) << sr.dist_km
                               << "km  d_ratio=" << std::setprecision(3) << sr.d_ratio;
+                if (sr.local_eff >= 0.f)
+                    std::cout << "  loc_eff=" << std::setprecision(3) << sr.local_eff;
                 std::cout << "  " << extra
                           << "  | " << sr.exec_ms << " ms";
                 if (sr.pdp_violations > 0)
@@ -693,10 +751,12 @@ void test_comparison(const std::string& data_dir)
 
         std::string dbvns_extra = "anchors=" + std::to_string(vns_stats.anchors_valid)
                                 + "/" + std::to_string(vns_stats.anchors_tried);
-        std::string lkh_extra   = "restarts=" + std::to_string(lkh_res.restarts_done);
+        std::string lkh_extra  = "restarts=" + std::to_string(lkh_res.restarts_done);
+        std::string ivns_extra = "iters=" + std::to_string(ivns_res.iters_done);
 
         print_solver("DbVNS", dbvns_r, dbvns_extra);
         print_solver("LKH  ", lkh_r,   lkh_extra);
+        print_solver("IVNS ", ivns_r,   ivns_extra);
 
         // Sequence previews
         if (dbvns_r.valid)
@@ -705,21 +765,30 @@ void test_comparison(const std::string& data_dir)
         if (lkh_r.valid)
             std::cout << "  LKH   seq: "
                       << cmp_seq_preview(depot_code, lkh_r.sequence, id_to_code) << "\n";
+        if (ivns_r.valid)
+            std::cout << "  IVNS  seq: "
+                      << cmp_seq_preview(depot_code, ivns_r.sequence, id_to_code) << "\n";
 
         // SVG renders
         if (rc) {
             std::string svg_d = results_dir + sep + short_id + "_dbvns.svg";
             std::string svg_l = results_dir + sep + short_id + "_lkh.svg";
+            std::string svg_i = results_dir + sep + short_id + "_ivns.svg";
             if (dbvns_r.valid)
                 cmp_render_svg(short_id, "DbVNS", dbvns_r.sequence,
                                id_to_code, *rc, dbvns_r.t_ratio, v_ms, svg_d);
             if (lkh_r.valid)
                 cmp_render_svg(short_id, "LKH", lkh_r.sequence,
                                id_to_code, *rc, lkh_r.t_ratio, lkh_res.exec_ms, svg_l);
+            if (ivns_r.valid)
+                cmp_render_svg(short_id, "IVNS", ivns_r.sequence,
+                               id_to_code, *rc, ivns_r.t_ratio, ivns_res.exec_ms, svg_i);
             std::cout << "  Renders: " << short_id << "_dbvns.svg"
-                      << "  |  " << short_id << "_lkh.svg\n";
+                      << "  |  " << short_id << "_lkh.svg"
+                      << "  |  " << short_id << "_ivns.svg\n";
         }
         std::cout << "\n";
+        std::cout.flush();
 
         // Store result
         std::string best_anchor_code = "-";
@@ -736,6 +805,7 @@ void test_comparison(const std::string& data_dir)
         cr.depot_code      = depot_code;
         cr.dbvns           = dbvns_r;
         cr.lkh             = lkh_r;
+        cr.ivns            = ivns_r;
         cr.anchors_tried   = vns_stats.anchors_tried;
         cr.anchors_valid   = vns_stats.anchors_valid;
         cr.best_anchor     = best_anchor_code;
@@ -755,21 +825,22 @@ void test_comparison(const std::string& data_dir)
               << std::right << std::setw(6)  << "Stops"
               << std::setw(9)  << "DbVNS_t"
               << std::setw(9)  << "LKH_t"
+              << std::setw(9)  << "IVNS_t"
               << std::setw(9)  << "Actual_t"
-              << std::setw(8)  << "D_tratio"
-              << std::setw(8)  << "L_tratio"
-              << std::setw(8)  << "D_km"
-              << std::setw(8)  << "L_km"
-              << std::setw(8)  << "Act_km"
+              << std::setw(8)  << "D_ratio"
+              << std::setw(8)  << "L_ratio"
+              << std::setw(8)  << "I_ratio"
               << std::setw(8)  << "ms_D"
               << std::setw(8)  << "ms_L"
+              << std::setw(8)  << "ms_I"
               << "\n";
-    cmp_sep(100);
+    cmp_sep(110);
 
     int   valid_both = 0;
-    float sum_d_tr = 0, sum_l_tr = 0;
+    float sum_d_tr = 0, sum_l_tr = 0, sum_i_tr = 0;
     float sum_d_km = 0, sum_l_km = 0, sum_a_km = 0;
-    long long sum_d_ms = 0, sum_l_ms = 0;
+    float sum_d_eff = 0, sum_l_eff = 0, sum_i_eff = 0;
+    long long sum_d_ms = 0, sum_l_ms = 0, sum_i_ms = 0;
 
     for (const auto& r : results) {
         std::string sid = r.route_id.substr(r.route_id.rfind('_') + 1, 8);
@@ -786,39 +857,38 @@ void test_comparison(const std::string& data_dir)
         else
             std::cout << std::setw(9) << "N/A";
 
+        if (r.ivns.valid)
+            std::cout << std::setw(9) << cmp_fmt_time(r.ivns.cost);
+        else
+            std::cout << std::setw(9) << "N/A";
+
         std::cout << std::setw(9) << cmp_fmt_time(r.actual_cost);
 
-        if (r.dbvns.valid)
-            std::cout << std::setw(8) << std::fixed << std::setprecision(3) << r.dbvns.t_ratio;
-        else
-            std::cout << std::setw(8) << "-";
-
-        if (r.lkh.valid)
-            std::cout << std::setw(8) << r.lkh.t_ratio;
-        else
-            std::cout << std::setw(8) << "-";
-
-        if (r.dbvns.dist_km >= 0) std::cout << std::setw(8) << std::setprecision(1) << r.dbvns.dist_km;
-        else std::cout << std::setw(8) << "-";
-        if (r.lkh.dist_km  >= 0) std::cout << std::setw(8) << r.lkh.dist_km;
-        else std::cout << std::setw(8) << "-";
-        if (r.actual_dist_km >= 0) std::cout << std::setw(8) << r.actual_dist_km;
-        else std::cout << std::setw(8) << "-";
+        if (r.dbvns.valid) std::cout << std::setw(8) << std::fixed << std::setprecision(3) << r.dbvns.t_ratio;
+        else               std::cout << std::setw(8) << "-";
+        if (r.lkh.valid)  std::cout << std::setw(8) << r.lkh.t_ratio;
+        else               std::cout << std::setw(8) << "-";
+        if (r.ivns.valid) std::cout << std::setw(8) << r.ivns.t_ratio;
+        else               std::cout << std::setw(8) << "-";
 
         std::cout << std::setw(8) << r.dbvns.exec_ms
                   << std::setw(8) << r.lkh.exec_ms
+                  << std::setw(8) << r.ivns.exec_ms
                   << "\n";
 
-        if (r.dbvns.valid && r.lkh.valid) {
+        if (r.dbvns.valid && r.lkh.valid && r.ivns.valid) {
             ++valid_both;
-            sum_d_tr += r.dbvns.t_ratio; sum_l_tr += r.lkh.t_ratio;
-            sum_d_ms += r.dbvns.exec_ms; sum_l_ms += r.lkh.exec_ms;
-            if (r.dbvns.dist_km >= 0) sum_d_km += r.dbvns.dist_km;
-            if (r.lkh.dist_km  >= 0) sum_l_km += r.lkh.dist_km;
+            sum_d_tr += r.dbvns.t_ratio; sum_l_tr += r.lkh.t_ratio; sum_i_tr += r.ivns.t_ratio;
+            sum_d_ms += r.dbvns.exec_ms; sum_l_ms += r.lkh.exec_ms; sum_i_ms += r.ivns.exec_ms;
+            if (r.dbvns.dist_km  >= 0) sum_d_km += r.dbvns.dist_km;
+            if (r.lkh.dist_km   >= 0) sum_l_km += r.lkh.dist_km;
             if (r.actual_dist_km >= 0) sum_a_km += r.actual_dist_km;
+            if (r.dbvns.local_eff >= 0) sum_d_eff += r.dbvns.local_eff;
+            if (r.lkh.local_eff  >= 0) sum_l_eff += r.lkh.local_eff;
+            if (r.ivns.local_eff >= 0) sum_i_eff += r.ivns.local_eff;
         }
     }
-    cmp_sep(100);
+    cmp_sep(110);
 
     if (valid_both == 0) { std::cout << "\nNo valid paired results.\n"; return; }
     float nf = static_cast<float>(valid_both);
@@ -830,10 +900,14 @@ void test_comparison(const std::string& data_dir)
     std::cout << "     DbVNS  avg t_ratio : " << std::fixed << std::setprecision(3) << (sum_d_tr/nf)
               << "  (1.000 = matches driver,  <1.000 = beats driver)\n";
     std::cout << "     LKH    avg t_ratio : " << (sum_l_tr/nf) << "\n";
+    std::cout << "     IVNS   avg t_ratio : " << (sum_i_tr/nf) << "\n";
     float improvement = (sum_d_tr - sum_l_tr) / nf;
-    std::cout << "     LKH improvement    : " << std::showpos << std::setprecision(3)
+    std::cout << "     LKH vs DbVNS       : " << std::showpos << std::setprecision(3)
               << (-improvement) << std::noshowpos
               << "  (" << std::setprecision(1) << (improvement / (sum_d_tr/nf) * 100.f) << "% reduction)\n";
+    float ivns_vs_lkh = (sum_i_tr - sum_l_tr) / nf;
+    std::cout << "     IVNS vs LKH        : " << std::showpos << std::setprecision(3)
+              << (-ivns_vs_lkh) << std::noshowpos << "\n";
 
     std::cout << "\n  ── Distance " << std::string(87, '-') << "\n";
     if (sum_d_km > 0 && sum_l_km > 0) {
@@ -843,22 +917,34 @@ void test_comparison(const std::string& data_dir)
     }
 
     std::cout << "\n  ── Execution time " << std::string(81, '-') << "\n";
-    float speedup = (sum_l_ms > 0) ? static_cast<float>(sum_d_ms) / static_cast<float>(sum_l_ms) : 0.f;
+    float speedup_lkh  = (sum_l_ms > 0) ? static_cast<float>(sum_d_ms) / static_cast<float>(sum_l_ms) : 0.f;
+    float speedup_ivns = (sum_i_ms > 0) ? static_cast<float>(sum_d_ms) / static_cast<float>(sum_i_ms) : 0.f;
     std::cout << "     DbVNS  total ms   : " << sum_d_ms << " ms"
               << "   avg=" << static_cast<long long>(sum_d_ms / valid_both) << " ms/route\n";
     std::cout << "     LKH    total ms   : " << sum_l_ms << " ms"
               << "   avg=" << static_cast<long long>(sum_l_ms / valid_both) << " ms/route\n";
-    std::cout << "     LKH speedup       : " << std::setprecision(1) << speedup << "x faster than DbVNS\n";
+    std::cout << "     IVNS   total ms   : " << sum_i_ms << " ms"
+              << "   avg=" << static_cast<long long>(sum_i_ms / valid_both) << " ms/route\n";
+    std::cout << "     LKH  speedup vs DbVNS : " << std::setprecision(1) << speedup_lkh  << "x\n";
+    std::cout << "     IVNS speedup vs DbVNS : " << speedup_ivns << "x\n";
 
     // ── Architecture validation ──────────────────────────────────────────────
-    int d_pdp = 0, l_pdp = 0;
+    int d_pdp = 0, l_pdp = 0, i_pdp = 0;
     for (const auto& r : results) {
         if (r.dbvns.valid) d_pdp += r.dbvns.pdp_violations;
         if (r.lkh.valid)  l_pdp += r.lkh.pdp_violations;
+        if (r.ivns.valid) i_pdp += r.ivns.pdp_violations;
     }
     std::cout << "\n  ── PDP constraint validation " << std::string(71, '-') << "\n";
     std::cout << "     DbVNS violations : " << d_pdp << (d_pdp == 0 ? "  (all routes pass)" : "  [FAIL]") << "\n";
     std::cout << "     LKH  violations  : " << l_pdp << (l_pdp == 0 ? "  (all routes pass)" : "  [FAIL]") << "\n";
+    std::cout << "     IVNS violations  : " << i_pdp << (i_pdp == 0 ? "  (all routes pass)" : "  [FAIL]") << "\n";
+
+    std::cout << "\n  ── Local efficiency  avg(min_edge / chosen_edge) ∈ (0,1] " << std::string(40, '-') << "\n";
+    std::cout << "     DbVNS  avg loc_eff : " << std::fixed << std::setprecision(3) << (sum_d_eff/nf)
+              << "  (1.000 = always chose cheapest neighbor)\n";
+    std::cout << "     LKH    avg loc_eff : " << (sum_l_eff/nf) << "\n";
+    std::cout << "     IVNS   avg loc_eff : " << (sum_i_eff/nf) << "\n";
 
     std::cout << "\n" << std::string(100, '=') << "\n\n";
 }

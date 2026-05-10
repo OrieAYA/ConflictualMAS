@@ -2,294 +2,174 @@
 #include "OperableEnvironment.hpp"
 #include <algorithm>
 #include <limits>
-#include <unordered_map>
-#include <unordered_set>
+#include <vector>
 
 // ============================================================================
-// INTERNALS
+// Array-based DbVNS-PDP — no heap allocation during search
 // ============================================================================
 
 namespace {
 
-// Node in the DbVNS decomposition tree.
-// sequence: partial sequence built in reverse (top = last endpoint committed).
-// pending : node ids not yet placed in the sequence.
-// forbidden: node ids excluded at this branch level (set by decompose or init).
-// cost    : sum of operable_env costs between consecutive entries in sequence.
-struct PDPDecomposedSolution {
-    PDPDecomposedSolution* parent = nullptr;
-    std::unordered_map<osmium::object_id_type, PDPDecomposedSolution*> children;
-    std::vector<ObjectiveNode>                                         sequence;
-    std::unordered_set<osmium::object_id_type>                        pending;
-    std::unordered_set<osmium::object_id_type>                        forbidden;
-    float cost = 0.0f;
+// Flat VNS search state; copyable in O(N) without heap allocation per field.
+struct State {
+    std::vector<int>  seq;
+    std::vector<bool> pending;   // indexed by env index; ready to visit
+    std::vector<bool> forbidden; // indexed by env index; blocked in this branch
+    int               pending_cnt = 0;
+    float             cost = 0.f;
 };
 
-// ============================================================================
-// DELETE DECOMPOSITION TREE
-// ============================================================================
-void delete_tree(PDPDecomposedSolution* root) {
-    if (!root) return;
-    for (auto& [id, child] : root->children)
-        delete_tree(child);
-    delete root;
-}
-
-// ============================================================================
-// ESTIMATE REMAINING
-// ============================================================================
-// Optimistic lower bound: current cost + min edge cost to any pending node
-// multiplied by the number of pending nodes.
-float estimate_remaining(const PDPDecomposedSolution& node,
-                          const OperableEnvironment&   env) {
-    if (node.pending.empty()) return node.cost;
-    if (node.sequence.empty()) return std::numeric_limits<float>::max();
-
-    int last_idx = env.find_index(node.sequence.back().id);
-    if (last_idx < 0) return std::numeric_limits<float>::max();
-
-    float min_c = std::numeric_limits<float>::max();
-    for (osmium::object_id_type pid : node.pending) {
-        int pidx = env.find_index(pid);
-        if (pidx < 0) continue;
-        float c = env.get_cost(last_idx, pidx);
-        if (c >= 0.0f && c < min_c) min_c = c;
-    }
-    if (min_c == std::numeric_limits<float>::max())
-        return std::numeric_limits<float>::max();
-    return node.cost + min_c * static_cast<float>(node.pending.size());
-}
-
-// ============================================================================
-// GREEDY CONSTRUCTION
-// ============================================================================
-// Repeatedly picks the cheapest reachable node from pending (excluding forbidden).
-// Reuses existing children when available. When a delivery node is selected,
-// its pickup is queued in pending so it is placed before it in the final sequence.
-PDPDecomposedSolution* greedy_construction(
-    PDPDecomposedSolution*     node,
-    const OperableEnvironment& env,
-    const PairingMap&          pickup_of
-) {
-    while (!node->pending.empty()) {
-        if (node->sequence.empty()) break;
-
-        int last_idx = env.find_index(node->sequence.back().id);
-        if (last_idx < 0) break;
-
-        osmium::object_id_type best_id   = 0;
-        float                  best_cost = std::numeric_limits<float>::max();
-        int                    best_cidx = -1;
-
-        for (osmium::object_id_type cid : node->pending) {
-            if (node->forbidden.count(cid)) continue;
-            int cidx = env.find_index(cid);
-            if (cidx < 0) continue;
-            float c = env.get_cost(last_idx, cidx);
-            if (c >= 0.0f && c < best_cost) {
-                best_cost = c;
-                best_id   = cid;
-                best_cidx = cidx;
-            }
+// Greedy NN extension of s until no pending node remains or stuck.
+// Returns true iff all pending nodes were consumed.
+static bool greedy_extend(State& s, const OperableEnvironment& env,
+                           const std::vector<int>& pickup_of_idx)
+{
+    int n = env.size();
+    while (s.pending_cnt > 0) {
+        int   last   = s.seq.back();
+        float best_c = std::numeric_limits<float>::max();
+        int   best_j = -1;
+        for (int j = 0; j < n; ++j) {
+            if (!s.pending[j] || s.forbidden[j]) continue;
+            float c = env.get_cost(last, j);
+            if (c >= 0.f && c < 1e8f && c < best_c) { best_c = c; best_j = j; }
         }
-
-        if (best_id == 0) break;
-
-        // Reuse existing child if this branch was already explored.
-        auto it = node->children.find(best_id);
-        if (it != node->children.end()) {
-            node = it->second;
-            continue;
+        if (best_j < 0) return false;
+        s.seq.push_back(best_j);
+        s.cost += best_c;
+        s.pending[best_j] = false; --s.pending_cnt;
+        s.forbidden[best_j] = true;
+        int pi = pickup_of_idx[best_j];
+        if (pi >= 0 && !s.forbidden[pi] && !s.pending[pi]) {
+            s.pending[pi] = true; ++s.pending_cnt;
         }
-
-        // Build new child.
-        PDPDecomposedSolution* child = new PDPDecomposedSolution();
-        child->parent   = node;
-        child->sequence = node->sequence;
-        child->sequence.push_back(env.nodes[best_cidx]);
-        child->pending  = node->pending;
-        child->pending.erase(best_id);
-        child->cost     = node->cost + best_cost;
-
-        // Initialize forbidden = all nodes already in sequence (prevents revisiting).
-        for (const ObjectiveNode& n : child->sequence)
-            child->forbidden.insert(n.id);
-
-        // If best_id is a delivery node, queue its pickup in pending so it is
-        // placed earlier in the final (reversed) sequence, respecting P_i before D_i.
-        auto pk_it = pickup_of.find(best_id);
-        if (pk_it != pickup_of.end()) {
-            osmium::object_id_type pid = pk_it->second;
-            if (!child->forbidden.count(pid))
-                child->pending.insert(pid);
-        }
-
-        node->children[best_id] = child;
-        node = child;
     }
-    return node;
+    return true;
 }
 
-// ============================================================================
-// DECOMPOSE WITH FORBIDDEN
-// ============================================================================
-// Backtracks from solution toward the root, marking each tail node as forbidden
-// in its parent. Returns all visited ancestors as alternative starting points.
-std::vector<PDPDecomposedSolution*> decompose_with_forbidden(
-    PDPDecomposedSolution* solution
-) {
-    std::vector<PDPDecomposedSolution*> decomposed;
-    PDPDecomposedSolution* current = solution;
+// Build initial state: anchor placed, all deliveries + anchor's pickup pending.
+static State make_initial(int anchor_idx, int n,
+                           const std::vector<int>&  pickup_of_idx,
+                           const std::vector<bool>& is_delivery_idx)
+{
+    State s;
+    s.seq.reserve(n);
+    s.pending.assign(n, false);
+    s.forbidden.assign(n, false);
+    s.pending_cnt = 0;
+    s.cost = 0.f;
 
-    while (current->parent != nullptr) {
-        osmium::object_id_type forbidden_id = current->sequence.back().id;
-        current = current->parent;
-        current->forbidden.insert(forbidden_id);
-        decomposed.push_back(current);
+    s.seq.push_back(anchor_idx);
+    s.forbidden[anchor_idx] = true;
+
+    int anc_pick = pickup_of_idx[anchor_idx]; // -1 if anchor has no pickup pair
+    for (int i = 0; i < n; ++i) {
+        if (i == anchor_idx) continue;
+        if (is_delivery_idx[i] || i == anc_pick) {
+            s.pending[i] = true; ++s.pending_cnt;
+        }
     }
-    return decomposed;
+    return s;
 }
 
-// ============================================================================
-// DB_VNS_SEARCH
-// ============================================================================
-// Main DbVNS-PDP search loop. Returns the best sequence found in reverse-build
-// order (call std::reverse to obtain the actual visit order).
-std::vector<ObjectiveNode> db_vns_search(
+// Reconstruct a prefix of length `depth` by replaying full_seq[0..depth-1]
+// from scratch. O(depth × N) — depth is typically small.
+static State rebuild_prefix(int anchor_idx, int n,
+                              const std::vector<int>&  full_seq,
+                              int                      depth,
+                              const OperableEnvironment& env,
+                              const std::vector<int>&  pickup_of_idx,
+                              const std::vector<bool>& is_delivery_idx)
+{
+    State s = make_initial(anchor_idx, n, pickup_of_idx, is_delivery_idx);
+    for (int step = 1; step < depth; ++step) {
+        int   node = full_seq[step];
+        float c    = env.get_cost(s.seq.back(), node);
+        s.seq.push_back(node);
+        if (c >= 0.f && c < 1e8f) s.cost += c;
+        if (s.pending[node]) { s.pending[node] = false; --s.pending_cnt; }
+        s.forbidden[node] = true;
+        int pi = pickup_of_idx[node];
+        if (pi >= 0 && !s.forbidden[pi] && !s.pending[pi]) {
+            s.pending[pi] = true; ++s.pending_cnt;
+        }
+    }
+    return s;
+}
+
+// Main DbVNS-PDP search for one anchor.
+static std::vector<ObjectiveNode> db_vns_search(
     const ObjectiveNode&       starting_node,
     const OperableEnvironment& env,
     const PairingMap&          pickup_of,
-    const DbVNSParams&         params
-) {
+    const DbVNSParams&         params)
+{
     if (env.nodes.empty()) return {};
+    int n = env.size();
 
-    // ---- Initial state ---------------------------------------------------
-    // Stack begins with the anchor delivery node (will be visited last).
-    // Pending = all other delivery nodes + pickup of the anchor (P_0).
-    // Other pickups are added dynamically when their delivery is selected.
-    PDPDecomposedSolution* initial = new PDPDecomposedSolution();
-    initial->sequence.push_back(starting_node);
-    initial->forbidden.insert(starting_node.id);
-
-    osmium::object_id_type p0_id = 0;
-    {
-        auto it = pickup_of.find(starting_node.id);
-        if (it != pickup_of.end()) p0_id = it->second;
+    std::vector<int>  pickup_of_idx(n, -1);
+    std::vector<bool> is_delivery_idx(n, false);
+    for (int i = 0; i < n; ++i) {
+        auto it = pickup_of.find(env.nodes[i].id);
+        if (it != pickup_of.end()) {
+            is_delivery_idx[i] = true;
+            int pi = env.find_index(it->second);
+            if (pi >= 0) pickup_of_idx[i] = pi;
+        }
     }
 
-    for (const ObjectiveNode& n : env.nodes) {
-        if (n.id == starting_node.id) continue;
-        bool is_delivery = pickup_of.count(n.id) > 0;
-        if (is_delivery || n.id == p0_id)
-            initial->pending.insert(n.id);
-    }
+    int anchor_idx = env.find_index(starting_node.id);
+    if (anchor_idx < 0) return {};
 
-    // ---- Greedy initial solution ------------------------------------------
-    PDPDecomposedSolution* current = greedy_construction(initial, env, pickup_of);
+    // Initial greedy solution.
+    State cur = make_initial(anchor_idx, n, pickup_of_idx, is_delivery_idx);
+    if (!greedy_extend(cur, env, pickup_of_idx)) return {};
 
-    if (current->sequence.size() <= 1 || !current->pending.empty()) {
-        delete_tree(initial);
-        return {};
-    }
+    std::vector<int> best_seq  = cur.seq;
+    float            best_cost = cur.cost;
 
-    PDPDecomposedSolution pbest      = *current;
-    float                 pbest_cost = pbest.cost;
+    const int k_max       = std::max(1, params.k_max);
+    const int max_decomps = std::max(1, params.max_decompositions);
+    int k = 1;
 
-    // ========================================
-    // PARAMETERS
-    // ========================================
-    const int   k_max           = params.k_max;
-    const int   max_decomps     = params.max_decompositions;
-    const float threshold_mult  = 1.0f + static_cast<float>(params.max_divergence);
-    const int   max_consec_empty = 3;
+    for (int iter = 0; iter < params.max_iterations; ++iter) {
+        int seq_sz = (int)best_seq.size();
 
-    int k            = 1;
-    int iter         = 0;
-    int consec_empty = 0;
+        // VNS shake schedule: for k=1 peel 1 node, for k=k_max peel ~N/k_max nodes.
+        int peel   = std::max(1, seq_sz / k_max * k);
+        int depth  = std::max(1, seq_sz - peel);
 
-    while (iter < params.max_iterations) {
+        // Rebuild prefix once; copy it for each decomposition trial.
+        State prefix = rebuild_prefix(anchor_idx, n, best_seq, depth,
+                                      env, pickup_of_idx, is_delivery_idx);
 
-        // ========================================
-        // A. SHAKE (Decomposition)
-        // ========================================
-        PDPDecomposedSolution* shaken = &pbest;
-        int until = std::min(
-            static_cast<int>(shaken->sequence.size() / k_max) * (k - 1),
-            std::max(0, static_cast<int>(shaken->sequence.size()) - 2)
-        );
-        for (int i = 0; i < until; ++i) {
-            if (shaken->parent) shaken = shaken->parent;
-            else break;
-        }
-
-        std::vector<PDPDecomposedSolution*> decomposed =
-            decompose_with_forbidden(shaken);
-
-        if (decomposed.empty()) { ++k; ++iter; continue; }
-
-        // ========================================
-        // B. FILTRAGE PROMISING ADAPTATIF
-        // ========================================
-        float local_threshold = pbest_cost * threshold_mult;
-        std::vector<PDPDecomposedSolution*> promising;
-
-        for (auto* d : decomposed) {
-            if (estimate_remaining(*d, env) <= local_threshold)
-                promising.push_back(d);
-        }
-
-        if (promising.empty()) {
-            ++consec_empty; ++k; ++iter;
-            if (consec_empty >= max_consec_empty) break;
-            continue;
-        }
-
-        if (static_cast<int>(promising.size()) > max_decomps) {
-            std::sort(promising.begin(), promising.end(),
-                [&env](const PDPDecomposedSolution* a, const PDPDecomposedSolution* b) {
-                    return estimate_remaining(*a, env) < estimate_remaining(*b, env);
-                });
-            promising.resize(max_decomps);
-        }
-
-        consec_empty = 0;
-
-        // ========================================
-        // C. EXPLORATION - 1 GREEDY PAR DÉCOMPOSITION
-        // ========================================
-        PDPDecomposedSolution* best_from_decomp = nullptr;
-        float                  best_decomp_cost = std::numeric_limits<float>::max();
-
-        for (auto* decomp : promising) {
-            PDPDecomposedSolution* rebuilt = greedy_construction(decomp, env, pickup_of);
-            if (rebuilt->sequence.empty() || !rebuilt->pending.empty()) continue;
-            if (rebuilt->cost < best_decomp_cost) {
-                best_decomp_cost = rebuilt->cost;
-                best_from_decomp = rebuilt;
+        bool improved = false;
+        for (int d = 0; d < max_decomps; ++d) {
+            State trial = prefix; // O(N) copy — no heap alloc for bool vecs, only int vec
+            if (greedy_extend(trial, env, pickup_of_idx) && trial.cost < best_cost) {
+                best_cost = trial.cost;
+                best_seq  = trial.seq;
+                improved  = true;
+                break;
             }
+            // Forbid the first choice of this completion so next trial diverges.
+            int plen = (int)prefix.seq.size();
+            if ((int)trial.seq.size() > plen)
+                prefix.forbidden[trial.seq[plen]] = true;
+            else
+                break; // stuck; no point trying further decomps
         }
 
-        if (best_from_decomp) current = best_from_decomp;
-
-        // ========================================
-        // D. ACCEPTATION
-        // ========================================
-        if (best_decomp_cost < pbest_cost) {
-            pbest      = *current;
-            pbest_cost = best_decomp_cost;
-            k = 1;
-        } else {
-            if (k != k_max) ++k;
-        }
-
-        ++iter;
+        if (improved) k = 1;
+        else if (k < k_max) ++k;
     }
 
-    // ========================================
-    // E. CLEANUP
-    // ========================================
-    delete_tree(initial);
-    return pbest.sequence;
+    // Reverse build order → forward visit order (anchor ends up last).
+    std::vector<ObjectiveNode> result;
+    result.reserve(best_seq.size());
+    for (int i = (int)best_seq.size() - 1; i >= 0; --i)
+        result.push_back(env.nodes[best_seq[i]]);
+    return result;
 }
 
 } // namespace
@@ -305,12 +185,7 @@ std::vector<ObjectiveNode> LocalSolutionAgent::plan(
     const OperableEnvironment& env,
     const PairingMap&          pickup_of,
     const PairingMap&          /*delivery_of*/,
-    osmium::object_id_type     /*agent_current*/
-) const {
-    // Run DbVNS-PDP; result is in reverse-build order (anchor = last element).
-    std::vector<ObjectiveNode> seq = db_vns_search(starting_node, env, pickup_of, params);
-    if (seq.empty()) return {};
-    // Reverse to obtain the actual visit order: first visited -> ... -> anchor (last).
-    std::reverse(seq.begin(), seq.end());
-    return seq;
+    osmium::object_id_type     /*agent_current*/) const
+{
+    return db_vns_search(starting_node, env, pickup_of, params);
 }

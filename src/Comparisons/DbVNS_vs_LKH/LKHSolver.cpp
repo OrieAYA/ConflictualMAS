@@ -85,25 +85,30 @@ static std::vector<int> lkh_nn_construct(
 // ── 2-opt with PDP constraint maintenance ────────────────────────────────────
 // Reversing segment [i+1..j] creates a violation iff for any pair (P,D)
 // both in that segment and P was before D — reversal puts D before P.
-// Runs until no improving move is found.
+// Restart-on-first-improvement. Capped at max_passes to bound O(N^5) worst case.
+// Segment length also capped at max_seg so the O(seg_len) PDP check stays cheap.
 
 static bool lkh_two_opt(
     std::vector<int>&          t,
     const OperableEnvironment& env,
     const std::vector<int>&    pair_idx,
-    const std::vector<bool>&   is_delivery)
+    const std::vector<bool>&   is_delivery,
+    int                        max_passes  = 40,
+    int                        max_seg_len = 60)
 {
     int n = static_cast<int>(t.size());
     bool any = false;
 
     std::vector<int> pos(n);
+    int  passes  = 0;
     bool improved = true;
-    while (improved) {
+    while (improved && passes < max_passes) {
         improved = false;
+        ++passes;
         for (int i = 0; i < n; ++i) pos[t[i]] = i;
 
         for (int i = 0; i < n - 1; ++i) {
-            for (int j = i + 2; j < n; ++j) {
+            for (int j = i + 2; j < n && (j - i) <= max_seg_len; ++j) {
                 int a = t[i], b = t[i + 1], c = t[j];
                 int d = (j + 1 < n) ? t[j + 1] : -1;
 
@@ -133,9 +138,10 @@ static bool lkh_two_opt(
                 if (!ok) continue;
 
                 std::reverse(t.begin() + i + 1, t.begin() + j + 1);
-                for (int k = i + 1; k <= j; ++k) pos[t[k]] = k;
                 improved = true;
                 any = true;
+                i = n; // exit outer loop → restart with fresh pos[]
+                break;
             }
         }
     }
@@ -147,27 +153,32 @@ static bool lkh_two_opt(
 //   Delivery v: can only be inserted AFTER its pickup in the new tour.
 //   Pickup v:   can only be inserted BEFORE its delivery in the new tour.
 // PDP check is O(1) per candidate insertion position.
-// Runs until no improving move found.
+// Strategy: one full pass finds the globally best move, applies it, restarts.
+// O(N^2) per pass × O(N) passes = O(N^3) total — safe for N<200.
 
 static bool lkh_or_opt(
     std::vector<int>&          t,
     const OperableEnvironment& env,
     const std::vector<int>&    pair_idx,
-    const std::vector<bool>&   is_delivery)
+    const std::vector<bool>&   is_delivery,
+    int                        max_passes = 40)
 {
     int n = static_cast<int>(t.size());
     bool any = false;
 
-    // pos[node_index] = position in t
     std::vector<int> pos(n);
-    for (int i = 0; i < n; ++i) pos[t[i]] = i;
 
-    // get_reduced(k) : element at position k in the tour with vi removed
-    // defined as a lambda inside the loop.
-
+    int  passes  = 0;
     bool improved = true;
-    while (improved) {
+    while (improved && passes < max_passes) {
         improved = false;
+        ++passes;
+        for (int i = 0; i < n; ++i) pos[t[i]] = i;
+
+        // Find the single best relocation across all nodes.
+        float global_best = 0.0f;
+        int   best_vi = -1, best_k = -1;
+
         for (int vi = 0; vi < n; ++vi) {
             int v   = t[vi];
             int pre = (vi > 0)     ? t[vi - 1] : -1;
@@ -191,33 +202,28 @@ static bool lkh_or_opt(
                 rv -= br;
             }
 
-            // Pair info for PDP check.
             int  pv    = pair_idx[v];
             bool v_del = is_delivery[v];
-            // Position of v's pair in the reduced tour (after removing v).
-            int adj = -1;
+            int  adj   = -1;
             if (pv >= 0) {
                 int pp = pos[pv];
                 adj = (pp > vi) ? pp - 1 : pp;
             }
 
-            // get_reduced: maps reduced-tour index k (0..n-2) → node index in t
+            // Maps reduced-tour index k → node index in t (vi excluded).
             auto gr = [&](int k) -> int {
                 return (k < vi) ? t[k] : t[k + 1];
             };
 
-            float best_delta = 0.0f;
-            int   best_k     = -1;
+            float local_best = 0.0f;
+            int   local_k    = -1;
 
             for (int k = 0; k < n; ++k) {
-                if (k == vi) continue; // same position
+                if (k == vi) continue;
 
-                // PDP constraint O(1):
-                // Delivery v: insertion pos k must be > adj (pickup before delivery).
-                // Pickup v:   insertion pos k must be <= adj (pickup before delivery).
                 if (pv >= 0) {
-                    if (v_del && k <= adj) continue;
-                    if (!v_del && k > adj) continue;
+                    if (v_del  && k <= adj) continue;
+                    if (!v_del && k >  adj) continue;
                 }
 
                 int before = (k > 0)     ? gr(k - 1) : -1;
@@ -241,19 +247,23 @@ static bool lkh_or_opt(
                 }
 
                 float delta = rv - ins;
-                if (delta > best_delta) { best_delta = delta; best_k = k; }
+                if (delta > local_best) { local_best = delta; local_k = k; }
             }
 
-            if (best_k < 0) continue;
-
-            // Apply: remove from vi, insert at best_k.
-            t.erase(t.begin() + vi);
-            t.insert(t.begin() + best_k, v);
-            for (int i = 0; i < n; ++i) pos[t[i]] = i;
-            improved = true;
-            any      = true;
-            break; // restart pass
+            if (local_k >= 0 && local_best > global_best) {
+                global_best = local_best;
+                best_vi = vi; best_k = local_k;
+            }
         }
+
+        if (best_vi < 0) break; // no improving move in full pass
+
+        // Apply best move of this pass.
+        int v = t[best_vi];
+        t.erase(t.begin() + best_vi);
+        t.insert(t.begin() + best_k, v);
+        improved = true;
+        any      = true;
     }
     return any;
 }

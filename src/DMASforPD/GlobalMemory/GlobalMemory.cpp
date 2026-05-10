@@ -213,6 +213,39 @@ void PDPGlobalMemory::commit_plan(int agent_id, float speed_mps) {
     register_committed_plan  (agent_id, speed_mps);
 }
 
+// ---- Congestion-push reroute -------------------------------------------
+
+void PDPGlobalMemory::push_rerouted_path(int agent_id, float speed_mps) {
+    DeliveryAgent* agent = get_delivery_agent(agent_id);
+    if (!agent) return;
+
+    const AgentSolution& sol = agent->solution;
+    if (sol.empty()) return;
+    // Works both mid-traversal (has edge_cursor) and at leg boundaries
+    // (edge_cursor reset). At boundaries, push_updated_path updates current_path
+    // only; begin_leg() then uses that refreshed path to create the cursor.
+
+    // The agent is heading from current_node to sequence[0].
+    osmium::object_id_type from = agent->current_node;
+    const ObjectiveNode&   to   = sol.sequence[0].node;
+
+    // Refresh the dynamic cost via TD-A*.
+    ObjectivePath* path = server_memory.refresh_dynamic_cost(
+        from, to.id, to.group_id, speed_mps, congestion_map, current_time_);
+    if (!path) return;
+
+    // Only push if the dynamic cost is meaningfully better than the static path.
+    const float improvement_threshold = 1.05f; // >5% better
+    if (!path->has_dynamic_cost()) return;
+    if (agent->local_memory.current_path &&
+        agent->local_memory.current_path->cost > 0.f &&
+        path->dynamic_cost >= agent->local_memory.current_path->cost / improvement_threshold)
+        return;
+
+    agent->push_updated_path(path);
+    commit_plan(agent_id, speed_mps);
+}
+
 // ---- Objective cleanup -------------------------------------------------
 
 void PDPGlobalMemory::clear_objective(osmium::object_id_type node_id, int group_id) {
@@ -221,6 +254,10 @@ void PDPGlobalMemory::clear_objective(osmium::object_id_type node_id, int group_
 }
 
 // ---- Path cache --------------------------------------------------------
+
+void PDPGlobalMemory::ensure_task_group(int group_id) {
+    server_memory.ensure_group(group_id);
+}
 
 const ObjectivePath* PDPGlobalMemory::get_or_compute_path(
     osmium::object_id_type from, osmium::object_id_type to, int group_id
@@ -253,6 +290,35 @@ void PDPGlobalMemory::advance_time(int t_now) {
     if (t_now <= current_time_) return;
     current_time_ = t_now;
     congestion_map.advance(t_now);
+}
+
+// ---- Episode reset -----------------------------------------------------
+
+void PDPGlobalMemory::reset_episode() {
+    // Clear all committed congestion contributions before wiping plans.
+    for (auto& [aid, plan] : committed_plans_) {
+        for (auto& [tp, departure] : plan) {
+            for (std::size_t i = 0; i < tp.edge_ids.size(); ++i)
+                congestion_map.remove_agent(tp.edge_ids[i],
+                                            tp.abs_entry(i, departure),
+                                            tp.abs_exit (i, departure));
+        }
+    }
+    committed_plans_.clear();
+
+    tasks_.clear();
+    available_tasks.clear();
+    allocated_tasks.clear();
+    finished_tasks.clear();
+    node_to_task_id_.clear();
+
+    // Reset the congestion map: clears load_ and resets t_now_ to 0.
+    // Without this, CongestionMap::update_load filters all new-episode steps
+    // (t < t_now_) so no congestion is ever tracked after the first episode.
+    congestion_map.reset();
+
+    // Reset clock to 0 so advance_time() accepts the new episode's steps.
+    current_time_ = 0;
 }
 
 // ---- Congestion --------------------------------------------------------

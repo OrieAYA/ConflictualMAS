@@ -30,7 +30,15 @@ set(SOURCES
     src/main.cpp
     src/utility.cpp
     src/Comparisons/DbVNS_vs_LKH/LKHSolver.cpp
+    src/Comparisons/DbVNS_vs_LKH/IVNSSolver.cpp
     src/Comparisons/DbVNS_vs_LKH/ComparisonTest.cpp
+    src/DMASforPD/Policy/ObjectiveDMPolicy.cpp
+    src/Training/CityConfig.cpp
+    src/Training/EpisodeConfig.cpp
+    src/Training/EpisodeGenerator.cpp
+    src/Training/EpisodeRunner.cpp
+    src/Training/TrainingLogger.cpp
+    src/Training/MultiCityTrainer.cpp
     src/Legacy/Tests/LegacyTests.cpp
     src/DMASforPD/Tests/PDPTests.cpp
     src/AmazonDataset/AmazonTest.cpp
@@ -63,6 +71,7 @@ add_executable(main ${SOURCES})
 
 target_include_directories(main PRIVATE
     ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/Training
 )
 
 target_link_libraries(main PRIVATE

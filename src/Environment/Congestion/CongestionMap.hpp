@@ -50,6 +50,10 @@ public:
     // Advance current step to t_now and purge all steps older than t_now.
     void advance(int t_now);
 
+    // Hard reset: clear all load entries and set t_now back to 0.
+    // Call at the start of each new episode so steps 0..N are accepted again.
+    void reset();
+
 private:
     std::unordered_map<osmium::object_id_type,
         std::unordered_map<int, int>> load_;   // way_id → {step_t → agent_count}

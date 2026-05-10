@@ -100,7 +100,16 @@ public:
     // Also removes it from node_to_task_id_ so it's no longer findable.
     void clear_objective(osmium::object_id_type node_id, int group_id);
 
+    // Push a congestion-rerouted path to a delivery agent mid-traversal.
+    // Refreshes the dynamic cost of the cached path, then calls
+    // agent->push_updated_path() so the agent's edge cursor resumes correctly.
+    // No-op if the path has not changed or no improvement is found.
+    void push_rerouted_path(int agent_id, float speed_mps);
+
     // ---- Path cache (delegates to server_memory) ------------------------
+
+    // Create an empty group cache if none exists (for synthetic training tasks).
+    void ensure_task_group(int group_id);
 
     const ObjectivePath* get_or_compute_path(
         osmium::object_id_type from, osmium::object_id_type to, int group_id);
@@ -118,6 +127,15 @@ public:
 
     int  current_time() const;
     void advance_time(int t_now);
+
+    // ---- Episode reset --------------------------------------------------
+    //
+    // Clears all per-episode state (tasks, plans, congestion, clock) while
+    // preserving the A* path cache (server_memory / group_caches_) so that
+    // path costs accumulated across episodes remain available.
+    // Must be called at the start of each new episode when the same
+    // PDPGlobalMemory instance is reused across episodes.
+    void reset_episode();
 
     // ---- Congestion (delegates to congestion_map) -----------------------
 

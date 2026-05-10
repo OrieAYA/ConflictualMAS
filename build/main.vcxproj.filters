@@ -10,7 +10,31 @@
     <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\LKHSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\IVNSSolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\ComparisonTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\ObjectiveDMPolicy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Training\CityConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeGenerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeRunner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Training\TrainingLogger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Training\MultiCityTrainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Tests\LegacyTests.cpp">

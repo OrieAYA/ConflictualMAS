@@ -74,7 +74,10 @@ void TaskAgent::on_task_event(int task_id, TaskEvent event, PDPGlobalMemory& mem
         memory.complete_task(task_id);
         if (DeliveryAgent* agent = memory.get_agent_for_task(task_id)) {
             agent->remove_completed_task(task_id);
-            agent->status = AgentStatus::Idle;
+            // Only go Idle if no other tasks remain; otherwise stay Active.
+            agent->status = agent->local_memory.tasks.empty()
+                            ? AgentStatus::Idle
+                            : AgentStatus::Active;
         }
         break;
     }

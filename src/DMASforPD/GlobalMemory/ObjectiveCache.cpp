@@ -228,6 +228,11 @@ void PDPServerMemory::initialize_from_geobox() {
     std::cout << "[PDPServerMemory] Initialized " << group_caches_.size() << " group caches\n";
 }
 
+void PDPServerMemory::ensure_group(int group_id) {
+    if (!group_caches_.count(group_id))
+        group_caches_[group_id].group_id = group_id;
+}
+
 const ObjectivePath* PDPServerMemory::get_or_compute_path(
     osmium::object_id_type from, osmium::object_id_type to, int group_id
 ) {

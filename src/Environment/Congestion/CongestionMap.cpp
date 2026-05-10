@@ -66,3 +66,8 @@ void CongestionMap::advance(int t_now) {
 
     t_now_ = t_now;
 }
+
+void CongestionMap::reset() {
+    load_.clear();
+    t_now_ = 0;
+}

@@ -1,7 +1,9 @@
 #include "DeliveryAgent.hpp"
 #include "DMASforPD/GlobalMemory/GlobalMemory.hpp"
 #include "DMASforPD/TaskAgent/TaskAllocationModule.hpp"
+#include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 // ---- Construction -------------------------------------------------------
@@ -38,12 +40,23 @@ void DeliveryAgent::disconnect(PDPGlobalMemory& memory) {
     memory.unregister_delivery_agent(agent_id);
 }
 
-void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& /*memory*/) {
+void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
     add_task_to_memory(task);
-    solution.push_back(task.pickup);
-    solution.push_back(task.delivery);
+
+    if (status == AgentStatus::Idle) {
+        // First task: trivial sequence (pickup then delivery).
+        solution.push_back(task.pickup);
+        solution.push_back(task.delivery);
+    } else {
+        // Additional task while already active: append naively then replan.
+        // plan() runs DbVNS over the full remaining sequence, respecting the
+        // pickup-before-delivery constraint across all assigned tasks.
+        solution.push_back(task.pickup);
+        solution.push_back(task.delivery);
+        plan(memory, memory.task_agent.params.default_speed_mps);
+    }
+
     status = AgentStatus::Active;
-    // assign_task and commit_plan are called by the TAM immediately after.
 }
 
 void DeliveryAgent::remove_completed_task(int task_id) {
@@ -62,13 +75,117 @@ void DeliveryAgent::remove_completed_task(int task_id) {
     local_memory.tasks.erase(it);
 }
 
-float DeliveryAgent::try_accept_task(const TaskOffer& /*offer*/, PDPGlobalMemory& /*memory*/) {
-    // Default: always accept. Future versions will evaluate via reward/importance
-    // and current workload reflected in local_memory.
-    return 1.0f;
+float DeliveryAgent::try_accept_task(const TaskOffer& offer, PDPGlobalMemory& memory) {
+    PDPTask* task = memory.get_task(offer.task_id);
+    if (!task) return 0.f;
+
+    // ── Estimate insertion cost: current_node → pickup → delivery (upper bound) ──
+    // Uses the path cache; falls back to kCostScale per missing leg.
+    float insertion_cost = kCostScale * 2.f;
+    {
+        const auto* to_pu = memory.get_or_compute_path(
+            current_node, task->pickup.id, task->pickup.group_id);
+        const auto* pu_del = memory.get_or_compute_path(
+            task->pickup.id, task->delivery.id, task->delivery.group_id);
+
+        float c_pu  = (to_pu  && to_pu->valid())  ? to_pu->cost  : kCostScale;
+        float c_del = (pu_del && pu_del->valid())  ? pu_del->cost : kCostScale;
+        insertion_cost = c_pu + c_del;
+    }
+
+    // ── Current planned route cost ─────────────────────────────────────────────
+    float route_cost = solution.total_planned_cost(memory);
+    if (route_cost >= 1e10f || route_cost < 0.f) route_cost = 0.f;
+
+    const float eps = 1e-6f;
+
+    // ── Build PolicyFeatures ───────────────────────────────────────────────────
+    PolicyFeatures f;
+    f.cost_diff      = std::clamp(insertion_cost / kCostScale, 0.f, 1.f);
+    f.profit_rate    = std::clamp(offer.reward / (insertion_cost * 0.5f + eps), 0.f, 1.f);
+    f.current_load   = std::clamp(
+        static_cast<float>(local_memory.tasks.size()) / kMaxLoad, 0.f, 1.f);
+    f.queue_duration = std::clamp(route_cost / kQueueScale, 0.f, 1.f);
+    f.efficiency_loss= std::clamp(insertion_cost / (route_cost + eps), 0.f, 1.f);
+    f.rank_in_call   = 1.f - std::clamp(
+        static_cast<float>(offer.prev_agents.size()) / kMaxAgents, 0.f, 1.f);
+    f.task_importance= std::clamp(offer.importance / kImpMax, 0.f, 1.f);
+
+    int n_agents = static_cast<int>(memory.all_delivery_agents().size());
+    int total    = memory.count_total();
+    f.n_agents_ratio = std::clamp(static_cast<float>(n_agents) / kMaxAgents, 0.f, 1.f);
+    f.n_alloc_ratio  = (total > 0)
+        ? static_cast<float>(memory.count_allocated()) / total : 0.f;
+    f.n_avail_ratio  = (total > 0)
+        ? static_cast<float>(memory.count_available()) / total : 0.f;
+
+    float score  = ObjectiveDMPolicy::shared().score(f);
+    bool  accept = score >= 0.5f;
+    // Reward is always 0 at decision time. The EpisodeRunner calls update_reward()
+    // with the actual task value when the task is delivered, giving correct
+    // credit assignment without requiring a separate delayed-reward buffer.
+    ObjectiveDMPolicy::shared().record(f, accept ? 1.f : 0.f, 0.f, agent_id);
+    return score;
 }
 
-// ---- Path management ----------------------------------------------------
+// ---- Path management (two-path lookahead) --------------------------------
+
+bool DeliveryAgent::begin_leg(const ObjectivePath* path, int task_id, bool is_pickup) {
+    local_memory.current_path = path;
+
+    if (!path || !path->valid() || path->nodes.size() < 2) {
+        // Fallback: no usable cached path — build a synthetic direct-hop cursor.
+        // The simulator will compute a haversine-based travel time for this hop.
+        osmium::object_id_type dest = solution.empty() ? 0 : solution.next_objective().id;
+        edge_cursor = EdgeCursor{ {current_node, dest}, {}, 0, task_id, is_pickup };
+        return false;
+    }
+
+    edge_cursor = EdgeCursor{
+        path->nodes,   // all nodes including start and objective
+        path->edges,   // way IDs between consecutive nodes
+        0,             // agent is at nodes[0] = current_node
+        task_id,
+        is_pickup
+    };
+    return true;
+}
+
+void DeliveryAgent::promote_next_path() {
+    local_memory.current_path = local_memory.next_path;
+    local_memory.next_path    = nullptr;
+}
+
+void DeliveryAgent::prefetch_next_path(PDPGlobalMemory& memory) {
+    // Pre-fetch the path from sequence[0]→sequence[1] (the leg after the current one).
+    // sequence[0] is the objective we are currently heading to.
+    if (solution.num_remaining() >= 2)
+        local_memory.next_path = solution.path_between(0, memory);
+    else
+        local_memory.next_path = nullptr;
+}
+
+void DeliveryAgent::push_updated_path(const ObjectivePath* new_path) {
+    // GlobalMemory calls this when congestion reroutes the current leg.
+    // Rebuild the cursor from the agent's current position within the new path.
+    local_memory.current_path = new_path;
+    if (!new_path || !new_path->valid() || new_path->nodes.size() < 2) return;
+
+    // Find the agent's current node in the new path to resume from there.
+    const auto& ns = new_path->nodes;
+    int resume = 0;
+    for (int i = 0; i < static_cast<int>(ns.size()); ++i) {
+        if (ns[i] == current_node) { resume = i; break; }
+    }
+
+    if (edge_cursor) {
+        edge_cursor->nodes    = new_path->nodes;
+        edge_cursor->edges    = new_path->edges;
+        edge_cursor->next_idx = resume;
+    }
+}
+
+// ---- Legacy path helpers (kept for TAM / planning compatibility) ---------
 
 void DeliveryAgent::fetch_current_path(PDPGlobalMemory& memory) {
     local_memory.current_path =

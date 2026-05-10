@@ -2,6 +2,9 @@
 #include "DMASforPD/Tests/PDPTests.hpp"
 #include "AmazonDataset/AmazonTest.hpp"
 #include "Comparisons/DbVNS_vs_LKH/ComparisonTest.hpp"
+#include "Training/MultiCityTrainer.hpp"
+#include "Training/CityConfig.hpp"
+#include "Training/TrainingConfig.hpp"
 #include <iostream>
 #include <string>
 
@@ -25,6 +28,8 @@ int main()
     std::cout << "[Amazon Last Mile]\n";
     std::cout << "  A  DbVNS on Amazon routes (new dataset, 13 routes)\n";
     std::cout << "  B  DbVNS vs LKH benchmark (same routes, side-by-side)\n\n";
+    std::cout << "[MAPPO Training]\n";
+    std::cout << "  T  Multi-city MAPPO training (Tokyo / Kyoto / LosAngeles)\n\n";
     std::cout << "Choice: ";
 
     std::string rep;
@@ -40,6 +45,30 @@ int main()
     else if (rep == "C" || rep == "c") pdp_create_geobox(osm_file, cache_dir);
     else if (rep == "A" || rep == "a") test_amazon_routes(amazon_dir);
     else if (rep == "B" || rep == "b") test_comparison(amazon_dir);
+    else if (rep == "T" || rep == "t") {
+        // ── MAPPO multi-city training ─────────────────────────────────────
+        // OSM files expected at:  <osm_root>/<CityName>.osm.pbf
+        // GeoBox JSON caches at:  <cache_root>/<CityName>.json  (auto-created)
+        // Results (CSV + policy) at:  <output_dir>/
+        const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
+        const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
+        const std::string output_dir = "C:\\ConflictualMAS\\results";
+
+        // set_osm_root must be called BEFORE CityRegistry::all() (lazy static).
+        CityRegistry::set_osm_root(osm_root);
+
+        TrainingConfig cfg;
+        cfg.cache_root  = cache_root;
+        cfg.output_dir  = output_dir;
+        cfg.n_rounds    = 50;
+        cfg.n_seeds     = 3;
+        cfg.eval_every  = 10;
+        cfg.save_policy = true;
+        cfg.verbose     = true;
+
+        MultiCityTrainer trainer;
+        trainer.train(cfg);
+    }
     else std::cout << "Unknown option.\n";
 
     return 0;
