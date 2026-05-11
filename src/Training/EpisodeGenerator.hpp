@@ -19,11 +19,22 @@ struct ScheduledTask {
 
 // ── Phase schedule with step boundaries ──────────────────────────────────────
 struct PhaseInfo {
-    int   step_begin;  // inclusive
-    int   step_end;    // exclusive
-    float lambda;
-    int   n_agents;
+    int   step_begin;       // inclusive
+    int   step_end;         // exclusive
+    float lambda;           // Poisson rate (tasks/step); may be > 1.0
+    int   n_agents_start;
+    int   n_agents_end;
     float label;
+    int   n_hot_zones;      // hot zones active for this phase
+
+    // Linearly interpolate fleet size between start and end of phase.
+    int n_agents_at(int step) const {
+        if (n_agents_start == n_agents_end || step_end <= step_begin)
+            return n_agents_start;
+        float t = float(step - step_begin) / float(step_end - step_begin);
+        t = t < 0.f ? 0.f : (t > 1.f ? 1.f : t);
+        return static_cast<int>(n_agents_start + t * (n_agents_end - n_agents_start) + 0.5f);
+    }
 };
 
 // ── Episode Generator ─────────────────────────────────────────────────────────
@@ -40,9 +51,9 @@ struct PhaseInfo {
 //               matching real-world demand clustering: commercial districts, hubs).
 //
 // Arrival process:
-//   Each step, a task arrives with probability lambda (Bernoulli approximation of
-//   the Poisson process).  This is exact for lambda << 1 and a reasonable
-//   approximation for the lambda ≤ 0.20 values used in the default phases.
+//   Each step, the number of arriving tasks is drawn from Poisson(lambda).
+//   Lambda is computed automatically as tasks_per_agent * avg_agents / steps,
+//   which can exceed 1.0 under high density (Amazon-scale: 250 tasks/agent).
 class EpisodeGenerator {
 public:
     explicit EpisodeGenerator(const EpisodeConfig& cfg,
@@ -83,7 +94,7 @@ private:
     osmium::object_id_type last_delivery_ = 0;
 
     void build_valid_index();
-    void resample_hot_zones();
+    void resample_hot_zones(int n_zones);
 
     // Pick pickup/delivery pair respecting same_origin_prob.
     osmium::object_id_type sample_pickup (bool clustered);

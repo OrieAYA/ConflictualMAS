@@ -104,14 +104,14 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
 
         // Determine current phase parameters.
         float phase_label = cfg_.phases.empty() ? 0.f : cfg_.phases.front().label;
-        float lambda      = cfg_.phases.empty() ? 0.f : cfg_.phases.front().lambda;
+        float lambda      = cfg_.phases.empty() ? 0.f : 0.f;
         int   n_active    = cfg_.phases.empty() ? (int)all_agents_.size()
-                                                : cfg_.phases.front().n_agents;
+                                                : cfg_.phases.front().n_agents_start;
         for (const auto& ph : phase_table) {
             if (step >= ph.step_begin && step < ph.step_end) {
                 phase_label = ph.label;
                 lambda      = ph.lambda;
-                n_active    = ph.n_agents;
+                n_active    = ph.n_agents_at(step);
                 break;
             }
         }

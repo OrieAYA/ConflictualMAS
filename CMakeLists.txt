@@ -39,6 +39,7 @@ set(SOURCES
     src/Training/EpisodeRunner.cpp
     src/Training/TrainingLogger.cpp
     src/Training/MultiCityTrainer.cpp
+    src/Training/TrainingSmokeTest.cpp
     src/Legacy/Tests/LegacyTests.cpp
     src/DMASforPD/Tests/PDPTests.cpp
     src/AmazonDataset/AmazonTest.cpp

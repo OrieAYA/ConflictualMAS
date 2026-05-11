@@ -12,14 +12,23 @@
 // Density phase — one segment of the episode timeline
 // ════════════════════════════════════════════════════════════════════════════
 //
-// Matches the user spec: low → denser → very dense with limited agents.
-// The three-phase curriculum makes the policy learn to balance workload
-// under increasing pressure and shrinking fleet.
+// Task arrival rate is expressed as tasks_per_agent (Amazon-scale reference:
+// ~100–250 PDP tasks per driver per phase). Lambda is computed automatically:
+//   lambda = tasks_per_agent * avg(n_agents_start, n_agents_end) / steps
+// The generator uses a Poisson distribution so lambda > 1.0 is legal.
+//
+// n_agents is linearly interpolated from n_agents_start to n_agents_end
+// within the phase, enabling smooth fleet-size ramps during the episode.
+//
+// n_hot_zones overrides the global EpisodeConfig.n_hot_zones for this phase.
+// Set to -1 to inherit the global value.
 struct DensityPhase {
-    int   steps;          // duration in simulation steps
-    float lambda;         // mean tasks/step (Poisson rate)
-    int   n_agents;       // fleet size for this phase
-    float label;          // [0,1] fed to GlobalState.density_phase
+    int   steps;              // duration in simulation steps
+    float tasks_per_agent;    // expected tasks per agent in this phase
+    int   n_agents_start;     // fleet size at phase start
+    int   n_agents_end;       // fleet size at phase end (linear ramp)
+    float label;              // [0,1] fed to GlobalState.density_phase
+    int   n_hot_zones = -1;   // hot zones this phase; -1 = use global
 };
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -32,18 +41,26 @@ struct EpisodeConfig {
     float speed_mps = 5.0f;
 
     // Phase schedule (executed in order).
-    // Default: progressive stress — low → medium → high density, fleet shrinks.
+    // Default: Amazon-scale three-phase curriculum over a pseudo-day (3600 steps).
+    //   Low    (1000 steps):  8→10 agents, ~100 tasks/agent, 4 hot zones
+    //   Medium (1500 steps): 10→13 agents, ~200 tasks/agent, 6 hot zones
+    //   High   (1100 steps): 13→15 agents, ~250 tasks/agent, 8 hot zones
+    // Expected lambda: low ≈ 0.90 | medium ≈ 1.53 | high ≈ 3.18 tasks/step.
     std::vector<DensityPhase> phases = {
-        {  500, 0.02f,  8, 0.0f },   // low density,    8 agents
-        { 1000, 0.08f,  6, 0.5f },   // medium density, 6 agents
-        {  500, 0.20f,  4, 1.0f }    // high density,   4 agents  ← stress test
+        { 1000, 100.f,  8, 10, 0.0f,  4 },
+        { 1500, 200.f, 10, 13, 0.5f,  6 },
+        { 1100, 250.f, 13, 15, 1.0f,  8 },
     };
 
     // ── Spatial task pattern ───────────────────────────────────────────────
     float cluster_prob     = 0.35f;  // P(task in hot zone vs uniform)
-    int   n_hot_zones      = 4;      // hot-zone centers resampled each episode
-    float hot_zone_radius  = 500.f;  // hot-zone radius in metres
+    int   n_hot_zones      = 6;      // default hot-zone count (overridden per phase)
+    float hot_zone_radius  = 600.f;  // hot-zone radius in metres
     float same_origin_prob = 0.0f;   // P(pickup == previous delivery) — lifelong reuse
+
+    // ── Task distance constraints ──────────────────────────────────────────
+    float min_task_dist_m  = 300.f;  // minimum haversine pickup→delivery distance
+    float max_task_dist_m  = 8000.f; // maximum haversine pickup→delivery distance
 
     // ── Optional depot (warehouse mode) ───────────────────────────────────
     bool                   use_depot   = false;
@@ -58,7 +75,10 @@ struct EpisodeConfig {
         int s = 0; for (const auto& p : phases) s += p.steps; return s;
     }
     int  max_agents()  const {
-        int m = 0; for (const auto& p : phases) m = std::max(m, p.n_agents); return m;
+        int m = 0;
+        for (const auto& p : phases)
+            m = std::max(m, std::max(p.n_agents_start, p.n_agents_end));
+        return m;
     }
 };
 

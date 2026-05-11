@@ -28,14 +28,12 @@ void EpisodeGenerator::build_valid_index() {
 }
 
 // ── Hot zone re-sampling ──────────────────────────────────────────────────────
-void EpisodeGenerator::resample_hot_zones() {
+void EpisodeGenerator::resample_hot_zones(int n_zones) {
     hot_zones_.clear();
-    int n = cfg_.n_hot_zones;
-    if (n <= 0 || cfg_.cluster_prob <= 0.f) return;
-
-    hot_zones_.reserve(n);
+    if (n_zones <= 0 || cfg_.cluster_prob <= 0.f || valid_nodes_.empty()) return;
+    hot_zones_.reserve(n_zones);
     std::uniform_int_distribution<int> pick(0, static_cast<int>(valid_nodes_.size()) - 1);
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < n_zones; ++i)
         hot_zones_.push_back(valid_nodes_[pick(rng_)]);
 }
 
@@ -44,7 +42,11 @@ std::vector<PhaseInfo> EpisodeGenerator::build_phase_table() const {
     std::vector<PhaseInfo> table;
     int step = 0;
     for (const auto& p : cfg_.phases) {
-        table.push_back({ step, step + p.steps, p.lambda, p.n_agents, p.label });
+        float avg_agents = (p.n_agents_start + p.n_agents_end) * 0.5f;
+        float lam = (p.steps > 0) ? p.tasks_per_agent * avg_agents / p.steps : 0.f;
+        int nz = (p.n_hot_zones >= 0) ? p.n_hot_zones : cfg_.n_hot_zones;
+        table.push_back({ step, step + p.steps, lam,
+                          p.n_agents_start, p.n_agents_end, p.label, nz });
         step += p.steps;
     }
     return table;
@@ -52,8 +54,7 @@ std::vector<PhaseInfo> EpisodeGenerator::build_phase_table() const {
 
 // ── Episode generation ────────────────────────────────────────────────────────
 std::vector<ScheduledTask> EpisodeGenerator::generate() {
-    resample_hot_zones();
-    last_delivery_ = 0;   // reset chain for this episode
+    last_delivery_ = 0;
     auto phases = build_phase_table();
     std::vector<ScheduledTask> stream;
 
@@ -61,27 +62,32 @@ std::vector<ScheduledTask> EpisodeGenerator::generate() {
     std::uniform_real_distribution<float> imp_dist(0.5f, 2.0f);
 
     for (const auto& ph : phases) {
-        // Bernoulli arrival with probability = lambda (valid for lambda <= 0.2)
-        float lam = std::min(ph.lambda, 1.0f);
+        // Resample hot zones at each phase boundary so spatial clusters
+        // shift with demand (commercial morning peak → residential evening).
+        resample_hot_zones(ph.n_hot_zones);
+
+        // Poisson arrival: allows lambda > 1.0 (multiple tasks per step).
+        std::poisson_distribution<int> poisson(ph.lambda);
 
         for (int step = ph.step_begin; step < ph.step_end; ++step) {
-            if (unit(rng_) > lam) continue; // no task this step
+            int n_arrive = (ph.lambda > 0.f) ? poisson(rng_) : 0;
+            for (int k = 0; k < n_arrive; ++k) {
+                bool clustered = (!hot_zones_.empty()) && (unit(rng_) < cfg_.cluster_prob);
 
-            bool clustered = (!hot_zones_.empty()) && (unit(rng_) < cfg_.cluster_prob);
+                auto pu  = sample_pickup(clustered);
+                auto del = sample_delivery(pu, clustered);
+                if (pu == 0 || del == 0 || pu == del) continue;
 
-            auto pu  = sample_pickup (clustered);
-            auto del = sample_delivery(pu, clustered);
-            if (pu == 0 || del == 0 || pu == del) continue; // degenerate
-
-            ScheduledTask t;
-            t.arrival_step     = step;
-            t.pickup_node_id   = pu;
-            t.delivery_node_id = del;
-            t.reward           = estimate_reward(pu, del);
-            t.importance       = imp_dist(rng_);
-            t.is_clustered     = clustered;
-            stream.push_back(t);
-            last_delivery_ = del;  // enable same_origin_prob for the next task
+                ScheduledTask t;
+                t.arrival_step     = step;
+                t.pickup_node_id   = pu;
+                t.delivery_node_id = del;
+                t.reward           = estimate_reward(pu, del);
+                t.importance       = imp_dist(rng_);
+                t.is_clustered     = clustered;
+                stream.push_back(t);
+                last_delivery_ = del;
+            }
         }
     }
     return stream;
@@ -133,18 +139,25 @@ osmium::object_id_type EpisodeGenerator::sample_pickup(bool clustered) {
 osmium::object_id_type EpisodeGenerator::sample_delivery(
     osmium::object_id_type pickup, bool clustered)
 {
-    // same_origin_prob: delivery = previous pickup (lifelong reuse scenario)
-    // For now, always sample independently; same_origin_prob is reserved.
+    const float min_d = cfg_.min_task_dist_m;
+    const float max_d = cfg_.max_task_dist_m;
+
     osmium::object_id_type del = 0;
-    for (int tries = 0; tries < 5; ++tries) {
+    for (int tries = 0; tries < 12; ++tries) {
+        osmium::object_id_type candidate;
         if (clustered && !hot_zones_.empty()) {
             std::uniform_int_distribution<int> zd(0, static_cast<int>(hot_zones_.size()) - 1);
-            del = sample_node_near(hot_zones_[zd(rng_)], cfg_.hot_zone_radius);
+            candidate = sample_node_near(hot_zones_[zd(rng_)], cfg_.hot_zone_radius);
         } else {
-            del = sample_node_uniform();
+            candidate = sample_node_uniform();
         }
-        if (del != pickup) break;
+        if (candidate == pickup) continue;
+        float d = haversine_m(pickup, candidate);
+        if (d >= min_d && d <= max_d) { del = candidate; break; }
     }
+    // Fallback: relax distance constraint rather than produce a degenerate task.
+    if (del == 0 || del == pickup)
+        del = sample_node_uniform();
     return del;
 }
 
