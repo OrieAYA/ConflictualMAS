@@ -1,4 +1,4 @@
-#include "Legacy/Tests/LegacyTests.hpp"
+﻿#include "Legacy/Tests/LegacyTests.hpp"
 #include "DMASforPD/Tests/PDPTests.hpp"
 #include "AmazonDataset/AmazonTest.hpp"
 #include "Comparisons/DbVNS_vs_LKH/ComparisonTest.hpp"
@@ -60,13 +60,18 @@ int main()
         CityRegistry::set_osm_root(osm_root);
 
         TrainingConfig cfg;
-        cfg.cache_root  = cache_root;
-        cfg.output_dir  = output_dir;
-        cfg.n_rounds    = 50;
-        cfg.n_seeds     = 3;
-        cfg.eval_every  = 10;
-        cfg.save_policy = true;
-        cfg.verbose     = true;
+        cfg.cache_root       = cache_root;
+        cfg.output_dir       = output_dir;
+        cfg.n_rounds         = 50;      // 7 cities × 50 rounds = 350 train eps  ≈ 3–5 h
+        cfg.n_seeds          = 1;       // single seed fits in one session; add more via load_policy
+        cfg.n_eval_episodes  = 5;       // per city × mode (3 checkpoints × 7 × 3 × 5 = 315 eps ≈ 1 h)
+        cfg.eval_every       = 25;      // eval at round 25, 50 + final
+        cfg.save_policy      = true;    // checkpoint saved → rerun with load_policy=true to extend
+        cfg.verbose          = true;
+
+        // To extend from a saved checkpoint (add more seeds / rounds):
+        //   cfg.load_policy  = true;
+        //   cfg.policy_path  = output_dir + "/policy_seed0.bin";
 
         MultiCityTrainer trainer;
         trainer.train(cfg);
@@ -112,122 +117,143 @@ int main()
 // =============================================================================
 
 // =============================================================================
-// OPTION T — MAPPO Multi-City Training
+// OPTION T - MAPPO Multi-City Training
 // =============================================================================
 //
 // OVERVIEW
 //   Trains a shared MAPPO policy (actor + centralized critic) on the Lifelong
-//   General Pickup-and-Delivery Problem across multiple real city road graphs.
-//   The policy learns when delivery agents should accept or refuse task offers
-//   under dynamic, multi-phase demand.
+//   General Pickup-and-Delivery Problem across 7 real city road graphs.
+//   Each agent independently decides to accept or refuse task offers using a
+//   shared 10->64->64->1 MLP (sigmoid), trained via PPO with centralised critic.
 //
-// ── REQUIRED OSM FILES ───────────────────────────────────────────────────────
+// =============================================================================
+// STEP-BY-STEP TUTORIAL
+// =============================================================================
 //
-//   Place at C:\ConflictualMAS\src\maps\<Name>.osm.pbf :
+// STEP 1 -- Download OSM regional files (no extra tool needed)
+//   The code uses libosmium (already linked) to parse .pbf files with a bbox
+//   filter applied at runtime. No pre-extraction or osmium-tool required.
 //
-//   TRAIN cities (mandatory):
-//     Tokyo.osm.pbf        —  extract: osmium extract --bbox=139.60,35.55,139.90,35.80 kanto-latest.osm.pbf
-//     Kyoto.osm.pbf        —  extract: osmium extract --bbox=135.65,34.95,135.85,35.10 kanto-latest.osm.pbf
-//     LosAngeles.osm.pbf   —  download: geofabrik.de → North America → us-california
+//   Download these 6 files from geofabrik.de and place them in:
+//     C:\ConflictualMAS\src\maps\
 //
-//   EVAL cities (optional — trainer throws if missing; comment out or set n_eval_episodes=0):
-//     NewYork.osm.pbf      —  geofabrik.de → North America → us-northeast
-//     Paris.osm.pbf        —  geofabrik.de → Europe → france/ile-de-france
-//     London.osm.pbf       —  geofabrik.de → Europe → great-britain
-//     Fukuoka.osm.pbf      —  geofabrik.de → Asia → japan/kyushu
+//   File                          URL (geofabrik.de)                       Covers
+//   kanto-latest.osm.pbf          /asia/japan/kanto                        Tokyo + Kyoto
+//   kyushu-latest.osm.pbf         /asia/japan/kyushu                       Fukuoka
+//   california-latest.osm.pbf     /north-america/us/california             Los Angeles
+//   new-york-latest.osm.pbf       /north-america/us/new-york               New York
+//   ile-de-france-latest.osm.pbf  /europe/france/ile-de-france             Paris
+//   great-britain-latest.osm.pbf  /europe/great-britain                    London
 //
-//   GeoBox JSON caches are auto-created at C:\ConflictualMAS\data\cache\ on
-//   first run and reused on subsequent runs (much faster load).
+//   Note: kanto-latest.osm.pbf is already at src/maps/ (used by smoke test).
+//         Only 5 additional downloads are needed.
 //
-// ── TRAINING PROTOCOL ────────────────────────────────────────────────────────
+// STEP 2 -- Build
+//   cmake --build C:\ConflictualMAS\build --config Debug
 //
-//   Seeds             :  3 independent runs (Xavier re-init each seed)
-//   Rounds per seed   :  50  (one episode per train city per round)
-//   Train episodes    :  50 × 3 cities = 150 per seed  →  450 total
-//   Eval checkpoints  :  every 10 rounds + final  =  6 per seed
-//   Eval episodes     :  6 × 7 cities × 3 modes × 10 eps  =  1 260 per seed
-//   Total episodes    :  1 410 per seed  →  4 230 across all seeds
+// STEP 3 -- Run the smoke test (sanity check before the full run, ~5 min)
+//   build\Debug\main.exe  ->  type S
+//   Expected: === PASS ===
 //
-// ── EPISODE STRUCTURE (pseudo-day, 3 600 steps) ──────────────────────────────
+// STEP 4 -- Launch training
+//   build\Debug\main.exe  ->  type T
+//
+//   First run: each city .pbf is parsed and cached as a .json GeoBox in
+//     C:\ConflictualMAS\data\cache\
+//   Parsing is slow (~5-15 min per city, ~60-90 min total for all 7) because
+//   libosmium reads the full regional file and filters by bbox.
+//   All subsequent runs load from cache and skip parsing entirely.
+//
+//   Expected console flow:
+//     Loading 7 cities from C:\ConflictualMAS\data\cache
+//       [Load] Tokyo    <- OSM (kanto-latest.osm.pbf, parsing...)   <- first run
+//       [Load] Tokyo    <- cache                                     <- next runs
+//       ...
+//     All cities loaded.
+//
+//     Seed 0  (rng=42)
+//       [s0 r0 Tokyo]      thr=0.18  acc=0.73  aloss=...  kl=...  ep=.../10  n=...  ...ms
+//       [s0 r0 Kyoto]      thr=0.21  ...
+//       [s0 r0 Fukuoka]    ...
+//       [s0 r0 LosAngeles] ...
+//       [s0 r0 NewYork]    ...
+//       [s0 r0 Paris]      ...
+//       [s0 r0 London]     ...
+//       -- Eval @ round 25 --
+//       -- Eval @ round 50 --
+//       -- Final Eval --
+//       [Checkpoint] saved to C:\ConflictualMAS\results\policy_seed0.bin
+//     Seed 0 done -- 665 episodes.
+//     Training complete. Results in C:\ConflictualMAS\results
+//
+// STEP 5 -- Check results
+//   C:\ConflictualMAS\results\
+//     seed0.csv          -- all episode metrics (open in Excel / plot with Python)
+//     summary.csv        -- aggregated stats
+//     policy_seed0.bin   -- trained weights
+//
+//   Key columns to watch (split=train rows):
+//     throughput_rate  -- rises from ~0.2 toward >0.5 as policy converges
+//     accept_rate      -- moves away from 0.73 flat; settles ~0.5-0.8
+//     critic_loss      -- should decrease toward 0 over rounds
+//
+// STEP 6 -- Extend training (optional, for publication-quality results)
+//   Uncomment in the TrainingConfig block below:
+//     cfg.load_policy = true;
+//     cfg.policy_path = output_dir + "/policy_seed0.bin";
+//   Run again -> type T.
+//   Each additional 50-round seed takes ~3-4 h.  3 seeds recommended for stats.
+//
+// =============================================================================
+// TECHNICAL REFERENCE
+// =============================================================================
+//
+// -- TRAINING PROTOCOL (single 5-6 h session) ---------------------------------
+//
+//   Seeds             :  1  (add more via load_policy; see Step 6)
+//   Rounds per seed   :  50  (one episode per city per round, round-robin)
+//   Train cities      :  7  (all cities, shared policy)
+//   Train episodes    :  50 x 7 = 350
+//   Eval checkpoints  :  rounds 25 and 50 + final  =  3 per seed
+//   Eval episodes     :  3 x 7 cities x 3 modes x 5 eps  =  315
+//   Total episodes    :  665
+//
+//   Timing (1 seed, after first-run GeoBox cache is built):
+//     Training  :  350 eps x ~25 s avg  ~  2.5 h
+//     Eval      :  315 eps x ~10 s avg  ~  52 min
+//     Total     :  ~3.5 h
+//
+// -- EPISODE STRUCTURE (pseudo-day, 3 600 steps) ------------------------------
 //
 //   Phase       Steps   Agents   Tasks/agent   Lambda     Hot zones
-//   Low          1000    8→10       ~100        ≈ 0.90        4
-//   Medium       1500   10→13       ~200        ≈ 1.53        6
-//   High         1100   13→15       ~250        ≈ 3.18        8
+//   Low          1000    8-10       ~100        ~0.90         4
+//   Medium       1500   10-13       ~200        ~1.53         6
+//   High         1100   13-15       ~250        ~3.18         8
 //
-//   Lambda > 1 is legal (Poisson generator — multiple tasks per step possible).
-//   Fleet size ramps linearly within each phase.
-//   Hot zones are resampled at each phase boundary (morning peak → evening peak).
-//   Task distance: 300 m – 8 000 m haversine (pickup → delivery).
+//   Poisson arrivals (lambda > 1 valid); fleet ramps linearly within each phase.
+//   Hot zones resampled at phase boundaries. Task dist: 300 m to 8 000 m.
 //
-// ── NETWORK ARCHITECTURE ─────────────────────────────────────────────────────
+// -- NETWORK ARCHITECTURE -----------------------------------------------------
 //
-//   Actor  (shared)     :  MLP  10 → 64 → 64 → 1  (sigmoid, Bernoulli policy)
-//   Critic (centralized):  MLP  20 → 64 → 64 → 1  (linear, V(global_state))
-//   PPO clip ε = 0.20   |  γ = 0.99  |  λ_GAE = 0.95  |  4 epochs per episode
-//   GAE computed per-agent trajectory (avoids cross-agent bootstrap error).
-//   Reward deferred: recorded as 0 at accept time, updated to task value on delivery.
+//   Actor  (shared)      :  MLP  10 -> 64 -> 64 -> 1  (sigmoid, Bernoulli policy)
+//   Critic (centralised) :  MLP  20 -> 64 -> 64 -> 1  (linear, V(global_state))
+//   PPO clip eps=0.20  |  gamma=0.99  |  lam_GAE=0.95  |  10 epochs / episode
+//   Mini-batch SGD + grad norm clipping (max_norm=0.5) + KL early stop (0.01).
 //
-// ── EXPECTED TIMING ──────────────────────────────────────────────────────────
+// -- CONVERGENCE MONITORING ---------------------------------------------------
 //
-//   OSM → GeoBox cache (one-time per city)
-//     Tokyo / Kyoto      :  2 – 5 min each
-//     LosAngeles         :  5 – 10 min
-//     Comparison cities  :  3 – 8 min each
+//   Verbose log (one line per training episode):
+//     [s0 r5 Tokyo]  thr=0.41  acc=0.68  aloss=0.12  closs=0.08  ent=0.61
+//                    kl=0.007  cf=0.18  ep=10/10  n=312  420ms
 //
-//   Training episode (warm A* cache after round 3–5)
-//     ~15 – 40 s per episode (depends on city size and episode task volume)
+//   thr rises, ent falls, closs falls, kl < 0.01 -> policy is converging.
+//   ep < 10/10 means KL early stop triggered (normal and healthy).
 //
-//   Eval episode (mostly cached paths)
-//     ~5 – 20 s per episode
+// -- TUNING -------------------------------------------------------------------
 //
-//   Estimated wall-clock per seed    :  3 – 6 hours
-//   Estimated wall-clock total (×3)  :  9 – 18 hours
-//
-//   To speed up a first run: reduce n_rounds to 10 and n_eval_episodes to 1
-//   (edit the TrainingConfig block below). Full 3-seed run is for final results.
-//
-// ── OUTPUT FILES ─────────────────────────────────────────────────────────────
-//
-//   C:\ConflictualMAS\results\
-//     seed0.csv, seed1.csv, seed2.csv   — per-episode metrics (train + eval)
-//     summary.csv                       — cross-seed aggregated statistics
-//     policy_seed0.bin, …               — serialized actor + critic weights
-//
-//   CSV columns: seed, episode, city, split (train/eval), method (MAPPO/Greedy/Random),
-//     n_agents, tasks_appeared, tasks_completed, throughput_rate, latency_mean,
-//     latency_per_agent, agent_utilisation, accept_rate, refuse_rate,
-//     actor_loss, critic_loss, entropy, n_exp, wallclock_ms.
-//
-// ── PROGRESS MONITORING ──────────────────────────────────────────────────────
-//
-//   With verbose=true (default), one line is printed per training episode:
-//     [sS rR CityName]  thr=0.52  acc=0.71  aloss=0.14  closs=0.09  ent=0.63  n=124  340ms
-//
-//   Healthy signs during training:
-//     thr (throughput)  — should rise from ~0.2 to >0.5 over 50 rounds
-//     acc (accept rate) — starts ~0.73 (bias), adapts to ≈ 0.5 – 0.8
-//     aloss             — fluctuates; positive trend = policy improving
-//     closs             — should decrease toward 0 over rounds
-//     ent               — should slowly decrease (policy becomes less random)
-//     n                 — number of PPO experiences; higher = more gradient signal
-//
-// ── TUNING ────────────────────────────────────────────────────────────────────
-//
-//   TrainingConfig (below):
-//     n_rounds          — total rounds of multi-city training (default 50)
-//     n_seeds           — independent statistical seeds (default 3)
-//     eval_every        — eval checkpoint period in rounds (default 10)
-//     n_eval_episodes   — eval episodes per city per mode (default 10)
-//
-//   EpisodeConfig (src/Training/EpisodeConfig.hpp):
-//     phases            — adjust tasks_per_agent / n_agents / steps per phase
-//     min_task_dist_m   — minimum pickup→delivery haversine distance (default 300 m)
-//     speed_mps         — agent travel speed (default 5 m/s ≈ 18 km/h)
-//
-//   PPOParams (src/DMASforPD/Policy/ObjectiveDMPolicy.hpp):
-//     lr_actor / lr_critic — learning rates (default 3e-4 / 1e-3)
-//     epochs               — PPO gradient epochs per episode (default 4)
+//   n_rounds, eval_every, n_eval_episodes  -- in the TrainingConfig block below
+//   phases, min_task_dist_m, speed_mps    -- src/Training/EpisodeConfig.hpp
+//   lr_actor, lr_critic, epochs           -- src/DMASforPD/Policy/ObjectiveDMPolicy.hpp
 //
 // =============================================================================
 

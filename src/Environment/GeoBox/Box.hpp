@@ -215,24 +215,5 @@ GeoBox create_geo_box(const std::string& osm_filename,
 GeoBox apply_objectives(GeoBox geo_box, const FlickrConfig& flickr_config, 
                        const std::string& cache_filename, bool use_cache = true, int group_id = 1);
 
-// Fonctions utilitaires pour les composantes
-void bfs_explore(const MyData& data, osmium::object_id_type start,
-                std::unordered_set<osmium::object_id_type>& visited,
-                std::vector<osmium::object_id_type>& component);
-
-std::vector<std::vector<osmium::object_id_type>> find_components_simple(const MyData& data);
-
-osmium::object_id_type get_max_way_id(const MyData& data);
-
-std::tuple<osmium::object_id_type, osmium::object_id_type, double> 
-find_closest_nodes(const MyData& data, 
-                  const std::vector<osmium::object_id_type>& comp1,
-                  const std::vector<osmium::object_id_type>& comp2);
-
-void create_connecting_way(MyData& data, osmium::object_id_type way_id, 
-                          osmium::object_id_type node1_id, osmium::object_id_type node2_id, 
-                          double distance);
-
-GeoBox connect_isolated_components(GeoBox geo_box);
 
 #endif // BOX_HPP

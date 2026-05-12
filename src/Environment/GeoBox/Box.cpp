@@ -7,7 +7,6 @@
 #include <filesystem>
 #include <limits>
 #include <queue>
-#include <tuple>
 #include <osmium/visitor.hpp>
 #include <osmium/io/any_input.hpp>
 #include <osmium/io/error.hpp>
@@ -220,7 +219,7 @@ GeoBox create_geo_box(const std::string& osm_filename,
         std::cout << "  Ways found: " << handler.data_collector.ways.size() << std::endl;
 
         GeoBox temp_box(handler.data_collector, handler.Map_bbox, osm_filename);
-        return connect_isolated_components(temp_box);
+        return keep_largest_component(temp_box);
         
     } catch (const osmium::io_error& e) {
         std::cerr << "OSM I/O Error: " << e.what() << std::endl;
@@ -475,169 +474,67 @@ std::vector<FlickrPOI> FlickrAPIClient::load_pois_from_file(const std::string& f
 }
 
 // ====================================================================
-// FONCTIONS DE CONNEXION DES COMPOSANTES
+// FILTRAGE DE LA PLUS GRANDE COMPOSANTE CONNEXE
 // ====================================================================
 
-GeoBox connect_isolated_components(GeoBox geo_box) {
-    if (!geo_box.is_valid) return geo_box;
-    
-    std::cout << "\n=== Connexion des composantes isolées ===" << std::endl;
-    
-    auto components = find_components_simple(geo_box.data);
-    
-    if (components.size() <= 1) {
-        std::cout << "Une seule composante - pas de connexion nécessaire" << std::endl;
-        return geo_box;
-    }
-    
-    std::cout << "Composantes trouvées: " << components.size() << std::endl;
-    
-    // Trouver la plus grande composante
-    size_t main_component_idx = 0;
-    for (size_t i = 1; i < components.size(); ++i) {
-        if (components[i].size() > components[main_component_idx].size()) {
-            main_component_idx = i;
-        }
-    }
-    
-    std::cout << "Composante principale: " << components[main_component_idx].size() << " nodes" << std::endl;
-    
-    // Connecter chaque petite composante à la principale
-    osmium::object_id_type next_way_id = get_max_way_id(geo_box.data) + 1;
-    
-    for (size_t i = 0; i < components.size(); ++i) {
-        if (i == main_component_idx) continue;
-        
-        auto [main_node, isolated_node, distance] = find_closest_nodes(
-            geo_box.data, components[main_component_idx], components[i]);
-            
-        std::cout << "Connexion composante " << i << " (distance: " << static_cast<int>(distance) << "m)" << std::endl;
-        
-        create_connecting_way(geo_box.data, next_way_id++, main_node, isolated_node, distance);
-    }
-    
-    return geo_box;
-}
-
-std::vector<std::vector<osmium::object_id_type>> find_components_simple(const MyData& data) {
-    std::unordered_set<osmium::object_id_type> visited;
-    std::vector<std::vector<osmium::object_id_type>> components;
-    
-    for (const auto& [node_id, node] : data.nodes) {
-        if (!visited.count(node_id)) {
-            std::vector<osmium::object_id_type> component;
-            bfs_explore(data, node_id, visited, component);
-            if (!component.empty()) {
-                components.push_back(component);
-            }
-        }
-    }
-    
-    return components;
-}
-
-void bfs_explore(const MyData& data, osmium::object_id_type start,
-                std::unordered_set<osmium::object_id_type>& visited,
-                std::vector<osmium::object_id_type>& component) {
-    
-    std::queue<osmium::object_id_type> queue;
-    queue.push(start);
+// BFS depuis un nœud de départ — remplit visited et component en O(V+E).
+static void bfs_component(const MyData& data,
+                           osmium::object_id_type start,
+                           std::unordered_set<osmium::object_id_type>& visited,
+                           std::vector<osmium::object_id_type>& component)
+{
+    std::queue<osmium::object_id_type> q;
+    q.push(start);
     visited.insert(start);
-    
-    while (!queue.empty()) {
-        osmium::object_id_type current = queue.front();
-        queue.pop();
-        component.push_back(current);
-        
-        auto node_it = data.nodes.find(current);
-        if (node_it == data.nodes.end()) continue;
-        
-        // Explorer les voisins via les ways incidents
-        for (const auto& way_id : node_it->second.incident_ways) {
-            auto way_it = data.ways.find(way_id);
-            if (way_it == data.ways.end()) continue;
-            
-            std::vector<osmium::object_id_type> neighbors = {way_it->second.node1_id, way_it->second.node2_id};
-            
-            for (const auto& neighbor_id : neighbors) {
-                if (neighbor_id != current && !visited.count(neighbor_id)) {
-                    visited.insert(neighbor_id);
-                    queue.push(neighbor_id);
+    while (!q.empty()) {
+        osmium::object_id_type cur = q.front(); q.pop();
+        component.push_back(cur);
+        auto nit = data.nodes.find(cur);
+        if (nit == data.nodes.end()) continue;
+        for (auto way_id : nit->second.incident_ways) {
+            auto wit = data.ways.find(way_id);
+            if (wit == data.ways.end()) continue;
+            for (auto nb : {wit->second.node1_id, wit->second.node2_id}) {
+                if (nb != cur && !visited.count(nb)) {
+                    visited.insert(nb);
+                    q.push(nb);
                 }
             }
         }
     }
 }
 
-osmium::object_id_type get_max_way_id(const MyData& data) {
-    osmium::object_id_type max_id = 0;
-    for (const auto& [way_id, way] : data.ways) {
-        if (way_id > max_id) {
-            max_id = way_id;
-        }
-    }
-    return max_id;
-}
+// Conserve uniquement la plus grande composante connexe.
+// Les composantes isolées (parkings, impasses OSM, erreurs de données) sont supprimées.
+// Complexité : O(V+E) — négligeable comparé au O(V²) de l'ancienne connexion par paires.
+static GeoBox keep_largest_component(GeoBox geo_box)
+{
+    if (!geo_box.is_valid) return geo_box;
 
-std::tuple<osmium::object_id_type, osmium::object_id_type, double> 
-find_closest_nodes(const MyData& data, 
-                  const std::vector<osmium::object_id_type>& comp1,
-                  const std::vector<osmium::object_id_type>& comp2) {
-    
-    double min_distance = std::numeric_limits<double>::max();
-    osmium::object_id_type best_node1 = 0;
-    osmium::object_id_type best_node2 = 0;
-    
-    for (const auto& node1_id : comp1) {
-        auto node1_it = data.nodes.find(node1_id);
-        if (node1_it == data.nodes.end()) continue;
-        
-        for (const auto& node2_id : comp2) {
-            auto node2_it = data.nodes.find(node2_id);
-            if (node2_it == data.nodes.end()) continue;
-            
-            double distance = calculate_haversine_distance(
-                node1_it->second.lat, node1_it->second.lon,
-                node2_it->second.lat, node2_it->second.lon
-            );
-            
-            if (distance < min_distance) {
-                min_distance = distance;
-                best_node1 = node1_id;
-                best_node2 = node2_id;
-            }
-        }
-    }
-    
-    return std::make_tuple(best_node1, best_node2, min_distance);
-}
+    MyData& data = geo_box.data;
+    if (data.nodes.empty()) return geo_box;
 
-void create_connecting_way(MyData& data, osmium::object_id_type way_id, 
-                          osmium::object_id_type node1_id, osmium::object_id_type node2_id, 
-                          double distance) {
-    
-    auto node1_it = data.nodes.find(node1_id);
-    auto node2_it = data.nodes.find(node2_id);
-    
-    if (node1_it == data.nodes.end() || node2_it == data.nodes.end()) {
-        std::cerr << "Erreur: nodes introuvables pour connexion" << std::endl;
-        return;
+    std::unordered_set<osmium::object_id_type> visited;
+    std::vector<osmium::object_id_type> best;
+
+    for (const auto& [id, _] : data.nodes) {
+        if (visited.count(id)) continue;
+        std::vector<osmium::object_id_type> comp;
+        bfs_component(data, id, visited, comp);
+        if (comp.size() > best.size())
+            best = std::move(comp);
     }
-    
-    // Créer le nouveau way
-    MyData::Way new_way(way_id);
-    new_way.node1_id = node1_id;
-    new_way.node2_id = node2_id;
-    new_way.points = {node1_it->second, node2_it->second};
-    new_way.distance_meters = static_cast<float>(distance);
-    
-    // Ajouter le way aux données
-    data.ways[way_id] = new_way;
-    
-    // CONNEXION IMMÉDIATE (cohérent avec MyHandler::way())
-    node1_it->second.incident_ways.push_back(way_id);
-    node2_it->second.incident_ways.push_back(way_id);
-    
-    std::cout << "Way de connexion créé: " << way_id 
-              << " (" << node1_id << " -> " << node2_id << ")" << std::endl;
+
+    const std::unordered_set<osmium::object_id_type> keep(best.begin(), best.end());
+
+    for (auto it = data.nodes.begin(); it != data.nodes.end(); )
+        it = keep.count(it->first) ? std::next(it) : data.nodes.erase(it);
+
+    for (auto it = data.ways.begin(); it != data.ways.end(); )
+        it = (keep.count(it->second.node1_id) && keep.count(it->second.node2_id))
+             ? std::next(it) : data.ways.erase(it);
+
+    std::cout << "Largest component: " << data.nodes.size() << " nodes, "
+              << data.ways.size() << " ways\n";
+    return geo_box;
 }
