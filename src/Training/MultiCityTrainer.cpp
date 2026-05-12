@@ -158,6 +158,10 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                               << "  aloss=" << res.train_stats.actor_loss
                               << "  closs=" << res.train_stats.critic_loss
                               << "  ent="   << res.train_stats.entropy
+                              << "  kl="    << res.train_stats.kl_approx
+                              << "  cf="    << res.train_stats.clip_frac
+                              << "  ep="    << res.train_stats.n_epochs
+                                            << "/" << policy.hparams.epochs
                               << "  n="     << res.train_stats.n_exp
                               << "  "       << res.wallclock_ms << "ms\n";
                 }

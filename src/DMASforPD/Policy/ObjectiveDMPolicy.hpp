@@ -84,16 +84,24 @@ struct Experience {
 };
 
 // ── PPO hyper-parameters ──────────────────────────────────────────────────────
+//
+// Aligned with MAPPO state-of-the-art (Yu et al., 2022):
+//   - Mini-batch SGD with gradient norm clipping
+//   - Value function clipping (prevents destructive critic updates)
+//   - KL-divergence early stopping (stops epoch loop when policy drifts too far)
+//   - Global advantage normalisation (once per episode, before epoch loop)
 struct PPOParams {
-    float lr_actor  = 3e-4f; // actor SGD learning rate
-    float lr_critic = 1e-3f; // critic SGD learning rate
-    float clip_eps  = 0.2f;  // PPO clip range
-    float gamma     = 0.99f; // discount factor
-    float lam_gae   = 0.95f; // GAE lambda
-    float ent_w     = 0.01f; // entropy bonus coefficient
-    float val_w     = 0.5f;  // critic loss coefficient (unused in separated updates)
-    int   epochs    = 4;     // PPO gradient epochs per train_epoch call
-    int   batch_sz  = 32;    // mini-batch size (reserved for future mini-batching)
+    float lr_actor      = 3e-4f;  // actor SGD learning rate
+    float lr_critic     = 1e-3f;  // critic SGD learning rate
+    float clip_eps      = 0.2f;   // PPO policy clip range ε
+    float val_clip_eps  = 0.2f;   // value function clip range (same ε, MAPPO standard)
+    float max_grad_norm = 0.5f;   // L2 gradient norm clipping
+    float target_kl     = 0.01f;  // KL early-stop threshold (break epoch if exceeded)
+    float gamma         = 0.99f;  // discount factor
+    float lam_gae       = 0.95f;  // GAE λ
+    float ent_w         = 0.01f;  // entropy bonus coefficient
+    int   epochs        = 10;     // max PPO gradient epochs per train_epoch call
+    int   batch_sz      = 256;    // mini-batch size (experiences per SGD step)
 };
 
 // ── MAPPO shared policy (singleton) ──────────────────────────────────────────
@@ -138,12 +146,15 @@ public:
 
     // ── Training stats (populated by train_epoch) ─────────────────────────
     struct TrainingStats {
-        float actor_loss  = 0.f;  // mean −L_clip (last actor epoch; higher = policy improving)
-        float critic_loss = 0.f;  // mean (V − ret)²  (should decrease)
-        float entropy     = 0.f;  // mean H(π) = −μlogμ − (1−μ)log(1−μ) (exploration measure)
-        float adv_mean    = 0.f;  // mean raw advantage before normalisation (should stay ≈0)
-        float adv_std     = 0.f;  // std of advantages (signal strength; >0 = learning signal)
-        int   n_exp       = 0;    // experiences in buffer at training time
+        float actor_loss  = 0.f;  // mean −L_clip  (positive = policy improving)
+        float critic_loss = 0.f;  // mean max(MSE_unclip, MSE_clip)  (↓ = critic converging)
+        float entropy     = 0.f;  // mean H(π) = −μlogμ − (1−μ)log(1−μ)  (↓ = less random)
+        float adv_mean    = 0.f;  // mean raw advantage before normalisation  (should ≈ 0)
+        float adv_std     = 0.f;  // std of advantages  (signal strength; > 0 = learning)
+        float kl_approx   = 0.f;  // mean approx KL(π_old ‖ π_new) per epoch  (< target_kl)
+        float clip_frac   = 0.f;  // fraction of samples where ratio r was clipped  (0.1–0.3)
+        int   n_exp       = 0;    // experiences processed
+        int   n_epochs    = 0;    // actual epochs run (may be < max if KL triggered early stop)
     };
 
     // ── Training ───────────────────────────────────────────────────────────
@@ -165,14 +176,22 @@ private:
     std::vector<Experience> buffer_;
     std::mt19937            rng_;
 
-    struct EpochActorStats { float actor_loss; float entropy; float adv_mean; float adv_std; };
+    // Mini-batch update stats.
+    struct MBStats { float loss; float entropy; float kl; float clip_frac; };
 
     // Compute GAE independently per agent trajectory (keyed by Experience::agent_id).
-    // Avoids cross-agent bootstrap errors when the buffer mixes decisions from
-    // multiple agents within the same episode.
-    void            compute_gae();
-    EpochActorStats update_actor();
-    float           update_critic(const std::vector<std::array<float, kGlobSz>>& gs);
+    void compute_gae();
+
+    // Single mini-batch SGD step for actor. `perm[start..end)` indexes buffer_.
+    // Advantages must already be globally normalised before calling.
+    // Returns (−L_clip, H(π), approx_KL, clip_fraction) averaged over the batch.
+    MBStats update_actor_mb(const std::vector<int>& perm, int start, int end);
+
+    // Single mini-batch SGD step for critic with value clipping.
+    // `perm[start..end)` indexes buffer_ and global_states simultaneously.
+    // Returns mean max(MSE_unclip, MSE_clip) over the batch.
+    float   update_critic_mb(const std::vector<int>& perm, int start, int end,
+                              const std::vector<std::array<float, kGlobSz>>& gs);
 };
 
 #endif // OBJECTIVE_DM_POLICY_HPP

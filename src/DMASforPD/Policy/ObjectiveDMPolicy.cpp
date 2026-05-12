@@ -147,18 +147,35 @@ void ObjectiveDMPolicy::update_reward(int buffer_idx, float reward) {
         buffer_[buffer_idx].reward = reward;
 }
 
+// ── Gradient norm clipping (L2, in-place) ────────────────────────────────────
+namespace {
+
+void clip_grad_norm(float* arrays[], const int sizes[], int n_arrays, float max_norm) {
+    float sq = 0.f;
+    for (int a = 0; a < n_arrays; ++a)
+        for (int i = 0; i < sizes[a]; ++i)
+            sq += arrays[a][i] * arrays[a][i];
+    float norm = std::sqrt(sq);
+    if (norm > max_norm) {
+        float scale = max_norm / (norm + 1e-6f);
+        for (int a = 0; a < n_arrays; ++a)
+            for (int i = 0; i < sizes[a]; ++i)
+                arrays[a][i] *= scale;
+    }
+}
+
+} // namespace
+
 // ── GAE (Generalized Advantage Estimation) — per-agent trajectories ───────────
 //
 // The global buffer interleaves decisions from multiple agents. Running a single
 // backward pass treats buffer[i+1] as the successor of buffer[i] even when they
-// belong to different agents, injecting cross-agent bootstrap error into the
-// advantages. This version groups buffer indices by agent_id and computes GAE
-// independently for each agent's sub-trajectory, fixing that error.
+// belong to different agents, injecting cross-agent bootstrap error. This version
+// groups indices by agent_id and processes each sub-trajectory independently.
 void ObjectiveDMPolicy::compute_gae() {
     int n = static_cast<int>(buffer_.size());
     if (n == 0) return;
 
-    // Collect buffer indices per agent in insertion order.
     std::unordered_map<int, std::vector<int>> by_agent;
     by_agent.reserve(32);
     for (int i = 0; i < n; ++i)
@@ -168,9 +185,7 @@ void ObjectiveDMPolicy::compute_gae() {
         float gae = 0.f, next_val = 0.f;
         for (int k = static_cast<int>(idxs.size()) - 1; k >= 0; --k) {
             int i = idxs[k];
-            float delta = buffer_[i].reward
-                        + hparams.gamma * next_val
-                        - buffer_[i].value;
+            float delta = buffer_[i].reward + hparams.gamma * next_val - buffer_[i].value;
             gae = delta + hparams.gamma * hparams.lam_gae * gae;
             buffer_[i].advantage = gae;
             buffer_[i].ret       = gae + buffer_[i].value;
@@ -179,27 +194,20 @@ void ObjectiveDMPolicy::compute_gae() {
     }
 }
 
-// ── Actor PPO update (manual backprop, gradient ascent on L_clip + entropy) ───
+// ── Mini-batch actor update ───────────────────────────────────────────────────
 //
-// Bernoulli policy: π(a|s) = μ^a * (1−μ)^(1−a)
-//   log π        = a·log(μ) + (1−a)·log(1−μ)
-//   ∂log π/∂z3   = (a − μ)            [chain rule cancels μ(1−μ)]
-//   ∂H/∂z3       = log((1−μ)/μ)·μ(1−μ) [entropy gradient through sigmoid]
-//   ∂L_clip/∂z3  = A·r·(a−μ)  when unclipped, else 0
-ObjectiveDMPolicy::EpochActorStats ObjectiveDMPolicy::update_actor() {
-    int n = static_cast<int>(buffer_.size());
-    if (n == 0) return {};
-
-    float adv_mean = 0.f;
-    for (const auto& e : buffer_) adv_mean += e.advantage;
-    adv_mean /= n;
-    float adv_var = 0.f;
-    for (const auto& e : buffer_) {
-        float d = e.advantage - adv_mean;
-        adv_var += d * d;
-    }
-    adv_var /= n;
-    float adv_std = std::sqrt(adv_var + 1e-8f);
+// Bernoulli policy: π(a|s) = μ^a · (1−μ)^(1−a)
+//   ∂log π / ∂z3   = a − μ          (sigmoid chain rule cancels μ(1−μ))
+//   ∂H     / ∂z3   = log((1−μ)/μ) · μ(1−μ)
+//   ∂L_clip/ ∂z3   = A · r · (a−μ)  when unclipped, 0 otherwise
+//
+// Advantages are assumed globally normalised before this call.
+// Returns (−L_clip, H(π), approx_KL, clip_fraction) averaged over the batch.
+ObjectiveDMPolicy::MBStats ObjectiveDMPolicy::update_actor_mb(
+    const std::vector<int>& perm, int start, int end)
+{
+    const int bsz = end - start;
+    if (bsz <= 0) return {};
 
     float dW1[kHid * kPolicySz]{};
     float db1[kHid]{};
@@ -209,88 +217,88 @@ ObjectiveDMPolicy::EpochActorStats ObjectiveDMPolicy::update_actor() {
     float db3 = 0.f;
 
     const float eps   = 1e-8f;
-    const float inv_n = 1.f / n;
+    const float inv_n = 1.f / bsz;
 
-    float L_clip_acc = 0.f, entropy_acc = 0.f;
+    float L_acc = 0.f, ent_acc = 0.f, kl_acc = 0.f, clip_acc = 0.f;
 
-    for (const auto& e : buffer_) {
+    for (int pi = start; pi < end; ++pi) {
+        const Experience& e = buffer_[perm[pi]];
         float h1[kHid], h2[kHid], pa1[kHid], pa2[kHid];
         float mu = actor.forward(e.obs.data(), h1, h2, pa1, pa2);
 
         float lp_new = (e.action > 0.5f)
-            ? std::logf(mu + eps)
-            : std::logf(1.f - mu + eps);
+            ? std::logf(mu + eps) : std::logf(1.f - mu + eps);
         float r = std::expf(lp_new - e.log_prob);
-        float A = (e.advantage - adv_mean) / adv_std;
+        float A = e.advantage;  // globally normalised in train_epoch
+
+        // Approx KL(π_old ‖ π_new): lp_old − lp_new (first-order estimate)
+        kl_acc += e.log_prob - lp_new;
 
         bool clipped = (r > 1.f + hparams.clip_eps && A > 0.f)
                     || (r < 1.f - hparams.clip_eps && A < 0.f);
+        if (clipped) clip_acc += 1.f;
 
-        float clip_grad = 0.f;
-        if (!clipped)
-            clip_grad = A * r * (e.action - mu);
+        float clip_grad = clipped ? 0.f : A * r * (e.action - mu);
+        float ent_grad  = hparams.ent_w
+                        * std::logf((1.f - mu + eps) / (mu + eps))
+                        * mu * (1.f - mu);
 
-        float ent_grad = hparams.ent_w
-                       * std::logf((1.f - mu + eps) / (mu + eps))
-                       * mu * (1.f - mu);
-
-        // Stats: L_clip value and policy entropy
         float L_clip = clipped
             ? std::clamp(r, 1.f - hparams.clip_eps, 1.f + hparams.clip_eps) * A
             : r * A;
-        L_clip_acc  += L_clip;
-        entropy_acc += -(mu * std::logf(mu + eps) + (1.f - mu) * std::logf(1.f - mu + eps));
+        L_acc   += L_clip;
+        ent_acc += -(mu * std::logf(mu + eps) + (1.f - mu) * std::logf(1.f - mu + eps));
 
         float dz3 = (clip_grad + ent_grad) * inv_n;
 
-        // ── Backprop through layer 3 ──────────────────────────────────────
         db3 += dz3;
         float dh2[kHid]{};
-        for (int j = 0; j < kHid; ++j) {
-            dW3[j] += dz3 * h2[j];
-            dh2[j]  = dz3 * actor.W3[j];
-        }
+        for (int j = 0; j < kHid; ++j) { dW3[j] += dz3 * h2[j]; dh2[j] = dz3 * actor.W3[j]; }
 
-        // ── Backprop through ReLU layer 2 ─────────────────────────────────
         float dh1[kHid]{};
         for (int i = 0; i < kHid; ++i) {
-            float dz2_i = dh2[i] * (pa2[i] > 0.f ? 1.f : 0.f);
-            db2[i] += dz2_i;
+            float dz2 = dh2[i] * (pa2[i] > 0.f ? 1.f : 0.f);
+            db2[i] += dz2;
             const float* row = actor.W2 + i * kHid;
-            for (int j = 0; j < kHid; ++j) {
-                dW2[i * kHid + j] += dz2_i * h1[j];
-                dh1[j]            += dz2_i * row[j];
-            }
+            for (int j = 0; j < kHid; ++j) { dW2[i*kHid+j] += dz2*h1[j]; dh1[j] += dz2*row[j]; }
         }
-
-        // ── Backprop through ReLU layer 1 ─────────────────────────────────
         for (int i = 0; i < kHid; ++i) {
-            float dz1_i = dh1[i] * (pa1[i] > 0.f ? 1.f : 0.f);
-            db1[i] += dz1_i;
-            for (int j = 0; j < kPolicySz; ++j)
-                dW1[i * kPolicySz + j] += dz1_i * e.obs[j];
+            float dz1 = dh1[i] * (pa1[i] > 0.f ? 1.f : 0.f);
+            db1[i] += dz1;
+            for (int j = 0; j < kPolicySz; ++j) dW1[i*kPolicySz+j] += dz1 * e.obs[j];
         }
     }
 
+    // L2 gradient norm clipping
+    float* ag[] = { dW1, db1, dW2, db2, dW3, &db3 };
+    int    as[] = { kHid*kPolicySz, kHid, kHid*kHid, kHid, kHid, 1 };
+    clip_grad_norm(ag, as, 6, hparams.max_grad_norm);
+
     float lr = hparams.lr_actor;
-    for (int i = 0; i < kHid * kPolicySz; ++i) actor.W1[i] += lr * dW1[i];
-    for (int i = 0; i < kHid; ++i)              actor.b1[i] += lr * db1[i];
-    for (int i = 0; i < kHid * kHid; ++i)       actor.W2[i] += lr * dW2[i];
-    for (int i = 0; i < kHid; ++i)              actor.b2[i] += lr * db2[i];
-    for (int i = 0; i < kHid; ++i)              actor.W3[i] += lr * dW3[i];
+    for (int i = 0; i < kHid*kPolicySz; ++i) actor.W1[i] += lr * dW1[i];
+    for (int i = 0; i < kHid; ++i)            actor.b1[i] += lr * db1[i];
+    for (int i = 0; i < kHid*kHid; ++i)       actor.W2[i] += lr * dW2[i];
+    for (int i = 0; i < kHid; ++i)            actor.b2[i] += lr * db2[i];
+    for (int i = 0; i < kHid; ++i)            actor.W3[i] += lr * dW3[i];
     actor.b3 += lr * db3;
 
-    return { -(L_clip_acc / n), entropy_acc / n, adv_mean, adv_std };
+    return { -(L_acc * inv_n), ent_acc * inv_n, kl_acc * inv_n, clip_acc * inv_n };
 }
 
-// ── Critic MSE update (gradient descent on (V − ret)²) ───────────────────────
-float ObjectiveDMPolicy::update_critic(
+// ── Mini-batch critic update with value clipping ──────────────────────────────
+//
+// Loss = mean( max( (V_new − ret)², (V_clip − ret)² ) )
+// where V_clip = V_old + clip(V_new − V_old, −ε, +ε).
+// V_old = buffer_[idx].value is frozen at the start of train_epoch.
+// Value clipping prevents destructively large critic updates while keeping
+// the loss differentiable through V_new.
+float ObjectiveDMPolicy::update_critic_mb(
+    const std::vector<int>& perm, int start, int end,
     const std::vector<std::array<float, kGlobSz>>& gs)
 {
-    int n  = static_cast<int>(buffer_.size());
-    int ng = static_cast<int>(gs.size());
-    if (n == 0 || ng == 0) return 0.f;
-    float mse_acc = 0.f;
+    const int bsz = end - start;
+    const int ng  = static_cast<int>(gs.size());
+    if (bsz <= 0 || ng == 0) return 0.f;
 
     float dW1[kHid * kGlobSz]{};
     float db1[kHid]{};
@@ -299,55 +307,71 @@ float ObjectiveDMPolicy::update_critic(
     float dW3[kHid]{};
     float db3 = 0.f;
 
-    const float inv_n = 1.f / std::min(n, ng);
+    const float inv_n = 1.f / bsz;
+    float mse_acc = 0.f;
 
-    for (int idx = 0; idx < n && idx < ng; ++idx) {
+    for (int pi = start; pi < end; ++pi) {
+        int idx = perm[pi];
+        if (idx >= ng) continue;
+
         const float* gx = gs[idx].data();
         float h1[kHid], h2[kHid], pa1[kHid], pa2[kHid];
-        float V = critic.forward(gx, h1, h2, pa1, pa2);
+        float V_new = critic.forward(gx, h1, h2, pa1, pa2);
+        float V_old = buffer_[idx].value;
+        float ret   = buffer_[idx].ret;
 
-        float err = V - buffer_[idx].ret;
-        mse_acc  += err * err;
-        float dz3 = 2.f * err * inv_n;
+        // Value clipping
+        float V_clip     = V_old + std::clamp(V_new - V_old, -hparams.val_clip_eps, hparams.val_clip_eps);
+        float err_new    = V_new  - ret;
+        float err_clip   = V_clip - ret;
+        mse_acc += std::max(err_new * err_new, err_clip * err_clip);
+
+        float dz3 = 2.f * err_new * inv_n;  // gradient always via V_new
 
         db3 += dz3;
         float dh2[kHid]{};
-        for (int j = 0; j < kHid; ++j) {
-            dW3[j] += dz3 * h2[j];
-            dh2[j]  = dz3 * critic.W3[j];
-        }
+        for (int j = 0; j < kHid; ++j) { dW3[j] += dz3 * h2[j]; dh2[j] = dz3 * critic.W3[j]; }
 
         float dh1[kHid]{};
         for (int i = 0; i < kHid; ++i) {
-            float dz2_i = dh2[i] * (pa2[i] > 0.f ? 1.f : 0.f);
-            db2[i] += dz2_i;
+            float dz2 = dh2[i] * (pa2[i] > 0.f ? 1.f : 0.f);
+            db2[i] += dz2;
             const float* row = critic.W2 + i * kHid;
-            for (int j = 0; j < kHid; ++j) {
-                dW2[i * kHid + j] += dz2_i * h1[j];
-                dh1[j]            += dz2_i * row[j];
-            }
+            for (int j = 0; j < kHid; ++j) { dW2[i*kHid+j] += dz2*h1[j]; dh1[j] += dz2*row[j]; }
         }
-
         for (int i = 0; i < kHid; ++i) {
-            float dz1_i = dh1[i] * (pa1[i] > 0.f ? 1.f : 0.f);
-            db1[i] += dz1_i;
-            for (int j = 0; j < kGlobSz; ++j)
-                dW1[i * kGlobSz + j] += dz1_i * gx[j];
+            float dz1 = dh1[i] * (pa1[i] > 0.f ? 1.f : 0.f);
+            db1[i] += dz1;
+            for (int j = 0; j < kGlobSz; ++j) dW1[i*kGlobSz+j] += dz1 * gx[j];
         }
     }
 
-    // SGD gradient descent: W -= lr * ∂MSE/∂W
+    // L2 gradient norm clipping
+    float* cg[] = { dW1, db1, dW2, db2, dW3, &db3 };
+    int    cs[] = { kHid*kGlobSz, kHid, kHid*kHid, kHid, kHid, 1 };
+    clip_grad_norm(cg, cs, 6, hparams.max_grad_norm);
+
     float lr = hparams.lr_critic;
-    for (int i = 0; i < kHid * kGlobSz; ++i) critic.W1[i] -= lr * dW1[i];
-    for (int i = 0; i < kHid; ++i)            critic.b1[i] -= lr * db1[i];
-    for (int i = 0; i < kHid * kHid; ++i)     critic.W2[i] -= lr * dW2[i];
-    for (int i = 0; i < kHid; ++i)            critic.b2[i] -= lr * db2[i];
-    for (int i = 0; i < kHid; ++i)            critic.W3[i] -= lr * dW3[i];
+    for (int i = 0; i < kHid*kGlobSz; ++i) critic.W1[i] -= lr * dW1[i];
+    for (int i = 0; i < kHid; ++i)          critic.b1[i] -= lr * db1[i];
+    for (int i = 0; i < kHid*kHid; ++i)     critic.W2[i] -= lr * dW2[i];
+    for (int i = 0; i < kHid; ++i)          critic.b2[i] -= lr * db2[i];
+    for (int i = 0; i < kHid; ++i)          critic.W3[i] -= lr * dW3[i];
     critic.b3 -= lr * db3;
-    return mse_acc / std::min(n, ng);
+
+    return mse_acc * inv_n;
 }
 
-// ── train_epoch ───────────────────────────────────────────────────────────────
+// ── train_epoch — MAPPO SOTA update cycle ────────────────────────────────────
+//
+// Steps:
+//   1. Compute V_old (frozen critic snapshot) for GAE and value clipping.
+//   2. Per-agent GAE — independent trajectories, avoids cross-agent bootstrap.
+//   3. Global advantage normalisation — one pass before the epoch loop.
+//   4. Mini-batch PPO loop (epochs × ⌈n/batch_sz⌉ SGD steps):
+//        a. Shuffle permutation — both actor and critic see the same order.
+//        b. Update actor + critic on each mini-batch.
+//        c. Track approx KL per epoch; break early if KL > target_kl.
 ObjectiveDMPolicy::TrainingStats ObjectiveDMPolicy::train_epoch(
     const std::vector<std::array<float, kGlobSz>>& global_states)
 {
@@ -357,31 +381,69 @@ ObjectiveDMPolicy::TrainingStats ObjectiveDMPolicy::train_epoch(
     ts.n_exp = n;
     if (n == 0) return ts;
 
-    if (ng > 0) {
+    // ── 1. Frozen V_old for GAE and value clipping ────────────────────────
+    if (ng > 0)
         for (int i = 0; i < n && i < ng; ++i)
             buffer_[i].value = critic.forward(global_states[i].data());
-    }
 
+    // ── 2. Per-agent GAE ──────────────────────────────────────────────────
     compute_gae();
 
-    // Critic epochs (buffer order preserved for gs alignment).
-    float closs_acc = 0.f;
-    if (ng > 0) {
-        for (int ep = 0; ep < hparams.epochs; ++ep)
-            closs_acc += update_critic(global_states);
-        ts.critic_loss = closs_acc / hparams.epochs;
+    // ── 3. Global advantage normalisation (MAPPO recommendation) ─────────
+    float adv_mean = 0.f;
+    for (const auto& e : buffer_) adv_mean += e.advantage;
+    adv_mean /= n;
+    float adv_var = 0.f;
+    for (const auto& e : buffer_) { float d = e.advantage - adv_mean; adv_var += d * d; }
+    float adv_std = std::sqrt(adv_var / n + 1e-8f);
+    ts.adv_mean = adv_mean;
+    ts.adv_std  = adv_std;
+    for (auto& e : buffer_) e.advantage = (e.advantage - adv_mean) / adv_std;
+
+    // ── 4. Mini-batch PPO epoch loop with KL early stopping ───────────────
+    std::vector<int> perm(n);
+    std::iota(perm.begin(), perm.end(), 0);
+
+    const int bsz = std::max(1, std::min(hparams.batch_sz, n));
+
+    float aloss_acc = 0.f, ent_acc = 0.f, closs_acc = 0.f;
+    float kl_acc = 0.f, clip_acc = 0.f;
+    int   n_updates = 0, epoch_run = 0;
+
+    for (int ep = 0; ep < hparams.epochs; ++ep) {
+        std::shuffle(perm.begin(), perm.end(), rng_);
+
+        float kl_epoch = 0.f;
+        int   n_batch  = 0;
+
+        for (int s = 0; s < n; s += bsz) {
+            int e = std::min(s + bsz, n);
+
+            auto [al, ent, kl, cf] = update_actor_mb(perm, s, e);
+            float cl = (ng > 0) ? update_critic_mb(perm, s, e, global_states) : 0.f;
+
+            aloss_acc += al;  ent_acc   += ent;
+            kl_epoch  += kl;  clip_acc  += cf;
+            closs_acc += cl;
+            ++n_batch;
+        }
+
+        ++epoch_run;
+        n_updates += n_batch;
+        float mean_kl = kl_epoch / std::max(1, n_batch);
+        kl_acc += mean_kl;
+
+        if (mean_kl > hparams.target_kl) break;  // KL early stopping
     }
 
-    // Actor epochs (shuffled). Take stats from the last epoch — most current weights.
-    EpochActorStats as{};
-    for (int ep = 0; ep < hparams.epochs; ++ep) {
-        std::shuffle(buffer_.begin(), buffer_.end(), rng_);
-        as = update_actor();
+    if (n_updates > 0) {
+        ts.actor_loss  = aloss_acc / n_updates;
+        ts.entropy     = ent_acc   / n_updates;
+        ts.critic_loss = closs_acc / n_updates;
+        ts.clip_frac   = clip_acc  / n_updates;
     }
-    ts.actor_loss = as.actor_loss;
-    ts.entropy    = as.entropy;
-    ts.adv_mean   = as.adv_mean;
-    ts.adv_std    = as.adv_std;
+    ts.kl_approx = (epoch_run > 0) ? kl_acc / epoch_run : 0.f;
+    ts.n_epochs  = epoch_run;
 
     buffer_.clear();
     return ts;
