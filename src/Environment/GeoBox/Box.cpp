@@ -183,10 +183,73 @@ void MyHandler::way(const osmium::Way& way) {
 }
 
 // ====================================================================
+// FILTRAGE DE LA PLUS GRANDE COMPOSANTE CONNEXE
+// ====================================================================
+
+static void bfs_component(const MyData& data,
+                           osmium::object_id_type start,
+                           std::unordered_set<osmium::object_id_type>& visited,
+                           std::vector<osmium::object_id_type>& component)
+{
+    std::queue<osmium::object_id_type> q;
+    q.push(start);
+    visited.insert(start);
+    while (!q.empty()) {
+        osmium::object_id_type cur = q.front(); q.pop();
+        component.push_back(cur);
+        auto nit = data.nodes.find(cur);
+        if (nit == data.nodes.end()) continue;
+        for (auto way_id : nit->second.incident_ways) {
+            auto wit = data.ways.find(way_id);
+            if (wit == data.ways.end()) continue;
+            for (auto nb : {wit->second.node1_id, wit->second.node2_id}) {
+                if (nb != cur && !visited.count(nb)) {
+                    visited.insert(nb);
+                    q.push(nb);
+                }
+            }
+        }
+    }
+}
+
+// Conserve uniquement la plus grande composante connexe.
+// Complexite O(V+E) — supprime parkings, impasses, erreurs OSM isolees.
+static GeoBox keep_largest_component(GeoBox geo_box)
+{
+    if (!geo_box.is_valid) return geo_box;
+    MyData& data = geo_box.data;
+    if (data.nodes.empty()) return geo_box;
+
+    std::unordered_set<osmium::object_id_type> visited;
+    std::vector<osmium::object_id_type> best;
+
+    for (const auto& [id, _] : data.nodes) {
+        if (visited.count(id)) continue;
+        std::vector<osmium::object_id_type> comp;
+        bfs_component(data, id, visited, comp);
+        if (comp.size() > best.size())
+            best = std::move(comp);
+    }
+
+    const std::unordered_set<osmium::object_id_type> keep(best.begin(), best.end());
+
+    for (auto it = data.nodes.begin(); it != data.nodes.end(); )
+        it = keep.count(it->first) ? std::next(it) : data.nodes.erase(it);
+
+    for (auto it = data.ways.begin(); it != data.ways.end(); )
+        it = (keep.count(it->second.node1_id) && keep.count(it->second.node2_id))
+             ? std::next(it) : data.ways.erase(it);
+
+    std::cout << "Largest component: " << data.nodes.size() << " nodes, "
+              << data.ways.size() << " ways\n";
+    return geo_box;
+}
+
+// ====================================================================
 // CRÉATION DE GEOBOX SIMPLIFIÉE
 // ====================================================================
 
-GeoBox create_geo_box(const std::string& osm_filename, 
+GeoBox create_geo_box(const std::string& osm_filename,
                       double min_lon, double min_lat, 
                       double max_lon, double max_lat) {
     
@@ -473,68 +536,3 @@ std::vector<FlickrPOI> FlickrAPIClient::load_pois_from_file(const std::string& f
     return pois;
 }
 
-// ====================================================================
-// FILTRAGE DE LA PLUS GRANDE COMPOSANTE CONNEXE
-// ====================================================================
-
-// BFS depuis un nœud de départ — remplit visited et component en O(V+E).
-static void bfs_component(const MyData& data,
-                           osmium::object_id_type start,
-                           std::unordered_set<osmium::object_id_type>& visited,
-                           std::vector<osmium::object_id_type>& component)
-{
-    std::queue<osmium::object_id_type> q;
-    q.push(start);
-    visited.insert(start);
-    while (!q.empty()) {
-        osmium::object_id_type cur = q.front(); q.pop();
-        component.push_back(cur);
-        auto nit = data.nodes.find(cur);
-        if (nit == data.nodes.end()) continue;
-        for (auto way_id : nit->second.incident_ways) {
-            auto wit = data.ways.find(way_id);
-            if (wit == data.ways.end()) continue;
-            for (auto nb : {wit->second.node1_id, wit->second.node2_id}) {
-                if (nb != cur && !visited.count(nb)) {
-                    visited.insert(nb);
-                    q.push(nb);
-                }
-            }
-        }
-    }
-}
-
-// Conserve uniquement la plus grande composante connexe.
-// Les composantes isolées (parkings, impasses OSM, erreurs de données) sont supprimées.
-// Complexité : O(V+E) — négligeable comparé au O(V²) de l'ancienne connexion par paires.
-static GeoBox keep_largest_component(GeoBox geo_box)
-{
-    if (!geo_box.is_valid) return geo_box;
-
-    MyData& data = geo_box.data;
-    if (data.nodes.empty()) return geo_box;
-
-    std::unordered_set<osmium::object_id_type> visited;
-    std::vector<osmium::object_id_type> best;
-
-    for (const auto& [id, _] : data.nodes) {
-        if (visited.count(id)) continue;
-        std::vector<osmium::object_id_type> comp;
-        bfs_component(data, id, visited, comp);
-        if (comp.size() > best.size())
-            best = std::move(comp);
-    }
-
-    const std::unordered_set<osmium::object_id_type> keep(best.begin(), best.end());
-
-    for (auto it = data.nodes.begin(); it != data.nodes.end(); )
-        it = keep.count(it->first) ? std::next(it) : data.nodes.erase(it);
-
-    for (auto it = data.ways.begin(); it != data.ways.end(); )
-        it = (keep.count(it->second.node1_id) && keep.count(it->second.node2_id))
-             ? std::next(it) : data.ways.erase(it);
-
-    std::cout << "Largest component: " << data.nodes.size() << " nodes, "
-              << data.ways.size() << " ways\n";
-    return geo_box;
-}
