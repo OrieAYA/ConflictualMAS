@@ -342,21 +342,14 @@ ObjectivePath PDPServerMemory::compute_path(
     result.node_a = std::min(from, to);
     result.node_b = std::max(from, to);
 
-    std::vector<osmium::object_id_type> edges = pathfinder.A_Star_Search(from, to);
-    if (edges.empty()) return result;
-    result.edges = edges;
+    // Use TD-A* with no congestion (speed=1 m/s, start_time=0) for static distance.
+    static const CongestionMap empty_congestion;
+    TDAStarResult tda = time_dependent_astar(from, to, 0, 1.0f, empty_congestion);
+    if (!tda.valid() || tda.edges.empty()) return result;
 
-    std::unordered_set<osmium::object_id_type> seen;
-    float cost = 0.0f;
-    for (const auto& way_id : edges) {
-        auto way_it = geo_box.data.ways.find(way_id);
-        if (way_it == geo_box.data.ways.end()) continue;
-        const auto& way = way_it->second;
-        cost += way.distance_meters;
-        for (const auto nid : {way.node1_id, way.node2_id})
-            if (seen.insert(nid).second) result.nodes.push_back(nid);
-    }
-    result.cost = cost;
+    result.edges = std::move(tda.edges);
+    result.nodes = std::move(tda.nodes);
+    result.cost  = tda.total_distance;
     tag_intermediate_objectives(result, group_id);
     return result;
 }

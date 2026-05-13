@@ -240,7 +240,7 @@ bool Pathfinder::Connected_subgraph_methode(
 std::vector<osmium::object_id_type> Pathfinder::A_Star_Search(
     const osmium::object_id_type& start_point,
     const osmium::object_id_type& end_point) {
-    
+
     std::vector<osmium::object_id_type> open = {start_point};
 
     std::unordered_map<osmium::object_id_type, std::pair<osmium::object_id_type, osmium::object_id_type>> cameFrom;
@@ -260,7 +260,7 @@ std::vector<osmium::object_id_type> Pathfinder::A_Star_Search(
 
         osmium::object_id_type actual_node = open[0];
         size_t best_index = 0;
-        
+
         for (size_t i = 1; i < open.size(); ++i) {
             if (FScore.count(open[i]) && FScore.count(actual_node)) {
                 if (FScore[open[i]] < FScore[actual_node]) {
