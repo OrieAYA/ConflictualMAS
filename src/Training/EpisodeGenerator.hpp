@@ -5,6 +5,7 @@
 #include "Environment/GeoBox/Box.hpp"
 #include <osmium/osm/types.hpp>
 #include <random>
+#include <unordered_map>
 #include <vector>
 
 // ── One task in the episode timeline ─────────────────────────────────────────
@@ -85,6 +86,23 @@ private:
 
     // Flat index of valid OSM node IDs (connected to at least one way).
     std::vector<osmium::object_id_type> valid_nodes_;
+
+    // Spatial grid: cell coords (lat_idx, lon_idx) → node ids inside that cell.
+    // Built once at construction; enables O(few hundred) radius queries on a 1M-node graph.
+    struct CellKeyHash {
+        std::size_t operator()(const std::pair<int,int>& p) const noexcept {
+            return std::hash<long long>{}((long long)p.first * 100003LL + p.second);
+        }
+    };
+    std::unordered_map<std::pair<int,int>, std::vector<osmium::object_id_type>,
+                       CellKeyHash> spatial_grid_;
+    double cell_lat_deg_ = 0.0;
+    double cell_lon_deg_ = 0.0;
+    double grid_min_lat_ = 0.0;
+    double grid_min_lon_ = 0.0;
+
+    void build_spatial_grid();
+    std::pair<int,int> cell_of(double lat, double lon) const;
 
     // Hot-zone centres for the current episode (resampled by generate()).
     std::vector<osmium::object_id_type> hot_zones_;

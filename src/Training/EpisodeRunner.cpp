@@ -20,15 +20,15 @@ EpisodeRunner::EpisodeRunner(const EpisodeConfig& cfg,
     // use the same value when computing estimated arrivals and congestion entries.
     memory_.task_agent.params.default_speed_mps = cfg_.speed_mps;
 
-    // Limit to one task per agent. With edge-by-edge movement, assigning a second
-    // task to an Active agent while it is traversing would cause plan() to reorder
-    // solution.sequence while existing ScheduledArrivals still carry the old
-    // task_id/is_pickup — leading to wrong mark_picked / mark_delivered calls.
-    // Single-task mode is correct and sufficient for LGPDP training.
-    memory_.task_agent.params.max_tasks_per_agent = 1;
+    // Agent task capacity (configurable via EpisodeConfig).
+    // Default = 1 (single-task mode, safe). For small-graph training, single-task
+    // is sufficient; for large graphs >1 boosts experience volume but risks
+    // ScheduledArrival/sequence-reorder mismatch — keep at 1 unless validated.
+    memory_.task_agent.params.max_tasks_per_agent = cfg_.max_tasks_per_agent;
 
-    // Single shared group cache for all synthetic task paths.
-    memory_.ensure_task_group(0);
+    // Single shared group cache (group 1) for all synthetic task paths.
+    // Group 0 stays empty (reserved as the "no-group" sentinel).
+    memory_.ensure_task_group(1);
 
     // Find a valid start node for agents (must be connected to at least one way).
     osmium::object_id_type start = 0;
@@ -370,7 +370,7 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
 
             if (!next_path)
                 next_path = memory_.get_or_compute_path(
-                    agent->current_node, next_obj.id, 0);
+                    agent->current_node, next_obj.id, 1);
 
             PDPTask* next_task    = memory_.get_task_for_node(next_obj.id);
             int      next_task_id = next_task ? next_task->task_id : -1;

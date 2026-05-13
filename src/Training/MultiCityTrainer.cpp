@@ -10,11 +10,56 @@ namespace fs = std::filesystem;
 
 // ── City loading ──────────────────────────────────────────────────────────────
 
+// Scale per-city episode params so task duration is short relative to episode
+// length — needed so agents don't stay saturated and the policy gets enough
+// experience. Adapted from city area (km²).
+static void customize_episode_for_city(EpisodeConfig& ep, const CityConfig& cc) {
+    const double a = cc.area_km2;
+    // Tier thresholds match Tokyo_Small / Tokyo_Medium / Tokyo_Large areas.
+    // Multi-task FIFO queue per agent — safe after the receive_task() reorder
+    // fix. Bigger graph ⇒ deeper queue so agents stay busy across long trips.
+    if (a < 50.0) {
+        // Small (~25 km²): short trips, dense flow.
+        ep.phases = {
+            { 1000,  60.f, 4,  5, 0.0f, 3 },
+            { 1500, 100.f, 5,  7, 0.5f, 4 },
+            { 1100, 140.f, 7,  8, 1.0f, 5 },
+        };
+        ep.min_task_dist_m = 150.f;
+        ep.max_task_dist_m = 1500.f;
+        ep.hot_zone_radius = 300.f;
+        ep.max_tasks_per_agent = 5;
+    } else if (a < 300.0) {
+        // Medium (~144 km²): mixed scale.
+        ep.phases = {
+            { 1000, 100.f,  6,  8, 0.0f, 4 },
+            { 1500, 150.f,  8, 10, 0.5f, 6 },
+            { 1100, 200.f, 10, 12, 1.0f, 7 },
+        };
+        ep.min_task_dist_m = 250.f;
+        ep.max_task_dist_m = 3500.f;
+        ep.hot_zone_radius = 500.f;
+        ep.max_tasks_per_agent = 6;
+    } else {
+        // Large (≥300 km²): Amazon-scale density, long task queues.
+        ep.phases = {
+            { 1000, 120.f,  8, 10, 0.0f, 4 },
+            { 1500, 200.f, 10, 13, 0.5f, 6 },
+            { 1100, 280.f, 13, 15, 1.0f, 8 },
+        };
+        ep.min_task_dist_m = 400.f;
+        ep.max_task_dist_m = 5000.f;
+        ep.hot_zone_radius = 800.f;
+        ep.max_tasks_per_agent = 8;
+    }
+}
+
 std::unique_ptr<CityAssets> MultiCityTrainer::load_city(
     const CityConfig& cc, int idx, EpisodeConfig ep,
     const std::string& cache_root)
 {
     ep.city = &cc;
+    customize_episode_for_city(ep, cc);
 
     GeoBox gb;
     const std::string cache_path = cache_root + "/" + cc.name + ".json";

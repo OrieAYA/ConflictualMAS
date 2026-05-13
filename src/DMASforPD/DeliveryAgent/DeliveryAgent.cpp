@@ -43,18 +43,14 @@ void DeliveryAgent::disconnect(PDPGlobalMemory& memory) {
 void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
     add_task_to_memory(task);
 
-    if (status == AgentStatus::Idle) {
-        // First task: trivial sequence (pickup then delivery).
-        solution.push_back(task.pickup);
-        solution.push_back(task.delivery);
-    } else {
-        // Additional task while already active: append naively then replan.
-        // plan() runs DbVNS over the full remaining sequence, respecting the
-        // pickup-before-delivery constraint across all assigned tasks.
-        solution.push_back(task.pickup);
-        solution.push_back(task.delivery);
-        plan(memory, memory.task_agent.params.default_speed_mps);
-    }
+    // FIFO append for both Idle and Active.
+    // plan() reorder is intentionally NOT called for active agents: it would
+    // rebuild solution.sequence (clear + reinsert) while the in-flight EdgeCursor
+    // and ScheduledArrival still target the original front. solution.advance()
+    // at arrival would then pop the new (reordered) front, breaking the
+    // invariant front().id == edge_cursor.target. FIFO append preserves it.
+    solution.push_back(task.pickup);
+    solution.push_back(task.delivery);
 
     status = AgentStatus::Active;
 }

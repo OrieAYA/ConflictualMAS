@@ -62,6 +62,11 @@ struct EpisodeConfig {
     float min_task_dist_m  = 300.f;  // minimum haversine pickup→delivery distance
     float max_task_dist_m  = 8000.f; // maximum haversine pickup→delivery distance
 
+    // ── Agent capacity ─────────────────────────────────────────────────────
+    // Number of tasks an agent can hold simultaneously (1 = single-task mode,
+    // safe; >1 enables queueing for higher throughput on long-distance graphs).
+    int max_tasks_per_agent = 1;
+
     // ── Optional depot (warehouse mode) ───────────────────────────────────
     bool                   use_depot   = false;
     osmium::object_id_type depot_node  = 0;

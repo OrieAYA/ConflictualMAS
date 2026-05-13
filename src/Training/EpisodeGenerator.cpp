@@ -25,6 +25,42 @@ void EpisodeGenerator::build_valid_index() {
     if (valid_nodes_.empty())
         throw std::runtime_error("EpisodeGenerator: no valid road nodes in GeoBox");
     std::sort(valid_nodes_.begin(), valid_nodes_.end()); // deterministic ordering
+    build_spatial_grid();
+}
+
+// ── Spatial grid (cell ≈ hot_zone_radius) ─────────────────────────────────────
+void EpisodeGenerator::build_spatial_grid() {
+    spatial_grid_.clear();
+    if (valid_nodes_.empty()) return;
+
+    double min_lat =  90.0, max_lat = -90.0;
+    double min_lon = 180.0, max_lon = -180.0;
+    for (auto id : valid_nodes_) {
+        auto it = geo_box_.data.nodes.find(id);
+        if (it == geo_box_.data.nodes.end()) continue;
+        min_lat = std::min(min_lat, it->second.lat);
+        max_lat = std::max(max_lat, it->second.lat);
+        min_lon = std::min(min_lon, it->second.lon);
+        max_lon = std::max(max_lon, it->second.lon);
+    }
+    grid_min_lat_ = min_lat;
+    grid_min_lon_ = min_lon;
+
+    const double r = std::max(cfg_.hot_zone_radius, 200.f);  // metres
+    const double mid_lat_rad = ((min_lat + max_lat) * 0.5) * 3.14159265358979323846 / 180.0;
+    cell_lat_deg_ = r / 111000.0;
+    cell_lon_deg_ = r / (111000.0 * std::max(std::cos(mid_lat_rad), 0.01));
+
+    for (auto id : valid_nodes_) {
+        auto it = geo_box_.data.nodes.find(id);
+        if (it == geo_box_.data.nodes.end()) continue;
+        spatial_grid_[cell_of(it->second.lat, it->second.lon)].push_back(id);
+    }
+}
+
+std::pair<int,int> EpisodeGenerator::cell_of(double lat, double lon) const {
+    return { static_cast<int>(std::floor((lat - grid_min_lat_) / cell_lat_deg_)),
+             static_cast<int>(std::floor((lon - grid_min_lon_) / cell_lon_deg_)) };
 }
 
 // ── Hot zone re-sampling ──────────────────────────────────────────────────────
@@ -106,17 +142,27 @@ osmium::object_id_type EpisodeGenerator::sample_node_near(
     auto it_c = geo_box_.data.nodes.find(center);
     if (it_c == geo_box_.data.nodes.end()) return sample_node_uniform();
 
-    double clat = it_c->second.lat;
-    double clon = it_c->second.lon;
+    const double clat = it_c->second.lat;
+    const double clon = it_c->second.lon;
 
-    // Collect candidates within radius (linear scan — acceptable for training).
+    // Scan only cells whose bounding box overlaps the radius.
+    const int span_lat = std::max(1, (int)std::ceil(radius_m / 111000.0 / cell_lat_deg_));
+    const int span_lon = std::max(1, (int)std::ceil(radius_m / 111000.0 / cell_lon_deg_));
+    const auto [ci, cj] = cell_of(clat, clon);
+
     std::vector<osmium::object_id_type> candidates;
-    for (auto id : valid_nodes_) {
-        auto it = geo_box_.data.nodes.find(id);
-        if (it == geo_box_.data.nodes.end()) continue;
-        double d = calculate_haversine_distance(clat, clon,
-                                                it->second.lat, it->second.lon);
-        if (d <= radius_m) candidates.push_back(id);
+    for (int di = -span_lat; di <= span_lat; ++di) {
+        for (int dj = -span_lon; dj <= span_lon; ++dj) {
+            auto it = spatial_grid_.find({ci + di, cj + dj});
+            if (it == spatial_grid_.end()) continue;
+            for (auto id : it->second) {
+                auto nit = geo_box_.data.nodes.find(id);
+                if (nit == geo_box_.data.nodes.end()) continue;
+                double d = calculate_haversine_distance(
+                    clat, clon, nit->second.lat, nit->second.lon);
+                if (d <= radius_m) candidates.push_back(id);
+            }
+        }
     }
     if (candidates.empty()) return sample_node_uniform();
     std::uniform_int_distribution<int> pick(0, static_cast<int>(candidates.size()) - 1);

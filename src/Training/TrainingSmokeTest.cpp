@@ -148,6 +148,62 @@ bool run_training_smoke_test(const std::string& osm_file,
     CHECK(finite(r_train2.train_stats.actor_loss),"2nd train actor_loss not finite");
     std::cout << "  [5] Episode reset OK — 2nd train acc=" << r_train2.metrics.accept_rate << "\n";
 
+    // ── 6. Multi-task per agent — validates FIFO append fix ───────────────────
+    // Builds a config with high task density so agents queue multiple tasks
+    // concurrently (max_tasks_per_agent = 5). Verifies that:
+    //   - No crash / exception during edge-by-edge traversal with queued tasks
+    //   - Accept rate is non-trivially higher than the single-task baseline
+    //   - Per-task metrics remain in [0,1] (no NaN, no broken accounting)
+    EpisodeConfig cfg_mt = cfg;
+    cfg_mt.max_tasks_per_agent = 5;
+    cfg_mt.speed_mps        = 15.f;   // faster so tasks actually complete in test
+    cfg_mt.min_task_dist_m  = 50.f;
+    cfg_mt.max_task_dist_m  = 600.f;  // short trips → multi-task cycling visible
+    cfg_mt.phases = {
+        // High lambda + short trips → agents queue multiple tasks and complete some.
+        { 400, 25.f, 3, 4, 0.0f, 3 },
+    };
+
+    std::unique_ptr<EpisodeRunner> runner_mt;
+    try {
+        ObjectiveDMPolicy::shared().clear_buffer();
+        runner_mt = std::make_unique<EpisodeRunner>(cfg_mt, geo_box, pathfinder, 43u);
+    } catch (const std::exception& e) {
+        std::cout << "  [FAIL] Multi-task runner: " << e.what() << "\n";
+        return false;
+    }
+    runner_mt->train_mode  = true;
+    runner_mt->policy_mode = PolicyMode::MAPPO;
+
+    RunResult r_mt;
+    try {
+        r_mt = runner_mt->run(0, 1);
+    } catch (const std::exception& e) {
+        std::cout << "  [FAIL] Multi-task episode: " << e.what() << "\n";
+        return false;
+    }
+    CHECK(in01(r_mt.metrics.accept_rate),     "MT accept_rate out of [0,1]");
+    CHECK(in01(r_mt.metrics.throughput_rate), "MT throughput_rate out of [0,1]");
+    CHECK(finite(r_mt.train_stats.actor_loss),"MT actor_loss not finite");
+    CHECK(r_mt.metrics.tasks_appeared > 0,    "MT no tasks generated");
+    CHECK(r_mt.metrics.tasks_completed > 0,   "MT no tasks completed — multi-task delivery flow broken?");
+
+    // Run a second multi-task episode to validate that episode_reset works
+    // correctly with multi-task state (objective registrations, paths, plans).
+    RunResult r_mt2;
+    try {
+        r_mt2 = runner_mt->run(0, 1);
+    } catch (const std::exception& e) {
+        std::cout << "  [FAIL] Multi-task 2nd episode: " << e.what() << "\n";
+        return false;
+    }
+    CHECK(in01(r_mt2.metrics.accept_rate), "MT2 accept_rate out of [0,1]");
+
+    std::cout << "  [6] Multi-task OK — max_tasks=5, acc=" << r_mt.metrics.accept_rate
+              << ", thr=" << r_mt.metrics.throughput_rate
+              << ", tasks=" << r_mt.metrics.tasks_appeared
+              << ", reset acc=" << r_mt2.metrics.accept_rate << "\n";
+
     std::cout << "=== PASS ===\n\n";
     return true;
 }

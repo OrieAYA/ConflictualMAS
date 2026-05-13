@@ -1,0 +1,44 @@
+
+=== ConflictualMAS ===
+
+[Legacy]
+  G  Global Solution Constructor
+  V  VNS Orienteering
+  P  PSO MTTDS
+  E  Create GeoBox
+  I  Initialize POI (Flickr)
+  R  Render map
+
+[DMASforPD]
+  D  PDP System test
+  C  Create PDP GeoBox
+
+[Amazon Last Mile]
+  A  DbVNS on Amazon routes (new dataset, 13 routes)
+  B  DbVNS vs LKH benchmark (same routes, side-by-side)
+
+[MAPPO Training]
+  T  Multi-city MAPPO training (Tokyo / Kyoto / LosAngeles)
+  S  Training smoke test (uses kanto OSM, no extra files needed)
+
+Choice: 
+=== Training Smoke Test ===
+  [1] GeoBox <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+  [1] OK  E33179 nodes, 39877 ways
+  [2] Config OK  E200 steps, 4 agents max
+[PDPServerMemory] Initialized 0 group caches
+  [3] Runner constructed OK
+  [3] Training episode OK  E43 tasks, acc=0.0930233, aloss=-1.49392e-05, closs=0.0045183, 105ms
+  [4] Eval OK  EGreedy acc=0.108108, MAPPO acc=0.0888889
+  [5] Episode reset OK  E2nd train acc=0.0869565
+[PDPServerMemory] Initialized 0 group caches
+  [6] Multi-task OK  Emax_tasks=5, acc=0.266667, thr=0.0444444, tasks=90, reset acc=0.258427
+=== PASS ===
+
