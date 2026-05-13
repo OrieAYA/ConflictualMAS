@@ -124,6 +124,23 @@ float DeliveryAgent::try_accept_task(const TaskOffer& offer, PDPGlobalMemory& me
     return score;
 }
 
+float DeliveryAgent::compute_bid(const TaskOffer& offer, PDPGlobalMemory& memory) {
+    PDPTask* task = memory.get_task(offer.task_id);
+    if (!task) return 0.f;
+
+    const auto* to_pu = memory.get_or_compute_path(
+        current_node, task->pickup.id, task->pickup.group_id);
+    const auto* pu_del = memory.get_or_compute_path(
+        task->pickup.id, task->delivery.id, task->delivery.group_id);
+
+    float c_pu  = (to_pu  && to_pu->valid())  ? to_pu->cost  : kCostScale;
+    float c_del = (pu_del && pu_del->valid()) ? pu_del->cost : kCostScale;
+    float insertion_cost = c_pu + c_del;
+
+    constexpr float eps = 1e-6f;
+    return (offer.reward * offer.importance) / std::max(insertion_cost, eps);
+}
+
 // ---- Path management (two-path lookahead) --------------------------------
 
 bool DeliveryAgent::begin_leg(const ObjectivePath* path, int task_id, bool is_pickup) {

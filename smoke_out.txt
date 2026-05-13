@@ -35,7 +35,7 @@ GeoBox chargée avec succès!
   [2] Config OK  E200 steps, 4 agents max
 [PDPServerMemory] Initialized 0 group caches
   [3] Runner constructed OK
-  [3] Training episode OK  E43 tasks, acc=0.0930233, aloss=-1.49392e-05, closs=0.0045183, 105ms
+  [3] Training episode OK  E43 tasks, acc=0.0930233, aloss=-5.77569e-06, closs=0.710507, 15ms
   [4] Eval OK  EGreedy acc=0.108108, MAPPO acc=0.0888889
   [5] Episode reset OK  E2nd train acc=0.0869565
 [PDPServerMemory] Initialized 0 group caches

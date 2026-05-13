@@ -3,6 +3,14 @@ C:\ConflictualMAS\src\utility.cpp;C:\ConflictualMAS\build\main.dir\Release\utili
 C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\LKHSolver.cpp;C:\ConflictualMAS\build\main.dir\Release\LKHSolver.obj
 C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\IVNSSolver.cpp;C:\ConflictualMAS\build\main.dir\Release\IVNSSolver.obj
 C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\ComparisonTest.cpp;C:\ConflictualMAS\build\main.dir\Release\ComparisonTest.obj
+C:\ConflictualMAS\src\DMASforPD\Policy\ObjectiveDMPolicy.cpp;C:\ConflictualMAS\build\main.dir\Release\ObjectiveDMPolicy.obj
+C:\ConflictualMAS\src\Training\CityConfig.cpp;C:\ConflictualMAS\build\main.dir\Release\CityConfig.obj
+C:\ConflictualMAS\src\Training\EpisodeConfig.cpp;C:\ConflictualMAS\build\main.dir\Release\EpisodeConfig.obj
+C:\ConflictualMAS\src\Training\EpisodeGenerator.cpp;C:\ConflictualMAS\build\main.dir\Release\EpisodeGenerator.obj
+C:\ConflictualMAS\src\Training\EpisodeRunner.cpp;C:\ConflictualMAS\build\main.dir\Release\EpisodeRunner.obj
+C:\ConflictualMAS\src\Training\TrainingLogger.cpp;C:\ConflictualMAS\build\main.dir\Release\TrainingLogger.obj
+C:\ConflictualMAS\src\Training\MultiCityTrainer.cpp;C:\ConflictualMAS\build\main.dir\Release\MultiCityTrainer.obj
+C:\ConflictualMAS\src\Training\TrainingSmokeTest.cpp;C:\ConflictualMAS\build\main.dir\Release\TrainingSmokeTest.obj
 C:\ConflictualMAS\src\Legacy\Tests\LegacyTests.cpp;C:\ConflictualMAS\build\main.dir\Release\LegacyTests.obj
 C:\ConflictualMAS\src\DMASforPD\Tests\PDPTests.cpp;C:\ConflictualMAS\build\main.dir\Release\PDPTests.obj
 C:\ConflictualMAS\src\AmazonDataset\AmazonTest.cpp;C:\ConflictualMAS\build\main.dir\Release\AmazonTest.obj

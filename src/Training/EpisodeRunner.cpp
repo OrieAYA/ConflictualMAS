@@ -202,6 +202,16 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
     RunResult result;
     result.metrics = metrics;
 
+    // Apply unfinished-acceptance penalty: any task still in task_accept_buf_idx_
+    // at this point was accepted but never delivered before episode end. The
+    // policy committed agent capacity to it without payoff — penalise to teach
+    // the policy not to over-saturate queues.
+    if (train_mode && policy_mode == PolicyMode::MAPPO &&
+        cfg_.unfinished_penalty < 0.f) {
+        for (const auto& [tid, buf_idx] : task_accept_buf_idx_)
+            ObjectiveDMPolicy::shared().update_reward(buf_idx, cfg_.unfinished_penalty);
+    }
+
     if (train_mode && policy_mode == PolicyMode::MAPPO && !global_states_.empty())
         result.train_stats = ObjectiveDMPolicy::shared().train_epoch(global_states_);
 
@@ -237,6 +247,20 @@ int EpisodeRunner::offer_task(int task_id, float reward, float importance,
                 return all_agents_[i]->agent_id;
         return -1;
     }
+    if (policy_mode == PolicyMode::InsertionGreedy) {
+        // SOTA-style threshold bidding: pick agent with highest profit/cost
+        // bid above the configured threshold.
+        TaskOffer offer{ task_id, reward, importance, {} };
+        float best_bid = 0.f;
+        int   best_aid = -1;
+        for (int i = 0; i < n_active; ++i) {
+            DeliveryAgent& a = *all_agents_[i];
+            if (!has_cap(a)) continue;
+            float bid = a.compute_bid(offer, memory_);
+            if (bid > best_bid) { best_bid = bid; best_aid = a.agent_id; }
+        }
+        return (best_bid > cfg_.insertion_greedy_threshold) ? best_aid : -1;
+    }
 
     // MAPPO: score each available agent (Idle or Active with capacity).
     // Push gs once per try_accept_task call (= once per record()) so that
@@ -251,6 +275,13 @@ int EpisodeRunner::offer_task(int task_id, float reward, float importance,
         float score = agent.try_accept_task(offer, memory_);
         global_states_.push_back(gs);  // aligned with the record() call above
         if (score >= 0.5f) return agent.agent_id;
+        // Refusal: set a small negative reward proportional to task importance,
+        // so the policy gets a signal that refusing high-value tasks is costly.
+        if (train_mode && cfg_.refuse_penalty_w > 0.f) {
+            int idx = ObjectiveDMPolicy::shared().buffer_size() - 1;
+            ObjectiveDMPolicy::shared().update_reward(
+                idx, -cfg_.refuse_penalty_w * importance);
+        }
         offer.prev_agents.push_back(agent.agent_id);
     }
     return -1;

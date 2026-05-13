@@ -67,6 +67,20 @@ struct EpisodeConfig {
     // safe; >1 enables queueing for higher throughput on long-distance graphs).
     int max_tasks_per_agent = 1;
 
+    // ── Reward shaping (MAPPO training only) ───────────────────────────────
+    // - delivered  : task->reward * task->importance  (positive, on completion)
+    // - refused    : -refuse_penalty_w * task->importance  (slight bias toward acceptance)
+    // - unfinished : unfinished_penalty (negative, applied at episode end for
+    //                accepted tasks that never delivered — discourages saturating
+    //                queues with tasks the agent can't complete in time)
+    float refuse_penalty_w  = 0.05f;
+    float unfinished_penalty = -1.0f;
+
+    // ── InsertionGreedy threshold ──────────────────────────────────────────
+    // Accept task if (reward * importance) / max(insertion_cost, ε) > threshold.
+    // 1.0 means "expect at least 1 unit of reward per unit of insertion cost".
+    float insertion_greedy_threshold = 0.5f;
+
     // ── Optional depot (warehouse mode) ───────────────────────────────────
     bool                   use_depot   = false;
     osmium::object_id_type depot_node  = 0;

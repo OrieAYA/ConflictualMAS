@@ -95,10 +95,11 @@ int MultiCityTrainer::run_eval(
 {
     const int num_cities = static_cast<int>(assets.size());
 
-    static constexpr std::array<PolicyMode, 3> k_modes = {
-        PolicyMode::MAPPO, PolicyMode::Greedy, PolicyMode::Random };
-    static constexpr std::array<const char*, 3> k_mode_strs = {
-        "MAPPO", "Greedy", "Random" };
+    static constexpr std::array<PolicyMode, 4> k_modes = {
+        PolicyMode::MAPPO, PolicyMode::Greedy,
+        PolicyMode::Random, PolicyMode::InsertionGreedy };
+    static constexpr std::array<const char*, 4> k_mode_strs = {
+        "MAPPO", "Greedy", "Random", "InsertionGreedy" };
 
     for (int ci = 0; ci < num_cities; ++ci) {
         const CityAssets& ca     = *assets[ci];
@@ -106,7 +107,7 @@ int MultiCityTrainer::run_eval(
 
         runner.train_mode = false;
 
-        for (int mi = 0; mi < 3; ++mi) {
+        for (int mi = 0; mi < 4; ++mi) {
             runner.policy_mode = k_modes[mi];
             for (int e = 0; e < cfg.n_eval_episodes; ++e) {
                 RunResult res = runner.run(ca.index, num_cities);

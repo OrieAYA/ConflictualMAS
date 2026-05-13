@@ -48,9 +48,11 @@ struct RunResult {
 // Random and Greedy do NOT call try_accept_task() and do NOT write to the
 // training buffer — safe for use as baselines without contaminating MAPPO.
 enum class PolicyMode {
-    MAPPO,   // shared actor MLP (default; records experiences)
-    Greedy,  // always accept first idle agent (upper-bound throughput proxy)
-    Random   // accept with p=0.5 (random baseline)
+    MAPPO,           // shared actor MLP (default; records experiences)
+    Greedy,          // always accept first idle agent (upper-bound throughput proxy)
+    Random,          // accept with p=0.5 (random baseline)
+    InsertionGreedy  // SOTA-style: accept if reward / insertion_cost > threshold
+                     // (myopic-optimal proxy, inspired by CBBA / threshold-bid auctions)
 };
 
 class EpisodeRunner {

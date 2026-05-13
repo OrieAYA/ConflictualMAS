@@ -10,9 +10,10 @@ namespace fs = std::filesystem;
 
 static std::string policy_mode_str(PolicyMode m) {
     switch (m) {
-    case PolicyMode::Greedy: return "Greedy";
-    case PolicyMode::Random: return "Random";
-    default:                 return "MAPPO";
+    case PolicyMode::Greedy:          return "Greedy";
+    case PolicyMode::Random:          return "Random";
+    case PolicyMode::InsertionGreedy: return "InsertionGreedy";
+    default:                          return "MAPPO";
     }
 }
 
