@@ -82,21 +82,21 @@ int MultiCityTrainer::run_eval(
 void MultiCityTrainer::train(const TrainingConfig& cfg) {
     fs::create_directories(cfg.output_dir);
 
-    // ── 1. Load all 7 city graphs once ────────────────────────────────────
-    const auto& all      = CityRegistry::all();
-    const int num_cities = static_cast<int>(all.size());
+    // ── 1. Load train cities only ─────────────────────────────────────────
+    const auto train_ptrs = CityRegistry::train_cities();
+    const int num_cities  = static_cast<int>(train_ptrs.size());
 
-    std::cout << "Loading " << num_cities << " cities from " << cfg.cache_root << "\n";
+    std::cout << "Loading " << num_cities << " train cities from " << cfg.cache_root << "\n";
     std::vector<std::unique_ptr<CityAssets>> assets;
     assets.reserve(num_cities);
     for (int i = 0; i < num_cities; ++i)
-        assets.push_back(load_city(all[i], i, cfg.episode_cfg, cfg.cache_root));
+        assets.push_back(load_city(*train_ptrs[i], i, cfg.episode_cfg, cfg.cache_root));
     std::cout << "All cities loaded.\n\n";
 
-    // ── 2. Collect train city indices (stable across seeds) ───────────────
+    // ── 2. All loaded cities are train cities ─────────────────────────────
     std::vector<int> train_indices;
     for (int i = 0; i < num_cities; ++i)
-        if (all[i].is_train()) train_indices.push_back(i);
+        train_indices.push_back(i);
 
     // ── 3. Multi-seed loop ────────────────────────────────────────────────
     const std::string summary_path = cfg.output_dir + "/summary.csv";

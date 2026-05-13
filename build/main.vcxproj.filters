@@ -37,6 +37,9 @@
     <ClCompile Include="C:\ConflictualMAS\src\Training\MultiCityTrainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Training\TrainingSmokeTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Tests\LegacyTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

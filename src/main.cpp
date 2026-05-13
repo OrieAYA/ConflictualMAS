@@ -11,7 +11,7 @@
 
 int main()
 {
-    const std::string osm_file  = "C:\\ConflictualMAS\\src\\maps\\kanto-latest.osm.pbf";
+    const std::string osm_file  = "C:\\ConflictualMAS\\src\\maps\\Tokyo.osm.pbf";
     const std::string cache_dir = "C:\\ConflictualMAS\\src\\geobox_cache_folder";
     const std::string amazon_dir = "C:\\ConflictualMAS\\src\\AmazonDataset\\~\\.rc-cli\\data";
 

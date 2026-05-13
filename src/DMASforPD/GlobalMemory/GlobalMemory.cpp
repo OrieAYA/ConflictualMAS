@@ -19,6 +19,9 @@ PDPGlobalMemory::PDPGlobalMemory(GeoBox& box, Pathfinder& pf,
 // ---- Task management ---------------------------------------------------
 
 int PDPGlobalMemory::add_task(const ObjectiveNode& pickup, const ObjectiveNode& delivery) {
+    server_memory.add_objective_node(pickup.id,   pickup.group_id);
+    server_memory.add_objective_node(delivery.id, delivery.group_id);
+
     int id = static_cast<int>(tasks_.size());
     PDPTask task;
     task.task_id  = id;
@@ -319,6 +322,10 @@ void PDPGlobalMemory::reset_episode() {
 
     // Reset clock to 0 so advance_time() accepts the new episode's steps.
     current_time_ = 0;
+
+    // Clear dynamic objective registrations (task nodes from the just-finished episode).
+    // Preserves paths_ so A* results are reused across episodes.
+    server_memory.reset_objectives(1);
 }
 
 // ---- Congestion --------------------------------------------------------

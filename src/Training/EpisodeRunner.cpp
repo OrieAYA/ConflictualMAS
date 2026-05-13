@@ -133,9 +133,9 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
                stream[stream_idx].arrival_step == step) {
             const auto& st = stream[stream_idx++];
 
-            // All synthetic tasks share group_id = 0 (path cache reuse).
-            ObjectiveNode pickup  { st.pickup_node_id,   0 };
-            ObjectiveNode delivery{ st.delivery_node_id, 0 };
+            // All synthetic tasks share group_id = 1 (group 0 is reserved / empty).
+            ObjectiveNode pickup  { st.pickup_node_id,   1 };
+            ObjectiveNode delivery{ st.delivery_node_id, 1 };
             int task_id = memory_.add_task(pickup, delivery);
 
             PDPTask* task = memory_.get_task(task_id);
@@ -265,8 +265,7 @@ int EpisodeRunner::start_leg(int agent_id, int task_id, bool is_pickup,
     DeliveryAgent* agent = memory_.get_delivery_agent(agent_id);
     if (!agent) return current_step + 1;
 
-    // Fetch (or compute) the path from the group-0 cache.
-    const ObjectivePath* path = memory_.get_or_compute_path(from, to, 0);
+    const ObjectivePath* path = memory_.get_or_compute_path(from, to, 1);
 
     // Load path into agent cursor and set local_memory.current_path.
     agent->begin_leg(path, task_id, is_pickup);

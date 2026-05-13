@@ -55,6 +55,8 @@ public:
     std::vector<ObjectiveNode> objective_nodes;
 
     void build_objective_set();
+    void register_in_set(osmium::object_id_type node_id);  // O(1) insert into objective_ids_
+    void episode_reset();   // clear objectives + search states + pair count; keep paths_
     bool is_complete() const;
 
     bool                              has_path (osmium::object_id_type a, osmium::object_id_type b) const;
@@ -164,6 +166,13 @@ public:
 
     // Store an externally computed path into a group cache.
     void store_path_in_group(int group_id, const ObjectivePath& path);
+
+    // Register a new objective node into its group cache (called when a task is created).
+    void add_objective_node(osmium::object_id_type node_id, int group_id);
+
+    // Clear all objective registrations for a group (between episodes).
+    // Preserves paths_ so A* results computed in prior episodes are reused.
+    void reset_objectives(int group_id);
 
     // Remove an objective node from its group cache (post pickup/delivery).
     void remove_objective_node(osmium::object_id_type node_id, int group_id);

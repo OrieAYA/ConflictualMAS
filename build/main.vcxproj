@@ -433,6 +433,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeRunner.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Training\TrainingLogger.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Training\MultiCityTrainer.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Training\TrainingSmokeTest.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Tests\LegacyTests.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Tests\PDPTests.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\AmazonDataset\AmazonTest.cpp" />

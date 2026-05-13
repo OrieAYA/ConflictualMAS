@@ -28,6 +28,18 @@ void ObjectiveGroupCache::build_objective_set() {
         objective_ids_.insert(on.id);
 }
 
+void ObjectiveGroupCache::register_in_set(osmium::object_id_type node_id) {
+    objective_ids_.insert(node_id);
+}
+
+void ObjectiveGroupCache::episode_reset() {
+    objective_nodes.clear();
+    objective_ids_.clear();
+    obj_pair_count_ = 0;
+    search_states_.clear();
+    // paths_ intentionally kept: A* results are permanent road-network geometry
+}
+
 bool ObjectiveGroupCache::is_complete() const {
     const std::size_t n = objective_nodes.size();
     return static_cast<std::size_t>(obj_pair_count_) >= n * (n - 1) / 2;
@@ -68,21 +80,19 @@ void ObjectiveGroupCache::remove_node(osmium::object_id_type node_id) {
             [node_id](const ObjectiveNode& n){ return n.id == node_id; }),
         objective_nodes.end()
     );
-    // Remove all cached paths that touch this node.
-    // Decrement obj_pair_count_ only for paths where the other endpoint is still
-    // an objective (meaning both were objectives when the path was stored and counted).
-    for (auto it = paths_.begin(); it != paths_.end(); ) {
-        if (it->first.first == node_id || it->first.second == node_id) {
+    // Update obj_pair_count_ for paths that had both endpoints as objectives.
+    // Do NOT erase paths: they are permanently memoized A* results on the road
+    // network, which never changes. Erasing them forces A* to rerun for the same
+    // node pairs in subsequent episodes, which is the main source of training slowness.
+    for (const auto& [key, _] : paths_) {
+        if (key.first == node_id || key.second == node_id) {
             const osmium::object_id_type other =
-                (it->first.first == node_id) ? it->first.second : it->first.first;
+                (key.first == node_id) ? key.second : key.first;
             if (objective_ids_.count(other))
                 --obj_pair_count_;
-            it = paths_.erase(it);
-        } else {
-            ++it;
         }
     }
-    // Invalidate search states originating from this node.
+    // Invalidate the Dijkstra search state originating from this node only.
     search_states_.erase(node_id);
 }
 
@@ -285,6 +295,20 @@ void PDPServerMemory::store_path_in_group(int group_id, const ObjectivePath& pat
     auto it = group_caches_.find(group_id);
     if (it != group_caches_.end())
         it->second.store_path(path);
+}
+
+void PDPServerMemory::reset_objectives(int group_id) {
+    auto it = group_caches_.find(group_id);
+    if (it == group_caches_.end()) return;
+    it->second.episode_reset();
+}
+
+void PDPServerMemory::add_objective_node(osmium::object_id_type node_id, int group_id) {
+    ensure_group(group_id);
+    auto& cache = group_caches_.at(group_id);
+    if (cache.contains_objective(node_id)) return;
+    cache.objective_nodes.push_back({node_id, group_id});
+    cache.register_in_set(node_id);
 }
 
 void PDPServerMemory::remove_objective_node(osmium::object_id_type node_id, int group_id) {
