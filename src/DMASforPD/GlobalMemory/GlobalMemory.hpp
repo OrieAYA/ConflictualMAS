@@ -36,6 +36,10 @@ public:
     std::vector<PDPTask*> allocated_tasks;   // Assigned to a delivery agent
     std::vector<PDPTask*> finished_tasks;    // Completed
 
+    // Set by EpisodeRunner before each offer_task call so that try_accept_task
+    // can use it as the time_remaining feature (1 − step/total_steps).
+    float cur_time_ratio = 0.f;
+
     PDPGlobalMemory() = delete;
     PDPGlobalMemory(GeoBox& box, Pathfinder& pf,
                     const CongestionParams& cparams  = {},

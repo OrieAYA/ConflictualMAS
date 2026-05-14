@@ -41,16 +41,18 @@ float linout(const float* W, float b, const float* x, int in_n) {
 
 // ── PolicyFeatures ────────────────────────────────────────────────────────────
 void PolicyFeatures::to_array(float* dst) const {
-    dst[0] = cost_diff;
-    dst[1] = profit_rate;
-    dst[2] = current_load;
-    dst[3] = queue_duration;
-    dst[4] = efficiency_loss;
-    dst[5] = rank_in_call;
-    dst[6] = task_importance;
-    dst[7] = n_agents_ratio;
-    dst[8] = n_alloc_ratio;
-    dst[9] = n_avail_ratio;
+    dst[ 0] = cost_diff;
+    dst[ 1] = profit_rate;
+    dst[ 2] = current_load;
+    dst[ 3] = queue_duration;
+    dst[ 4] = efficiency_loss;
+    dst[ 5] = rank_in_call;
+    dst[ 6] = task_importance;
+    dst[ 7] = n_agents_ratio;
+    dst[ 8] = n_alloc_ratio;
+    dst[ 9] = n_avail_ratio;
+    dst[10] = recall_round_norm;
+    dst[11] = time_remaining;
 }
 
 // ── ActorMLP ──────────────────────────────────────────────────────────────────

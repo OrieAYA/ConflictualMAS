@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <random>
 
 // ---- Construction -------------------------------------------------------
 
@@ -106,6 +107,10 @@ float DeliveryAgent::try_accept_task(const TaskOffer& offer, PDPGlobalMemory& me
     f.rank_in_call   = 1.f - std::clamp(
         static_cast<float>(offer.prev_agents.size()) / kMaxAgents, 0.f, 1.f);
     f.task_importance= std::clamp(offer.importance / kImpMax, 0.f, 1.f);
+    f.recall_round_norm = std::clamp(
+        static_cast<float>(offer.recall_round)
+        / static_cast<float>(std::max(offer.max_recalls, 1)),
+        0.f, 1.f);
 
     int n_agents = static_cast<int>(memory.all_delivery_agents().size());
     int total    = memory.count_total();
@@ -114,14 +119,25 @@ float DeliveryAgent::try_accept_task(const TaskOffer& offer, PDPGlobalMemory& me
         ? static_cast<float>(memory.count_allocated()) / total : 0.f;
     f.n_avail_ratio  = (total > 0)
         ? static_cast<float>(memory.count_available()) / total : 0.f;
+    f.time_remaining = std::clamp(1.f - memory.cur_time_ratio, 0.f, 1.f);
 
-    float score  = ObjectiveDMPolicy::shared().score(f);
-    bool  accept = score >= 0.5f;
-    // Reward is always 0 at decision time. The EpisodeRunner calls update_reward()
-    // with the actual task value when the task is delivered, giving correct
-    // credit assignment without requiring a separate delayed-reward buffer.
-    ObjectiveDMPolicy::shared().record(f, accept ? 1.f : 0.f, 0.f, agent_id);
-    return score;
+    // ── Stochastic action sampling ─────────────────────────────────────────────
+    // PPO requires the recorded action to be sampled from π(a|s). A hard
+    // threshold (action = μ ≥ 0.5) was used previously, which produced
+    // mathematically inconsistent log_probs and locked the policy at acc ≈ 1.0
+    // because μ never had to cross 0.5 to generate action=0 experiences.
+    // Sampling Bernoulli(μ) naturally generates both action=1 and action=0
+    // records around any μ ∈ (0,1), allowing the gradient to learn the true
+    // accept/refuse trade-off.
+    static thread_local std::mt19937 rng{std::random_device{}()};
+    float mu = ObjectiveDMPolicy::shared().score(f);
+    std::bernoulli_distribution dist(std::clamp(mu, 0.001f, 0.999f));
+    float action = dist(rng) ? 1.f : 0.f;
+
+    // Reward is 0 at decision time; EpisodeRunner::on_objective_reached calls
+    // update_reward() with the actual task value when the task is delivered.
+    ObjectiveDMPolicy::shared().record(f, action, 0.f, agent_id);
+    return action;  // 0 or 1 — TAM still uses >= 0.5 threshold which works.
 }
 
 float DeliveryAgent::compute_bid(const TaskOffer& offer, PDPGlobalMemory& memory) {

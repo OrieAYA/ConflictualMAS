@@ -41,7 +41,7 @@ static void customize_episode_for_city(EpisodeConfig& ep, const CityConfig& cc) 
         ep.hot_zone_radius = 500.f;
         ep.max_tasks_per_agent = 6;
     } else {
-        // Large (≥300 km²): Amazon-scale density, long task queues.
+        // Large (>=300 km²): Amazon-scale density, long task queues.
         ep.phases = {
             { 1000, 120.f,  8, 10, 0.0f, 4 },
             { 1500, 200.f, 10, 13, 0.5f, 6 },
@@ -84,7 +84,17 @@ std::unique_ptr<CityAssets> MultiCityTrainer::load_city(
     return std::make_unique<CityAssets>(&cc, idx, std::move(ep), std::move(gb));
 }
 
-// ── Evaluation ────────────────────────────────────────────────────────────────
+// ── Evaluation (train cities) ─────────────────────────────────────────────────
+//
+// 5 eval modes per city:
+//   MAPPO            – full system (learned policy + TAM routing)
+//   TamAlwaysAccept  – TAM routing only, no learned policy (ablation)
+//   Greedy           – sequential scan, first idle agent
+//   Random           – random accept/reject baseline
+//   InsertionGreedy  – cost-aware heuristic (strongest non-learning baseline)
+//
+// The MAPPO vs TamAlwaysAccept comparison isolates the policy learning benefit.
+// The TamAlwaysAccept vs Greedy comparison isolates the TAM routing benefit.
 
 int MultiCityTrainer::run_eval(
     const TrainingConfig& cfg,
@@ -95,11 +105,11 @@ int MultiCityTrainer::run_eval(
 {
     const int num_cities = static_cast<int>(assets.size());
 
-    static constexpr std::array<PolicyMode, 4> k_modes = {
-        PolicyMode::MAPPO, PolicyMode::Greedy,
-        PolicyMode::Random, PolicyMode::InsertionGreedy };
-    static constexpr std::array<const char*, 4> k_mode_strs = {
-        "MAPPO", "Greedy", "Random", "InsertionGreedy" };
+    static constexpr std::array<PolicyMode, 5> k_modes = {
+        PolicyMode::MAPPO, PolicyMode::TamAlwaysAccept,
+        PolicyMode::Greedy, PolicyMode::Random, PolicyMode::InsertionGreedy };
+    static constexpr std::array<const char*, 5> k_mode_strs = {
+        "MAPPO", "TamAlwaysAccept", "Greedy", "Random", "InsertionGreedy" };
 
     for (int ci = 0; ci < num_cities; ++ci) {
         const CityAssets& ca     = *assets[ci];
@@ -107,7 +117,7 @@ int MultiCityTrainer::run_eval(
 
         runner.train_mode = false;
 
-        for (int mi = 0; mi < 4; ++mi) {
+        for (int mi = 0; mi < 5; ++mi) {
             runner.policy_mode = k_modes[mi];
             for (int e = 0; e < cfg.n_eval_episodes; ++e) {
                 RunResult res = runner.run(ca.index, num_cities);
@@ -116,6 +126,61 @@ int MultiCityTrainer::run_eval(
                     ca.config->name, "eval", k_mode_strs[mi],
                     ca.ep_cfg.max_agents());
                 logger.push(rec);
+                std::cout << "    [eval " << ca.config->name << "/" << k_mode_strs[mi]
+                          << "/" << (e + 1) << "/" << cfg.n_eval_episodes
+                          << "]  thr=" << res.metrics.throughput_rate
+                          << "  acc=" << res.metrics.accept_rate
+                          << "  " << res.wallclock_ms << "ms\n";
+            }
+        }
+    }
+
+    return global_ep;
+}
+
+// ── Generalisation evaluation (unseen cities) ─────────────────────────────────
+//
+// Runs MAPPO + TamAlwaysAccept + InsertionGreedy on cities held out from
+// training. Called once per seed after the final train-city eval.
+// Only 3 modes (skip Greedy/Random — already characterised on train cities).
+
+int MultiCityTrainer::run_generalize_eval(
+    const TrainingConfig& cfg,
+    const std::vector<std::unique_ptr<CityAssets>>& gen_assets,
+    std::vector<std::unique_ptr<EpisodeRunner>>& gen_runners,
+    int global_ep, int seed,
+    TrainingLogger& logger)
+{
+    if (gen_assets.empty()) return global_ep;
+
+    const int num_gen = static_cast<int>(gen_assets.size());
+
+    static constexpr std::array<PolicyMode, 3> k_modes = {
+        PolicyMode::MAPPO, PolicyMode::TamAlwaysAccept, PolicyMode::InsertionGreedy };
+    static constexpr std::array<const char*, 3> k_mode_strs = {
+        "MAPPO", "TamAlwaysAccept", "InsertionGreedy" };
+
+    std::cout << "  -- Generalisation Eval (" << num_gen << " cities) --\n";
+    for (int ci = 0; ci < num_gen; ++ci) {
+        const CityAssets& ca     = *gen_assets[ci];
+        EpisodeRunner&    runner = *gen_runners[ci];
+
+        runner.train_mode = false;
+
+        for (int mi = 0; mi < 3; ++mi) {
+            runner.policy_mode = k_modes[mi];
+            for (int e = 0; e < cfg.n_eval_episodes; ++e) {
+                RunResult res = runner.run(ca.index, num_gen);
+                EpisodeRecord rec = make_record(
+                    res, seed, global_ep++,
+                    ca.config->name, "generalize", k_mode_strs[mi],
+                    ca.ep_cfg.max_agents());
+                logger.push(rec);
+                std::cout << "    [gen " << ca.config->name << "/" << k_mode_strs[mi]
+                          << "/" << (e + 1) << "/" << cfg.n_eval_episodes
+                          << "]  thr=" << res.metrics.throughput_rate
+                          << "  acc=" << res.metrics.accept_rate
+                          << "  " << res.wallclock_ms << "ms\n";
             }
         }
     }
@@ -128,7 +193,7 @@ int MultiCityTrainer::run_eval(
 void MultiCityTrainer::train(const TrainingConfig& cfg) {
     fs::create_directories(cfg.output_dir);
 
-    // ── 1. Load train cities only ─────────────────────────────────────────
+    // ── 1. Load train cities ──────────────────────────────────────────────
     const auto train_ptrs = CityRegistry::train_cities();
     const int num_cities  = static_cast<int>(train_ptrs.size());
 
@@ -137,9 +202,26 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
     assets.reserve(num_cities);
     for (int i = 0; i < num_cities; ++i)
         assets.push_back(load_city(*train_ptrs[i], i, cfg.episode_cfg, cfg.cache_root));
-    std::cout << "All cities loaded.\n\n";
+    std::cout << "All train cities loaded.\n\n";
 
-    // ── 2. All loaded cities are train cities ─────────────────────────────
+    // ── 2. Load generalisation cities (skip gracefully if OSM missing) ────
+    const auto gen_ptrs = CityRegistry::comparison_cities();
+    std::vector<std::unique_ptr<CityAssets>> gen_assets;
+    if (!gen_ptrs.empty()) {
+        std::cout << "Loading generalisation cities (skip if missing)...\n";
+        for (int i = 0; i < (int)gen_ptrs.size(); ++i) {
+            try {
+                gen_assets.push_back(
+                    load_city(*gen_ptrs[i], num_cities + i, cfg.episode_cfg, cfg.cache_root));
+            } catch (const std::exception& e) {
+                std::cout << "  [Skip] " << gen_ptrs[i]->name
+                          << " — " << e.what() << "\n";
+            }
+        }
+        std::cout << gen_assets.size() << "/" << gen_ptrs.size()
+                  << " generalisation cities loaded.\n\n";
+    }
+
     std::vector<int> train_indices;
     for (int i = 0; i < num_cities; ++i)
         train_indices.push_back(i);
@@ -167,7 +249,7 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                 std::cout << "[Policy] Loaded from " << cfg.policy_path << "\n";
         }
 
-        // Create per-city runners. Reused across rounds so the A* cache warms up.
+        // Per-city runners for train cities (reused across rounds — A* cache warms up).
         std::vector<std::unique_ptr<EpisodeRunner>> runners;
         runners.reserve(num_cities);
         for (int i = 0; i < num_cities; ++i) {
@@ -176,6 +258,14 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                 ca.ep_cfg, ca.geo_box, ca.pathfinder,
                 static_cast<uint32_t>(seed)));
         }
+
+        // Per-city runners for generalisation cities (cold path — no training).
+        std::vector<std::unique_ptr<EpisodeRunner>> gen_runners;
+        gen_runners.reserve(gen_assets.size());
+        for (auto& ga : gen_assets)
+            gen_runners.push_back(std::make_unique<EpisodeRunner>(
+                ga->ep_cfg, ga->geo_box, ga->pathfinder,
+                static_cast<uint32_t>(seed)));
 
         TrainingLogger logger(cfg.output_dir, seed);
         int global_ep = 0;
@@ -213,7 +303,7 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                 }
             }
 
-            // Periodic eval (after completing the full round).
+            // Periodic eval on train cities.
             if ((round + 1) % cfg.eval_every == 0) {
                 std::cout << "  -- Eval @ round " << (round + 1) << " --\n";
                 global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger);
@@ -221,11 +311,18 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
             }
         }
 
-        // ── 5. Final evaluation ───────────────────────────────────────────
-        std::cout << "  -- Final Eval --\n";
-        global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger);
+        // ── 5. Final evaluation (skipped if last round already eval'd) ────
+        if (cfg.n_rounds % cfg.eval_every != 0) {
+            std::cout << "  -- Final Eval --\n";
+            global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger);
+        }
 
-        // ── 6. Policy checkpoint ──────────────────────────────────────────
+        // ── 6. Generalisation evaluation (unseen cities, end of seed) ─────
+        global_ep = run_generalize_eval(
+            cfg, gen_assets, gen_runners, global_ep, seed, logger);
+        logger.flush();
+
+        // ── 7. Policy checkpoint ──────────────────────────────────────────
         if (cfg.save_policy) {
             const std::string ckpt = cfg.output_dir + "/policy_seed"
                                    + std::to_string(seed) + ".bin";
@@ -233,8 +330,7 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
             std::cout << "  [Checkpoint] saved to " << ckpt << "\n";
         }
 
-        // ── 7. Per-seed summary ───────────────────────────────────────────
-        logger.flush();
+        // ── 8. Per-seed summary ───────────────────────────────────────────
         TrainingLogger::write_summary(summary_path, logger.records(), seed);
 
         std::cout << "Seed " << s << " done — " << global_ep << " episodes.\n\n";

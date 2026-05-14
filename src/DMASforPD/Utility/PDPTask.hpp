@@ -41,8 +41,20 @@ struct PDPTask {
     ObjectiveNode delivery;
     TaskStatus    status     = TaskStatus::Idle;
     int           agent_id   = -1;
-    float         reward     = 1.0f;   // current reward (updated by TAM on recall)
-    float         importance = 1.0f;   // urgency / priority
+
+    // Working values — boosted by TAM on each recall round. Used only to score
+    // offers (drives PolicyFeatures::profit_rate and task_importance during
+    // allocation), never as the actual completion reward.
+    float         reward     = 1.0f;
+    float         importance = 1.0f;
+
+    // Immutable originals — set once at creation, never modified by recall.
+    // The completion reward written into the MAPPO buffer at delivery uses
+    // these so that "refuse first, accept on recall" cannot game a larger
+    // reward than "accept immediately".
+    float         reward_original     = 1.0f;
+    float         importance_original = 1.0f;
+
     TaskTimeline  timeline;
 
     // ---- Status predicates -----------------------------------------------

@@ -17,6 +17,8 @@ struct TaskOffer {
     float            reward;        // current task reward (may be boosted on recall)
     float            importance;    // urgency / priority
     std::vector<int> prev_agents;   // agents called before (context for the recipient)
+    int              recall_round = 0;  // 0 = first round, 1..N = recall index
+    int              max_recalls  = 3;  // for normalisation in PolicyFeatures
 };
 
 // ---- Task Allocation Module (TAM) --------------------------------------
@@ -41,9 +43,11 @@ struct TaskOffer {
 class TaskAllocationModule {
 public:
     struct Params {
-        int   max_recalls        = 3;
-        float recall_reward_mult = 1.5f;   // reward multiplier on each recall round
-        float recall_import_mult = 1.2f;   // importance multiplier on each recall round
+        int   max_recalls          = 3;
+        float recall_reward_mult   = 1.5f;   // reward multiplier on each recall round
+        float recall_import_mult   = 1.2f;   // importance multiplier on each recall round
+        int   max_tasks_per_agent  = 1;       // capacity guard — TAM won't offer to full agents
+        bool  always_accept        = false;   // bypass policy: accept unconditionally (TamAlwaysAccept ablation)
     };
 
     explicit TaskAllocationModule(PDPTask& task, Params p = {});
@@ -86,7 +90,7 @@ private:
 
     // ---- Helpers ----------------------------------------------------------
 
-    // Build a set of current_node values for all Idle delivery agents.
+    // Build a set of current_node values for all agents with remaining capacity.
     std::unordered_set<osmium::object_id_type> idle_agent_positions(
         PDPGlobalMemory& memory) const;
 

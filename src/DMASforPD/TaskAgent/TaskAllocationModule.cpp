@@ -60,8 +60,9 @@ bool TaskAllocationModule::step(PDPGlobalMemory& memory, float speed_mps) {
 std::unordered_set<osmium::object_id_type>
 TaskAllocationModule::idle_agent_positions(PDPGlobalMemory& memory) const {
     std::unordered_set<osmium::object_id_type> positions;
+    const int cap = params_.max_tasks_per_agent;
     for (const auto& [aid, agent] : memory.all_delivery_agents())
-        if (agent->status == AgentStatus::Idle && agent->is_at_node())
+        if (agent->is_at_node() && (int)agent->local_memory.tasks.size() < cap)
             positions.insert(agent->current_node);
     return positions;
 }
@@ -79,11 +80,12 @@ bool TaskAllocationModule::handle_delivery_node(
     osmium::object_id_type node, float cost,
     PDPGlobalMemory& memory, float speed_mps
 ) {
-    // Direct allocation: idle agent physically at this node (delivery-side discovery).
+    // Direct allocation: agent with capacity physically at this node.
+    const int cap = params_.max_tasks_per_agent;
     for (auto& [aid, agent] : memory.all_delivery_agents()) {
         if (agent->current_node == node
-            && agent->status == AgentStatus::Idle
-            && agent->is_at_node())
+            && agent->is_at_node()
+            && (int)agent->local_memory.tasks.size() < cap)
         {
             matrix_[aid].delivery_cost = cost;
             if (offer_to_agent(aid, memory, speed_mps)) return true;
@@ -138,16 +140,25 @@ bool TaskAllocationModule::offer_to_agent(
 ) {
     DeliveryAgent* agent = memory.get_delivery_agent(agent_id);
     if (!agent) return false;
+    if ((int)agent->local_memory.tasks.size() >= params_.max_tasks_per_agent) return false;
 
     auto& entry = matrix_[agent_id];
     entry.call_count++;
 
-    std::vector<int> prev;
-    prev.reserve(matrix_.size());
-    for (const auto& [aid, _] : matrix_) if (aid != agent_id) prev.push_back(aid);
+    float score;
+    if (params_.always_accept) {
+        // Ablation mode: bypass MAPPO policy, accept unconditionally.
+        // No buffer write — this is a non-learning baseline.
+        score = 1.0f;
+    } else {
+        std::vector<int> prev;
+        prev.reserve(matrix_.size());
+        for (const auto& [aid, _] : matrix_) if (aid != agent_id) prev.push_back(aid);
 
-    TaskOffer offer{task_.task_id, task_.reward, task_.importance, std::move(prev)};
-    float score = agent->try_accept_task(offer, memory);
+        TaskOffer offer{task_.task_id, task_.reward, task_.importance,
+                        std::move(prev), recall_count_, params_.max_recalls};
+        score = agent->try_accept_task(offer, memory);
+    }
     entry.score = score;
 
     if (score >= 0.5f) {

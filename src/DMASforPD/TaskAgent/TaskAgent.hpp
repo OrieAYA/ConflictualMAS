@@ -67,6 +67,14 @@ public:
     // Advances all running TAMs; allocates tasks as they are accepted.
     void step(PDPGlobalMemory& memory);
 
+    // Access a running TAM for synchronous driving (training pipeline).
+    // Returns nullptr if no TAM is active for this task.
+    TaskAllocationModule* get_tam(int task_id) {
+        auto it = active_tams_.find(task_id);
+        return (it == active_tams_.end()) ? nullptr : it->second.get();
+    }
+    void erase_tam(int task_id) { active_tams_.erase(task_id); }
+
 private:
     std::vector<DeliveryAgent*> agents_;
 

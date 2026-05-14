@@ -62,10 +62,10 @@ int main()
         TrainingConfig cfg;
         cfg.cache_root       = cache_root;
         cfg.output_dir       = output_dir;
-        cfg.n_rounds         = 50;      // 7 cities × 50 rounds = 350 train eps  ≈ 3–5 h
-        cfg.n_seeds          = 1;       // single seed fits in one session; add more via load_policy
-        cfg.n_eval_episodes  = 5;       // per city × mode (3 checkpoints × 7 × 3 × 5 = 315 eps ≈ 1 h)
-        cfg.eval_every       = 25;      // eval at round 25, 50 + final
+        cfg.n_rounds         = 100;     // 3 cities × 100 rounds = 300 train eps/seed
+        cfg.n_seeds          = 2;       // 2 independent seeds → publishable error bars
+        cfg.n_eval_episodes  = 3;       // per city × mode (4 checkpoints × 3 × 5 × 3 = 180 eps/seed)
+        cfg.eval_every       = 25;      // eval at rounds 25, 50, 75, 100
         cfg.save_policy      = true;    // checkpoint saved → rerun with load_policy=true to extend
         cfg.verbose          = true;
 

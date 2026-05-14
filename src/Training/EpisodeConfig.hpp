@@ -65,21 +65,30 @@ struct EpisodeConfig {
     // ── Agent capacity ─────────────────────────────────────────────────────
     // Number of tasks an agent can hold simultaneously (1 = single-task mode,
     // safe; >1 enables queueing for higher throughput on long-distance graphs).
-    int max_tasks_per_agent = 1;
+    int max_tasks_per_agent = 3;
 
     // ── Reward shaping (MAPPO training only) ───────────────────────────────
-    // - delivered  : task->reward * task->importance  (positive, on completion)
-    // - refused    : -refuse_penalty_w * task->importance  (slight bias toward acceptance)
-    // - unfinished : unfinished_penalty (negative, applied at episode end for
-    //                accepted tasks that never delivered — discourages saturating
-    //                queues with tasks the agent can't complete in time)
-    float refuse_penalty_w  = 0.05f;
-    float unfinished_penalty = -1.0f;
+    //
+    // - delivered  : +task.reward_original * task.importance_original
+    // - refused    : -refuse_penalty_w * task.importance_original
+    // - unfinished : -unfinished_factor * task.reward_original * task.importance_original
+    //                (proportional to the value the agent failed to capture)
+    //
+    // For default reward=1, importance=1:
+    //   delivered  +1.00 | refused -0.15 | unfinished -0.50
+    // Indifference threshold p* ≈ 0.23: the agent should refuse a task only if it
+    // estimates < 23% probability of delivering it. A flat unfinished penalty
+    // (e.g. -0.10) makes "accept-and-fail" dominant over "refuse" regardless of
+    // p, so the policy collapses to acc ≈ 100%.
+    float refuse_penalty_w   = 0.15f;
+    float unfinished_factor  = 1.0f;  // full value loss → indifference at p* ≈ 0.42
 
     // ── InsertionGreedy threshold ──────────────────────────────────────────
-    // Accept task if (reward * importance) / max(insertion_cost, ε) > threshold.
-    // 1.0 means "expect at least 1 unit of reward per unit of insertion cost".
-    float insertion_greedy_threshold = 0.5f;
+    // Accept task if (reward * importance) / max(insertion_cost_m, ε) > threshold.
+    // Insertion cost is in meters, reward*importance ∈ [0.05, 10]. Typical bids
+    // are 1e-5 to 1e-2, so threshold ≈ 1e-4 = "accept if at least 1 reward unit
+    // per 10 km of routing cost". This filters genuinely unprofitable tasks.
+    float insertion_greedy_threshold = 1e-4f;
 
     // ── Optional depot (warehouse mode) ───────────────────────────────────
     bool                   use_depot   = false;

@@ -72,6 +72,11 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
     active_sum_    = 0;
     active_steps_  = 0;
 
+    // Propagate the always_accept flag to the TAM for TamAlwaysAccept ablation mode.
+    // Must be set before the episode loop so all TAMs created during the episode inherit it.
+    memory_.task_agent.params.tam_params.always_accept =
+        (policy_mode == PolicyMode::TamAlwaysAccept);
+
     // Reset per-episode GlobalMemory state (tasks, plans, congestion, clock).
     // Preserves the A* path cache so costs computed in prior episodes reuse.
     memory_.reset_episode();
@@ -141,29 +146,40 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
             PDPTask* task = memory_.get_task(task_id);
             task->reward     = st.reward;
             task->importance = st.importance;
+            task->reward_original     = st.reward;
+            task->importance_original = st.importance;
 
-            int winner = offer_task(task_id, st.reward, st.importance, n_active, cur_gs);
+            OfferResult res = offer_task(task_id, st.reward, st.importance,
+                                         n_active, cur_gs);
+            const int winner = res.agent_id;
             if (winner >= 0) {
                 ++n_accepted_;
-                memory_.assign_task(task_id, winner);
                 DeliveryAgent* agent = memory_.get_delivery_agent(winner);
 
-                // Snapshot status before receive_task changes it to Active.
-                const bool was_idle = (agent->status == AgentStatus::Idle);
-
-                agent->receive_task(*task, memory_);
-                memory_.commit_plan(winner, cfg_.speed_mps);
+                bool was_idle;
+                if (res.tam_owned) {
+                    // TAM already did assign + receive + commit. After
+                    // receive_task the agent's task list contains this task
+                    // plus whatever it had before. Sole task ⇒ was Idle.
+                    was_idle = agent->local_memory.tasks.size() == 1;
+                } else {
+                    was_idle = (agent->status == AgentStatus::Idle);
+                    memory_.assign_task(task_id, winner);
+                    agent->receive_task(*task, memory_);
+                    memory_.commit_plan(winner, cfg_.speed_mps);
+                }
 
                 // Record the buffer index of this accept decision so we can set
-                // the real completion reward when the task is delivered.
+                // the real completion reward (originals) when the task is
+                // delivered. In TAM path the accept entry is the LAST record.
                 if (policy_mode == PolicyMode::MAPPO)
                     task_accept_buf_idx_[task_id] =
                         ObjectiveDMPolicy::shared().buffer_size() - 1;
 
-                // Only start the edge-by-edge leg if the agent was Idle.
-                // If the agent was already Active (multi-task), plan() reordered
-                // the solution but the current cursor is still valid; the new
-                // objectives will be picked up when the current delivery completes.
+                // Only start the edge-by-edge leg if the agent was Idle. If
+                // already Active (multi-task queue), the current cursor is
+                // still valid; the new objectives are picked up after the
+                // current delivery completes.
                 if (was_idle)
                     start_leg(winner, task_id, true,
                               agent->current_node, st.pickup_node_id, step);
@@ -203,13 +219,19 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
     result.metrics = metrics;
 
     // Apply unfinished-acceptance penalty: any task still in task_accept_buf_idx_
-    // at this point was accepted but never delivered before episode end. The
-    // policy committed agent capacity to it without payoff — penalise to teach
-    // the policy not to over-saturate queues.
+    // was accepted but never delivered before episode end. The penalty scales
+    // with the task value the agent failed to capture, so failing a high-value
+    // task hurts more than failing a low-value one. This keeps the policy from
+    // accepting tasks it cannot deliver, while a flat penalty would collapse
+    // into "accept everything" once it falls below the refuse penalty.
     if (train_mode && policy_mode == PolicyMode::MAPPO &&
-        cfg_.unfinished_penalty < 0.f) {
-        for (const auto& [tid, buf_idx] : task_accept_buf_idx_)
-            ObjectiveDMPolicy::shared().update_reward(buf_idx, cfg_.unfinished_penalty);
+        cfg_.unfinished_factor > 0.f) {
+        for (const auto& [tid, buf_idx] : task_accept_buf_idx_) {
+            PDPTask* t = memory_.get_task(tid);
+            float val = t ? (t->reward_original * t->importance_original) : 1.f;
+            ObjectiveDMPolicy::shared().update_reward(
+                buf_idx, -cfg_.unfinished_factor * val);
+        }
     }
 
     if (train_mode && policy_mode == PolicyMode::MAPPO && !global_states_.empty())
@@ -223,11 +245,14 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
 
 // ── Task offer ────────────────────────────────────────────────────────────────
 
-int EpisodeRunner::offer_task(int task_id, float reward, float importance,
-                              int n_active,
-                              const std::array<float, kGlobSz>& gs) {
-    // Greedy and Random baselines bypass try_accept_task to avoid writing to
-    // the MAPPO training buffer.
+EpisodeRunner::OfferResult EpisodeRunner::offer_task(
+    int task_id, float reward, float importance,
+    int n_active, const std::array<float, kGlobSz>& gs)
+{
+    // Make the current time ratio visible to try_accept_task via GlobalMemory.
+    // gs[0] = GlobalState::time_ratio = step / total_steps.
+    memory_.cur_time_ratio = gs[0];
+
     const int task_cap = memory_.task_agent.params.max_tasks_per_agent;
     auto has_cap = [&](const DeliveryAgent& a) {
         return a.status == AgentStatus::Idle ||
@@ -235,56 +260,77 @@ int EpisodeRunner::offer_task(int task_id, float reward, float importance,
                 (int)a.local_memory.tasks.size() < task_cap);
     };
 
+    // ── Baselines: sequential scan, no TAM, no MAPPO buffer writes ────────────
     if (policy_mode == PolicyMode::Greedy) {
         for (int i = 0; i < n_active; ++i)
-            if (has_cap(*all_agents_[i])) return all_agents_[i]->agent_id;
-        return -1;
+            if (has_cap(*all_agents_[i])) return { all_agents_[i]->agent_id, false };
+        return { -1, false };
     }
     if (policy_mode == PolicyMode::Random) {
         std::bernoulli_distribution coin(0.5);
         for (int i = 0; i < n_active; ++i)
             if (has_cap(*all_agents_[i]) && coin(rng_))
-                return all_agents_[i]->agent_id;
-        return -1;
+                return { all_agents_[i]->agent_id, false };
+        return { -1, false };
     }
     if (policy_mode == PolicyMode::InsertionGreedy) {
-        // SOTA-style threshold bidding: pick agent with highest profit/cost
-        // bid above the configured threshold.
-        TaskOffer offer{ task_id, reward, importance, {} };
-        float best_bid = 0.f;
-        int   best_aid = -1;
+        TaskOffer offer{ task_id, reward, importance, {}, 0, 0 };
         for (int i = 0; i < n_active; ++i) {
             DeliveryAgent& a = *all_agents_[i];
             if (!has_cap(a)) continue;
             float bid = a.compute_bid(offer, memory_);
-            if (bid > best_bid) { best_bid = bid; best_aid = a.agent_id; }
+            if (bid > cfg_.insertion_greedy_threshold)
+                return { a.agent_id, false };
         }
-        return (best_bid > cfg_.insertion_greedy_threshold) ? best_aid : -1;
+        return { -1, false };
     }
 
-    // MAPPO: score each available agent (Idle or Active with capacity).
-    // Push gs once per try_accept_task call (= once per record()) so that
-    // global_states_[i] aligns exactly with buffer_[i] in train_epoch.
-    TaskOffer offer{ task_id, reward, importance, {} };
-    for (int i = 0; i < n_active; ++i) {
-        DeliveryAgent& agent = *all_agents_[i];
-        if (!has_cap(agent)) {
-            offer.prev_agents.push_back(agent.agent_id);
-            continue;
-        }
-        float score = agent.try_accept_task(offer, memory_);
-        global_states_.push_back(gs);  // aligned with the record() call above
-        if (score >= 0.5f) return agent.agent_id;
-        // Refusal: set a small negative reward proportional to task importance,
-        // so the policy gets a signal that refusing high-value tasks is costly.
-        if (train_mode && cfg_.refuse_penalty_w > 0.f) {
-            int idx = ObjectiveDMPolicy::shared().buffer_size() - 1;
-            ObjectiveDMPolicy::shared().update_reward(
-                idx, -cfg_.refuse_penalty_w * importance);
-        }
-        offer.prev_agents.push_back(agent.agent_id);
+    // ── MAPPO / TamAlwaysAccept: drive the real Task Allocation Module ───────────
+    //
+    // Both modes use TAM (Dijkstra-optimal agent selection). The difference:
+    //   MAPPO            – agents sample accept/reject from their learned policy;
+    //                      experiences are recorded for PPO training.
+    //   TamAlwaysAccept  – TAM always accepts (params_.always_accept=true);
+    //                      no buffer writes, no refusal penalties — pure routing ablation.
+    const int buf_before = ObjectiveDMPolicy::shared().buffer_size();
+
+    memory_.task_agent.on_new_task(task_id, memory_);
+    auto* tam = memory_.task_agent.get_tam(task_id);
+    if (!tam) return { -1, true };
+
+    // Safety budget on Dijkstra expansion per task. Each TAM step expands one
+    // node on the pickup side and one on the delivery side. 300 keeps the
+    // wallclock manageable on Tokyo_Medium (~50k nodes) while still finding
+    // agents within a reasonable radius. Tasks where no agent is reachable
+    // within the budget are treated as refused.
+    constexpr int kMaxTamSteps = 300;
+    int steps_used = 0;
+    while (steps_used < kMaxTamSteps
+           && !tam->is_allocated() && !tam->is_exhausted()) {
+        tam->step(memory_, cfg_.speed_mps);
+        ++steps_used;
     }
-    return -1;
+
+    const int buf_after = ObjectiveDMPolicy::shared().buffer_size();
+
+    // Align global_states_ with every record() the TAM produced.
+    for (int i = buf_before; i < buf_after; ++i)
+        global_states_.push_back(gs);
+
+    PDPTask* t = memory_.get_task(task_id);
+    const bool allocated = tam->is_allocated() && t && t->agent_id >= 0;
+
+    // Apply refusal penalty (MAPPO only — TamAlwaysAccept writes no buffer entries).
+    if (train_mode && policy_mode == PolicyMode::MAPPO && cfg_.refuse_penalty_w > 0.f && t) {
+        const int last_excl = allocated ? buf_after - 1 : buf_after;
+        const float pen = -cfg_.refuse_penalty_w * t->importance_original;
+        for (int i = buf_before; i < last_excl; ++i)
+            ObjectiveDMPolicy::shared().update_reward(i, pen);
+    }
+
+    memory_.task_agent.erase_tam(task_id);
+
+    return { allocated ? t->agent_id : -1, true };
 }
 
 // ── Edge-by-edge movement ─────────────────────────────────────────────────────
@@ -377,10 +423,16 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
         // Update the MAPPO experience for this task with the actual completion
         // reward. This replaces the placeholder 0 recorded at decision time,
         // giving correct credit assignment to the accept decision.
+        //
+        // Use *_original (immutable) so that "refuse first, accept on recall"
+        // cannot game a larger reward than immediate acceptance — the TAM may
+        // have boosted task->reward / task->importance to attract bidders, but
+        // the policy must be trained on the true task value.
         if (policy_mode == PolicyMode::MAPPO) {
             auto it = task_accept_buf_idx_.find(task_id);
             if (it != task_accept_buf_idx_.end()) {
-                float completion_reward = task->reward * task->importance;
+                float completion_reward =
+                    task->reward_original * task->importance_original;
                 ObjectiveDMPolicy::shared().update_reward(it->second, completion_reward);
                 task_accept_buf_idx_.erase(it);
             }

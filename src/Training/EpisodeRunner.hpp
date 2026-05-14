@@ -48,11 +48,12 @@ struct RunResult {
 // Random and Greedy do NOT call try_accept_task() and do NOT write to the
 // training buffer — safe for use as baselines without contaminating MAPPO.
 enum class PolicyMode {
-    MAPPO,           // shared actor MLP (default; records experiences)
-    Greedy,          // always accept first idle agent (upper-bound throughput proxy)
-    Random,          // accept with p=0.5 (random baseline)
-    InsertionGreedy  // SOTA-style: accept if reward / insertion_cost > threshold
-                     // (myopic-optimal proxy, inspired by CBBA / threshold-bid auctions)
+    MAPPO,            // full system: MAPPO policy + TAM routing
+    TamAlwaysAccept,  // ablation: TAM routing only, always accept (no policy learning)
+                      // isolates TAM routing contribution from MAPPO learning
+    Greedy,           // always accept first idle agent (sequential scan)
+    Random,           // accept with p=0.5 (random baseline)
+    InsertionGreedy   // accept if reward / insertion_cost > threshold (cost-aware heuristic)
 };
 
 class EpisodeRunner {
@@ -109,10 +110,18 @@ private:
     int  active_sum_     = 0;
     int  active_steps_   = 0;
 
-    // Offer task to the first available agent (Idle or Active with capacity).
-    // Returns accepting agent_id, or -1 if refused by all.
-    int offer_task(int task_id, float reward, float importance, int n_active,
-                   const std::array<float, kGlobSz>& gs);
+    // Result of offering a task.
+    //   agent_id  : winning agent (>= 0) or -1 if refused
+    //   tam_owned : true if the TAM already performed assign_task + receive_task
+    //               + commit_plan inside offer_to_agent (MAPPO path). The caller
+    //               must skip those operations to avoid double-bookkeeping.
+    struct OfferResult { int agent_id; bool tam_owned; };
+
+    // Offer task following the policy_mode protocol:
+    //   MAPPO            → drive the real TAM (two Dijkstra + consensus + recall)
+    //   Greedy/Random/IG → simple capacity-based sequential scan
+    OfferResult offer_task(int task_id, float reward, float importance, int n_active,
+                           const std::array<float, kGlobSz>& gs);
 
     // ── Edge-by-edge movement ──────────────────────────────────────────────
 

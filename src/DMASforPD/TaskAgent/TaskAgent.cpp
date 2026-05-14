@@ -39,8 +39,10 @@ void TaskAgent::on_new_task(int task_id, PDPGlobalMemory& memory) {
     PDPTask* task = memory.get_task(task_id);
     if (!task) return;
     task->start_allocation();
+    TaskAllocationModule::Params tp = params.tam_params;
+    tp.max_tasks_per_agent = params.max_tasks_per_agent;
     active_tams_.emplace(task_id,
-        std::make_unique<TaskAllocationModule>(*task, params.tam_params));
+        std::make_unique<TaskAllocationModule>(*task, tp));
 }
 
 void TaskAgent::on_task_event(int task_id, TaskEvent event, PDPGlobalMemory& memory) {

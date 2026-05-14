@@ -8,7 +8,7 @@
 #include <vector>
 
 // ── Normalisation constants ────────────────────────────────────────────────────
-static constexpr int   kPolicySz   = 10;        // feature vector length
+static constexpr int   kPolicySz   = 12;        // feature vector length
 static constexpr int   kHid        = 64;         // hidden layer width (actor & critic)
 static constexpr int   kGlobSz     = 20;         // global state vector (critic input)
 static constexpr float kCostScale  = 10'000.f;   // 10 km reference
@@ -22,16 +22,22 @@ static constexpr float kImpMax     = 10.f;        // max task importance
 // Built at try_accept_task() time from TaskOffer + GlobalMemory + local state.
 // All fields are clamped to [0, 1].
 struct PolicyFeatures {
-    float cost_diff       = 0.f; // cheapest insertion cost / kCostScale
-    float profit_rate     = 0.f; // reward / (insertion_cost * 0.5 + ε)
-    float current_load    = 0.f; // tasks.size() / kMaxLoad
-    float queue_duration  = 0.f; // planned route cost / kQueueScale
-    float efficiency_loss = 0.f; // insertion_cost / (route_cost + ε)
-    float rank_in_call    = 0.f; // 1 − prev_agents.size() / kMaxAgents
-    float task_importance = 0.f; // importance / kImpMax
-    float n_agents_ratio  = 0.f; // active agents / kMaxAgents
-    float n_alloc_ratio   = 0.f; // allocated tasks / total tasks
-    float n_avail_ratio   = 0.f; // available tasks / total tasks
+    float cost_diff         = 0.f; // cheapest insertion cost / kCostScale
+    float profit_rate       = 0.f; // reward / (insertion_cost * 0.5 + ε)
+    float current_load      = 0.f; // tasks.size() / kMaxLoad
+    float queue_duration    = 0.f; // planned route cost / kQueueScale
+    float efficiency_loss   = 0.f; // insertion_cost / (route_cost + ε)
+    float rank_in_call      = 0.f; // 1 − prev_agents.size() / kMaxAgents
+    float task_importance   = 0.f; // importance / kImpMax  (boosted version)
+    float n_agents_ratio    = 0.f; // active agents / kMaxAgents
+    float n_alloc_ratio     = 0.f; // allocated tasks / total tasks
+    float n_avail_ratio     = 0.f; // available tasks / total tasks
+    float recall_round_norm = 0.f; // recall_round / max(max_recalls,1) ∈ [0,1]
+                                   // signals "task is being recalled; refusing
+                                   // again risks exhaustion (unfinished penalty)"
+    float time_remaining    = 0.f; // 1 − step/total_steps ∈ [0,1]
+                                   // key refusal signal: refuse if remaining time
+                                   // is insufficient to complete the delivery
 
     void to_array(float* dst) const;
 };
@@ -99,7 +105,9 @@ struct PPOParams {
     float target_kl     = 0.01f;  // KL early-stop threshold (break epoch if exceeded)
     float gamma         = 0.99f;  // discount factor
     float lam_gae       = 0.95f;  // GAE λ
-    float ent_w         = 0.01f;  // entropy bonus coefficient
+    float ent_w         = 0.03f;  // entropy bonus coefficient (raised from 0.01
+                                  // to keep refusal samples in the buffer; with
+                                  // 0.01 the policy collapsed to acc ≈ 99.9%)
     int   epochs        = 10;     // max PPO gradient epochs per train_epoch call
     int   batch_sz      = 256;    // mini-batch size (experiences per SGD step)
 };

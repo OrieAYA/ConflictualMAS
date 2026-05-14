@@ -70,6 +70,12 @@ private:
                         std::vector<std::unique_ptr<EpisodeRunner>>& runners,
                         int global_ep, int seed,
                         TrainingLogger& logger);
+
+    static int run_generalize_eval(const TrainingConfig& cfg,
+                                   const std::vector<std::unique_ptr<CityAssets>>& gen_assets,
+                                   std::vector<std::unique_ptr<EpisodeRunner>>& gen_runners,
+                                   int global_ep, int seed,
+                                   TrainingLogger& logger);
 };
 
 #endif // MULTI_CITY_TRAINER_HPP
