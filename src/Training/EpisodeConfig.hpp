@@ -98,6 +98,16 @@ struct EpisodeConfig {
     // refusal threshold becomes more informative for capacity-constrained cases.
     float pickup_reward_frac = 0.3f;  // fraction of total reward given at pickup
 
+    // ── Planning strategy (insertion algorithm) ─────────────────────────────
+    // false (default) → Solomon cheapest insertion: best (pos_P, pos_D) by
+    //                    pure route-length delta. Backward-compatible with all
+    //                    existing training/eval runs.
+    // true  → Mitrovic-Minic et al. 2004 Double-Horizon adapted:
+    //          slack-preserving cost for long-term insertions.
+    // EpisodeRunner mirrors this to PDPGlobalMemory::planning_use_double_horizon
+    // at the start of each run(). receive_task() dispatches on the flag.
+    bool use_double_horizon_planning = false;
+
     // ── InsertionGreedy threshold ──────────────────────────────────────────
     // Accept task if (reward * importance) / max(insertion_cost_m, ε) > threshold.
     // Insertion cost is in meters, reward*importance ∈ [0.05, 10]. Typical bids

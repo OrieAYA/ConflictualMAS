@@ -4,6 +4,7 @@
 #include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
 #include "DMASforPD/Policy/IPPOPolicy.hpp"
 #include "DMASforPD/Policy/MapperPolicy.hpp"
+#include "DMASforPD/Policy/FaithfulMapperPolicy.hpp"
 #include "DMASforPD/Policy/HybridPolicy.hpp"
 #include <algorithm>
 #include <cmath>
@@ -128,7 +129,45 @@ void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
     //
     //   Capacity test: max(load_after[pos_P-1 .. pos_D-1]) + 1 <= max_carry.
     //   If pos_P == pos_D, range is the single index pos_P-1.
-    float best_delta = std::numeric_limits<float>::max();
+    // ── Planning strategy setup (cheapest vs Double-Horizon) ────────────────
+    // memory.planning_use_double_horizon is set by EpisodeRunner from cfg.
+    // When false → classical Solomon cheapest insertion (score = f_p + f_d).
+    // When true  → Mitrovic-Minic 2004 Double-Horizon, adapted:
+    //   cost = (1-α_p)·f_p + α_p·g_p + (1-α_d)·f_d + α_d·g_d
+    //   g_p = (n−pos_P) · f_p   (slack-decrease proxy at subsequent locations)
+    //   g_d = (n−pos_D) · f_d
+    //   α_p, α_d ∈ {0 short-term, 0.25 long-term} based on the estimated arrival
+    //   time of the new pickup / delivery vs the current simulation step.
+    const bool  use_dh        = memory.planning_use_double_horizon;
+    const float speed         = std::max(memory.speed_mps, 0.1f);
+    const int   current_step  = use_dh
+        ? static_cast<int>(memory.cur_time_ratio * memory.total_steps) : 0;
+    const int   short_horizon = use_dh
+        ? std::max(60, memory.total_steps / 10) : 0;
+    constexpr float kDHAlpha  = 0.25f;
+
+    // Precompute estimated arrival time for each existing sequence position.
+    // Uses the commit_plan-published estimated_arrival when available, otherwise
+    // forward-simulates from current_node at constant speed.
+    std::vector<int> arr;
+    if (use_dh) {
+        arr.resize(n);
+        int t_acc = current_step;
+        osmium::object_id_type prev = current_node;
+        for (int i = 0; i < n; ++i) {
+            const int committed = seq[i].estimated_arrival;
+            if (committed >= current_step) {
+                arr[i] = committed;
+                t_acc  = committed;
+            } else {
+                t_acc += static_cast<int>(std::ceil(seg(prev, seq[i].node.id) / speed));
+                arr[i] = t_acc;
+            }
+            prev = seq[i].node.id;
+        }
+    }
+
+    float best_score = std::numeric_limits<float>::max();
     int   best_pP = -1, best_pD = -1;
 
     for (int pP = 1; pP <= n; ++pP) {
@@ -139,46 +178,86 @@ void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
                 if (load_after[k] > peak_load) peak_load = load_after[k];
             if (peak_load + 1 > max_carry) continue;
 
-            // Insertion cost delta — closed-form, two cases:
-            float delta;
+            // ── Compute per-position cost components f_p, f_d ───────────────
+            // (Same components used by both strategies; cheapest uses their
+            //  sum, double-horizon uses the weighted formula.)
+            float f_p, f_d;
             if (pP == pD) {
-                // P and D adjacent in the new sequence (D right after P).
                 osmium::object_id_type before =
                     (pP == 0) ? current_node : seq[pP - 1].node.id;
                 osmium::object_id_type after =
                     (pP == n) ? 0 : seq[pP].node.id;
-
                 const float c_bp = seg(before, task.pickup.id);
                 const float c_pd = seg(task.pickup.id, task.delivery.id);
-                const float c_da = seg(task.delivery.id, after);   // 0 if no after
-                const float c_ba = seg(before, after);             // 0 if no after
-                delta = c_bp + c_pd + c_da - c_ba;
+                const float c_da = seg(task.delivery.id, after);
+                const float c_ba = seg(before, after);
+                // For DH we need a clean split; for cheapest only the sum matters.
+                f_p = c_bp + c_pd;
+                f_d = c_da - c_ba;
+                if (f_d < 0.f) f_d = 0.f;
             } else {
-                // P at pP, D at pD with pP < pD — two independent insertions.
                 osmium::object_id_type before_P =
                     (pP == 0) ? current_node : seq[pP - 1].node.id;
-                osmium::object_id_type after_P = seq[pP].node.id;     // pP < n
-                const float p_delta = seg(before_P, task.pickup.id)
-                                    + seg(task.pickup.id, after_P)
-                                    - seg(before_P, after_P);
+                osmium::object_id_type after_P = seq[pP].node.id;
+                f_p = seg(before_P, task.pickup.id)
+                    + seg(task.pickup.id, after_P)
+                    - seg(before_P, after_P);
 
-                osmium::object_id_type before_D = seq[pD - 1].node.id; // pD >= 1
+                osmium::object_id_type before_D = seq[pD - 1].node.id;
                 osmium::object_id_type after_D =
                     (pD == n) ? 0 : seq[pD].node.id;
-                const float d_delta = seg(before_D, task.delivery.id)
-                                    + seg(task.delivery.id, after_D)
-                                    - seg(before_D, after_D);
-
-                delta = p_delta + d_delta;
+                f_d = seg(before_D, task.delivery.id)
+                    + seg(task.delivery.id, after_D)
+                    - seg(before_D, after_D);
             }
 
-            if (delta < best_delta) {
-                best_delta = delta;
+            float score;
+            if (use_dh) {
+                // Estimated arrival time of the freshly inserted P and D.
+                osmium::object_id_type src_for_P =
+                    (pP == 0) ? current_node : seq[pP - 1].node.id;
+                const int t_before_pP = (pP == 0) ? current_step : arr[pP - 1];
+                const int t_new_P = t_before_pP + static_cast<int>(
+                    std::ceil(seg(src_for_P, task.pickup.id) / speed));
+
+                // Source of the D-leg: the new P node if pD == pP, otherwise
+                // the existing seq[pD-1] (because the new P is inserted before
+                // pD only when pD > pP, in which case the route from new D
+                // departs from seq[pD-1] in the new sequence).
+                osmium::object_id_type src_for_D =
+                    (pD == pP) ? task.pickup.id
+                                : ((pD == 0) ? current_node : seq[pD - 1].node.id);
+                const int t_before_pD =
+                    (pD == pP) ? t_new_P
+                                : ((pD == 0) ? current_step : arr[pD - 1]);
+                const int t_new_D = t_before_pD + static_cast<int>(
+                    std::ceil(seg(src_for_D, task.delivery.id) / speed));
+
+                const bool p_short = (t_new_P - current_step) <= short_horizon;
+                const bool d_short = (t_new_D - current_step) <= short_horizon;
+                const float alpha_p = p_short ? 0.f : kDHAlpha;
+                const float alpha_d = d_short ? 0.f : kDHAlpha;
+
+                const float g_p = static_cast<float>(std::max(0, n - pP)) * f_p;
+                const float g_d = static_cast<float>(std::max(0, n - pD)) * f_d;
+
+                score = (1.f - alpha_p) * f_p + alpha_p * g_p
+                      + (1.f - alpha_d) * f_d + alpha_d * g_d;
+            } else {
+                // Classical cheapest insertion: minimise pure route-length delta.
+                score = f_p + f_d;
+            }
+
+            if (score < best_score) {
+                best_score = score;
                 best_pP    = pP;
                 best_pD    = pD;
             }
         }
     }
+    // For legacy compatibility (logs / debug printing if any): keep best_delta name.
+    const float best_delta = best_score;
+    (void)best_delta;
 
     // ── Apply the chosen insertion. (n, n) is always admissible (FIFO append
     // at the tail with carry = 1), so best_pP >= 0 holds in practice; the
@@ -294,9 +373,11 @@ float DeliveryAgent::try_accept_task(const TaskOffer& offer, PDPGlobalMemory& me
     // letting the gradient learn the accept/refuse trade-off.
     //
     // Dispatch to the active learning policy:
-    //   - kMAPPO  → ObjectiveDMPolicy (shared actor, centralised critic)
-    //   - kIPPO   → IPPOPolicy (shared actor, per-agent local critic)
-    //   - kMAPPER → MapperPolicy (per-agent actor, per-agent critic + Ev)
+    //   - kMAPPO          → ObjectiveDMPolicy (shared actor, centralised critic)
+    //   - kIPPO           → IPPOPolicy (shared actor, shared local critic — paper-faithful)
+    //   - kMAPPER         → MapperPolicy (per-agent + enhanced Ev with mutation)
+    //   - kFaithfulMAPPER → FaithfulMapperPolicy (per-agent + paper-faithful Ev: copy, no mutation)
+    //   - kHybrid         → HybridPolicy (MAPPO base + per-agent residual)
     // The TAM is policy-agnostic; it just compares the returned score to 0.5.
     static thread_local std::mt19937 rng{std::random_device{}()};
     float mu;
@@ -306,6 +387,9 @@ float DeliveryAgent::try_accept_task(const TaskOffer& offer, PDPGlobalMemory& me
             break;
         case PDPGlobalMemory::PolicyKind::kMAPPER:
             mu = MapperPolicy::shared().score(agent_id, f);
+            break;
+        case PDPGlobalMemory::PolicyKind::kFaithfulMAPPER:
+            mu = FaithfulMapperPolicy::shared().score(agent_id, f);
             break;
         case PDPGlobalMemory::PolicyKind::kHybrid:
             mu = HybridPolicy::shared().score(agent_id, f);
@@ -326,6 +410,9 @@ float DeliveryAgent::try_accept_task(const TaskOffer& offer, PDPGlobalMemory& me
             break;
         case PDPGlobalMemory::PolicyKind::kMAPPER:
             MapperPolicy::shared().record(agent_id, f, action, 0.f);
+            break;
+        case PDPGlobalMemory::PolicyKind::kFaithfulMAPPER:
+            FaithfulMapperPolicy::shared().record(agent_id, f, action, 0.f);
             break;
         case PDPGlobalMemory::PolicyKind::kHybrid:
             HybridPolicy::shared().record(agent_id, f, action, 0.f);

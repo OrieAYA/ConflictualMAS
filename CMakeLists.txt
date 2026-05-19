@@ -35,6 +35,7 @@ set(SOURCES
     src/DMASforPD/Policy/ObjectiveDMPolicy.cpp
     src/DMASforPD/Policy/IPPOPolicy.cpp
     src/DMASforPD/Policy/MapperPolicy.cpp
+    src/DMASforPD/Policy/FaithfulMapperPolicy.cpp
     src/DMASforPD/Policy/HybridPolicy.cpp
     src/Tests/PlanningComparisonTest.cpp
     src/Training/CityConfig.cpp

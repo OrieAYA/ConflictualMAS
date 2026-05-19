@@ -2,6 +2,7 @@
 #include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
 #include "DMASforPD/Policy/IPPOPolicy.hpp"
 #include "DMASforPD/Policy/MapperPolicy.hpp"
+#include "DMASforPD/Policy/FaithfulMapperPolicy.hpp"
 #include "DMASforPD/Policy/HybridPolicy.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
@@ -169,6 +170,7 @@ static const char* policy_mode_label(PolicyMode m) {
         case PolicyMode::MAPPO:           return "MAPPO";
         case PolicyMode::IPPO:            return "IPPO";
         case PolicyMode::MAPPER:          return "MAPPER";
+        case PolicyMode::FaithfulMAPPER:  return "FaithfulMAPPER";
         case PolicyMode::Hybrid:          return "Hybrid";
         case PolicyMode::TamAlwaysAccept: return "TamAlwaysAccept";
         case PolicyMode::Greedy:          return "Greedy";
@@ -453,12 +455,21 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
         ippo.init_xavier(init_rng);
         ippo.clear_buffer_all();
 
-        // Re-initialise MAPPER (per-agent decentralised + Ev) for this seed.
+        // Re-initialise MAPPER (per-agent decentralised + enhanced Ev) for this seed.
         // Same pool size — slots are mapped to the same agent ids used by IPPO.
         auto& mapper = MapperPolicy::shared();
         mapper.ensure_agents(learning_pool);
         mapper.init_xavier_all(init_rng);
         mapper.clear_buffer_all();
+
+        // Re-initialise FaithfulMAPPER (per-agent decentralised + paper-faithful Ev:
+        // probabilistic replacement with EXACT copy of best agent, no mutation).
+        // Trained side-by-side with MAPPER on the same scenario draws to allow a
+        // direct head-to-head comparison of the two evolution mechanisms.
+        auto& faithful = FaithfulMapperPolicy::shared();
+        faithful.ensure_agents(learning_pool);
+        faithful.init_xavier_all(init_rng);
+        faithful.clear_buffer_all();
 
         if (cfg.load_policy) {
             auto try_load = [&](const char* name, const std::string& path,
@@ -475,12 +486,14 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                     std::cout << "[Policy] Loaded " << name << " from " << path << "\n";
                 }
             };
-            try_load("MAPPO ", cfg.policy_path,
+            try_load("MAPPO   ", cfg.policy_path,
                      [&](const std::string& p){ return policy.load(p); });
-            try_load("IPPO  ", cfg.ippo_policy_path,
+            try_load("IPPO    ", cfg.ippo_policy_path,
                      [&](const std::string& p){ return ippo.load(p); });
-            try_load("MAPPER", cfg.mapper_policy_path,
+            try_load("MAPPER  ", cfg.mapper_policy_path,
                      [&](const std::string& p){ return mapper.load(p); });
+            try_load("FMAPPER ", cfg.faithful_mapper_policy_path,
+                     [&](const std::string& p){ return faithful.load(p); });
         }
 
         // ── Hybrid base initialisation ──────────────────────────────────────
@@ -513,9 +526,10 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                         + " — set the corresponding *_policy_path in cfg");
                 }
             };
-            check("MAPPO",  PolicyMode::MAPPO,  cfg.policy_path);
-            check("IPPO",   PolicyMode::IPPO,   cfg.ippo_policy_path);
-            check("MAPPER", PolicyMode::MAPPER, cfg.mapper_policy_path);
+            check("MAPPO",          PolicyMode::MAPPO,          cfg.policy_path);
+            check("IPPO",           PolicyMode::IPPO,           cfg.ippo_policy_path);
+            check("MAPPER",         PolicyMode::MAPPER,         cfg.mapper_policy_path);
+            check("FaithfulMAPPER", PolicyMode::FaithfulMAPPER, cfg.faithful_mapper_policy_path);
             // Hybrid base derives from MAPPO, so check MAPPO path for it too.
             if (has_mode(PolicyMode::Hybrid) && cfg.policy_path.empty()) {
                 throw std::runtime_error(
@@ -565,6 +579,7 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
             policy.set_progress(progress);
             ippo.set_progress(progress);
             mapper.set_progress(progress);
+            faithful.set_progress(progress);
 
             // Helper to log one training episode's stats line uniformly.
             auto log_train = [&](const RunResult& res, const char* tag,
@@ -593,9 +608,10 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                                   cfg.train_modes.end(), m)
                        != cfg.train_modes.end();
             };
-            const bool train_ippo   = train_mode_active(PolicyMode::IPPO);
-            const bool train_mapper = train_mode_active(PolicyMode::MAPPER);
-            const bool train_mappo  = train_mode_active(PolicyMode::MAPPO);
+            const bool train_ippo     = train_mode_active(PolicyMode::IPPO);
+            const bool train_mapper   = train_mode_active(PolicyMode::MAPPER);
+            const bool train_faithful = train_mode_active(PolicyMode::FaithfulMAPPER);
+            const bool train_mappo    = train_mode_active(PolicyMode::MAPPO);
 
             for (int ci : train_indices) {
                 CityAssets&    ca     = *assets[ci];
@@ -640,6 +656,23 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                         log_train(res, "MAPPER", mapper.hparams.epochs);
                 }
 
+                // ── FaithfulMAPPER training episode (skipped if not in train_modes) ─
+                // Same per-agent architecture as MAPPER but paper-faithful Ev:
+                // probabilistic replacement of weights with exact copies of the
+                // best agent (no mutation noise). Runs on the SAME scenario draw
+                // as MAPPER above for head-to-head comparison.
+                if (train_faithful) {
+                    runner.train_mode  = true;
+                    runner.policy_mode = PolicyMode::FaithfulMAPPER;
+                    RunResult res = runner.run(ca.index, num_cities, sc);
+                    logger.push(make_record(
+                        res, seed, global_ep++,
+                        ca.config->name, "train", "FaithfulMAPPER",
+                        ca.ep_cfg.max_agents()));
+                    if (global_ep % cfg.log_every == 0)
+                        log_train(res, "FMAPPER", faithful.hparams.epochs);
+                }
+
                 // ── MAPPO training episode (skipped if not in train_modes) ──
                 if (train_mappo) {
                     runner.train_mode  = true;
@@ -654,16 +687,16 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                 }
             }
 
-            // ── MAPPER Evolutionary RL step ───────────────────────────────
+            // ── MAPPER Evolutionary RL step (enhanced variant) ────────────
             // Every `ev_params.period_rounds` rounds, rank decentralised
-            // policies by their rolling fitness and replace the worst with
-            // mutated copies of the best (Liu et al., IROS 2020). Combines
-            // gradient-based PPO updates with genetic-style exploration,
-            // letting stuck policies escape local optima via the elite gene
-            // pool. This is the "Ev" in MAPPER and must run on a multi-
-            // episode cadence (single-episode fitness is too noisy).
+            // policies by their rolling fitness and replace the bottom worst_frac
+            // with Gaussian-mutated copies of a random elite (Liu et al.
+            // IROS 2020, augmented with mutation noise N(0, mutation_std²)).
+            // Combines gradient-based PPO updates with genetic-style
+            // exploration; runs on a multi-episode cadence (single-episode
+            // fitness is too noisy).
             const int ev_period = std::max(1, mapper.ev_params.period_rounds);
-            if ((round + 1) % ev_period == 0) {
+            if (train_mapper && (round + 1) % ev_period == 0) {
                 const int n_mut = mapper.evolutionary_step();
                 if (n_mut > 0 && cfg.verbose) {
                     std::cout << "  [MAPPER-Ev @ round " << (round + 1)
@@ -672,8 +705,24 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                 }
             }
 
+            // ── FaithfulMAPPER Evolutionary RL step (paper-faithful) ──────
+            // Implements Algorithm 1 of Liu et al. exactly:
+            //   p_i = 1 - exp(η·R̄_i)/exp(η·R̄_best)
+            //   if uniform < p_i: Θ_i ← Θ_best   (exact copy, no mutation)
+            // Reuses the same period_rounds cadence as MAPPER for fairness.
+            const int faithful_ev_period =
+                std::max(1, faithful.ev_params.period_rounds);
+            if (train_faithful && (round + 1) % faithful_ev_period == 0) {
+                const int n_rep = faithful.evolutionary_step();
+                if (n_rep > 0 && cfg.verbose) {
+                    std::cout << "  [FaithfulMAPPER-Ev @ round " << (round + 1)
+                              << "] replaced " << n_rep << "/"
+                              << faithful.n_agents() << " policies (no mutation)\n";
+                }
+            }
+
             // Periodic eval on train cities (normal + stress scenarios).
-            if ((round + 1) % cfg.eval_every == 0) {
+            if (!cfg.train_only && (round + 1) % cfg.eval_every == 0) {
                 std::cout << "  -- Eval @ round " << (round + 1) << " --\n";
                 global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger);
                 if (!cfg.skip_stress_eval)
@@ -686,8 +735,10 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
         // In eval_only mode we ALWAYS run the final eval (no training rounds
         // happened, so no periodic eval triggered). In training mode we run
         // it only if the last round did not already eval (avoid duplicates).
-        if (cfg.eval_only || cfg.n_rounds == 0 ||
-            cfg.n_rounds % cfg.eval_every != 0) {
+        // train_only short-circuits this entirely.
+        if (!cfg.train_only &&
+            (cfg.eval_only || cfg.n_rounds == 0 ||
+             cfg.n_rounds % cfg.eval_every != 0)) {
             std::cout << "  -- Final Eval --\n";
             global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger);
             if (!cfg.skip_stress_eval)
@@ -695,7 +746,7 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
         }
 
         // ── 6. Generalisation evaluation (unseen cities, end of seed) ─────
-        if (!cfg.skip_generalize_eval)
+        if (!cfg.train_only && !cfg.skip_generalize_eval)
             global_ep = run_generalize_eval(
                 cfg, gen_assets, gen_runners, global_ep, seed, logger);
         logger.flush();
@@ -704,7 +755,12 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
         // Save only the policies that were actually trained this run — saving
         // a Xavier-init policy that was never updated would silently overwrite
         // a previously-trained checkpoint with random weights. Default (empty
-        // train_modes) preserves the old behaviour (save all three).
+        // train_modes) preserves the old behaviour (save all four).
+        //
+        // Each method goes into its OWN subdirectory under cfg.output_dir,
+        // so checkpoints from different training runs (different methods, same
+        // seed) don't overwrite each other. The directories are created on the
+        // fly if they don't exist yet.
         if (cfg.save_policy && !cfg.eval_only) {
             auto should_save = [&](PolicyMode m){
                 if (cfg.train_modes.empty()) return true;   // default = save all
@@ -712,31 +768,55 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                                   cfg.train_modes.end(), m)
                        != cfg.train_modes.end();
             };
+            auto ensure_dir = [](const std::string& p) {
+                std::error_code ec;
+                fs::create_directories(p, ec);
+            };
+
             if (should_save(PolicyMode::MAPPO)) {
-                const std::string ckpt_mappo = cfg.output_dir + "/policy_seed"
-                                             + std::to_string(seed) + ".bin";
-                policy.save(ckpt_mappo);
-                std::cout << "  [Checkpoint] MAPPO  saved to " << ckpt_mappo << "\n";
+                const std::string subdir   = cfg.output_dir + "/mappo";
+                ensure_dir(subdir);
+                const std::string ckpt = subdir + "/policy_seed"
+                                       + std::to_string(seed) + ".bin";
+                policy.save(ckpt);
+                std::cout << "  [Checkpoint] MAPPO          saved to " << ckpt << "\n";
             } else {
-                std::cout << "  [Checkpoint] MAPPO  skipped (not in train_modes)\n";
+                std::cout << "  [Checkpoint] MAPPO          skipped (not in train_modes)\n";
             }
             if (should_save(PolicyMode::IPPO)) {
-                const std::string ckpt_ippo = cfg.output_dir + "/ippo_seed"
-                                            + std::to_string(seed) + ".bin";
-                ippo.save(ckpt_ippo);
-                std::cout << "  [Checkpoint] IPPO   saved to " << ckpt_ippo
-                          << "  (" << ippo.n_agents() << " critics)\n";
+                const std::string subdir = cfg.output_dir + "/ippo_faithful";
+                ensure_dir(subdir);
+                const std::string ckpt = subdir + "/ippo_seed"
+                                       + std::to_string(seed) + ".bin";
+                ippo.save(ckpt);
+                std::cout << "  [Checkpoint] IPPO           saved to " << ckpt
+                          << "  (shared actor + shared critic)\n";
             } else {
-                std::cout << "  [Checkpoint] IPPO   skipped (not in train_modes)\n";
+                std::cout << "  [Checkpoint] IPPO           skipped (not in train_modes)\n";
             }
             if (should_save(PolicyMode::MAPPER)) {
-                const std::string ckpt_mapper = cfg.output_dir + "/mapper_seed"
-                                              + std::to_string(seed) + ".bin";
-                mapper.save(ckpt_mapper);
-                std::cout << "  [Checkpoint] MAPPER saved to " << ckpt_mapper
-                          << "  (" << mapper.n_agents() << " agents)\n";
+                const std::string subdir = cfg.output_dir + "/mapper_enhanced";
+                ensure_dir(subdir);
+                const std::string ckpt = subdir + "/mapper_seed"
+                                       + std::to_string(seed) + ".bin";
+                mapper.save(ckpt);
+                std::cout << "  [Checkpoint] MAPPER         saved to " << ckpt
+                          << "  (" << mapper.n_agents()
+                          << " agents, enhanced Ev with mutation)\n";
             } else {
-                std::cout << "  [Checkpoint] MAPPER skipped (not in train_modes)\n";
+                std::cout << "  [Checkpoint] MAPPER         skipped (not in train_modes)\n";
+            }
+            if (should_save(PolicyMode::FaithfulMAPPER)) {
+                const std::string subdir = cfg.output_dir + "/mapper_faithful";
+                ensure_dir(subdir);
+                const std::string ckpt = subdir + "/mapper_seed"
+                                       + std::to_string(seed) + ".bin";
+                faithful.save(ckpt);
+                std::cout << "  [Checkpoint] FaithfulMAPPER saved to " << ckpt
+                          << "  (" << faithful.n_agents()
+                          << " agents, paper-faithful Ev: copy without mutation)\n";
+            } else {
+                std::cout << "  [Checkpoint] FaithfulMAPPER skipped (not in train_modes)\n";
             }
         }
 

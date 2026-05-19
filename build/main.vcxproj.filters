@@ -25,6 +25,9 @@
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MapperPolicy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\FaithfulMapperPolicy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\HybridPolicy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

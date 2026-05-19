@@ -140,34 +140,51 @@ int main()
         cfg.output_dir      = output_dir;
         cfg.n_rounds        = 60;
         cfg.n_seeds         = 1;
-        cfg.n_eval_episodes = 3;
-        cfg.eval_every      = 20;        // SAME AS MAY 17: rounds 20, 40, 60
         cfg.save_policy     = true;
         cfg.verbose         = true;
 
-        // Train ONLY MAPPER — IPPO/MAPPO skipped (no PPO updates, no buffer writes)
-        cfg.train_modes = { PolicyMode::MAPPER };
+        // ── Pure training run — all eval phases disabled ───────────────────
+        // train/eval are fully decoupled: Option M produces three RL
+        // checkpoints (MAPPER-enhanced, MAPPER-faithful, IPPO-faithful),
+        // Option X/Y do the full comparison eval afterwards on saved weights.
+        // Skips periodic, final, stress, and generalize evals.
+        cfg.train_only = true;
+
+        // ── Planning method = Double-Horizon (Mitrovic-Minic+2004 adapted) ──
+        // All three RL policies train under DH planning at the insertion level:
+        // every accept triggers slack-preserving (pos_P, pos_D) selection instead
+        // of pure cheapest insertion. Picked because option P showed DH > MCA
+        // on throughput (+17% relative) across all scenarios.
+        cfg.episode_cfg.use_double_horizon_planning = true;
+
+        // ── Two MAPPER variants trained simultaneously, head-to-head ───────
+        //   MAPPER         — enhanced variant (elite + Gaussian mutation N(0, 0.02²))
+        //   FaithfulMAPPER — paper-faithful (probabilistic copy of best, no mutation)
+        // MAPPO is intentionally NOT retrained — we compare against the May 17
+        // MAPPO checkpoint (results/accepted/policy_seed42_mappo_working_2026-05-17.bin)
+        // during Option X eval. IPPO was dropped from this run (too slow); its
+        // paper-faithful refactor remains in the codebase for later use.
+        // All three share kPolicySz = 12 features.
+        // Each round runs one episode PER training mode PER train city: 2 modes
+        // × 6 cities = 12 episodes per round.
+        cfg.train_modes = {
+            PolicyMode::MAPPER,
+            PolicyMode::FaithfulMAPPER
+        };
 
         // Match May 17 scenario distribution exactly: 3-regime sampler (no slack)
         // Verified from log: 0/360 slack samples → slack regime was absent on May 17.
         cfg.disable_slack_regime = true;
 
-        // 4-mode eval (drops the 4 from May 17's 8-mode sweep)
-        cfg.eval_modes = {
-            PolicyMode::MAPPER,
-            PolicyMode::MAPPO,
-            PolicyMode::TamAlwaysAccept,
-            PolicyMode::Greedy
-        };
-        cfg.skip_stress_eval     = false;  // SAME AS MAY 17
-        cfg.skip_generalize_eval = false;  // SAME AS MAY 17
+        // No checkpoint loading needed: all three RL policies start from Xavier
+        // init, and no eval phase compares against MAPPO during training.
+        cfg.load_policy = false;
 
-        // Load May 17 MAPPO checkpoint for the periodic eval comparison.
-        cfg.load_policy = true;
-        cfg.policy_path = "C:\\ConflictualMAS\\results\\accepted\\"
-                          "policy_seed42_mappo_working_2026-05-17.bin";
-        // IPPO and MAPPER paths intentionally left empty: IPPO not in eval_modes,
-        // MAPPER is being trained from scratch in this run.
+        // Output subdirectories (created automatically at save time):
+        //   results/mapper_enhanced/mapper_seed42.bin
+        //   results/mapper_faithful/mapper_seed42.bin
+        // MAPPO May 17 checkpoint at results/accepted/ remains untouched.
+        // IPPO is not in train_modes → no checkpoint produced this run.
 
         MultiCityTrainer trainer;
         trainer.train(cfg);

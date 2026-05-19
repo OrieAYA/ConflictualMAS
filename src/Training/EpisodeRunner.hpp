@@ -75,8 +75,15 @@ enum class PolicyMode {
                       // per-agent local critics. Ablation between MAPPO's
                       // centralised critic and MAPPER's decentralised actor.
     MAPPER,           // decentralised RL baseline [Liu+IROS2020 adapted]:
-                      // per-agent actor + per-agent critic + Evolutionary RL
-                      // (selection/mutation of per-agent policy weights).
+                      // per-agent actor + per-agent critic + Evolutionary RL.
+                      // Our "enhanced" variant: top-elite preservation + Gaussian
+                      // mutation N(0, 0.02²) on bottom replacements.
+    FaithfulMAPPER,   // paper-faithful MAPPER [Liu+IROS2020] — same per-agent
+                      // architecture as MAPPER, but evolution exactly per
+                      // Algorithm 1: probabilistic replacement (p_i ∝ fitness
+                      // gap to best) + EXACT copy of best agent's weights
+                      // (no mutation noise). Distinct singleton so it can
+                      // be trained side-by-side with MAPPER on the same draws.
     Hybrid,           // frozen MAPPO base + per-agent online linear residual.
                       // Combines MAPPO's hot-start for new agents with
                       // MAPPER's specialisation, plus an explicit rollback

@@ -2,6 +2,7 @@
 #include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
 #include "DMASforPD/Policy/IPPOPolicy.hpp"
 #include "DMASforPD/Policy/MapperPolicy.hpp"
+#include "DMASforPD/Policy/FaithfulMapperPolicy.hpp"
 #include "DMASforPD/Policy/HybridPolicy.hpp"
 #include "DMASforPD/TaskAgent/TaskAgent.hpp"
 #include "DMASforPD/DeliveryAgent/OperableEnvironment.hpp"
@@ -76,6 +77,7 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         ObjectiveDMPolicy::shared().clear_buffer();
         IPPOPolicy::shared().clear_buffer_all();
         MapperPolicy::shared().clear_buffer_all();
+        FaithfulMapperPolicy::shared().clear_buffer_all();
     }
     // Hybrid is ALWAYS cleared at episode start (train or eval): its REINFORCE
     // update runs at the end of every episode regardless of train_mode — that's
@@ -85,10 +87,11 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         HybridPolicy::shared().clear_buffer_all();
 
     // Always start a fresh recent-records log for the per-agent baselines
-    // (IPPO, MAPPER, Hybrid); stale offers from a previous episode must not be
-    // picked up by the refusal-penalty bracketing during this one.
+    // (IPPO, MAPPER, FaithfulMAPPER, Hybrid); stale offers from a previous
+    // episode must not be picked up by the refusal-penalty bracketing.
     IPPOPolicy::shared().clear_recent_records();
     MapperPolicy::shared().clear_recent_records();
+    FaithfulMapperPolicy::shared().clear_recent_records();
     HybridPolicy::shared().clear_recent_records();
 
     // Publish the active learning policy to PDPGlobalMemory so that
@@ -99,6 +102,9 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
             break;
         case PolicyMode::MAPPER:
             memory_.active_policy = PDPGlobalMemory::PolicyKind::kMAPPER;
+            break;
+        case PolicyMode::FaithfulMAPPER:
+            memory_.active_policy = PDPGlobalMemory::PolicyKind::kFaithfulMAPPER;
             break;
         case PolicyMode::Hybrid:
             memory_.active_policy = PDPGlobalMemory::PolicyKind::kHybrid;
@@ -134,6 +140,11 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     // can reference them (deliverability = steps_remaining / delivery_steps).
     memory_.speed_mps   = cfg_.speed_mps;
     memory_.total_steps = cfg_.total_steps();
+
+    // Planning strategy: cheapest insertion vs Double-Horizon insertion.
+    // Mirrored from cfg to memory so DeliveryAgent::receive_task() can dispatch
+    // without needing a pointer back to EpisodeConfig.
+    memory_.planning_use_double_horizon = cfg_.use_double_horizon_planning;
 
     for (auto& a : all_agents_) {
         a->status = AgentStatus::Idle;
@@ -240,6 +251,9 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
                 } else if (policy_mode == PolicyMode::MAPPER) {
                     task_accept_buf_idx_[task_id] =
                         MapperPolicy::shared().buffer_size(winner) - 1;
+                } else if (policy_mode == PolicyMode::FaithfulMAPPER) {
+                    task_accept_buf_idx_[task_id] =
+                        FaithfulMapperPolicy::shared().buffer_size(winner) - 1;
                 } else if (policy_mode == PolicyMode::Hybrid) {
                     task_accept_buf_idx_[task_id] =
                         HybridPolicy::shared().buffer_size(winner) - 1;
@@ -447,7 +461,8 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     const bool is_learning_mode =
         (policy_mode == PolicyMode::MAPPO) ||
         (policy_mode == PolicyMode::IPPO)  ||
-        (policy_mode == PolicyMode::MAPPER);
+        (policy_mode == PolicyMode::MAPPER) ||
+        (policy_mode == PolicyMode::FaithfulMAPPER);
     // Hybrid receives the unfinished penalty regardless of train_mode because
     // its REINFORCE update runs at every episode end (online adaptation).
     const bool apply_unfinished_penalty =
@@ -466,6 +481,8 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
                 IPPOPolicy::shared().add_to_reward(t->agent_id, buf_idx, penalty);
             } else if (policy_mode == PolicyMode::MAPPER) {
                 MapperPolicy::shared().add_to_reward(t->agent_id, buf_idx, penalty);
+            } else if (policy_mode == PolicyMode::FaithfulMAPPER) {
+                FaithfulMapperPolicy::shared().add_to_reward(t->agent_id, buf_idx, penalty);
             } else if (policy_mode == PolicyMode::Hybrid) {
                 HybridPolicy::shared().add_to_reward(t->agent_id, buf_idx, penalty);
             }
@@ -474,7 +491,7 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
 
     // Per-episode learning update.
     //
-    // MAPPO/IPPO/MAPPER: PPO updates only when train_mode=true.
+    // MAPPO/IPPO/MAPPER/FaithfulMAPPER: PPO updates only when train_mode=true.
     // Hybrid: REINFORCE update + rollback check runs at the end of EVERY
     // episode regardless of train_mode — this is the defining property of
     // Hybrid (continual online adaptation).
@@ -488,6 +505,9 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         } else if (policy_mode == PolicyMode::MAPPER &&
                    MapperPolicy::shared().total_buffer_size() > 0) {
             result.train_stats = MapperPolicy::shared().train_epoch();
+        } else if (policy_mode == PolicyMode::FaithfulMAPPER &&
+                   FaithfulMapperPolicy::shared().total_buffer_size() > 0) {
+            result.train_stats = FaithfulMapperPolicy::shared().train_epoch();
         }
     }
     if (policy_mode == PolicyMode::Hybrid &&
@@ -755,10 +775,11 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     //                   records distributed across per-agent buffers.
     // TamAlwaysAccept – TAM always accepts (params.always_accept); no buffer
     //                   writes, no refusal penalties — pure routing ablation.
-    const int  buf_before     = ObjectiveDMPolicy::shared().buffer_size();
-    const int  ippo_before    = IPPOPolicy::shared().n_recent_records();
-    const int  mapper_before  = MapperPolicy::shared().n_recent_records();
-    const int  hybrid_before  = HybridPolicy::shared().n_recent_records();
+    const int  buf_before        = ObjectiveDMPolicy::shared().buffer_size();
+    const int  ippo_before       = IPPOPolicy::shared().n_recent_records();
+    const int  mapper_before     = MapperPolicy::shared().n_recent_records();
+    const int  faithful_before   = FaithfulMapperPolicy::shared().n_recent_records();
+    const int  hybrid_before     = HybridPolicy::shared().n_recent_records();
 
     memory_.task_agent.on_new_task(task_id, memory_);
     auto* tam = memory_.task_agent.get_tam(task_id);
@@ -775,10 +796,11 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         ++steps_used;
     }
 
-    const int buf_after    = ObjectiveDMPolicy::shared().buffer_size();
-    const int ippo_after   = IPPOPolicy::shared().n_recent_records();
-    const int mapper_after = MapperPolicy::shared().n_recent_records();
-    const int hybrid_after = HybridPolicy::shared().n_recent_records();
+    const int buf_after        = ObjectiveDMPolicy::shared().buffer_size();
+    const int ippo_after       = IPPOPolicy::shared().n_recent_records();
+    const int mapper_after     = MapperPolicy::shared().n_recent_records();
+    const int faithful_after   = FaithfulMapperPolicy::shared().n_recent_records();
+    const int hybrid_after     = HybridPolicy::shared().n_recent_records();
 
     // Align global_states_ with every record() the TAM produced (MAPPO critic).
     if (policy_mode == PolicyMode::MAPPO) {
@@ -814,6 +836,12 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
             for (int i = mapper_before; i < last_excl; ++i) {
                 auto [aid, buf_idx] = MapperPolicy::shared().recent_record(i);
                 MapperPolicy::shared().update_reward(aid, buf_idx, pen);
+            }
+        } else if (policy_mode == PolicyMode::FaithfulMAPPER) {
+            const int last_excl = allocated ? faithful_after - 1 : faithful_after;
+            for (int i = faithful_before; i < last_excl; ++i) {
+                auto [aid, buf_idx] = FaithfulMapperPolicy::shared().recent_record(i);
+                FaithfulMapperPolicy::shared().update_reward(aid, buf_idx, pen);
             }
         } else if (policy_mode == PolicyMode::Hybrid) {
             const int last_excl = allocated ? hybrid_after - 1 : hybrid_after;
@@ -900,6 +928,7 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
         if (policy_mode == PolicyMode::MAPPO ||
             policy_mode == PolicyMode::IPPO  ||
             policy_mode == PolicyMode::MAPPER ||
+            policy_mode == PolicyMode::FaithfulMAPPER ||
             policy_mode == PolicyMode::Hybrid) {
             auto it = task_accept_buf_idx_.find(task_id);
             if (it != task_accept_buf_idx_.end()) {
@@ -913,6 +942,9 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
                         task->agent_id, it->second, pickup_credit);
                 } else if (policy_mode == PolicyMode::MAPPER) {
                     MapperPolicy::shared().add_to_reward(
+                        task->agent_id, it->second, pickup_credit);
+                } else if (policy_mode == PolicyMode::FaithfulMAPPER) {
+                    FaithfulMapperPolicy::shared().add_to_reward(
                         task->agent_id, it->second, pickup_credit);
                 } else /* Hybrid */ {
                     HybridPolicy::shared().add_to_reward(
@@ -974,6 +1006,7 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
         if (policy_mode == PolicyMode::MAPPO ||
             policy_mode == PolicyMode::IPPO  ||
             policy_mode == PolicyMode::MAPPER ||
+            policy_mode == PolicyMode::FaithfulMAPPER ||
             policy_mode == PolicyMode::Hybrid) {
             auto it = task_accept_buf_idx_.find(task_id);
             if (it != task_accept_buf_idx_.end()) {
@@ -987,6 +1020,9 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
                         task->agent_id, it->second, delivery_credit);
                 } else if (policy_mode == PolicyMode::MAPPER) {
                     MapperPolicy::shared().add_to_reward(
+                        task->agent_id, it->second, delivery_credit);
+                } else if (policy_mode == PolicyMode::FaithfulMAPPER) {
+                    FaithfulMapperPolicy::shared().add_to_reward(
                         task->agent_id, it->second, delivery_credit);
                 } else /* Hybrid */ {
                     HybridPolicy::shared().add_to_reward(

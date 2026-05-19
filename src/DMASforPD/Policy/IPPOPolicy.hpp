@@ -13,48 +13,49 @@
 // IPPO — Independent PPO baseline (de Witt et al., 2020)
 // ════════════════════════════════════════════════════════════════════════════
 //
-// A "middle ground" between MAPPO's CTDE and MAPPER's full decentralisation.
-// It serves as the principled ablation that isolates the contribution of the
-// local-vs-centralised critic from the actor-decentralisation and the
-// evolutionary mechanism.
+// Faithful reimplementation of the IPPO algorithm from
+//   "Is Independent Learning All You Need in the StarCraft Multi-Agent
+//    Challenge?" (de Witt et al., 2020, arXiv:2011.09533).
+//
+// Verbatim from paper Section 4:
+//   "each agent a learns a local observation based critic V_φ(z^a_t)
+//    parameterised by φ using GAE with γ = 0.99 and λ = 0.95.
+//    The network parameters φ, θ are shared across critics, and actors,
+//    respectively."
+//
+// → SHARED actor (1 set of weights θ used by every agent).
+// → SHARED critic (1 set of weights φ used by every agent), with input
+//   = each agent's local observation z^a_t.
+// → Per-agent EXPERIENCE BUFFERS (each agent's trajectory is collected
+//   separately for proper per-agent GAE).
+// → Centralised state is NOT used (this is what makes it "independent").
 //
 //   ┌────────────────┬──────────────────────┬──────────────────────┬─────────────────────────┐
-//   │                │ MAPPO (CTDE)         │ IPPO                 │ MAPPER (Decentralized+Ev)│
+//   │                │ MAPPO (CTDE)         │ IPPO (de Witt 2020)  │ MAPPER (Decentr.+Ev)    │
 //   ├────────────────┼──────────────────────┼──────────────────────┼─────────────────────────┤
 //   │ Actor          │ 1 shared             │ 1 shared             │ N per-agent             │
-//   │ Critic         │ 1 centralised, 20-d  │ N local, 13-d        │ N local, 13-d           │
+//   │ Critic         │ 1 centralised, 20-d  │ 1 shared, 12-d local │ N per-agent, 12-d local │
 //   │ Exploration    │ Entropy bonus        │ Entropy bonus        │ Entropy + Evolutionary  │
 //   │ State for V    │ Global system state  │ Agent's own features │ Agent's own features    │
 //   └────────────────┴──────────────────────┴──────────────────────┴─────────────────────────┘
 //
-// Ablation power: comparing the three baselines lets us attribute observed
-// gains to specific design axes —
-//   MAPPO  →  IPPO :  centralised critic vs local critic
-//   IPPO   →  MAPPER:  shared actor vs per-agent actor + evolutionary mutation
-//
-// Implementation notes:
-//   • Same 13-d PolicyFeatures input as the actor (no global state needed).
+// Implementation notes (matching paper):
+//   • Same 12-d PolicyFeatures input as the actor (no global state needed).
 //   • Same PPO hyper-parameters as MAPPO/MAPPER for a fair comparison.
-//   • Per-agent buffers and per-agent GAE — each critic learns from its own
-//     agent's trajectory.
-//   • Global advantage normalisation across all agents — the shared actor
-//     sees experiences from every agent and needs comparable advantage scales.
-//   • Critic updates done per-agent within each mini-batch (grouped by aid)
-//     so each critic only sees its own data.
-//   • The shared actor receives one combined PPO update from all mini-batch
-//     entries regardless of which agent produced them.
+//   • Per-agent buffers and per-agent GAE — each trajectory has its own
+//     λ-return sweep, but uses the SHARED critic's V(s) estimates.
+//   • Global advantage normalisation across all agents — both shared
+//     networks see experiences from every agent and need comparable scales.
+//   • Single critic update per mini-batch on the global batch (all agents'
+//     entries mixed), because the critic weights are shared.
 
 class IPPOPolicy {
 public:
-    // The IPPO defining feature: ONE shared actor, used by every agent.
-    ActorMLP   actor;
-    PPOParams  hparams;
-
-    // Per-agent local critic + experience buffer.
-    struct LocalCritic {
-        MapperCriticMLP         critic;
-        std::vector<Experience> buffer;
-    };
+    // The IPPO defining feature: ONE shared actor + ONE shared critic.
+    // Both are used by every agent. Critic input = agent's local obs.
+    ActorMLP        actor;
+    MapperCriticMLP critic;
+    PPOParams       hparams;
 
     IPPOPolicy();
 
@@ -67,8 +68,10 @@ public:
     float score(const PolicyFeatures& features) const;
 
     // ── Data collection ────────────────────────────────────────────────────
-    // Appends an Experience to agents_[agent_id].buffer. Returns the index
-    // inside that buffer for later reward shaping.
+    // Appends an Experience to buffers_[agent_id]. Returns the index inside
+    // that buffer for later reward shaping. Per-agent buffer keeps the
+    // trajectory structure intact so GAE can sweep one agent's history at
+    // a time (the shared critic is queried by observation, not by agent id).
     int  record(int agent_id, const PolicyFeatures& obs,
                 float action, float reward);
 
@@ -86,9 +89,9 @@ public:
     using TrainingStats = ObjectiveDMPolicy::TrainingStats;
 
     // ── Training ────────────────────────────────────────────────────────────
-    // PPO update with shared actor + per-agent critics. Each agent's GAE
-    // uses its own critic; advantages are globally normalised so the shared
-    // actor sees consistent scales across agents.
+    // PPO update with shared actor + shared critic. Per-agent GAE then
+    // global advantage normalisation, then global mini-batch updates on
+    // both shared networks.
     TrainingStats train_epoch();
 
     void clear_buffer(int agent_id);
@@ -99,22 +102,27 @@ public:
 
     void set_progress(float progress);
 
-    // Xavier-initialise the shared actor and every existing critic.
+    // Xavier-initialise both shared networks.
     void init_xavier(std::mt19937& rng);
 
-    // Pre-allocate state for agent ids [0, n_agents).
+    // Pre-allocate empty buffers for agent ids [0, n_agents).
     void ensure_agents(int n_agents);
 
-    int  n_agents() const { return static_cast<int>(agents_.size()); }
+    int  n_agents() const { return static_cast<int>(buffers_.size()); }
 
 private:
-    std::unordered_map<int, LocalCritic> agents_;
-    std::mt19937                         rng_;
-    std::vector<std::pair<int,int>>      recent_records_;
+    // Per-agent experience buffer. The SAME shared critic and shared actor
+    // are used to score every entry — the buffer just keeps each agent's
+    // trajectory contiguous for GAE.
+    std::unordered_map<int, std::vector<Experience>> buffers_;
 
-    LocalCritic& get_or_create(int agent_id);
+    std::mt19937                                     rng_;
+    std::vector<std::pair<int,int>>                  recent_records_;
 
-    void compute_gae(LocalCritic& a);
+    std::vector<Experience>& get_or_create_buffer(int agent_id);
+
+    // Per-trajectory GAE sweep (one agent's buffer at a time).
+    void compute_gae(std::vector<Experience>& buf);
 
     struct MBStats { float loss; float entropy; float kl; float clip_frac; };
 
@@ -122,9 +130,9 @@ private:
     MBStats update_actor_mb(const std::vector<std::pair<int,int>>& perm,
                              int start, int end);
 
-    // Critic update on an agent's own indices.
-    float   update_critic_mb(LocalCritic& a,
-                              const std::vector<int>& indices);
+    // Critic update on a global mini-batch (shared critic, all agents' data).
+    float   update_critic_mb(const std::vector<std::pair<int,int>>& perm,
+                              int start, int end);
 };
 
 #endif // IPPO_POLICY_HPP

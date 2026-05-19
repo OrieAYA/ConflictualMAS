@@ -42,10 +42,11 @@ struct TrainingConfig {
     // (MAPPO, IPPO, MAPPER) at the start of each seed. The respective paths
     // must point to checkpoints saved by the same seed's save() call.
     // Leave a path empty to skip loading that policy and keep Xavier init.
-    bool        load_policy        = false;
-    std::string policy_path        = "";   // MAPPO  checkpoint (.bin)
-    std::string ippo_policy_path   = "";   // IPPO   checkpoint (.bin) — required for post-train eval
-    std::string mapper_policy_path = "";   // MAPPER checkpoint (.bin) — required for post-train eval
+    bool        load_policy                  = false;
+    std::string policy_path                  = "";   // MAPPO          checkpoint (.bin)
+    std::string ippo_policy_path             = "";   // IPPO           checkpoint (.bin)
+    std::string mapper_policy_path           = "";   // MAPPER         checkpoint (.bin) — enhanced variant
+    std::string faithful_mapper_policy_path  = "";   // FaithfulMAPPER checkpoint (.bin) — paper-faithful variant
 
     // Save a checkpoint after each seed's training.
     bool        save_policy   = true;
@@ -67,6 +68,12 @@ struct TrainingConfig {
 
     // Skip the generalisation eval on held-out cities (saves ~45 min).
     bool        skip_generalize_eval = false;
+
+    // Skip ALL evaluation phases (periodic, final, stress, generalize) for a
+    // pure training run. Use when eval is done separately via Option X/Y on
+    // the saved checkpoints. Overrides eval_every and the skip_* flags above.
+    // Training still saves checkpoints honouring save_policy + train_modes.
+    bool        train_only          = false;
 
     // ── Training mode subset ──────────────────────────────────────────────
     // Which RL policies to actually TRAIN per round. Default = all three.

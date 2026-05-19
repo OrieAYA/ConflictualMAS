@@ -49,16 +49,38 @@ public:
     float speed_mps   = 5.0f;
     int   total_steps = 3600;
 
+    // ── Planning strategy used by DeliveryAgent::receive_task() ─────────────
+    // false (default) → Cheapest insertion: pick (pos_P, pos_D) minimising
+    //                    route-length delta f_p + f_d. Classical Solomon-style.
+    // true  → Double-Horizon insertion [Mitrovic-Minic et al. 2004]:
+    //          cost = (1-α_p)·f_p + α_p·g_p + (1-α_d)·f_d + α_d·g_d
+    //          where g_p = (n−pos_P)·f_p (slack-decrease proxy at subsequent
+    //          locations) and α ∈ {0 short-term, 0.25 long-term} based on the
+    //          estimated arrival time of the new pickup / delivery vs current.
+    //
+    // EpisodeRunner copies this from cfg.use_double_horizon_planning at the
+    // start of each run(). Capacity + pickup-before-delivery invariants are
+    // preserved by construction in both branches.
+    bool  planning_use_double_horizon = false;
+
     // Active learning-policy dispatcher used by DeliveryAgent::try_accept_task.
     // Set by EpisodeRunner at the start of each run() based on policy_mode:
-    //   - PolicyMode::MAPPO  → kMAPPO  (shared actor + centralised critic)
-    //   - PolicyMode::IPPO   → kIPPO   (shared actor + per-agent local critic)
-    //   - PolicyMode::MAPPER → kMAPPER (per-agent actor + per-agent critic + Ev)
+    //   - PolicyMode::MAPPO          → kMAPPO   (shared actor + centralised critic)
+    //   - PolicyMode::IPPO           → kIPPO    (shared actor + shared local critic,
+    //                                            de Witt+2020 paper-faithful)
+    //   - PolicyMode::MAPPER         → kMAPPER  (per-agent actor + per-agent critic +
+    //                                            enhanced Ev with Gaussian mutation)
+    //   - PolicyMode::FaithfulMAPPER → kFaithfulMAPPER (same architecture as MAPPER
+    //                                            but paper-faithful Ev: probabilistic
+    //                                            replacement + exact copy of best,
+    //                                            no mutation noise)
+    //   - PolicyMode::Hybrid         → kHybrid  (MAPPO base + per-agent residual)
     // try_accept_task routes the feature vector to the corresponding policy
-    // singleton (ObjectiveDMPolicy / IPPOPolicy / MapperPolicy) and records the
-    // experience into the right buffer. Other modes (Greedy, Random, ...) bypass
-    // try_accept_task entirely so the kind is ignored.
-    enum class PolicyKind { kMAPPO = 0, kIPPO = 1, kMAPPER = 2, kHybrid = 3 };
+    // singleton (ObjectiveDMPolicy / IPPOPolicy / MapperPolicy / FaithfulMapperPolicy /
+    // HybridPolicy) and records the experience into the right buffer. Other modes
+    // (Greedy, Random, ...) bypass try_accept_task entirely so the kind is ignored.
+    enum class PolicyKind { kMAPPO = 0, kIPPO = 1, kMAPPER = 2,
+                            kHybrid = 3, kFaithfulMAPPER = 4 };
     PolicyKind active_policy = PolicyKind::kMAPPO;
 
     PDPGlobalMemory() = delete;
