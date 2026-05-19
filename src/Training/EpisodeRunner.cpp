@@ -1,5 +1,8 @@
 #include "EpisodeRunner.hpp"
 #include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
+#include "DMASforPD/Policy/IPPOPolicy.hpp"
+#include "DMASforPD/Policy/MapperPolicy.hpp"
+#include "DMASforPD/Policy/HybridPolicy.hpp"
 #include "DMASforPD/TaskAgent/TaskAgent.hpp"
 #include "DMASforPD/DeliveryAgent/OperableEnvironment.hpp"
 #include "Environment/GeoBox/Box.hpp"
@@ -38,7 +41,12 @@ EpisodeRunner::EpisodeRunner(const EpisodeConfig& cfg,
     if (start == 0)
         throw std::runtime_error("EpisodeRunner: no valid road node for agent start");
 
-    int n = cfg_.max_agents();
+    // Allocate the agent pool with a 1.5× overhead so the per-episode
+    // EpisodeScenario.agents_mult can sample values above 1.0 (slack regime)
+    // without being clamped down to the nominal max_agents() at run-time.
+    // Idle surplus agents are inert (never offered tasks when n_active < pool)
+    // and cost only a small per-instance memory footprint.
+    int n = std::max(1, static_cast<int>(std::ceil(cfg_.max_agents() * 1.5)));
     all_agents_.reserve(n);
     for (int i = 0; i < n; ++i) {
         auto a = std::make_unique<DeliveryAgent>(i, start);
@@ -55,7 +63,8 @@ EpisodeRunner::~EpisodeRunner() {
 
 // ── Main episode loop ─────────────────────────────────────────────────────────
 
-RunResult EpisodeRunner::run(int city_index, int num_cities) {
+RunResult EpisodeRunner::run(int city_index, int num_cities,
+                             EpisodeScenario scenario) {
     auto t0 = std::chrono::steady_clock::now();
     arrivals_.clear();
     global_states_.clear();
@@ -63,23 +72,68 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
     // Discard any eval experiences that accumulated since the last train_epoch.
     // (Eval runs with train_mode=false skip train_epoch, so the shared buffer
     //  accumulates stale data that must not contaminate the next training update.)
-    if (!train_mode)
+    if (!train_mode) {
         ObjectiveDMPolicy::shared().clear_buffer();
+        IPPOPolicy::shared().clear_buffer_all();
+        MapperPolicy::shared().clear_buffer_all();
+    }
+    // Hybrid is ALWAYS cleared at episode start (train or eval): its REINFORCE
+    // update runs at the end of every episode regardless of train_mode — that's
+    // the defining property of Hybrid (continual online adaptation), not the
+    // gradient-based offline batch training of MAPPO/IPPO/MAPPER.
+    if (policy_mode == PolicyMode::Hybrid)
+        HybridPolicy::shared().clear_buffer_all();
+
+    // Always start a fresh recent-records log for the per-agent baselines
+    // (IPPO, MAPPER, Hybrid); stale offers from a previous episode must not be
+    // picked up by the refusal-penalty bracketing during this one.
+    IPPOPolicy::shared().clear_recent_records();
+    MapperPolicy::shared().clear_recent_records();
+    HybridPolicy::shared().clear_recent_records();
+
+    // Publish the active learning policy to PDPGlobalMemory so that
+    // DeliveryAgent::try_accept_task routes its calls to the right backend.
+    switch (policy_mode) {
+        case PolicyMode::IPPO:
+            memory_.active_policy = PDPGlobalMemory::PolicyKind::kIPPO;
+            break;
+        case PolicyMode::MAPPER:
+            memory_.active_policy = PDPGlobalMemory::PolicyKind::kMAPPER;
+            break;
+        case PolicyMode::Hybrid:
+            memory_.active_policy = PDPGlobalMemory::PolicyKind::kHybrid;
+            break;
+        default:
+            memory_.active_policy = PDPGlobalMemory::PolicyKind::kMAPPO;
+            break;
+    }
     n_accepted_    = 0;
     n_refused_     = 0;
     latency_sum_   = 0;
     latency_count_ = 0;
     active_sum_    = 0;
     active_steps_  = 0;
+    efficiency_sum_   = 0.0;
+    efficiency_count_ = 0;
+    congestion_sum_   = 0.0;
+    congestion_steps_ = 0;
+    trip_sum_         = 0;
+    trip_count_       = 0;
 
-    // Propagate the always_accept flag to the TAM for TamAlwaysAccept ablation mode.
-    // Must be set before the episode loop so all TAMs created during the episode inherit it.
+    // Propagate the always_accept flag to the TAM for TamAlwaysAccept ablation.
+    // Must be set before the episode loop so all TAMs created during the episode
+    // inherit it.
     memory_.task_agent.params.tam_params.always_accept =
         (policy_mode == PolicyMode::TamAlwaysAccept);
 
     // Reset per-episode GlobalMemory state (tasks, plans, congestion, clock).
     // Preserves the A* path cache so costs computed in prior episodes reuse.
     memory_.reset_episode();
+
+    // Publish episode-level constants so the policy's per-decision features
+    // can reference them (deliverability = steps_remaining / delivery_steps).
+    memory_.speed_mps   = cfg_.speed_mps;
+    memory_.total_steps = cfg_.total_steps();
 
     for (auto& a : all_agents_) {
         a->status = AgentStatus::Idle;
@@ -120,6 +174,9 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
                 break;
             }
         }
+        // Apply scenario multipliers (varies difficulty per episode).
+        lambda   *= scenario.density_mult;
+        n_active  = std::max(1, static_cast<int>(std::round(n_active * scenario.agents_mult)));
         n_active = std::min(n_active, static_cast<int>(all_agents_.size()));
 
         // Process arrivals before injecting new tasks so agents that just
@@ -158,9 +215,9 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
 
                 bool was_idle;
                 if (res.tam_owned) {
-                    // TAM already did assign + receive + commit. After
-                    // receive_task the agent's task list contains this task
-                    // plus whatever it had before. Sole task ⇒ was Idle.
+                    // TAM already did assign + receive + commit. After receive_task
+                    // the agent's task list contains this task plus whatever it had
+                    // before. Sole task ⇒ was Idle.
                     was_idle = agent->local_memory.tasks.size() == 1;
                 } else {
                     was_idle = (agent->status == AgentStatus::Idle);
@@ -169,12 +226,24 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
                     memory_.commit_plan(winner, cfg_.speed_mps);
                 }
 
-                // Record the buffer index of this accept decision so we can set
-                // the real completion reward (originals) when the task is
-                // delivered. In TAM path the accept entry is the LAST record.
-                if (policy_mode == PolicyMode::MAPPO)
+                // Record buffer index of the accept decision so the completion
+                // reward can be set at delivery. In the TAM path the accept
+                // entry is the LAST record produced by offer_to_agent — in the
+                // shared buffer for MAPPO, or in the winning agent's own buffer
+                // for IPPO/MAPPER.
+                if (policy_mode == PolicyMode::MAPPO) {
                     task_accept_buf_idx_[task_id] =
                         ObjectiveDMPolicy::shared().buffer_size() - 1;
+                } else if (policy_mode == PolicyMode::IPPO) {
+                    task_accept_buf_idx_[task_id] =
+                        IPPOPolicy::shared().buffer_size(winner) - 1;
+                } else if (policy_mode == PolicyMode::MAPPER) {
+                    task_accept_buf_idx_[task_id] =
+                        MapperPolicy::shared().buffer_size(winner) - 1;
+                } else if (policy_mode == PolicyMode::Hybrid) {
+                    task_accept_buf_idx_[task_id] =
+                        HybridPolicy::shared().buffer_size(winner) - 1;
+                }
 
                 // Only start the edge-by-edge leg if the agent was Idle. If
                 // already Active (multi-task queue), the current cursor is
@@ -188,6 +257,12 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
                 // Task stays in available_tasks but won't be re-offered.
             }
         }
+
+        // Sample network congestion once per step (mean edge load over all edges
+        // with at least one planned agent passage). Averaged at episode end to
+        // produce ComparisonMetrics::mean_congestion.
+        congestion_sum_   += memory_.congestion_map.mean_load_now();
+        congestion_steps_ += 1;
 
         // Count active agents for utilisation metric.
         int n_now = 0;
@@ -214,6 +289,10 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
     metrics.agent_utilisation = (active_steps_ > 0 && n_accepted_ > 0)
         ? static_cast<float>(active_sum_) / active_steps_ / cfg_.max_agents() : 0.f;
     metrics.total_steps = total_steps;
+    metrics.mean_congestion = (congestion_steps_ > 0)
+        ? static_cast<float>(congestion_sum_ / congestion_steps_) : 0.f;
+    metrics.mean_trip_steps = (trip_count_ > 0)
+        ? static_cast<float>(trip_sum_) / trip_count_ : 0.f;
 
     RunResult result;
     result.metrics = metrics;
@@ -224,18 +303,56 @@ RunResult EpisodeRunner::run(int city_index, int num_cities) {
     // task hurts more than failing a low-value one. This keeps the policy from
     // accepting tasks it cannot deliver, while a flat penalty would collapse
     // into "accept everything" once it falls below the refuse penalty.
-    if (train_mode && policy_mode == PolicyMode::MAPPO &&
-        cfg_.unfinished_factor > 0.f) {
+    const bool is_learning_mode =
+        (policy_mode == PolicyMode::MAPPO) ||
+        (policy_mode == PolicyMode::IPPO)  ||
+        (policy_mode == PolicyMode::MAPPER);
+    // Hybrid receives the unfinished penalty regardless of train_mode because
+    // its REINFORCE update runs at every episode end (online adaptation).
+    const bool apply_unfinished_penalty =
+        (train_mode && is_learning_mode) || (policy_mode == PolicyMode::Hybrid);
+    if (apply_unfinished_penalty && cfg_.unfinished_factor > 0.f) {
         for (const auto& [tid, buf_idx] : task_accept_buf_idx_) {
             PDPTask* t = memory_.get_task(tid);
-            float val = t ? (t->reward_original * t->importance_original) : 1.f;
-            ObjectiveDMPolicy::shared().update_reward(
-                buf_idx, -cfg_.unfinished_factor * val);
+            if (!t) continue;
+            const float val    = t->reward_original * t->importance_original;
+            const bool  picked = (t->timeline.picked_step >= 0);
+            const float lost_frac = picked ? (1.f - cfg_.pickup_reward_frac) : 1.f;
+            const float penalty   = -cfg_.unfinished_factor * lost_frac * val;
+            if (policy_mode == PolicyMode::MAPPO) {
+                ObjectiveDMPolicy::shared().add_to_reward(buf_idx, penalty);
+            } else if (policy_mode == PolicyMode::IPPO) {
+                IPPOPolicy::shared().add_to_reward(t->agent_id, buf_idx, penalty);
+            } else if (policy_mode == PolicyMode::MAPPER) {
+                MapperPolicy::shared().add_to_reward(t->agent_id, buf_idx, penalty);
+            } else if (policy_mode == PolicyMode::Hybrid) {
+                HybridPolicy::shared().add_to_reward(t->agent_id, buf_idx, penalty);
+            }
         }
     }
 
-    if (train_mode && policy_mode == PolicyMode::MAPPO && !global_states_.empty())
-        result.train_stats = ObjectiveDMPolicy::shared().train_epoch(global_states_);
+    // Per-episode learning update.
+    //
+    // MAPPO/IPPO/MAPPER: PPO updates only when train_mode=true.
+    // Hybrid: REINFORCE update + rollback check runs at the end of EVERY
+    // episode regardless of train_mode — this is the defining property of
+    // Hybrid (continual online adaptation).
+    if (train_mode) {
+        if (policy_mode == PolicyMode::MAPPO && !global_states_.empty()) {
+            result.train_stats =
+                ObjectiveDMPolicy::shared().train_epoch(global_states_);
+        } else if (policy_mode == PolicyMode::IPPO &&
+                   IPPOPolicy::shared().total_buffer_size() > 0) {
+            result.train_stats = IPPOPolicy::shared().train_epoch();
+        } else if (policy_mode == PolicyMode::MAPPER &&
+                   MapperPolicy::shared().total_buffer_size() > 0) {
+            result.train_stats = MapperPolicy::shared().train_epoch();
+        }
+    }
+    if (policy_mode == PolicyMode::Hybrid &&
+        HybridPolicy::shared().total_buffer_size() > 0) {
+        result.train_stats = HybridPolicy::shared().train_epoch();
+    }
 
     auto t1 = std::chrono::steady_clock::now();
     result.wallclock_ms =
@@ -253,12 +370,12 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     // gs[0] = GlobalState::time_ratio = step / total_steps.
     memory_.cur_time_ratio = gs[0];
 
-    const int task_cap = memory_.task_agent.params.max_tasks_per_agent;
-    auto has_cap = [&](const DeliveryAgent& a) {
-        return a.status == AgentStatus::Idle ||
-               (a.status == AgentStatus::Active &&
-                (int)a.local_memory.tasks.size() < task_cap);
-    };
+    // Queue length is no longer a filter — physical carrying capacity is
+    // enforced at planning time inside receive_task (capacity-aware insertion
+    // respecting max_tasks_per_agent simultaneously-held packages). For
+    // baselines, this means any agent can be considered eligible at offer
+    // time; sequence-level capacity is settled by the insertion routine.
+    auto has_cap = [&](const DeliveryAgent& /*a*/) { return true; };
 
     // ── Baselines: sequential scan, no TAM, no MAPPO buffer writes ────────────
     if (policy_mode == PolicyMode::Greedy) {
@@ -285,24 +402,191 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         return { -1, false };
     }
 
-    // ── MAPPO / TamAlwaysAccept: drive the real Task Allocation Module ───────────
+    // ── LaCAM*-inspired baseline: optimal-myopic best-insertion ──────────────
+    // Real LaCAM* is grid-MAPF specific; we adapt its "always pick the globally
+    // best assignment" spirit by scanning ALL eligible agents and selecting the
+    // one whose route_cost(current → pickup → delivery) is minimum. Unlike
+    // InsertionGreedy this never short-circuits on the first acceptable bid.
+    if (policy_mode == PolicyMode::LaCAM) {
+        PDPTask* t = memory_.get_task(task_id);
+        if (!t) return { -1, false };
+        const auto* pu_del = memory_.get_or_compute_path(
+            t->pickup.id, t->delivery.id, t->delivery.group_id);
+        const float c_del = (pu_del && pu_del->valid()) ? pu_del->cost : kCostScale;
+
+        int   best_aid  = -1;
+        float best_cost = std::numeric_limits<float>::max();
+        for (int i = 0; i < n_active; ++i) {
+            DeliveryAgent& a = *all_agents_[i];
+            if (!has_cap(a)) continue;
+            const auto* to_pu = memory_.get_or_compute_path(
+                a.current_node, t->pickup.id, t->pickup.group_id);
+            const float c_pu = (to_pu && to_pu->valid()) ? to_pu->cost : kCostScale;
+            const float cost = c_pu + c_del;
+            if (cost < best_cost) { best_cost = cost; best_aid = a.agent_id; }
+        }
+        return { best_aid, false };
+    }
+
+    // ── PIBT-inspired baseline: load-balanced priority allocation ────────────
+    // PIBT [Okumura et al.] assigns higher priority to agents that need to move
+    // first to avoid deadlocks. In our PDP setting (no grid conflicts), we adapt
+    // the priority concept to a load-balancing rule: the agent with the smallest
+    // current task queue wins. This avoids the first-by-index pathology of
+    // Greedy where the same agent monopolises all early tasks.
+    if (policy_mode == PolicyMode::PIBT) {
+        int best_aid  = -1;
+        int min_load  = std::numeric_limits<int>::max();
+        for (int i = 0; i < n_active; ++i) {
+            DeliveryAgent& a = *all_agents_[i];
+            if (!has_cap(a)) continue;
+            const int load = static_cast<int>(a.local_memory.tasks.size());
+            if (load < min_load) { min_load = load; best_aid = a.agent_id; }
+        }
+        return { best_aid, false };
+    }
+
+    // ── Congestion-Aware baseline (Liu, Saha et al.) ─────────────────────────
+    // Picks the eligible agent whose pickup-side path has the lowest dynamic
+    // (congestion-adjusted) cost. Falls back to static cost when the dynamic
+    // cost has not yet been computed for that path. Reuses the existing
+    // CongestionMap + TD-A* machinery in PDPServerMemory.
+    if (policy_mode == PolicyMode::CongestionAware) {
+        PDPTask* t = memory_.get_task(task_id);
+        if (!t) return { -1, false };
+
+        int   best_aid  = -1;
+        float best_cong = std::numeric_limits<float>::max();
+        for (int i = 0; i < n_active; ++i) {
+            DeliveryAgent& a = *all_agents_[i];
+            if (!has_cap(a)) continue;
+            const auto* to_pu = memory_.get_or_compute_path(
+                a.current_node, t->pickup.id, t->pickup.group_id);
+            float cong = kCostScale;
+            if (to_pu && to_pu->valid()) {
+                cong = to_pu->has_dynamic_cost()
+                    ? to_pu->dynamic_cost   // congestion-adjusted travel time
+                    : to_pu->cost;          // static fallback (no congestion data)
+            }
+            if (cong < best_cong) { best_cong = cong; best_aid = a.agent_id; }
+        }
+        return { best_aid, false };
+    }
+
+    // ── Token Passing (TP) [Ma+2017, AAMAS] ───────────────────────────────────
+    // Original TP: agent ai with the token picks the task τ from the available
+    // set T' such that h(loc(ai), pickup(τ)) is minimal, where T' filters out
+    // tasks whose pickup/delivery is occupied by another agent's path-end.
     //
-    // Both modes use TAM (Dijkstra-optimal agent selection). The difference:
-    //   MAPPO            – agents sample accept/reject from their learned policy;
-    //                      experiences are recorded for PPO training.
-    //   TamAlwaysAccept  – TAM always accepts (params_.always_accept=true);
-    //                      no buffer writes, no refusal penalties — pure routing ablation.
-    const int buf_before = ObjectiveDMPolicy::shared().buffer_size();
+    // Online L-GPDP adaptation: tasks arrive one at a time. For each arriving
+    // task, we pick the agent with the minimum static A* distance from its
+    // current_node to the pickup. The collision filter is trivial here (no
+    // physical collisions). Capacity is enforced downstream by receive_task().
+    //
+    // Difference from LaCAM: TP uses only the pickup-leg cost (matching the
+    // paper's h-value criterion), while LaCAM minimises c_pu + c_del. Both
+    // scan all eligible agents, but TP captures the "closest agent picks
+    // the task" decentralised-token spirit, not the global-best assignment.
+    if (policy_mode == PolicyMode::TokenPassing) {
+        PDPTask* t = memory_.get_task(task_id);
+        if (!t) return { -1, false };
+
+        int   best_aid = -1;
+        float best_h   = std::numeric_limits<float>::max();
+        for (int i = 0; i < n_active; ++i) {
+            DeliveryAgent& a = *all_agents_[i];
+            if (!has_cap(a)) continue;
+            const auto* to_pu = memory_.get_or_compute_path(
+                a.current_node, t->pickup.id, t->pickup.group_id);
+            const float h = (to_pu && to_pu->valid()) ? to_pu->cost : kCostScale;
+            if (h < best_h) { best_h = h; best_aid = a.agent_id; }
+        }
+        return { best_aid, false };
+    }
+
+    // ── MCA: true marginal-cost assignment [Chen+2021] ────────────────────────
+    // Scans ALL eligible agents. For each, computes the true cheapest-insertion
+    // delta over all admissible (pos_P, pos_D) positions in the agent's route
+    // (capacity-constrained, preserving the in-flight head). Assigns to the
+    // agent with the globally minimum marginal cost. Unlike LaCAM, which ignores
+    // existing routes, this correctly accounts for route detour cost.
+    if (policy_mode == PolicyMode::MCA) {
+        PDPTask* t = memory_.get_task(task_id);
+        if (!t) return { -1, false };
+
+        int   best_aid  = -1;
+        float best_cost = std::numeric_limits<float>::max();
+        for (int i = 0; i < n_active; ++i) {
+            DeliveryAgent& a = *all_agents_[i];
+            if (!has_cap(a)) continue;
+            float mc = compute_marginal_cost(a, *t);
+            if (mc < best_cost) { best_cost = mc; best_aid = a.agent_id; }
+        }
+        return { best_aid, false };
+    }
+
+    // ── TrafficFlow: GP-PIBT spirit full-trip congestion-aware [Chen+2024] ───
+    // Extends CongestionAware by using the congestion-adjusted (dynamic) cost
+    // for BOTH the current→pickup leg AND the pickup→delivery leg, capturing
+    // the full planned trip cost under current traffic conditions.
+    // CongestionAware weights only the first leg; TrafficFlow weights both.
+    if (policy_mode == PolicyMode::TrafficFlow) {
+        PDPTask* t = memory_.get_task(task_id);
+        if (!t) return { -1, false };
+
+        int   best_aid  = -1;
+        float best_cost = std::numeric_limits<float>::max();
+        for (int i = 0; i < n_active; ++i) {
+            DeliveryAgent& a = *all_agents_[i];
+            if (!has_cap(a)) continue;
+            const auto* to_pu = memory_.get_or_compute_path(
+                a.current_node, t->pickup.id, t->pickup.group_id);
+            const auto* pu_del = memory_.get_or_compute_path(
+                t->pickup.id, t->delivery.id, t->delivery.group_id);
+            float c_pu  = kCostScale;
+            float c_del = kCostScale;
+            if (to_pu && to_pu->valid())
+                c_pu  = to_pu->has_dynamic_cost()  ? to_pu->dynamic_cost  : to_pu->cost;
+            if (pu_del && pu_del->valid())
+                c_del = pu_del->has_dynamic_cost() ? pu_del->dynamic_cost : pu_del->cost;
+            const float total = c_pu + c_del;
+            if (total < best_cost) { best_cost = total; best_aid = a.agent_id; }
+        }
+        return { best_aid, false };
+    }
+
+    // ── MAPPO / TamAlwaysAccept: drive the Task Allocation Module ──────────────
+    //
+    // TAM algorithm (matches the paper's design):
+    //   Two incremental Dijkstra expansions run alternately from the pickup node
+    //   and from the delivery node. Each step grows a path-distance cache.
+    //   When the expansion reaches an objective node already owned by some agent
+    //   (pickup/delivery of one of that agent's planned tasks), the agent is
+    //   added to the TAM matrix with its side-cost. An agent that appears on
+    //   BOTH sides becomes a candidate; offers are tried in ascending combined
+    //   cost. If all expansions terminate without allocation, the task is recalled
+    //   (importance boosted) up to max_recalls before being declared exhausted.
+    //
+    // MAPPO           – shared actor + centralised critic; records go to the
+    //                   single ObjectiveDMPolicy buffer.
+    // IPPO            – shared actor + per-agent local critics; records spread
+    //                   across per-agent buffers, tracked via recent_records.
+    // MAPPER          – per-agent actor + per-agent critic + Evolutionary RL;
+    //                   records distributed across per-agent buffers.
+    // TamAlwaysAccept – TAM always accepts (params.always_accept); no buffer
+    //                   writes, no refusal penalties — pure routing ablation.
+    const int  buf_before     = ObjectiveDMPolicy::shared().buffer_size();
+    const int  ippo_before    = IPPOPolicy::shared().n_recent_records();
+    const int  mapper_before  = MapperPolicy::shared().n_recent_records();
+    const int  hybrid_before  = HybridPolicy::shared().n_recent_records();
 
     memory_.task_agent.on_new_task(task_id, memory_);
     auto* tam = memory_.task_agent.get_tam(task_id);
-    if (!tam) return { -1, true };
+    if (!tam) return {-1, true};
 
     // Safety budget on Dijkstra expansion per task. Each TAM step expands one
-    // node on the pickup side and one on the delivery side. 300 keeps the
-    // wallclock manageable on Tokyo_Medium (~50k nodes) while still finding
-    // agents within a reasonable radius. Tasks where no agent is reachable
-    // within the budget are treated as refused.
+    // node on the pickup side and one on the delivery side. With tasks_per_agent
+    // tuned for ~150 tasks/episode this budget is rarely consumed in practice.
     constexpr int kMaxTamSteps = 300;
     int steps_used = 0;
     while (steps_used < kMaxTamSteps
@@ -311,26 +595,58 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         ++steps_used;
     }
 
-    const int buf_after = ObjectiveDMPolicy::shared().buffer_size();
+    const int buf_after    = ObjectiveDMPolicy::shared().buffer_size();
+    const int ippo_after   = IPPOPolicy::shared().n_recent_records();
+    const int mapper_after = MapperPolicy::shared().n_recent_records();
+    const int hybrid_after = HybridPolicy::shared().n_recent_records();
 
-    // Align global_states_ with every record() the TAM produced.
-    for (int i = buf_before; i < buf_after; ++i)
-        global_states_.push_back(gs);
+    // Align global_states_ with every record() the TAM produced (MAPPO critic).
+    if (policy_mode == PolicyMode::MAPPO) {
+        for (int i = buf_before; i < buf_after; ++i)
+            global_states_.push_back(gs);
+    }
 
     PDPTask* t = memory_.get_task(task_id);
     const bool allocated = tam->is_allocated() && t && t->agent_id >= 0;
 
-    // Apply refusal penalty (MAPPO only — TamAlwaysAccept writes no buffer entries).
-    if (train_mode && policy_mode == PolicyMode::MAPPO && cfg_.refuse_penalty_w > 0.f && t) {
-        const int last_excl = allocated ? buf_after - 1 : buf_after;
+    // Refusal penalty.
+    //   MAPPO  → walk the shared-buffer range [buf_before, last_excl).
+    //   IPPO   → walk the recent-records (agent_id, buf_idx) range.
+    //   MAPPER → same as IPPO but on its own recent-records log.
+    //   Hybrid → same recent-records pattern; applied regardless of train_mode
+    //            because online adaptation runs every episode.
+    const bool apply_refuse_penalty =
+        train_mode || (policy_mode == PolicyMode::Hybrid);
+    if (apply_refuse_penalty && cfg_.refuse_penalty_w > 0.f && t) {
         const float pen = -cfg_.refuse_penalty_w * t->importance_original;
-        for (int i = buf_before; i < last_excl; ++i)
-            ObjectiveDMPolicy::shared().update_reward(i, pen);
+        if (policy_mode == PolicyMode::MAPPO) {
+            const int last_excl = allocated ? buf_after - 1 : buf_after;
+            for (int i = buf_before; i < last_excl; ++i)
+                ObjectiveDMPolicy::shared().update_reward(i, pen);
+        } else if (policy_mode == PolicyMode::IPPO) {
+            const int last_excl = allocated ? ippo_after - 1 : ippo_after;
+            for (int i = ippo_before; i < last_excl; ++i) {
+                auto [aid, buf_idx] = IPPOPolicy::shared().recent_record(i);
+                IPPOPolicy::shared().update_reward(aid, buf_idx, pen);
+            }
+        } else if (policy_mode == PolicyMode::MAPPER) {
+            const int last_excl = allocated ? mapper_after - 1 : mapper_after;
+            for (int i = mapper_before; i < last_excl; ++i) {
+                auto [aid, buf_idx] = MapperPolicy::shared().recent_record(i);
+                MapperPolicy::shared().update_reward(aid, buf_idx, pen);
+            }
+        } else if (policy_mode == PolicyMode::Hybrid) {
+            const int last_excl = allocated ? hybrid_after - 1 : hybrid_after;
+            for (int i = hybrid_before; i < last_excl; ++i) {
+                auto [aid, buf_idx] = HybridPolicy::shared().recent_record(i);
+                HybridPolicy::shared().update_reward(aid, buf_idx, pen);
+            }
+        }
     }
 
     memory_.task_agent.erase_tam(task_id);
 
-    return { allocated ? t->agent_id : -1, true };
+    return {allocated ? t->agent_id : -1, true};
 }
 
 // ── Edge-by-edge movement ─────────────────────────────────────────────────────
@@ -398,6 +714,33 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
     if (is_pickup) {
         task->mark_picked(current_step);
 
+        // Reward shaping: deliver partial credit at pickup so the decision-time
+        // experience gets a signal long before the actual delivery (which can be
+        // 500-1500 steps later). Reduces credit-assignment delay drastically.
+        if (policy_mode == PolicyMode::MAPPO ||
+            policy_mode == PolicyMode::IPPO  ||
+            policy_mode == PolicyMode::MAPPER ||
+            policy_mode == PolicyMode::Hybrid) {
+            auto it = task_accept_buf_idx_.find(task_id);
+            if (it != task_accept_buf_idx_.end()) {
+                const float pickup_credit = cfg_.pickup_reward_frac
+                    * task->reward_original * task->importance_original;
+                if (policy_mode == PolicyMode::MAPPO) {
+                    ObjectiveDMPolicy::shared().add_to_reward(
+                        it->second, pickup_credit);
+                } else if (policy_mode == PolicyMode::IPPO) {
+                    IPPOPolicy::shared().add_to_reward(
+                        task->agent_id, it->second, pickup_credit);
+                } else if (policy_mode == PolicyMode::MAPPER) {
+                    MapperPolicy::shared().add_to_reward(
+                        task->agent_id, it->second, pickup_credit);
+                } else /* Hybrid */ {
+                    HybridPolicy::shared().add_to_reward(
+                        task->agent_id, it->second, pickup_credit);
+                }
+            }
+        }
+
         // Promote pre-fetched next_path (pickup→delivery) to current_path.
         agent->promote_next_path();
 
@@ -420,20 +763,55 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
         latency_sum_   += latency;
         latency_count_ += 1;
 
-        // Update the MAPPO experience for this task with the actual completion
-        // reward. This replaces the placeholder 0 recorded at decision time,
-        // giving correct credit assignment to the accept decision.
+        // Pickup→delivery traversal time (excludes wait time before allocation).
+        if (task->timeline.picked_step >= 0) {
+            trip_sum_   += current_step - task->timeline.picked_step;
+            trip_count_ += 1;
+        }
+
+        // Track per-task delivery efficiency = reward / pickup→delivery distance.
+        // Reward is normalised in [0.1, 5.0] and distance in metres; dividing by
+        // 1000 yields a [0, ~10] range, finally rescaled into [0, 1] for the
+        // critic's GlobalState::avg_efficiency. Higher = the route delivered
+        // more reward per meter (good geographic match between task and agent).
+        const auto* pu_del = memory_.get_or_compute_path(
+            task->pickup.id, task->delivery.id, task->delivery.group_id);
+        const float dist_m = (pu_del && pu_del->valid()) ? pu_del->cost : 1.f;
+        if (dist_m > 1.f) {
+            const float eff = task->reward_original * 1000.f / dist_m;
+            efficiency_sum_   += static_cast<double>(eff);
+            efficiency_count_ += 1;
+        }
+
+        // Reward shaping: add the remaining delivery credit on top of the
+        // partial pickup credit already given. Total accumulated reward equals
+        // task->reward_original × importance_original (i.e., 1.0 × imp by default).
         //
-        // Use *_original (immutable) so that "refuse first, accept on recall"
-        // cannot game a larger reward than immediate acceptance — the TAM may
-        // have boosted task->reward / task->importance to attract bidders, but
-        // the policy must be trained on the true task value.
-        if (policy_mode == PolicyMode::MAPPO) {
+        // Use *_original (immutable) so "refuse-first-accept-on-recall" cannot
+        // game a larger reward than immediate acceptance — TAM may boost
+        // reward/importance to attract bidders, but the policy must be trained
+        // on the true task value.
+        if (policy_mode == PolicyMode::MAPPO ||
+            policy_mode == PolicyMode::IPPO  ||
+            policy_mode == PolicyMode::MAPPER ||
+            policy_mode == PolicyMode::Hybrid) {
             auto it = task_accept_buf_idx_.find(task_id);
             if (it != task_accept_buf_idx_.end()) {
-                float completion_reward =
-                    task->reward_original * task->importance_original;
-                ObjectiveDMPolicy::shared().update_reward(it->second, completion_reward);
+                const float delivery_credit = (1.f - cfg_.pickup_reward_frac)
+                    * task->reward_original * task->importance_original;
+                if (policy_mode == PolicyMode::MAPPO) {
+                    ObjectiveDMPolicy::shared().add_to_reward(
+                        it->second, delivery_credit);
+                } else if (policy_mode == PolicyMode::IPPO) {
+                    IPPOPolicy::shared().add_to_reward(
+                        task->agent_id, it->second, delivery_credit);
+                } else if (policy_mode == PolicyMode::MAPPER) {
+                    MapperPolicy::shared().add_to_reward(
+                        task->agent_id, it->second, delivery_credit);
+                } else /* Hybrid */ {
+                    HybridPolicy::shared().add_to_reward(
+                        task->agent_id, it->second, delivery_credit);
+                }
                 task_accept_buf_idx_.erase(it);
             }
         }
@@ -517,6 +895,91 @@ void EpisodeRunner::process_arrivals(int current_step) {
         arrivals_.end());
 }
 
+// ── MCA marginal-cost dry-run ─────────────────────────────────────────────────
+//
+// Read-only mirror of DeliveryAgent::receive_task() cheapest-insertion search.
+// Returns the minimum route-cost delta (detour) for inserting task into agent
+// a's sequence over all admissible (pos_P, pos_D) positions:
+//   - pos_P in [1, n]   — preserves in-flight head at index 0
+//   - pos_D in [pos_P, n]
+//   - capacity constraint: peak load in [pos_P-1 .. pos_D-1] + 1 <= max_carry
+// For an idle agent (n==0) returns the point-to-point direct trip cost.
+
+float EpisodeRunner::compute_marginal_cost(const DeliveryAgent& a,
+                                           const PDPTask&       task) {
+    const auto& seq = a.solution.sequence;
+    const int   n   = static_cast<int>(seq.size());
+    const int   max_carry = std::max(
+        1, memory_.task_agent.params.max_tasks_per_agent);
+
+    auto seg = [&](osmium::object_id_type from,
+                   osmium::object_id_type to) -> float {
+        if (from == 0 || to == 0 || from == to) return 0.f;
+        const auto* p = memory_.get_or_compute_path(from, to, 1);
+        return (p && p->valid()) ? p->cost : kCostScale;
+    };
+
+    if (n == 0)
+        return seg(a.current_node, task.pickup.id)
+             + seg(task.pickup.id, task.delivery.id);
+
+    // Build carry-load profile (mirrors receive_task — task not yet in sequence).
+    int initial_load = 0;
+    for (const PDPTask* t : a.local_memory.tasks) {
+        if (t->task_id == task.task_id) continue;
+        if (t->timeline.picked_step >= 0 && t->timeline.delivered_step < 0)
+            ++initial_load;
+    }
+    std::vector<int> load_after(n, 0);
+    {
+        int cur = initial_load;
+        for (int i = 0; i < n; ++i) {
+            const PDPTask* t = memory_.get_task_for_node(seq[i].node.id);
+            if (t) {
+                if      (t->pickup.id   == seq[i].node.id) ++cur;
+                else if (t->delivery.id == seq[i].node.id) --cur;
+            }
+            load_after[i] = cur;
+        }
+    }
+
+    float best_delta = std::numeric_limits<float>::max();
+    for (int pP = 1; pP <= n; ++pP) {
+        for (int pD = pP; pD <= n; ++pD) {
+            int peak = 0;
+            for (int k = pP - 1; k <= pD - 1; ++k)
+                if (load_after[k] > peak) peak = load_after[k];
+            if (peak + 1 > max_carry) continue;
+
+            float delta;
+            if (pP == pD) {
+                osmium::object_id_type before = seq[pP - 1].node.id;
+                osmium::object_id_type after  = (pP == n) ? 0 : seq[pP].node.id;
+                delta = seg(before, task.pickup.id)
+                      + seg(task.pickup.id, task.delivery.id)
+                      + seg(task.delivery.id, after)
+                      - seg(before, after);
+            } else {
+                osmium::object_id_type before_P = seq[pP - 1].node.id;
+                osmium::object_id_type after_P  = seq[pP].node.id;
+                float p_delta = seg(before_P, task.pickup.id)
+                              + seg(task.pickup.id, after_P)
+                              - seg(before_P, after_P);
+
+                osmium::object_id_type before_D = seq[pD - 1].node.id;
+                osmium::object_id_type after_D  = (pD == n) ? 0 : seq[pD].node.id;
+                float d_delta = seg(before_D, task.delivery.id)
+                              + seg(task.delivery.id, after_D)
+                              - seg(before_D, after_D);
+
+                delta = p_delta + d_delta;
+            }
+            if (delta < best_delta) best_delta = delta;
+        }
+    }
+    return best_delta;
+}
+
 // ── GlobalState assembly ──────────────────────────────────────────────────────
 
 GlobalState EpisodeRunner::build_global_state(int step, int total_steps,
@@ -527,8 +990,12 @@ GlobalState EpisodeRunner::build_global_state(int step, int total_steps,
 
     gs.time_ratio     = total_steps > 0
         ? static_cast<float>(step) / total_steps : 0.f;
-    gs.n_agents_ratio = cfg_.max_agents() > 0
-        ? static_cast<float>(n_active) / cfg_.max_agents() : 0.f;
+    // Normalise against the actual agent pool (sized 1.5× the nominal
+    // max_agents() in the constructor) so the ratio stays in [0,1] even
+    // when EpisodeScenario.agents_mult exceeds 1.0.
+    const int pool = static_cast<int>(all_agents_.size());
+    gs.n_agents_ratio = pool > 0
+        ? std::clamp(static_cast<float>(n_active) / pool, 0.f, 1.f) : 0.f;
     gs.avail_ratio    = tasks_total > 0
         ? static_cast<float>(memory_.count_available()) / tasks_total : 0.f;
     gs.alloc_ratio    = tasks_total > 0
@@ -556,12 +1023,25 @@ GlobalState EpisodeRunner::build_global_state(int step, int total_steps,
           / cfg_.time_window_steps : 0.f;
     gs.accept_rate = tasks_total > 0
         ? static_cast<float>(n_accepted_) / tasks_total : 0.f;
-    gs.avg_efficiency = 0.f; // placeholder — no route-quality signal in simplified model
+    // Running mean delivery efficiency (reward per km traversed), squashed
+    // into [0,1] for the critic. Provides a real route-quality signal that
+    // shifts with the spatial mix of accepted tasks.
+    if (efficiency_count_ > 0) {
+        const float mean_eff = static_cast<float>(
+            efficiency_sum_ / efficiency_count_);
+        gs.avg_efficiency = std::clamp(mean_eff / 10.f, 0.f, 1.f);
+    } else {
+        gs.avg_efficiency = 0.f;
+    }
 
     gs.city_id_norm  = city_norm;
     gs.density_phase = phase_label;
     gs.cluster_ratio = 0.f; // could track hot-zone fraction if needed
-    gs.congestion    = 0.f; // placeholder
+    // Mean per-edge agent load at the current step, normalised to [0,1] using
+    // the BPR capacity scaling: a load equal to capacity_per_meter implies
+    // strong congestion. With default 0.05 slots/m, an average load > 2 is
+    // already heavy congestion in most edge sizes, so clamp at 5.
+    gs.congestion = std::clamp(memory_.congestion_map.mean_load_now() / 5.f, 0.f, 1.f);
 
     return gs;
 }

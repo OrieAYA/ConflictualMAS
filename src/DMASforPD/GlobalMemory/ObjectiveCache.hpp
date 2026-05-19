@@ -82,10 +82,15 @@ public:
     // Incremental Dijkstra — resumes between calls.
     // Stops at the next uncached objective node OR at any node in agent_positions.
     // agent_positions: current nodes of idle delivery agents (checked from delivery side only).
+    // max_cost: spatial pruning — stops expansion when the smallest open-set
+    //           cost exceeds this bound. Does NOT permanently exhaust the search
+    //           (the node is pushed back to the heap), so a subsequent call with
+    //           a larger max_cost will resume past the previous frontier.
     DiscoveryStep discover_step(
         osmium::object_id_type from,
         const MyData&          data,
-        const std::unordered_set<osmium::object_id_type>& agent_positions = {}
+        const std::unordered_set<osmium::object_id_type>& agent_positions = {},
+        float                  max_cost = std::numeric_limits<float>::max()
     );
 
     // Convenience wrapper (no agent detection, returns path or nullptr).
@@ -146,10 +151,12 @@ public:
     const ObjectivePath* discover_next_path(osmium::object_id_type from, int group_id);
 
     // TAM-aware step: expands one node, also checks agent_positions.
+    // max_cost prunes the Dijkstra expansion radius (see ObjectiveGroupCache::discover_step).
     ObjectiveGroupCache::DiscoveryStep discover_step(
         osmium::object_id_type from,
         int group_id,
-        const std::unordered_set<osmium::object_id_type>& agent_positions = {}
+        const std::unordered_set<osmium::object_id_type>& agent_positions = {},
+        float                  max_cost = std::numeric_limits<float>::max()
     );
 
     // Refresh the dynamic cost of a cached path using TD-A*.

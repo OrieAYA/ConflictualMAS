@@ -19,21 +19,26 @@ const std::vector<CityConfig>& CityRegistry::all() {
                         bb, role, area, lam });
     };
 
-    // ── Training: 3 Tokyo scales (curriculum-friendly: short → long tasks) ──
-    // Small  ~  5 ×  5 km — Shibuya/Shinjuku core, dense, short trips.
-    // Medium ~ 12 × 12 km — Yamanote inner wards, mixed density.
-    // Large  ~ 30 × 28 km — current bbox, full metropolitan span.
-    add("Tokyo_Small",  "Tokyo.osm.pbf", { 139.68, 35.65, 139.74, 35.70 }, CityRole::TrainAndApply,   25.0, 0.06f);
-    add("Tokyo_Medium", "Tokyo.osm.pbf", { 139.64, 35.62, 139.80, 35.74 }, CityRole::TrainAndApply,  144.0, 0.06f);
-    add("Tokyo_Large",  "Tokyo.osm.pbf", { 139.60, 35.55, 139.90, 35.80 }, CityRole::TrainAndApply,  627.0, 0.06f);
+    // ── Training: 3 city families × 2 scales (Small/Medium) ────────────────
+    // Tokyo  : Shibuya/Shinjuku core (Small) & Yamanote inner (Medium)
+    // Kyoto  : Karasuma core (Small) & Kyoto basin (Medium)
+    // LA     : Downtown core (Small) & Mid-Wilshire/Hollywood (Medium)
+    // Each "Small" ≈ 5×5 km / 25 km² and each "Medium" ≈ 12×12 km / 140 km².
+    // Tokyo_Large is kept as comparison-only because per-episode time on the
+    // 1M-node graph dominates the schedule (~3-15 min/episode).
+    add("Tokyo_Small",       "Tokyo.osm.pbf",      { 139.68, 35.65, 139.74, 35.70 }, CityRole::TrainAndApply,   25.0, 0.06f);
+    add("Tokyo_Medium",      "Tokyo.osm.pbf",      { 139.64, 35.62, 139.80, 35.74 }, CityRole::TrainAndApply,  144.0, 0.06f);
+    add("Kyoto_Small",       "Kyoto.osm.pbf",      { 135.74, 34.99, 135.79, 35.03 }, CityRole::TrainAndApply,   25.0, 0.04f);
+    add("Kyoto_Medium",      "Kyoto.osm.pbf",      { 135.70, 34.95, 135.83, 35.07 }, CityRole::TrainAndApply,  140.0, 0.04f);
+    add("LosAngeles_Small",  "LosAngeles.osm.pbf", {-118.28, 34.03,-118.22, 34.07 }, CityRole::TrainAndApply,   25.0, 0.05f);
+    add("LosAngeles_Medium", "LosAngeles.osm.pbf", {-118.32, 34.00,-118.18, 34.12 }, CityRole::TrainAndApply,  140.0, 0.05f);
 
     // ── Comparison / generalisation only ────────────────────────────────────
-    add("Kyoto",      "Kyoto.osm.pbf",      { 135.65, 34.95, 135.85, 35.10 }, CityRole::ComparisonOnly,  217.0, 0.04f);
-    add("Fukuoka",    "Fukuoka.osm.pbf",    { 130.30, 33.55, 130.55, 33.70 }, CityRole::ComparisonOnly,  340.0, 0.04f);
-    add("LosAngeles", "LosAngeles.osm.pbf", {-118.50, 33.90,-118.10, 34.15 }, CityRole::ComparisonOnly, 1300.0, 0.05f);
-    add("NewYork",    "NewYork.osm.pbf",    { -74.05, 40.60, -73.75, 40.85 }, CityRole::ComparisonOnly,  783.0, 0.07f);
-    add("Paris",      "Paris.osm.pbf",      {   2.25, 48.80,   2.45, 48.92 }, CityRole::ComparisonOnly,  105.0, 0.08f);
-    add("London",     "London.osm.pbf",     {  -0.25, 51.45,   0.00, 51.60 }, CityRole::ComparisonOnly, 1572.0, 0.05f);
+    add("Tokyo_Large", "Tokyo.osm.pbf",        { 139.60, 35.55, 139.90, 35.80 }, CityRole::ComparisonOnly,  627.0, 0.06f);
+    add("Fukuoka",     "Fukuoka.osm.pbf",      { 130.30, 33.55, 130.55, 33.70 }, CityRole::ComparisonOnly,  340.0, 0.04f);
+    add("NewYork",     "NewYork.osm.pbf",      { -74.05, 40.60, -73.75, 40.85 }, CityRole::ComparisonOnly,  783.0, 0.07f);
+    add("Paris",       "Paris.osm.pbf",        {   2.25, 48.80,   2.45, 48.92 }, CityRole::ComparisonOnly,  105.0, 0.08f);
+    add("London",      "London.osm.pbf",       {  -0.25, 51.45,   0.00, 51.60 }, CityRole::ComparisonOnly, 1572.0, 0.05f);
 
     return reg;
 }

@@ -19,6 +19,12 @@
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\ObjectiveDMPolicy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\IPPOPolicy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MapperPolicy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Training\CityConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

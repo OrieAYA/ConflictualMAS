@@ -40,6 +40,27 @@ public:
     // can use it as the time_remaining feature (1 − step/total_steps).
     float cur_time_ratio = 0.f;
 
+    // Set by EpisodeRunner once per episode (in run()). Used by try_accept_task
+    // to compute the `deliverability` feature: steps_remaining / delivery_steps.
+    //   speed_mps   — agent speed in meters per step (typically 5.0 → ~18 km/h)
+    //   total_steps — episode horizon in simulation steps (typically 3600)
+    // Without these, the policy cannot judge whether an accepted task can
+    // physically be completed before the episode ends.
+    float speed_mps   = 5.0f;
+    int   total_steps = 3600;
+
+    // Active learning-policy dispatcher used by DeliveryAgent::try_accept_task.
+    // Set by EpisodeRunner at the start of each run() based on policy_mode:
+    //   - PolicyMode::MAPPO  → kMAPPO  (shared actor + centralised critic)
+    //   - PolicyMode::IPPO   → kIPPO   (shared actor + per-agent local critic)
+    //   - PolicyMode::MAPPER → kMAPPER (per-agent actor + per-agent critic + Ev)
+    // try_accept_task routes the feature vector to the corresponding policy
+    // singleton (ObjectiveDMPolicy / IPPOPolicy / MapperPolicy) and records the
+    // experience into the right buffer. Other modes (Greedy, Random, ...) bypass
+    // try_accept_task entirely so the kind is ignored.
+    enum class PolicyKind { kMAPPO = 0, kIPPO = 1, kMAPPER = 2, kHybrid = 3 };
+    PolicyKind active_policy = PolicyKind::kMAPPO;
+
     PDPGlobalMemory() = delete;
     PDPGlobalMemory(GeoBox& box, Pathfinder& pf,
                     const CongestionParams& cparams  = {},

@@ -8,7 +8,7 @@
 #include <vector>
 
 // ── Normalisation constants ────────────────────────────────────────────────────
-static constexpr int   kPolicySz   = 12;        // feature vector length
+static constexpr int   kPolicySz   = 13;        // feature vector length
 static constexpr int   kHid        = 64;         // hidden layer width (actor & critic)
 static constexpr int   kGlobSz     = 20;         // global state vector (critic input)
 static constexpr float kCostScale  = 10'000.f;   // 10 km reference
@@ -36,8 +36,14 @@ struct PolicyFeatures {
                                    // signals "task is being recalled; refusing
                                    // again risks exhaustion (unfinished penalty)"
     float time_remaining    = 0.f; // 1 − step/total_steps ∈ [0,1]
-                                   // key refusal signal: refuse if remaining time
-                                   // is insufficient to complete the delivery
+                                   // raw fraction of episode left
+    float deliverability    = 0.f; // steps_remaining / (delivery_steps + 1), clamped to [0,1]
+                                   // 1.0 = plenty of time to deliver
+                                   // 0.5 = just enough time (tight)
+                                   // < 0.2 = task likely unfinishable
+                                   // primary feasibility signal: time_remaining
+                                   // alone says "20% of episode left"; this also
+                                   // tells the policy how long the task takes.
 
     void to_array(float* dst) const;
 };
@@ -48,8 +54,8 @@ struct ActorMLP {
     float b1[kHid]{};
     float W2[kHid * kHid]{};
     float b2[kHid]{};
-    float W3[kHid]{};  // output-layer weights (single neuron)
-    float b3 = 1.0f;   // positive bias → initial μ ≈ 0.73 (prefer acceptance)
+    float W3[kHid]{};  // output-layer weights (single neuron, shrunk ×0.01 at init)
+    float b3 = 0.0f;   // zero bias + small W3 → initial μ ≈ 0.5 (neutral policy)
 
     // Forward pass. Optional output pointers cache intermediate activations for backprop.
     float forward(const float* x,
@@ -97,19 +103,29 @@ struct Experience {
 //   - KL-divergence early stopping (stops epoch loop when policy drifts too far)
 //   - Global advantage normalisation (once per episode, before epoch loop)
 struct PPOParams {
-    float lr_actor      = 3e-4f;  // actor SGD learning rate
-    float lr_critic     = 1e-3f;  // critic SGD learning rate
+    // Effective lr at each train_epoch — annealed linearly from *_init to *_min
+    // by ObjectiveDMPolicy::set_progress(progress ∈ [0,1]). MAPPO SoTA (Yu+2022)
+    // and standard PPO practice use linear LR decay over training.
+    float lr_actor      = 3e-3f;  // current actor lr (mutated by set_progress)
+    float lr_actor_init = 3e-3f;  // value at progress=0
+    float lr_actor_min  = 3e-4f;  // value at progress=1 (×0.1 of init)
+    float lr_critic     = 1e-3f;  // current critic lr
+    float lr_critic_init = 1e-3f;
+    float lr_critic_min  = 1e-4f;
     float clip_eps      = 0.2f;   // PPO policy clip range ε
     float val_clip_eps  = 0.2f;   // value function clip range (same ε, MAPPO standard)
     float max_grad_norm = 0.5f;   // L2 gradient norm clipping
     float target_kl     = 0.01f;  // KL early-stop threshold (break epoch if exceeded)
     float gamma         = 0.99f;  // discount factor
     float lam_gae       = 0.95f;  // GAE λ
-    float ent_w         = 0.03f;  // entropy bonus coefficient (raised from 0.01
-                                  // to keep refusal samples in the buffer; with
-                                  // 0.01 the policy collapsed to acc ≈ 99.9%)
+    float ent_w         = 0.03f;  // entropy bonus coefficient (current, annealed)
+    float ent_w_init    = 0.03f;  // high early — encourages exploration
+    float ent_w_min     = 0.005f; // low late  — lets policy commit to a strategy
     int   epochs        = 10;     // max PPO gradient epochs per train_epoch call
-    int   batch_sz      = 256;    // mini-batch size (experiences per SGD step)
+    int   batch_sz      = 32;     // mini-batch size (SoTA PPO uses 32-64; previous
+                                  //   256 was larger than the per-episode buffer
+                                  //   (~60-100 exp), reducing 10 epochs of SGD
+                                  //   to 10 full-batch steps with no stochasticity)
 };
 
 // ── MAPPO shared policy (singleton) ──────────────────────────────────────────
@@ -147,10 +163,16 @@ public:
     //   agent_id   : which delivery agent made this decision (for per-agent GAE).
     void record(const PolicyFeatures& obs, float action, float reward, int agent_id);
 
-    // Update the reward for a previously recorded experience.
+    // Update the reward for a previously recorded experience (SETS reward).
     // Called at task delivery to set the completion reward on the accept entry.
     // buffer_idx must be < buffer_size(); silently ignored if out of range.
     void update_reward(int buffer_idx, float reward);
+
+    // Add `delta` to the existing reward (additive semantics).
+    // Use this for reward shaping where multiple events contribute to one
+    // experience: e.g., +pickup_reward at pickup THEN +delivery_reward at
+    // delivery, or pickup credit + unfinished penalty if delivery never happens.
+    void add_to_reward(int buffer_idx, float delta);
 
     // ── Training stats (populated by train_epoch) ─────────────────────────
     struct TrainingStats {
@@ -179,6 +201,12 @@ public:
 
     int  buffer_size() const { return static_cast<int>(buffer_.size()); }
     void clear_buffer()      { buffer_.clear(); }
+
+    // Set linear training progress ∈ [0,1] (0 = start, 1 = end). Anneals
+    // hparams.lr_actor, hparams.lr_critic and hparams.ent_w from their *_init
+    // toward their *_min values. Call this BEFORE each training episode so the
+    // next train_epoch picks up the annealed values.
+    void set_progress(float progress);
 
 private:
     std::vector<Experience> buffer_;

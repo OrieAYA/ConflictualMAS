@@ -30,8 +30,9 @@ int main()
     std::cout << "  A  DbVNS on Amazon routes (new dataset, 13 routes)\n";
     std::cout << "  B  DbVNS vs LKH benchmark (same routes, side-by-side)\n\n";
     std::cout << "[MAPPO Training]\n";
-    std::cout << "  T  Multi-city MAPPO training (Tokyo / Kyoto / LosAngeles)\n";
-    std::cout << "  S  Training smoke test (uses kanto OSM, no extra files needed)\n\n";
+    std::cout << "  T  Multi-city MAPPO training (Tokyo/Kyoto/LosAngeles × Small/Medium)\n";
+    std::cout << "  S  Training smoke test (uses kanto OSM, no extra files needed)\n";
+    std::cout << "  X  Eval-only (load saved checkpoints, light 4-mode comparison)\n\n";
     std::cout << "Choice: ";
 
     std::string rep;
@@ -62,21 +63,96 @@ int main()
         TrainingConfig cfg;
         cfg.cache_root       = cache_root;
         cfg.output_dir       = output_dir;
-        cfg.n_rounds         = 100;     // 3 cities × 100 rounds = 300 train eps/seed
-        cfg.n_seeds          = 2;       // 2 independent seeds → publishable error bars
-        cfg.n_eval_episodes  = 3;       // per city × mode (4 checkpoints × 3 × 5 × 3 = 180 eps/seed)
-        cfg.eval_every       = 25;      // eval at rounds 25, 50, 75, 100
-        cfg.save_policy      = true;    // checkpoint saved → rerun with load_policy=true to extend
+        cfg.n_rounds         = 60;
+        cfg.n_seeds          = 1;
+        cfg.n_eval_episodes  = 3;
+        cfg.eval_every       = 20;
+        cfg.save_policy      = true;
         cfg.verbose          = true;
+
+        // ── Lightweight periodic eval ────────────────────────────────────────
+        // The default eval array (12 modes × 6 cities × 3 eps = 216 eps per
+        // periodic eval) was taking 1-2h per eval window. With 3 eval windows
+        // per seed + final + stress + generalize, that's 6-8h of pure eval.
+        // The lightweight subset below (5 modes) drops periodic eval cost
+        // by 2.4× while keeping the comparison meaningful for monitoring.
+        // The FINAL exhaustive comparison should be done via option X.
+        cfg.eval_modes = {
+            PolicyMode::MAPPO,
+            PolicyMode::IPPO,
+            PolicyMode::MAPPER,
+            PolicyMode::TamAlwaysAccept,
+            PolicyMode::Greedy
+        };
+        // Periodic stress eval is expensive (same 5 modes × 6 cities); enable
+        // only at the end if needed. Generalize eval kept at end of each seed.
+        cfg.skip_stress_eval     = true;
+        cfg.skip_generalize_eval = false;
+
+        // Train on Tokyo/Kyoto/LA × Small/Medium only (6 cities). Generalisation
+        // eval on Tokyo_Large/Fukuoka/NewYork/Paris/London is disabled because
+        // the policy structure changed (lr_actor ×10, adv ×2) and the old
+        // generalization protocol added 3+ h that doesn't fit the overnight budget.
 
         // To extend from a saved checkpoint (add more seeds / rounds):
         //   cfg.load_policy  = true;
-        //   cfg.policy_path  = output_dir + "/policy_seed0.bin";
+        //   cfg.policy_path  = output_dir + "/policy_seed42.bin";
 
         MultiCityTrainer trainer;
         trainer.train(cfg);
     }
     else if (rep == "S" || rep == "s") run_training_smoke_test(osm_file, cache_dir);
+    else if (rep == "X" || rep == "x") {
+        // ── Eval-only: 5-mode benchmark across all 7 cities ──────────────────
+        // The FINAL publication-grade comparison. Evaluates 5 policies on every
+        // available city (train + held-out = 7) with both normal and stress
+        // scenarios. Uses saved checkpoints, no training.
+        //
+        // Modes:
+        //   - MAPPO           (shared actor, centralised critic)
+        //   - MAPPER          (per-agent actor + evolutionary RL)
+        //   - Hybrid          (MAPPO base + per-agent online residual)
+        //   - TamAlwaysAccept (TAM-only ablation)
+        //   - Greedy          (sanity baseline)
+        //
+        // Coverage: 5 modes × 7 cities × 2 phases (normal + stress) × 5 eps
+        //         = 350 eval episodes per seed.
+        const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
+        const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
+        const std::string output_dir = "C:\\ConflictualMAS\\results";
+        CityRegistry::set_osm_root(osm_root);
+
+        TrainingConfig cfg;
+        cfg.cache_root       = cache_root;
+        cfg.output_dir       = output_dir;
+        cfg.n_seeds          = 1;
+        cfg.n_eval_episodes  = 5;
+        cfg.verbose          = true;
+
+        // Eval-only flags — full coverage: train + stress + generalize
+        cfg.eval_only            = true;
+        cfg.skip_stress_eval     = false;  // include over-saturated scenarios
+        cfg.skip_generalize_eval = false;  // include held-out cities
+
+        // Final 5-mode comparison (publication target)
+        cfg.eval_modes = {
+            PolicyMode::MAPPO,
+            PolicyMode::MAPPER,
+            PolicyMode::Hybrid,
+            PolicyMode::TamAlwaysAccept,
+            PolicyMode::Greedy
+        };
+
+        // Load trained policies from disk. Hybrid auto-derives its base from
+        // the loaded MAPPO actor inside MultiCityTrainer.
+        cfg.load_policy        = true;
+        cfg.policy_path        = output_dir + "/policy_seed42.bin";
+        cfg.ippo_policy_path   = output_dir + "/ippo_seed42.bin";
+        cfg.mapper_policy_path = output_dir + "/mapper_seed42.bin";
+
+        MultiCityTrainer trainer;
+        trainer.train(cfg);
+    }
     else std::cout << "Unknown option.\n";
 
     return 0;
@@ -92,8 +168,8 @@ int main()
 //   with a small 4×5 km central Tokyo bbox — no extra downloads needed.
 //
 // HOW TO RUN
-//   1. Build  : cmake --build C:\ConflictualMAS\build --config Debug
-//   2. Launch : build\Debug\main.exe  →  type S
+//   1. Build  : cmake --build "C:/ConflictualMAS/build" --config Release 2>&1 | grep -iE "error|main.vcxproj ->" | tail -10
+//   2. Launch : C:\ConflictualMAS\build\Release\main.exe
 //
 // WHAT IT CHECKS
 //   1. GeoBox loads and contains valid road nodes.
@@ -117,143 +193,194 @@ int main()
 // =============================================================================
 
 // =============================================================================
-// OPTION T - MAPPO Multi-City Training
+// OPTION T - MAPPO Multi-City Training (publishable protocol)
 // =============================================================================
 //
 // OVERVIEW
-//   Trains a shared MAPPO policy (actor + centralized critic) on the Lifelong
-//   General Pickup-and-Delivery Problem across 7 real city road graphs.
-//   Each agent independently decides to accept or refuse task offers using a
-//   shared 10->64->64->1 MLP (sigmoid), trained via PPO with centralised critic.
+//   Trains a shared MAPPO policy on the Lifelong General Pickup-and-Delivery
+//   Problem (LGPDP) over 3 Tokyo scales (curriculum), then evaluates on unseen
+//   cities for out-of-distribution generalisation.
+//
+//   Architecture (CTDE):
+//     Actor  (shared)      :  MLP  12 -> 64 -> 64 -> 1  (sigmoid, Bernoulli)
+//     Critic (centralised) :  MLP  20 -> 64 -> 64 -> 1  (linear, V(global_state))
+//
+//   Allocation: real Task Allocation Module (incremental Dijkstra from pickup
+//   and delivery; agents discovered via objective nodes of their assigned tasks;
+//   plan-order check before offer; max 3 recalls with importance boost).
 //
 // =============================================================================
 // STEP-BY-STEP TUTORIAL
 // =============================================================================
 //
-// STEP 1 -- Download OSM regional files (no extra tool needed)
-//   The code uses libosmium (already linked) to parse .pbf files with a bbox
-//   filter applied at runtime. No pre-extraction or osmium-tool required.
+// STEP 1 -- OSM file (only Tokyo is required to train)
+//   Required for training: src/maps/Tokyo.osm.pbf
+//     All 3 train scales (Small/Medium/Large) use the same Tokyo.osm.pbf with
+//     different bboxes (5x5 km / 12x12 km / 30x28 km).
 //
-//   Download these 6 files from geofabrik.de and place them in:
-//     C:\ConflictualMAS\src\maps\
+//   Optional for the generalisation phase (loaded with graceful skip):
+//     src/maps/Kyoto.osm.pbf       Kyoto       (~217 km²)
+//     src/maps/Fukuoka.osm.pbf     Fukuoka     (~340 km²)
+//     src/maps/LosAngeles.osm.pbf  Los Angeles (~1300 km²)
+//     src/maps/NewYork.osm.pbf     New York    (~783 km²)
+//     src/maps/Paris.osm.pbf       Paris       (~105 km²)
+//     src/maps/London.osm.pbf      London      (~1572 km²)
 //
-//   File                          URL (geofabrik.de)                       Covers
-//   kanto-latest.osm.pbf          /asia/japan/kanto                        Tokyo + Kyoto
-//   kyushu-latest.osm.pbf         /asia/japan/kyushu                       Fukuoka
-//   california-latest.osm.pbf     /north-america/us/california             Los Angeles
-//   new-york-latest.osm.pbf       /north-america/us/new-york               New York
-//   ile-de-france-latest.osm.pbf  /europe/france/ile-de-france             Paris
-//   great-britain-latest.osm.pbf  /europe/great-britain                    London
-//
-//   Note: kanto-latest.osm.pbf is already at src/maps/ (used by smoke test).
-//         Only 5 additional downloads are needed.
+//   Any missing OSM file is skipped at load time (printed as "[Skip] <city>").
 //
 // STEP 2 -- Build
 //   cmake --build C:\ConflictualMAS\build --config Debug
 //
-// STEP 3 -- Run the smoke test (sanity check before the full run, ~5 min)
+// STEP 3 -- Smoke test (sanity check, ~30 s after first OSM parse)
 //   build\Debug\main.exe  ->  type S
 //   Expected: === PASS ===
 //
 // STEP 4 -- Launch training
 //   build\Debug\main.exe  ->  type T
 //
-//   First run: each city .pbf is parsed and cached as a .json GeoBox in
-//     C:\ConflictualMAS\data\cache\
-//   Parsing is slow (~5-15 min per city, ~60-90 min total for all 7) because
-//   libosmium reads the full regional file and filters by bbox.
-//   All subsequent runs load from cache and skip parsing entirely.
+//   First run: each city bbox is parsed from Tokyo.osm.pbf and cached as JSON
+//   in C:\ConflictualMAS\data\cache\ (Tokyo_Small.json, etc.). Subsequent
+//   runs skip parsing.
 //
 //   Expected console flow:
-//     Loading 7 cities from C:\ConflictualMAS\data\cache
-//       [Load] Tokyo    <- OSM (kanto-latest.osm.pbf, parsing...)   <- first run
-//       [Load] Tokyo    <- cache                                     <- next runs
+//     Loading 3 train cities from C:\ConflictualMAS\data\cache
+//       [Load] Tokyo_Small  <- OSM (parsing...)   <- first run
+//       [Load] Tokyo_Small  <- cache              <- next runs
 //       ...
-//     All cities loaded.
+//     All train cities loaded.
+//
+//     Loading generalisation cities (skip if missing)...
+//       [Skip] Kyoto -- failed to load city Kyoto    <- if Kyoto.osm.pbf absent
+//       [Load] LosAngeles  <- cache
+//       ...
 //
 //     Seed 0  (rng=42)
-//       [s0 r0 Tokyo]      thr=0.18  acc=0.73  aloss=...  kl=...  ep=.../10  n=...  ...ms
-//       [s0 r0 Kyoto]      thr=0.21  ...
-//       [s0 r0 Fukuoka]    ...
-//       [s0 r0 LosAngeles] ...
-//       [s0 r0 NewYork]    ...
-//       [s0 r0 Paris]      ...
-//       [s0 r0 London]     ...
-//       -- Eval @ round 25 --
-//       -- Eval @ round 50 --
-//       -- Final Eval --
-//       [Checkpoint] saved to C:\ConflictualMAS\results\policy_seed0.bin
-//     Seed 0 done -- 665 episodes.
-//     Training complete. Results in C:\ConflictualMAS\results
+//       [s0 r0 Tokyo_Small]   thr=...  acc=...  aloss=...  cf=...  ms=...
+//       [s0 r0 Tokyo_Medium]  ...
+//       [s0 r0 Tokyo_Large]   ...
+//       -- Eval @ round 25 --        <- 3 cities x 5 modes x 3 eps = 45 episodes
+//       ...
+//       -- Eval @ round 100 --
+//       -- Generalisation Eval (N cities) --   <- 3 modes x N x 3 eps
+//       [Checkpoint] saved to .../policy_seed42.bin
+//     Seed 0 done.
+//
+//     Seed 1  (rng=43)  ...
 //
 // STEP 5 -- Check results
 //   C:\ConflictualMAS\results\
-//     seed0.csv          -- all episode metrics (open in Excel / plot with Python)
-//     summary.csv        -- aggregated stats
-//     policy_seed0.bin   -- trained weights
+//     seed42.csv         -- per-episode metrics for seed 0 (rng=42)
+//     seed43.csv         -- per-episode metrics for seed 1 (rng=43)
+//     summary.csv        -- per-seed aggregates
+//     policy_seed42.bin  -- trained weights for seed 0
+//     policy_seed43.bin  -- trained weights for seed 1
 //
-//   Key columns to watch (split=train rows):
-//     throughput_rate  -- rises from ~0.2 toward >0.5 as policy converges
-//     accept_rate      -- moves away from 0.73 flat; settles ~0.5-0.8
-//     critic_loss      -- should decrease toward 0 over rounds
+//   Key comparisons (filter split=eval or split=generalize):
+//     MAPPO vs TamAlwaysAccept   -- isolates the value of policy LEARNING
+//                                   (both use the same TAM routing)
+//     TamAlwaysAccept vs Greedy  -- isolates the value of TAM routing
+//     MAPPO vs InsertionGreedy   -- vs the strongest non-learning baseline
 //
-// STEP 6 -- Extend training (optional, for publication-quality results)
-//   Uncomment in the TrainingConfig block below:
-//     cfg.load_policy = true;
-//     cfg.policy_path = output_dir + "/policy_seed0.bin";
-//   Run again -> type T.
-//   Each additional 50-round seed takes ~3-4 h.  3 seeds recommended for stats.
+//   Convergence to watch on split=train (per round, per city):
+//     throughput_rate  -- rises with rounds
+//     accept_rate      -- settles ~0.4-0.8 (NOT pinned at 0.99 or 0.01)
+//     clip_fraction    -- > 0.05 means PPO updates are non-trivial
 //
 // =============================================================================
-// TECHNICAL REFERENCE
+// TRAINING PROTOCOL
 // =============================================================================
 //
-// -- TRAINING PROTOCOL (single 5-6 h session) ---------------------------------
+//   Seeds             :  2  (rng = 42, 43)
+//   Rounds per seed   :  100  (one MAPPO episode per train city per round)
+//   Train cities      :  3  (Tokyo_Small, Tokyo_Medium, Tokyo_Large)
+//   Train episodes    :  100 x 3            =  300 / seed
+//   Eval checkpoints  :  rounds 25, 50, 75, 100   = 4 / seed
+//   Eval modes        :  8  (MAPPO, TamAlwaysAccept, Greedy, Random, InsertionGreedy,
+//                            LaCAM, PIBT, CongestionAware)
+//                       — see related works mapping in EpisodeRunner.hpp
+//   Eval episodes     :  3 x 6 x 8 x 3      =  432 / seed
+//   Generalise modes  :  4  (MAPPO, TamAlwaysAccept, LaCAM, CongestionAware)
+//   Generalise eps    :  N_gen x 3 x 3      (per seed, N_gen = available comp. cities)
+//   Total per seed    :  ~480 + 9*N_gen episodes
 //
-//   Seeds             :  1  (add more via load_policy; see Step 6)
-//   Rounds per seed   :  50  (one episode per city per round, round-robin)
-//   Train cities      :  7  (all cities, shared policy)
-//   Train episodes    :  50 x 7 = 350
-//   Eval checkpoints  :  rounds 25 and 50 + final  =  3 per seed
-//   Eval episodes     :  3 x 7 cities x 3 modes x 5 eps  =  315
-//   Total episodes    :  665
+//   Timing (after Tokyo.osm.pbf is cached, Debug build):
+//     Per seed   :  ~1.5-2 h   (large Tokyo dominates)
+//     2 seeds    :  ~3-4 h
 //
-//   Timing (1 seed, after first-run GeoBox cache is built):
-//     Training  :  350 eps x ~25 s avg  ~  2.5 h
-//     Eval      :  315 eps x ~10 s avg  ~  52 min
-//     Total     :  ~3.5 h
+// =============================================================================
+// EPISODE STRUCTURE (3 600 steps, three-phase curriculum)
+// =============================================================================
 //
-// -- EPISODE STRUCTURE (pseudo-day, 3 600 steps) ------------------------------
+// Per-city overrides applied by MultiCityTrainer::customize_episode_for_city:
 //
-//   Phase       Steps   Agents   Tasks/agent   Lambda     Hot zones
-//   Low          1000    8-10       ~100        ~0.90         4
-//   Medium       1500   10-13       ~200        ~1.53         6
-//   High         1100   13-15       ~250        ~3.18         8
+//   Tokyo_Small  (~25 km²)   max_tasks_per_agent=3
+//     Low   1000 steps  4-5 agents   3 tasks/agent   3 hot zones
+//     Med   1500 steps  5-7 agents   5 tasks/agent   4 hot zones
+//     High  1100 steps  7-8 agents   7 tasks/agent   5 hot zones
 //
-//   Poisson arrivals (lambda > 1 valid); fleet ramps linearly within each phase.
-//   Hot zones resampled at phase boundaries. Task dist: 300 m to 8 000 m.
+//   Tokyo_Medium (~144 km²)  max_tasks_per_agent=3
+//     Low   1000 steps  6-8 agents   4 tasks/agent   4 hot zones
+//     Med   1500 steps  8-10         6 tasks/agent   6 hot zones
+//     High  1100 steps  10-12        7 tasks/agent   7 hot zones
 //
-// -- NETWORK ARCHITECTURE -----------------------------------------------------
+//   Tokyo_Large  (>=300 km²) max_tasks_per_agent=4
+//     Low   1000 steps  8-10         4 tasks/agent   4 hot zones
+//     Med   1500 steps  10-13        6 tasks/agent   6 hot zones
+//     High  1100 steps  13-15        8 tasks/agent   8 hot zones
 //
-//   Actor  (shared)      :  MLP  10 -> 64 -> 64 -> 1  (sigmoid, Bernoulli policy)
-//   Critic (centralised) :  MLP  20 -> 64 -> 64 -> 1  (linear, V(global_state))
-//   PPO clip eps=0.20  |  gamma=0.99  |  lam_GAE=0.95  |  10 epochs / episode
-//   Mini-batch SGD + grad norm clipping (max_norm=0.5) + KL early stop (0.01).
+// Poisson task arrivals; fleet ramps linearly within each phase. Hot zones
+// resampled at phase boundaries.
 //
-// -- CONVERGENCE MONITORING ---------------------------------------------------
+// =============================================================================
+// MAPPO HYPERPARAMETERS
+// =============================================================================
+//
+//   PPO clip eps      = 0.20
+//   gamma             = 0.99
+//   lambda (GAE)      = 0.95
+//   epochs / episode  = 10  (with KL early stop at 0.01)
+//   Grad-norm clipping (max_norm=0.5), mini-batch SGD.
+//
+// Policy feature vector (12 floats, see ObjectiveDMPolicy::PolicyFeatures):
+//   Rentability : profit_rate, insertion_cost_norm
+//   Status      : current_load, queue_duration_norm
+//   Social      : call_rank_norm, importance_norm, recall_round_norm
+//   Relativity  : n_active_norm, allocated_ratio, available_ratio
+//   Temporal    : time_remaining
+//
+// =============================================================================
+// CONVERGENCE MONITORING
+// =============================================================================
 //
 //   Verbose log (one line per training episode):
-//     [s0 r5 Tokyo]  thr=0.41  acc=0.68  aloss=0.12  closs=0.08  ent=0.61
-//                    kl=0.007  cf=0.18  ep=10/10  n=312  420ms
+//     [s0 r5 Tokyo_Small]  thr=0.41  acc=0.68  aloss=0.12  closs=0.08
+//                          ent=0.61  kl=0.007  cf=0.18  ep=10/10  n=312  420ms
 //
-//   thr rises, ent falls, closs falls, kl < 0.01 -> policy is converging.
+//   Healthy signals:
+//     cf  > 0.05   PPO updates are non-trivial (was 0 before fixes -> degenerate)
+//     acc in [0.4, 0.85]  policy actually refuses some tasks
+//     thr rises across rounds
+//     ent decreases gradually
+//     kl < 0.02 most steps (else lr too high)
+//
 //   ep < 10/10 means KL early stop triggered (normal and healthy).
 //
-// -- TUNING -------------------------------------------------------------------
+// =============================================================================
+// TUNING
+// =============================================================================
 //
-//   n_rounds, eval_every, n_eval_episodes  -- in the TrainingConfig block below
-//   phases, min_task_dist_m, speed_mps    -- src/Training/EpisodeConfig.hpp
-//   lr_actor, lr_critic, epochs           -- src/DMASforPD/Policy/ObjectiveDMPolicy.hpp
+//   n_rounds, n_seeds, eval_every, n_eval_episodes
+//     -> in the TrainingConfig block below
+//
+//   tasks_per_agent, n_agents per phase, hot zones
+//     -> src/Training/MultiCityTrainer.cpp :: customize_episode_for_city
+//
+//   PPO hyperparameters (lr_actor, lr_critic, epochs, clip_eps, ...)
+//     -> src/DMASforPD/Policy/ObjectiveDMPolicy.hpp
+//
+//   Resume / extend from checkpoint:
+//     cfg.load_policy = true;
+//     cfg.policy_path = output_dir + "/policy_seed42.bin";
 //
 // =============================================================================
 

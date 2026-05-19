@@ -54,6 +54,12 @@ public:
     // Call at the start of each new episode so steps 0..N are accepted again.
     void reset();
 
+    // Mean agent load at the current step across all tracked edges.
+    // Returns 0 if no edge currently has any load. Used by EpisodeRunner to
+    // populate GlobalState::congestion so the centralised critic sees a real
+    // congestion signal (was a 0-padding placeholder before).
+    float mean_load_now() const;
+
 private:
     std::unordered_map<osmium::object_id_type,
         std::unordered_map<int, int>> load_;   // way_id → {step_t → agent_count}

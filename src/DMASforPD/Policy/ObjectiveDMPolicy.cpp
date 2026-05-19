@@ -53,6 +53,7 @@ void PolicyFeatures::to_array(float* dst) const {
     dst[ 9] = n_avail_ratio;
     dst[10] = recall_round_norm;
     dst[11] = time_remaining;
+    dst[12] = deliverability;
 }
 
 // ── ActorMLP ──────────────────────────────────────────────────────────────────
@@ -60,9 +61,16 @@ void ActorMLP::init_xavier(std::mt19937& rng) {
     xavier(W1, kPolicySz, kHid, rng);
     xavier(W2, kHid, kHid, rng);
     xavier(W3, kHid, 1, rng);
+    // SoTA PPO output-layer init (SB3 / CleanRL convention):
+    //   - Output weights shrunk by 0.01 so the initial logit ≈ 0 regardless of input,
+    //     giving μ ≈ 0.5 (neutral policy — agent neither prefers accept nor refuse).
+    //   - Bias = 0 (was 1.0 which biased to acc ≈ 0.73 and caused collapse to acc≈1.0
+    //     when combined with the +1 vs −0.15 reward gap).
+    // The neutral start lets exploration drive the policy toward the true optimum.
+    for (int i = 0; i < kHid; ++i) W3[i] *= 0.01f;
     std::fill(b1, b1 + kHid, 0.f);
     std::fill(b2, b2 + kHid, 0.f);
-    b3 = 1.0f; // → sigmoid(1.0) ≈ 0.73: prefer acceptance before training
+    b3 = 0.0f;
 }
 
 float ActorMLP::forward(const float* x,
@@ -119,6 +127,14 @@ ObjectiveDMPolicy& ObjectiveDMPolicy::shared() {
     return instance;
 }
 
+void ObjectiveDMPolicy::set_progress(float progress) {
+    const float p = std::clamp(progress, 0.f, 1.f);
+    auto lerp = [p](float a, float b) { return a + p * (b - a); };
+    hparams.lr_actor  = lerp(hparams.lr_actor_init,  hparams.lr_actor_min);
+    hparams.lr_critic = lerp(hparams.lr_critic_init, hparams.lr_critic_min);
+    hparams.ent_w     = lerp(hparams.ent_w_init,     hparams.ent_w_min);
+}
+
 float ObjectiveDMPolicy::score(const PolicyFeatures& features) const {
     float x[kPolicySz];
     features.to_array(x);
@@ -147,6 +163,11 @@ void ObjectiveDMPolicy::record(const PolicyFeatures& obs, float action,
 void ObjectiveDMPolicy::update_reward(int buffer_idx, float reward) {
     if (buffer_idx >= 0 && buffer_idx < static_cast<int>(buffer_.size()))
         buffer_[buffer_idx].reward = reward;
+}
+
+void ObjectiveDMPolicy::add_to_reward(int buffer_idx, float delta) {
+    if (buffer_idx >= 0 && buffer_idx < static_cast<int>(buffer_.size()))
+        buffer_[buffer_idx].reward += delta;
 }
 
 // ── Gradient norm clipping (L2, in-place) ────────────────────────────────────
@@ -400,7 +421,13 @@ ObjectiveDMPolicy::TrainingStats ObjectiveDMPolicy::train_epoch(
     float adv_std = std::sqrt(adv_var / n + 1e-8f);
     ts.adv_mean = adv_mean;
     ts.adv_std  = adv_std;
-    for (auto& e : buffer_) e.advantage = (e.advantage - adv_mean) / adv_std;
+    // Standard normalisation (mean 0, std 1) then a 2× post-scale. The extra
+    // amplification pushes actor gradients past sigmoid saturation so PPO-clip
+    // actually triggers on borderline decisions; with the prior 1× scale and
+    // 3e-4 lr the policy hovered at Xavier init (cf=0 across 100 rounds).
+    constexpr float kAdvScale = 2.0f;
+    for (auto& e : buffer_)
+        e.advantage = kAdvScale * (e.advantage - adv_mean) / adv_std;
 
     // ── 4. Mini-batch PPO epoch loop with KL early stopping ───────────────
     std::vector<int> perm(n);

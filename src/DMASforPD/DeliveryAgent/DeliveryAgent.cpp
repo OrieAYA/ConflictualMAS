@@ -2,6 +2,9 @@
 #include "DMASforPD/GlobalMemory/GlobalMemory.hpp"
 #include "DMASforPD/TaskAgent/TaskAllocationModule.hpp"
 #include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
+#include "DMASforPD/Policy/IPPOPolicy.hpp"
+#include "DMASforPD/Policy/MapperPolicy.hpp"
+#include "DMASforPD/Policy/HybridPolicy.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -44,16 +47,167 @@ void DeliveryAgent::disconnect(PDPGlobalMemory& memory) {
 void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
     add_task_to_memory(task);
 
-    // FIFO append for both Idle and Active.
-    // plan() reorder is intentionally NOT called for active agents: it would
-    // rebuild solution.sequence (clear + reinsert) while the in-flight EdgeCursor
-    // and ScheduledArrival still target the original front. solution.advance()
-    // at arrival would then pop the new (reordered) front, breaking the
-    // invariant front().id == edge_cursor.target. FIFO append preserves it.
-    solution.push_back(task.pickup);
-    solution.push_back(task.delivery);
+    // ── Capacity-aware insertion (DbVNS-PDP spirit, extended for LGPDP) ───────
+    //
+    // The agent's queue length is unbounded; what matters is the simultaneous
+    // carrying load (picked-but-not-yet-delivered packages) at every step of
+    // the planned sequence. This must never exceed the physical capacity
+    // max_tasks_per_agent. We extend the existing DbVNS-PDP planning idea
+    // (constraint-aware exploration of admissible positions) into an
+    // online insertion routine that respects three constraints:
+    //
+    //   1. **In-flight invariant** — solution.sequence[0] is being traversed
+    //      via edge_cursor; we never touch it (pos_P >= 1).
+    //   2. **Sequence constraint** — for every task, pickup must precede
+    //      delivery (enforced by construction: pos_D >= pos_P).
+    //   3. **Capacity constraint** — at no point may the simultaneous carry
+    //      exceed max_carry (verified against the load profile).
+    //
+    // Among admissible (pos_P, pos_D) pairs we pick the one minimising the
+    // induced detour cost (cheapest-insertion in the Solomon / Savelsbergh
+    // PDP literature, restricted to the constraint tree above). The (n, n)
+    // pair — FIFO append at the end — is always admissible (carry = 1 around
+    // adjacent P,D), so the search always terminates with a valid plan.
+    //
+    // Tasks already picked up but not yet delivered (i.e. whose delivery is
+    // still in the sequence) contribute to the initial carrying load — without
+    // this, an agent mid-task could be told to accept another package while
+    // already at capacity.
+
+    const int max_carry = std::max(
+        1, memory.task_agent.params.max_tasks_per_agent);
+
+    auto& seq = solution.sequence;
+    const int n = static_cast<int>(seq.size());
+
+    // Idle agent ⇒ trivial: queue just becomes [P, D].
+    if (n == 0) {
+        solution.push_back(task.pickup);
+        solution.push_back(task.delivery);
+        status = AgentStatus::Active;
+        prefetch_next_path(memory);
+        return;
+    }
+
+    // ── Initial carrying load: count tasks already picked but not delivered.
+    // Skip the just-added new task — it has not been picked yet.
+    int initial_load = 0;
+    for (const PDPTask* t : local_memory.tasks) {
+        if (t == &task) continue;
+        if (t->timeline.picked_step >= 0 && t->timeline.delivered_step < 0)
+            ++initial_load;
+    }
+
+    // ── Build the carry-load profile of the current sequence.
+    //   load_after[i] = simultaneous carry AFTER visiting seq[i]
+    //   (load_before[0] = initial_load by definition)
+    std::vector<int> load_after(n, 0);
+    {
+        int cur = initial_load;
+        for (int i = 0; i < n; ++i) {
+            const PDPTask* t = memory.get_task_for_node(seq[i].node.id);
+            if (t) {
+                if      (t->pickup.id   == seq[i].node.id) ++cur;
+                else if (t->delivery.id == seq[i].node.id) --cur;
+            }
+            load_after[i] = cur;
+        }
+    }
+
+    // ── Path-cost helper using the persistent A* cache (group 1).
+    auto seg = [&](osmium::object_id_type from,
+                   osmium::object_id_type to) -> float {
+        if (from == 0 || to == 0 || from == to) return 0.f;
+        const auto* p = memory.get_or_compute_path(from, to, 1);
+        return (p && p->valid()) ? p->cost : kCostScale;
+    };
+
+    // ── Constraint-tree search over admissible (pos_P, pos_D).
+    //   Range for pos_P: [1, n]  (preserve in-flight at index 0; n = append)
+    //   Range for pos_D: [pos_P, n]  (D after P; pos_D == pos_P = D right after P)
+    //
+    //   Capacity test: max(load_after[pos_P-1 .. pos_D-1]) + 1 <= max_carry.
+    //   If pos_P == pos_D, range is the single index pos_P-1.
+    float best_delta = std::numeric_limits<float>::max();
+    int   best_pP = -1, best_pD = -1;
+
+    for (int pP = 1; pP <= n; ++pP) {
+        for (int pD = pP; pD <= n; ++pD) {
+            // Capacity branch pruning.
+            int peak_load = 0;
+            for (int k = pP - 1; k <= pD - 1; ++k)
+                if (load_after[k] > peak_load) peak_load = load_after[k];
+            if (peak_load + 1 > max_carry) continue;
+
+            // Insertion cost delta — closed-form, two cases:
+            float delta;
+            if (pP == pD) {
+                // P and D adjacent in the new sequence (D right after P).
+                osmium::object_id_type before =
+                    (pP == 0) ? current_node : seq[pP - 1].node.id;
+                osmium::object_id_type after =
+                    (pP == n) ? 0 : seq[pP].node.id;
+
+                const float c_bp = seg(before, task.pickup.id);
+                const float c_pd = seg(task.pickup.id, task.delivery.id);
+                const float c_da = seg(task.delivery.id, after);   // 0 if no after
+                const float c_ba = seg(before, after);             // 0 if no after
+                delta = c_bp + c_pd + c_da - c_ba;
+            } else {
+                // P at pP, D at pD with pP < pD — two independent insertions.
+                osmium::object_id_type before_P =
+                    (pP == 0) ? current_node : seq[pP - 1].node.id;
+                osmium::object_id_type after_P = seq[pP].node.id;     // pP < n
+                const float p_delta = seg(before_P, task.pickup.id)
+                                    + seg(task.pickup.id, after_P)
+                                    - seg(before_P, after_P);
+
+                osmium::object_id_type before_D = seq[pD - 1].node.id; // pD >= 1
+                osmium::object_id_type after_D =
+                    (pD == n) ? 0 : seq[pD].node.id;
+                const float d_delta = seg(before_D, task.delivery.id)
+                                    + seg(task.delivery.id, after_D)
+                                    - seg(before_D, after_D);
+
+                delta = p_delta + d_delta;
+            }
+
+            if (delta < best_delta) {
+                best_delta = delta;
+                best_pP    = pP;
+                best_pD    = pD;
+            }
+        }
+    }
+
+    // ── Apply the chosen insertion. (n, n) is always admissible (FIFO append
+    // at the tail with carry = 1), so best_pP >= 0 holds in practice; the
+    // explicit fallback covers any pathological no-path case.
+    if (best_pP < 0) {
+        solution.push_back(task.pickup);
+        solution.push_back(task.delivery);
+    } else {
+        // Snapshot the existing nodes (clearing the sequence loses the
+        // SolutionStep wrappers, but estimated_arrival is recomputed by
+        // commit_plan() called by the caller).
+        std::vector<ObjectiveNode> snapshot;
+        snapshot.reserve(static_cast<size_t>(n) + 2);
+        for (int i = 0; i < best_pP; ++i) snapshot.push_back(seq[i].node);
+        snapshot.push_back(task.pickup);
+        for (int i = best_pP; i < best_pD; ++i) snapshot.push_back(seq[i].node);
+        snapshot.push_back(task.delivery);
+        for (int i = best_pD; i < n; ++i) snapshot.push_back(seq[i].node);
+
+        seq.clear();
+        for (const auto& node : snapshot) solution.push_back(node);
+    }
 
     status = AgentStatus::Active;
+
+    // Pre-fetched next_path may be stale when pos_P == 1 (the second
+    // objective changed). Refresh unconditionally — the call is cheap and
+    // safe regardless of whether the next objective actually moved.
+    prefetch_next_path(memory);
 }
 
 void DeliveryAgent::remove_completed_task(int task_id) {
@@ -103,7 +257,14 @@ float DeliveryAgent::try_accept_task(const TaskOffer& offer, PDPGlobalMemory& me
     f.current_load   = std::clamp(
         static_cast<float>(local_memory.tasks.size()) / kMaxLoad, 0.f, 1.f);
     f.queue_duration = std::clamp(route_cost / kQueueScale, 0.f, 1.f);
-    f.efficiency_loss= std::clamp(insertion_cost / (route_cost + eps), 0.f, 1.f);
+    // Fractional route extension. Idle agents (route_cost ≈ 0) get 0 — they start
+    // fresh, no efficiency loss. Busy agents get insertion/(route+insertion) ∈ [0,1]:
+    // 0 = task is free relative to existing route, 1 = doubles the route.
+    // Previous formula insertion/(route+ε) collapsed to 1.0 for idle agents,
+    // signalling "worst case" exactly when the agent was most available.
+    f.efficiency_loss = (route_cost < 1.f)
+        ? 0.f
+        : std::clamp(insertion_cost / (route_cost + insertion_cost + eps), 0.f, 1.f);
     f.rank_in_call   = 1.f - std::clamp(
         static_cast<float>(offer.prev_agents.size()) / kMaxAgents, 0.f, 1.f);
     f.task_importance= std::clamp(offer.importance / kImpMax, 0.f, 1.f);
@@ -121,22 +282,75 @@ float DeliveryAgent::try_accept_task(const TaskOffer& offer, PDPGlobalMemory& me
         ? static_cast<float>(memory.count_available()) / total : 0.f;
     f.time_remaining = std::clamp(1.f - memory.cur_time_ratio, 0.f, 1.f);
 
+    // Deliverability: physical feasibility of completing this task before the
+    // episode ends. Computes how many simulation steps are left vs. how many
+    // steps the agent needs to traverse insertion_cost meters at speed_mps.
+    //   delivery_steps  ≈ insertion_cost / speed_mps
+    //   steps_remaining ≈ time_remaining * total_steps
+    //   deliverability  = steps_remaining / (delivery_steps + 1)  ∈ [0, 1]
+    // Interpretation:
+    //   1.0  → at least as much time as needed (safe)
+    //   0.5  → roughly 50% margin — half the time is consumed by travel
+    //   <0.2 → task very likely cannot be completed in time
+    // This is the policy's primary signal for accept/refuse decisions near
+    // episode end, complementing time_remaining (which only says "how much of
+    // the episode is left" without referencing task length).
+    {
+        const float delivery_steps = insertion_cost
+            / std::max(memory.speed_mps, 0.1f);
+        const float steps_remaining = std::max(0.f, 1.f - memory.cur_time_ratio)
+            * static_cast<float>(memory.total_steps);
+        f.deliverability = std::clamp(
+            steps_remaining / (delivery_steps + 1.f), 0.f, 1.f);
+    }
+
     // ── Stochastic action sampling ─────────────────────────────────────────────
-    // PPO requires the recorded action to be sampled from π(a|s). A hard
-    // threshold (action = μ ≥ 0.5) was used previously, which produced
-    // mathematically inconsistent log_probs and locked the policy at acc ≈ 1.0
-    // because μ never had to cross 0.5 to generate action=0 experiences.
-    // Sampling Bernoulli(μ) naturally generates both action=1 and action=0
-    // records around any μ ∈ (0,1), allowing the gradient to learn the true
-    // accept/refuse trade-off.
+    // PPO requires the recorded action to be sampled from π(a|s). Bernoulli(μ)
+    // naturally generates both action=1 and action=0 around any μ ∈ (0,1),
+    // letting the gradient learn the accept/refuse trade-off.
+    //
+    // Dispatch to the active learning policy:
+    //   - kMAPPO  → ObjectiveDMPolicy (shared actor, centralised critic)
+    //   - kIPPO   → IPPOPolicy (shared actor, per-agent local critic)
+    //   - kMAPPER → MapperPolicy (per-agent actor, per-agent critic + Ev)
+    // The TAM is policy-agnostic; it just compares the returned score to 0.5.
     static thread_local std::mt19937 rng{std::random_device{}()};
-    float mu = ObjectiveDMPolicy::shared().score(f);
+    float mu;
+    switch (memory.active_policy) {
+        case PDPGlobalMemory::PolicyKind::kIPPO:
+            mu = IPPOPolicy::shared().score(f);
+            break;
+        case PDPGlobalMemory::PolicyKind::kMAPPER:
+            mu = MapperPolicy::shared().score(agent_id, f);
+            break;
+        case PDPGlobalMemory::PolicyKind::kHybrid:
+            mu = HybridPolicy::shared().score(agent_id, f);
+            break;
+        case PDPGlobalMemory::PolicyKind::kMAPPO:
+        default:
+            mu = ObjectiveDMPolicy::shared().score(f);
+            break;
+    }
     std::bernoulli_distribution dist(std::clamp(mu, 0.001f, 0.999f));
     float action = dist(rng) ? 1.f : 0.f;
 
     // Reward is 0 at decision time; EpisodeRunner::on_objective_reached calls
     // update_reward() with the actual task value when the task is delivered.
-    ObjectiveDMPolicy::shared().record(f, action, 0.f, agent_id);
+    switch (memory.active_policy) {
+        case PDPGlobalMemory::PolicyKind::kIPPO:
+            IPPOPolicy::shared().record(agent_id, f, action, 0.f);
+            break;
+        case PDPGlobalMemory::PolicyKind::kMAPPER:
+            MapperPolicy::shared().record(agent_id, f, action, 0.f);
+            break;
+        case PDPGlobalMemory::PolicyKind::kHybrid:
+            HybridPolicy::shared().record(agent_id, f, action, 0.f);
+            break;
+        case PDPGlobalMemory::PolicyKind::kMAPPO:
+        default:
+            ObjectiveDMPolicy::shared().record(f, action, 0.f, agent_id);
+            break;
+    }
     return action;  // 0 or 1 — TAM still uses >= 0.5 threshold which works.
 }
 
@@ -281,6 +495,4 @@ void DeliveryAgent::plan(PDPGlobalMemory& memory, float speed_mps) {
 
 void DeliveryAgent::add_task_to_memory(PDPTask& task) {
     local_memory.tasks.push_back(&task);
-    local_memory.operable_env.add_task(task);
-    local_memory.local_agents.emplace_back(task.delivery);
 }

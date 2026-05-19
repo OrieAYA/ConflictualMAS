@@ -8,15 +8,6 @@
 
 namespace fs = std::filesystem;
 
-static std::string policy_mode_str(PolicyMode m) {
-    switch (m) {
-    case PolicyMode::Greedy:          return "Greedy";
-    case PolicyMode::Random:          return "Random";
-    case PolicyMode::InsertionGreedy: return "InsertionGreedy";
-    default:                          return "MAPPO";
-    }
-}
-
 // ── Construction ─────────────────────────────────────────────────────────────
 
 TrainingLogger::TrainingLogger(const std::string& output_dir, int seed) {
@@ -40,6 +31,7 @@ void TrainingLogger::write_header() {
           << "tasks_appeared,tasks_completed,throughput_rate,"
           << "accept_rate,refuse_rate,"
           << "latency_mean,latency_per_agent,agent_utilisation,"
+          << "mean_congestion,mean_trip_steps,"
           << "actor_loss,critic_loss,entropy,adv_std,n_experiences,"
           << "wallclock_ms\n";
     header_written_ = true;
@@ -64,6 +56,8 @@ void TrainingLogger::write_row(const EpisodeRecord& r) {
           << r.latency_mean     << ','
           << r.latency_per_agent<< ','
           << r.agent_utilisation<< ','
+          << r.mean_congestion  << ','
+          << r.mean_trip_steps  << ','
           << r.actor_loss       << ','
           << r.critic_loss      << ','
           << r.entropy          << ','
@@ -99,6 +93,8 @@ void TrainingLogger::write_summary(const std::string& path,
           << "accept_rate_mean,accept_rate_std,"
           << "latency_mean_mean,latency_mean_std,"
           << "utilisation_mean,utilisation_std,"
+          << "mean_congestion_mean,mean_congestion_std,"
+          << "mean_trip_steps_mean,mean_trip_steps_std,"
           << "actor_loss_mean,critic_loss_mean,entropy_mean\n";
     }
 
@@ -136,6 +132,8 @@ void TrainingLogger::write_summary(const std::string& path,
         float acc_m  = mean_of([](const EpisodeRecord& r){ return r.accept_rate; });
         float lat_m  = mean_of([](const EpisodeRecord& r){ return r.latency_mean; });
         float uti_m  = mean_of([](const EpisodeRecord& r){ return r.agent_utilisation; });
+        float cng_m  = mean_of([](const EpisodeRecord& r){ return r.mean_congestion; });
+        float trp_m  = mean_of([](const EpisodeRecord& r){ return r.mean_trip_steps; });
 
         f << seed << ','
           << group[0]->city << ',' << group[0]->phase << ',' << group[0]->policy_mode << ','
@@ -145,6 +143,8 @@ void TrainingLogger::write_summary(const std::string& path,
           << acc_m  << ',' << std_of([](const EpisodeRecord& r){ return r.accept_rate; },    acc_m) << ','
           << lat_m  << ',' << std_of([](const EpisodeRecord& r){ return r.latency_mean; },   lat_m) << ','
           << uti_m  << ',' << std_of([](const EpisodeRecord& r){ return r.agent_utilisation; },uti_m) << ','
+          << cng_m  << ',' << std_of([](const EpisodeRecord& r){ return r.mean_congestion; }, cng_m) << ','
+          << trp_m  << ',' << std_of([](const EpisodeRecord& r){ return r.mean_trip_steps; }, trp_m) << ','
           << mean_of([](const EpisodeRecord& r){ return r.actor_loss; })  << ','
           << mean_of([](const EpisodeRecord& r){ return r.critic_loss; }) << ','
           << mean_of([](const EpisodeRecord& r){ return r.entropy; })     << '\n';
@@ -177,6 +177,8 @@ EpisodeRecord make_record(const RunResult& result,
     r.latency_mean      = m.latency_mean;
     r.latency_per_agent = m.latency_per_agent;
     r.agent_utilisation = m.agent_utilisation;
+    r.mean_congestion   = m.mean_congestion;
+    r.mean_trip_steps   = m.mean_trip_steps;
 
     const auto& ts = result.train_stats;
     r.actor_loss        = ts.actor_loss;

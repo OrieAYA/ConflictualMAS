@@ -1,0 +1,1288 @@
+[s0 r0 Tokyo_Small stress_heavy]  thr=0.138365  acc=0.289308  aloss=-0.0110747  closs=2.29405  ent=0.693144  kl=-0.000178098  cf=0  ep=10/10  n=85  7309ms
+  [s0 r0 Tokyo_Medium normal]  thr=0.0550459  acc=0.385321  aloss=-0.324342  closs=15.8756  ent=0.693092  kl=8.60227e-05  cf=0  ep=10/10  n=97  51061ms
+  [s0 r0 Kyoto_Small normal]  thr=0.193548  acc=0.348387  aloss=-0.0124284  closs=1.36563  ent=0.69278  kl=0.000738739  cf=0  ep=10/10  n=113  4419ms
+  [s0 r0 Kyoto_Medium normal]  thr=0.0336134  acc=0.336134  aloss=0.00128922  closs=9.88894  ent=0.69253  kl=-0.000418035  cf=0  ep=10/10  n=85  35372ms
+  [s0 r0 LosAngeles_Small stress_heavy]  thr=0.162338  acc=0.318182  aloss=-0.000894719  closs=2.60373  ent=0.692477  kl=2.1817e-06  cf=0  ep=10/10  n=94  11079ms
+  [s0 r0 LosAngeles_Medium stress_heavy]  thr=0.0849057  acc=0.424528  aloss=0.0380793  closs=11.308  ent=0.691904  kl=-0.000247611  cf=0  ep=10/10  n=78  40939ms
+  [s0 r1 Tokyo_Small stress_light]  thr=0.232  acc=0.424  aloss=0.0290692  closs=3.10759  ent=0.691453  kl=0.000618114  cf=0  ep=10/10  n=105  10673ms
+  [s0 r1 Tokyo_Medium normal]  thr=0.148148  acc=0.481481  aloss=0.00360664  closs=14.5773  ent=0.690534  kl=-0.000153201  cf=0  ep=10/10  n=90  69363ms
+  [s0 r1 Kyoto_Small normal]  thr=0.208861  acc=0.360759  aloss=0.0159951  closs=0.381726  ent=0.688771  kl=0.00164892  cf=0  ep=10/10  n=111  10738ms
+  [s0 r1 Kyoto_Medium normal]  thr=0.123894  acc=0.442478  aloss=0.0198253  closs=7.75821  ent=0.684482  kl=-0.00159761  cf=0  ep=10/10  n=76  41419ms
+  [s0 r1 LosAngeles_Small stress_light]  thr=0.191781  acc=0.356164  aloss=0.0103792  closs=1.58532  ent=0.68427  kl=-0.000174086  cf=0  ep=10/10  n=85  15333ms
+  [s0 r1 LosAngeles_Medium stress_light]  thr=0.174312  acc=0.504587  aloss=0.00846038  closs=10.4484  ent=0.682367  kl=0.000999618  cf=0  ep=10/10  n=111  42191ms
+  [s0 r2 Tokyo_Small normal]  thr=0.184211  acc=0.342105  aloss=-0.0110441  closs=1.26342  ent=0.679482  kl=0.00044458  cf=0  ep=10/10  n=93  9687ms
+  [s0 r2 Tokyo_Medium stress_heavy]  thr=0.13913  acc=0.452174  aloss=0.0416501  closs=21.532  ent=0.673831  kl=0.00141879  cf=0  ep=10/10  n=106  79924ms
+  [s0 r2 Kyoto_Small normal]  thr=0.190789  acc=0.342105  aloss=0.167397  closs=1.40144  ent=0.673745  kl=-0.000207598  cf=0  ep=10/10  n=97  12871ms
+  [s0 r2 Kyoto_Medium stress_heavy]  thr=0.130841  acc=0.46729  aloss=0.0248274  closs=10.4474  ent=0.669751  kl=-0.00369548  cf=0  ep=10/10  n=68  31665ms
+  [s0 r2 LosAngeles_Small stress_heavy]  thr=0.194631  acc=0.355705  aloss=-0.0113696  closs=1.02462  ent=0.666802  kl=0.000434053  cf=0  ep=10/10  n=89  13757ms
+  [s0 r2 LosAngeles_Medium stress_light]  thr=0.145455  acc=0.472727  aloss=-0.0136062  closs=17.5649  ent=0.661309  kl=-0.00011748  cf=0  ep=10/10  n=88  46763ms
+  [s0 r3 Tokyo_Small normal]  thr=0.16  acc=0.297143  aloss=0.00052385  closs=2.75592  ent=0.661799  kl=-4.74246e-06  cf=0  ep=10/10  n=83  20187ms
+  [s0 r3 Tokyo_Medium stress_heavy]  thr=0.169231  acc=0.446154  aloss=0.0020385  closs=10.1469  ent=0.658482  kl=7.284e-06  cf=0  ep=10/10  n=92  90902ms
+  [s0 r3 Kyoto_Small stress_heavy]  thr=0.258993  acc=0.431655  aloss=0.00806699  closs=0.633303  ent=0.660671  kl=-0.000376505  cf=0  ep=10/10  n=89  11462ms
+  [s0 r3 Kyoto_Medium normal]  thr=0.153846  acc=0.5  aloss=-0.00273526  closs=5.59908  ent=0.655898  kl=0.000169261  cf=0  ep=10/10  n=80  31486ms
+  [s0 r3 LosAngeles_Small normal]  thr=0.244755  acc=0.391608  aloss=-0.000645415  closs=0.685947  ent=0.658724  kl=0.000475163  cf=0  ep=10/10  n=94  12834ms
+  [s0 r3 LosAngeles_Medium normal]  thr=0.0782609  acc=0.391304  aloss=0.0636195  closs=11.2128  ent=0.651829  kl=0.000268351  cf=0  ep=10/10  n=68  56167ms
+  [s0 r4 Tokyo_Small stress_light]  thr=0.213333  acc=0.373333  aloss=-0.0123578  closs=0.855737  ent=0.653887  kl=-9.62017e-05  cf=0  ep=10/10  n=84  18456ms
+  [s0 r4 Tokyo_Medium stress_light]  thr=0.154472  acc=0.447154  aloss=-0.0040109  closs=15.0274  ent=0.649493  kl=-7.14133e-05  cf=0  ep=10/10  n=94  124024ms
+  [s0 r4 Kyoto_Small normal]  thr=0.230303  acc=0.375758  aloss=-0.000490348  closs=0.798049  ent=0.648893  kl=0.000916189  cf=0  ep=10/10  n=105  14860ms
+  [s0 r4 Kyoto_Medium stress_light]  thr=0.156522  acc=0.469565  aloss=0.00428546  closs=13.5981  ent=0.639534  kl=0.00262716  cf=0  ep=10/10  n=72  50852ms
+  [s0 r4 LosAngeles_Small stress_light]  thr=0.194118  acc=0.335294  aloss=-0.00616287  closs=0.791883  ent=0.646004  kl=-0.00056805  cf=0  ep=10/10  n=83  23932ms
+  [s0 r4 LosAngeles_Medium normal]  thr=0.15  acc=0.45  aloss=-0.00177274  closs=9.49282  ent=0.634809  kl=0.00198371  cf=0  ep=10/10  n=93  59817ms
+  [s0 r5 Tokyo_Small normal]  thr=0.157895  acc=0.315789  aloss=0.0452942  closs=1.41728  ent=0.634009  kl=0.00138554  cf=0  ep=10/10  n=79  20253ms
+  [s0 r5 Tokyo_Medium normal]  thr=0.131579  acc=0.447368  aloss=-0.0529786  closs=18.5868  ent=0.626191  kl=0.00233253  cf=0  ep=10/10  n=67  109892ms
+  [s0 r5 Kyoto_Small stress_heavy]  thr=0.226994  acc=0.374233  aloss=0.0290602  closs=1.0007  ent=0.634134  kl=-0.00056719  cf=0  ep=10/10  n=84  15152ms
+  [s0 r5 Kyoto_Medium stress_light]  thr=0.139535  acc=0.418605  aloss=0.128092  closs=11.608  ent=0.628455  kl=0.00128751  cf=0  ep=10/10  n=71  51759ms
+  [s0 r5 LosAngeles_Small normal]  thr=0.222222  acc=0.356725  aloss=0.0298737  closs=1.70664  ent=0.636682  kl=0.000535932  cf=0  ep=10/10  n=80  21899ms
+  [s0 r5 LosAngeles_Medium normal]  thr=0.154545  acc=0.463636  aloss=-0.0515645  closs=11.5975  ent=0.633617  kl=7.58616e-05  cf=0  ep=10/10  n=71  53207ms
+  [s0 r6 Tokyo_Small normal]  thr=0.222973  acc=0.385135  aloss=0.0049196  closs=0.752546  ent=0.642739  kl=-8.1202e-05  cf=0  ep=10/10  n=90  23210ms
+  [s0 r6 Tokyo_Medium stress_light]  thr=0.115789  acc=0.494737  aloss=0.0405852  closs=9.76988  ent=0.633821  kl=0.000291264  cf=0  ep=10/10  n=72  70126ms
+  [s0 r6 Kyoto_Small stress_light]  thr=0.205479  acc=0.369863  aloss=0.0779668  closs=1.47642  ent=0.641021  kl=0.000176755  cf=0  ep=10/10  n=77  16629ms
+  [s0 r6 Kyoto_Medium normal]  thr=0.116071  acc=0.4375  aloss=0.0222292  closs=8.7389  ent=0.632593  kl=-0.000106094  cf=0  ep=10/10  n=75  43711ms
+  [s0 r6 LosAngeles_Small stress_light]  thr=0.220588  acc=0.397059  aloss=-0.0261341  closs=0.681735  ent=0.637362  kl=-0.000687281  cf=0  ep=10/10  n=78  19076ms
+  [s0 r6 LosAngeles_Medium normal]  thr=0.171717  acc=0.525253  aloss=0.0064294  closs=4.64605  ent=0.626333  kl=-0.000135426  cf=0  ep=10/10  n=74  62233ms
+  [s0 r7 Tokyo_Small normal]  thr=0.23913  acc=0.413043  aloss=-0.0319728  closs=0.913319  ent=0.623367  kl=-0.00125385  cf=0  ep=10/10  n=80  17077ms
+  [s0 r7 Tokyo_Medium stress_heavy]  thr=0.182609  acc=0.486957  aloss=0.00379054  closs=10.5283  ent=0.610233  kl=-2.15733e-05  cf=0  ep=10/10  n=80  114308ms
+  [s0 r7 Kyoto_Small stress_light]  thr=0.26087  acc=0.434783  aloss=-0.0280732  closs=0.725265  ent=0.60893  kl=-0.000973387  cf=0  ep=10/10  n=79  14882ms
+  [s0 r7 Kyoto_Medium normal]  thr=0.141593  acc=0.460177  aloss=-0.0493593  closs=6.21891  ent=0.602304  kl=0.000406115  cf=0  ep=10/10  n=70  44907ms
+  [s0 r7 LosAngeles_Small stress_heavy]  thr=0.241379  acc=0.406897  aloss=-0.00719591  closs=1.34464  ent=0.614223  kl=0.000600194  cf=0  ep=10/10  n=89  19192ms
+  [s0 r7 LosAngeles_Medium normal]  thr=0.168  acc=0.456  aloss=-0.00576325  closs=7.93422  ent=0.604359  kl=-0.000144468  cf=0  ep=10/10  n=88  109500ms
+  [s0 r8 Tokyo_Small normal]  thr=0.236842  acc=0.394737  aloss=0.00393658  closs=0.525897  ent=0.611355  kl=6.33935e-05  cf=0  ep=10/10  n=92  26353ms
+  [s0 r8 Tokyo_Medium stress_light]  thr=0.162393  acc=0.461538  aloss=0.00789397  closs=14.4661  ent=0.600542  kl=-4.77099e-05  cf=0  ep=10/10  n=74  116019ms
+  [s0 r8 Kyoto_Small normal]  thr=0.2375  acc=0.375  aloss=-0.0154568  closs=1.26731  ent=0.609981  kl=0.000301034  cf=0  ep=10/10  n=90  17322ms
+  [s0 r8 Kyoto_Medium normal]  thr=0.165138  acc=0.486239  aloss=0.0341351  closs=3.72437  ent=0.596224  kl=0.000166364  cf=0  ep=10/10  n=79  44976ms
+  [s0 r8 LosAngeles_Small normal]  thr=0.268456  acc=0.42953  aloss=-0.00709498  closs=1.63421  ent=0.595013  kl=0.000173437  cf=0  ep=10/10  n=89  22211ms
+  [s0 r8 LosAngeles_Medium stress_heavy]  thr=0.155738  acc=0.45082  aloss=0.043941  closs=8.18123  ent=0.586165  kl=-8.42096e-05  cf=0  ep=10/10  n=79  73367ms
+  [s0 r9 Tokyo_Small stress_light]  thr=0.194444  acc=0.361111  aloss=0.0384024  closs=0.827554  ent=0.590615  kl=-0.000122152  cf=0  ep=10/10  n=73  25397ms
+  [s0 r9 Tokyo_Medium stress_light]  thr=0.162162  acc=0.477477  aloss=0.0198719  closs=11.072  ent=0.575517  kl=-0.000179232  cf=0  ep=10/10  n=71  106513ms
+  [s0 r9 Kyoto_Small normal]  thr=0.213836  acc=0.36478  aloss=-0.00575615  closs=1.29641  ent=0.57956  kl=-0.00113617  cf=0  ep=10/10  n=75  14299ms
+  [s0 r9 Kyoto_Medium stress_heavy]  thr=0.168067  acc=0.470588  aloss=0.00192392  closs=5.90911  ent=0.566839  kl=0.000218168  cf=0  ep=10/10  n=75  58679ms
+  [s0 r9 LosAngeles_Small normal]  thr=0.187879  acc=0.333333  aloss=-0.0606701  closs=1.26155  ent=0.58032  kl=-0.000602229  cf=0  ep=10/10  n=70  28142ms
+  [s0 r9 LosAngeles_Medium stress_light]  thr=0.130841  acc=0.46729  aloss=-0.0527785  closs=13.1045  ent=0.564984  kl=1.80805e-06  cf=0  ep=10/10  n=67  55541ms
+  [s0 r10 Tokyo_Small normal]  thr=0.235714  acc=0.407143  aloss=0.0188504  closs=1.19831  ent=0.569529  kl=0.00104457  cf=0  ep=10/10  n=84  23537ms
+  [s0 r10 Tokyo_Medium stress_heavy]  thr=0.150943  acc=0.490566  aloss=0.0467115  closs=24.2198  ent=0.549277  kl=-0.000123641  cf=0  ep=10/10  n=67  99875ms
+  [s0 r10 Kyoto_Small stress_heavy]  thr=0.300752  acc=0.481203  aloss=0.00355351  closs=1.42316  ent=0.557147  kl=0.000351869  cf=0  ep=10/10  n=87  17313ms
+  [s0 r10 Kyoto_Medium stress_light]  thr=0.154472  acc=0.447154  aloss=0.0322547  closs=9.12957  ent=0.530356  kl=7.38737e-05  cf=0  ep=10/10  n=73  60338ms
+  [s0 r10 LosAngeles_Small stress_heavy]  thr=0.225352  acc=0.394366  aloss=0.047282  closs=1.26018  ent=0.535271  kl=-0.00224732  cf=0  ep=10/10  n=67  24456ms
+  [s0 r10 LosAngeles_Medium stress_light]  thr=0.18018  acc=0.504505  aloss=0.0162089  closs=3.57683  ent=0.506478  kl=-0.00171713  cf=0  ep=10/10  n=65  62597ms
+  [s0 r11 Tokyo_Small stress_light]  thr=0.186047  acc=0.372093  aloss=0.000484779  closs=0.788167  ent=0.512627  kl=-0.000689153  cf=0  ep=10/10  n=58  25217ms
+  [s0 r11 Tokyo_Medium stress_heavy]  thr=0.150442  acc=0.469027  aloss=-0.107797  closs=16.0616  ent=0.495715  kl=0.000770981  cf=0  ep=10/10  n=65  150204ms
+  [s0 r11 Kyoto_Small stress_light]  thr=0.256  acc=0.448  aloss=0.00441107  closs=0.85565  ent=0.505127  kl=-0.000566179  cf=0  ep=10/10  n=70  23898ms
+  [s0 r11 Kyoto_Medium normal]  thr=0.175926  acc=0.509259  aloss=-0.0242007  closs=6.13094  ent=0.477494  kl=-0.00052291  cf=0  ep=10/10  n=68  50380ms
+  [s0 r11 LosAngeles_Small stress_light]  thr=0.305344  acc=0.480916  aloss=-0.0290342  closs=1.33139  ent=0.483946  kl=3.64619e-05  cf=0  ep=10/10  n=78  21398ms
+  [s0 r11 LosAngeles_Medium normal]  thr=0.119658  acc=0.42735  aloss=-0.000176884  closs=14.4609  ent=0.467804  kl=-0.00052051  cf=0  ep=10/10  n=63  66421ms
+  [s0 r12 Tokyo_Small stress_heavy]  thr=0.224359  acc=0.378205  aloss=0.018028  closs=1.06043  ent=0.486765  kl=0.000556185  cf=0  ep=10/10  n=74  42629ms
+  [s0 r12 Tokyo_Medium normal]  thr=0.185841  acc=0.504425  aloss=-0.0943916  closs=10.2814  ent=0.451633  kl=-2.1278e-05  cf=0  ep=10/10  n=65  91666ms
+  [s0 r12 Kyoto_Small stress_light]  thr=0.179487  acc=0.333333  aloss=0.381408  closs=0.901335  ent=0.468948  kl=-0.00107048  cf=0  ep=10/10  n=66  22159ms
+  [s0 r12 Kyoto_Medium normal]  thr=0.115385  acc=0.461538  aloss=0.00284759  closs=4.27453  ent=0.452861  kl=0.000727732  cf=0  ep=10/10  n=55  48151ms
+  [s0 r12 LosAngeles_Small normal]  thr=0.190141  acc=0.359155  aloss=0.159275  closs=1.18822  ent=0.47023  kl=0.00192702  cf=0  ep=10/10  n=66  33350ms
+  [s0 r12 LosAngeles_Medium normal]  thr=0.0707071  acc=0.434343  aloss=0.000887666  closs=16.0582  ent=0.442698  kl=0.00081298  cf=0  ep=10/10  n=54  60171ms
+  [s0 r13 Tokyo_Small normal]  thr=0.2125  acc=0.35625  aloss=-0.0484713  closs=0.938706  ent=0.44524  kl=0.00183803  cf=0  ep=10/10  n=76  29304ms
+  [s0 r13 Tokyo_Medium normal]  thr=0.142857  acc=0.464286  aloss=0.0030961  closs=13.9755  ent=0.417731  kl=4.84886e-05  cf=0  ep=10/10  n=62  84758ms
+  [s0 r13 Kyoto_Small normal]  thr=0.283688  acc=0.453901  aloss=0.0335583  closs=1.53942  ent=0.451765  kl=-0.000410467  cf=0  ep=10/10  n=80  23633ms
+  [s0 r13 Kyoto_Medium stress_light]  thr=0.155963  acc=0.486239  aloss=-0.00125708  closs=8.16895  ent=0.427508  kl=2.63847e-05  cf=0  ep=10/10  n=63  48504ms
+  [s0 r13 LosAngeles_Small normal]  thr=0.307087  acc=0.488189  aloss=-0.0133231  closs=1.55354  ent=0.443951  kl=-0.000296974  cf=0  ep=10/10  n=72  20847ms
+  [s0 r13 LosAngeles_Medium normal]  thr=0.211009  acc=0.53211  aloss=0.00383789  closs=9.12628  ent=0.412555  kl=-0.000496242  cf=0  ep=10/10  n=66  53138ms
+  [s0 r14 Tokyo_Small stress_heavy]  thr=0.222973  acc=0.385135  aloss=-0.0217445  closs=1.47424  ent=0.424396  kl=-0.000405338  cf=0  ep=10/10  n=72  25316ms
+  [s0 r14 Tokyo_Medium stress_light]  thr=0.168224  acc=0.504673  aloss=0.0033715  closs=12.5852  ent=0.413742  kl=0.000422449  cf=0  ep=10/10  n=61  100200ms
+  [s0 r14 Kyoto_Small stress_light]  thr=0.225  acc=0.375  aloss=-0.020494  closs=1.31184  ent=0.439169  kl=0.00170085  cf=0  ep=10/10  n=78  23268ms
+  [s0 r14 Kyoto_Medium normal]  thr=0.135922  acc=0.485437  aloss=-0.0101282  closs=5.2798  ent=0.422222  kl=-0.000723108  cf=0  ep=10/10  n=61  41385ms
+  [s0 r14 LosAngeles_Small stress_heavy]  thr=0.210884  acc=0.37415  aloss=0.0551384  closs=1.1004  ent=0.439086  kl=0.000569695  cf=0  ep=10/10  n=68  21256ms
+  [s0 r14 LosAngeles_Medium stress_light]  thr=0.104348  acc=0.417391  aloss=-0.0276553  closs=8.69654  ent=0.412955  kl=-0.000289017  cf=0  ep=10/10  n=51  102200ms
+  [s0 r15 Tokyo_Small stress_light]  thr=0.170886  acc=0.322785  aloss=0.015675  closs=2.21263  ent=0.430229  kl=-3.70647e-05  cf=0  ep=10/10  n=55  25210ms
+  [s0 r15 Tokyo_Medium normal]  thr=0.188119  acc=0.534653  aloss=-0.000679203  closs=13.4162  ent=0.418993  kl=-0.000118886  cf=0  ep=10/10  n=64  79753ms
+  [s0 r15 Kyoto_Small normal]  thr=0.272152  acc=0.417722  aloss=0.0119595  closs=2.05776  ent=0.428614  kl=-0.000344657  cf=0  ep=10/10  n=77  22123ms
+  [s0 r15 Kyoto_Medium normal]  thr=0.148148  acc=0.592593  aloss=-0.0136554  closs=6.89198  ent=0.405289  kl=0.000316181  cf=0  ep=10/10  n=54  35005ms
+  [s0 r15 LosAngeles_Small normal]  thr=0.243421  acc=0.401316  aloss=-0.0502574  closs=1.25845  ent=0.429259  kl=0.00088548  cf=0  ep=10/10  n=69  25381ms
+  [s0 r15 LosAngeles_Medium stress_light]  thr=0.204545  acc=0.602273  aloss=-0.00237165  closs=7.30097  ent=0.411321  kl=-0.00038262  cf=0  ep=10/10  n=59  59631ms
+  [s0 r16 Tokyo_Small stress_heavy]  thr=0.206061  acc=0.345455  aloss=-0.0792962  closs=1.38228  ent=0.415368  kl=-0.000239261  cf=0  ep=10/10  n=66  26495ms
+  [s0 r16 Tokyo_Medium stress_heavy]  thr=0.13  acc=0.49  aloss=-0.00833451  closs=10.6325  ent=0.411106  kl=0.00114896  cf=0  ep=10/10  n=55  121523ms
+  [s0 r16 Kyoto_Small stress_heavy]  thr=0.225352  acc=0.394366  aloss=0.0305303  closs=1.55797  ent=0.430601  kl=0.000405276  cf=0  ep=10/10  n=66  12850ms
+  [s0 r16 Kyoto_Medium normal]  thr=0.131579  acc=0.447368  aloss=-0.0151866  closs=9.33768  ent=0.404738  kl=0.00293767  cf=0  ep=10/10  n=68  79908ms
+  [s0 r16 LosAngeles_Small normal]  thr=0.180124  acc=0.329193  aloss=0.0133232  closs=2.00118  ent=0.43188  kl=0.000786309  cf=0  ep=10/10  n=65  33431ms
+  [s0 r16 LosAngeles_Medium stress_light]  thr=0.141593  acc=0.460177  aloss=-0.163793  closs=12.2005  ent=0.400112  kl=0.00197662  cf=0  ep=10/10  n=66  97065ms
+  [s0 r17 Tokyo_Small normal]  thr=0.208861  acc=0.360759  aloss=-0.0451287  closs=1.36339  ent=0.398298  kl=0.00189619  cf=0  ep=10/10  n=66  30871ms
+  [s0 r17 Tokyo_Medium stress_heavy]  thr=0.115044  acc=0.433628  aloss=-0.0232084  closs=6.52866  ent=0.370507  kl=7.11442e-05  cf=0  ep=10/10  n=54  67951ms
+  [s0 r17 Kyoto_Small normal]  thr=0.244898  acc=0.408163  aloss=0.00489286  closs=1.17132  ent=0.395788  kl=0.000202661  cf=0  ep=10/10  n=72  20171ms
+  [s0 r17 Kyoto_Medium normal]  thr=0.154545  acc=0.463636  aloss=-0.00532806  closs=7.91892  ent=0.370131  kl=-2.94007e-05  cf=0  ep=10/10  n=57  50632ms
+  [s0 r17 LosAngeles_Small normal]  thr=0.22  acc=0.38  aloss=0.0636971  closs=1.0447  ent=0.402202  kl=-0.000312275  cf=0  ep=10/10  n=71  27355ms
+  [s0 r17 LosAngeles_Medium stress_light]  thr=0.0824742  acc=0.443299  aloss=-0.00892664  closs=12.663  ent=0.368645  kl=-0.000203861  cf=0  ep=10/10  n=48  48921ms
+  [s0 r18 Tokyo_Small stress_heavy]  thr=0.201439  acc=0.374101  aloss=0.00463011  closs=0.633518  ent=0.38418  kl=0.000625521  cf=0  ep=10/10  n=56  23681ms
+  [s0 r18 Tokyo_Medium normal]  thr=0.163636  acc=0.481818  aloss=-0.00910972  closs=6.99709  ent=0.370993  kl=0.000159498  cf=0  ep=10/10  n=59  130042ms
+  [s0 r18 Kyoto_Small stress_heavy]  thr=0.254902  acc=0.405229  aloss=-0.0356308  closs=1.55266  ent=0.395654  kl=-8.72689e-05  cf=0  ep=10/10  n=73  24186ms
+  [s0 r18 Kyoto_Medium normal]  thr=0.175439  acc=0.491228  aloss=-0.0203429  closs=6.66548  ent=0.36289  kl=-0.000375668  cf=0  ep=10/10  n=58  47908ms
+  [s0 r18 LosAngeles_Small stress_light]  thr=0.260274  acc=0.417808  aloss=-0.0767969  closs=0.96454  ent=0.391176  kl=0.000490155  cf=0  ep=10/10  n=72  28021ms
+  [s0 r18 LosAngeles_Medium normal]  thr=0.122951  acc=0.409836  aloss=0.000259125  closs=4.91001  ent=0.353794  kl=0.000563006  cf=0  ep=10/10  n=62  79967ms
+  [s0 r19 Tokyo_Small stress_light]  thr=0.207792  acc=0.363636  aloss=0.0338521  closs=1.45266  ent=0.373109  kl=-0.00072015  cf=0  ep=10/10  n=67  37665ms
+  [s0 r19 Tokyo_Medium normal]  thr=0.144144  acc=0.459459  aloss=-0.00488259  closs=10.2085  ent=0.354598  kl=0.000625108  cf=0  ep=10/10  n=60  93646ms
+  [s0 r19 Kyoto_Small normal]  thr=0.193548  acc=0.341935  aloss=-0.001743  closs=0.947203  ent=0.365808  kl=0.000278562  cf=0  ep=10/10  n=62  33480ms
+  [s0 r19 Kyoto_Medium stress_heavy]  thr=0.208  acc=0.496  aloss=0.0605429  closs=9.8697  ent=0.352547  kl=4.3011e-05  cf=0  ep=10/10  n=70  57819ms
+  [s0 r19 LosAngeles_Small stress_light]  thr=0.171053  acc=0.328947  aloss=-0.00359581  closs=2.19875  ent=0.36635  kl=-0.000195027  cf=0  ep=10/10  n=57  32234ms
+  [s0 r19 LosAngeles_Medium stress_light]  thr=0.14876  acc=0.446281  aloss=0.00199329  closs=6.55708  ent=0.359003  kl=8.99406e-05  cf=0  ep=10/10  n=60  68349ms
+  -- Eval @ round 20 --
+    [eval Tokyo_Small/MAPPO/1/3]  thr=0.205479  acc=0.369863  33527ms
+    [eval Tokyo_Small/MAPPO/2/3]  thr=0.21831  acc=0.387324  24363ms
+    [eval Tokyo_Small/MAPPO/3/3]  thr=0.202797  acc=0.370629  22869ms
+    [eval Tokyo_Small/TamAlwaysAccept/1/3]  thr=0.251852  acc=0.42963  20195ms
+    [eval Tokyo_Small/TamAlwaysAccept/2/3]  thr=0.190141  acc=0.359155  23405ms
+    [eval Tokyo_Small/TamAlwaysAccept/3/3]  thr=0.173653  acc=0.317365  26944ms
+    [eval Tokyo_Small/Greedy/1/3]  thr=0.113821  acc=0.308943  6916ms
+    [eval Tokyo_Small/Greedy/2/3]  thr=0.152  acc=0.344  3053ms
+    [eval Tokyo_Small/Greedy/3/3]  thr=0.115108  acc=0.28777  3348ms
+    [eval Tokyo_Small/Random/1/3]  thr=0.11875  acc=0.26875  3329ms
+    [eval Tokyo_Small/Random/2/3]  thr=0.10596  acc=0.264901  3572ms
+    [eval Tokyo_Small/Random/3/3]  thr=0.114865  acc=0.277027  3540ms
+    [eval Tokyo_Small/InsertionGreedy/1/3]  thr=0.133758  acc=0.286624  5160ms
+    [eval Tokyo_Small/InsertionGreedy/2/3]  thr=0.141791  acc=0.320896  5870ms
+    [eval Tokyo_Small/InsertionGreedy/3/3]  thr=0.123288  acc=0.280822  4811ms
+    [eval Tokyo_Small/LaCAM/1/3]  thr=0.124183  acc=0.27451  5534ms
+    [eval Tokyo_Small/LaCAM/2/3]  thr=0.162963  acc=0.340741  6449ms
+    [eval Tokyo_Small/LaCAM/3/3]  thr=0.17931  acc=0.344828  5807ms
+    [eval Tokyo_Small/PIBT/1/3]  thr=0.125786  acc=0.27044  3363ms
+    [eval Tokyo_Small/PIBT/2/3]  thr=0.111111  acc=0.277778  3631ms
+    [eval Tokyo_Small/PIBT/3/3]  thr=0.141026  acc=0.294872  3436ms
+    [eval Tokyo_Small/CongestionAware/1/3]  thr=0.137931  acc=0.303448  5992ms
+    [eval Tokyo_Small/CongestionAware/2/3]  thr=0.161765  acc=0.330882  6011ms
+    [eval Tokyo_Small/CongestionAware/3/3]  thr=0.12  acc=0.28  5745ms
+    [eval Tokyo_Medium/MAPPO/1/3]  thr=0.12931  acc=0.439655  120721ms
+    [eval Tokyo_Medium/MAPPO/2/3]  thr=0.169811  acc=0.5  62733ms
+    [eval Tokyo_Medium/MAPPO/3/3]  thr=0.166667  acc=0.482456  61169ms
+    [eval Tokyo_Medium/TamAlwaysAccept/1/3]  thr=0.18018  acc=0.504505  56252ms
+    [eval Tokyo_Medium/TamAlwaysAccept/2/3]  thr=0.152174  acc=0.543478  51335ms
+    [eval Tokyo_Medium/TamAlwaysAccept/3/3]  thr=0.19  acc=0.55  48853ms
+    [eval Tokyo_Medium/Greedy/1/3]  thr=0.0438596  acc=0.359649  16819ms
+    [eval Tokyo_Medium/Greedy/2/3]  thr=0.0681818  acc=0.477273  12275ms
+    [eval Tokyo_Medium/Greedy/3/3]  thr=0.105882  acc=0.529412  11560ms
+    [eval Tokyo_Medium/Random/1/3]  thr=0.113043  acc=0.426087  12432ms
+    [eval Tokyo_Medium/Random/2/3]  thr=0.0854701  acc=0.393162  11430ms
+    [eval Tokyo_Medium/Random/3/3]  thr=0.0737705  acc=0.368852  11557ms
+    [eval Tokyo_Medium/InsertionGreedy/1/3]  thr=0.0714286  acc=0.357143  24534ms
+    [eval Tokyo_Medium/InsertionGreedy/2/3]  thr=0.0923077  acc=0.369231  23755ms
+    [eval Tokyo_Medium/InsertionGreedy/3/3]  thr=0.0673077  acc=0.413462  23030ms
+    [eval Tokyo_Medium/LaCAM/1/3]  thr=0.112245  acc=0.479592  34673ms
+    [eval Tokyo_Medium/LaCAM/2/3]  thr=0.0894309  acc=0.382114  26592ms
+    [eval Tokyo_Medium/LaCAM/3/3]  thr=0.166667  acc=0.519608  30824ms
+    [eval Tokyo_Medium/PIBT/1/3]  thr=0.0803571  acc=0.392857  12448ms
+    [eval Tokyo_Medium/PIBT/2/3]  thr=0.0990099  acc=0.455446  11946ms
+    [eval Tokyo_Medium/PIBT/3/3]  thr=0.079646  acc=0.39823  12478ms
+    [eval Tokyo_Medium/CongestionAware/1/3]  thr=0.158416  acc=0.514852  29777ms
+    [eval Tokyo_Medium/CongestionAware/2/3]  thr=0.0916667  acc=0.391667  26188ms
+    [eval Tokyo_Medium/CongestionAware/3/3]  thr=0.135593  acc=0.440678  28460ms
+    [eval Kyoto_Small/MAPPO/1/3]  thr=0.226667  acc=0.38  33159ms
+    [eval Kyoto_Small/MAPPO/2/3]  thr=0.24183  acc=0.398693  19810ms
+    [eval Kyoto_Small/MAPPO/3/3]  thr=0.218543  acc=0.370861  21188ms
+    [eval Kyoto_Small/TamAlwaysAccept/1/3]  thr=0.269504  acc=0.439716  15425ms
+    [eval Kyoto_Small/TamAlwaysAccept/2/3]  thr=0.312925  acc=0.469388  16239ms
+    [eval Kyoto_Small/TamAlwaysAccept/3/3]  thr=0.189655  acc=0.327586  22658ms
+    [eval Kyoto_Small/Greedy/1/3]  thr=0.137681  acc=0.311594  6107ms
+    [eval Kyoto_Small/Greedy/2/3]  thr=0.144928  acc=0.318841  3033ms
+    [eval Kyoto_Small/Greedy/3/3]  thr=0.149606  acc=0.330709  2218ms
+    [eval Kyoto_Small/Random/1/3]  thr=0.145695  acc=0.304636  2469ms
+    [eval Kyoto_Small/Random/2/3]  thr=0.139241  acc=0.291139  2632ms
+    [eval Kyoto_Small/Random/3/3]  thr=0.122449  acc=0.285714  2729ms
+    [eval Kyoto_Small/InsertionGreedy/1/3]  thr=0.163121  acc=0.319149  4790ms
+    [eval Kyoto_Small/InsertionGreedy/2/3]  thr=0.115385  acc=0.269231  3651ms
+    [eval Kyoto_Small/InsertionGreedy/3/3]  thr=0.136364  acc=0.318182  5047ms
+    [eval Kyoto_Small/LaCAM/1/3]  thr=0.145695  acc=0.304636  5568ms
+    [eval Kyoto_Small/LaCAM/2/3]  thr=0.130137  acc=0.294521  5134ms
+    [eval Kyoto_Small/LaCAM/3/3]  thr=0.159722  acc=0.326389  5071ms
+    [eval Kyoto_Small/PIBT/1/3]  thr=0.131579  acc=0.289474  3005ms
+    [eval Kyoto_Small/PIBT/2/3]  thr=0.121622  acc=0.283784  3045ms
+    [eval Kyoto_Small/PIBT/3/3]  thr=0.138158  acc=0.296053  2187ms
+    [eval Kyoto_Small/CongestionAware/1/3]  thr=0.1125  acc=0.2625  5403ms
+    [eval Kyoto_Small/CongestionAware/2/3]  thr=0.154412  acc=0.330882  4356ms
+    [eval Kyoto_Small/CongestionAware/3/3]  thr=0.154412  acc=0.330882  5317ms
+    [eval Kyoto_Medium/MAPPO/1/3]  thr=0.144068  acc=0.432203  126371ms
+    [eval Kyoto_Medium/MAPPO/2/3]  thr=0.126126  acc=0.441441  43340ms
+    [eval Kyoto_Medium/MAPPO/3/3]  thr=0.161616  acc=0.525253  27171ms
+    [eval Kyoto_Medium/TamAlwaysAccept/1/3]  thr=0.201754  acc=0.508772  38176ms
+    [eval Kyoto_Medium/TamAlwaysAccept/2/3]  thr=0.196429  acc=0.517857  35887ms
+    [eval Kyoto_Medium/TamAlwaysAccept/3/3]  thr=0.209524  acc=0.542857  40923ms
+    [eval Kyoto_Medium/Greedy/1/3]  thr=0.0944882  acc=0.377953  13466ms
+    [eval Kyoto_Medium/Greedy/2/3]  thr=0.0841122  acc=0.420561  8458ms
+    [eval Kyoto_Medium/Greedy/3/3]  thr=0.11  acc=0.47  9347ms
+    [eval Kyoto_Medium/Random/1/3]  thr=0.0961538  acc=0.423077  9703ms
+    [eval Kyoto_Medium/Random/2/3]  thr=0.0677966  acc=0.372881  10342ms
+    [eval Kyoto_Medium/Random/3/3]  thr=0.117647  acc=0.460784  11471ms
+    [eval Kyoto_Medium/InsertionGreedy/1/3]  thr=0.0625  acc=0.34375  13468ms
+    [eval Kyoto_Medium/InsertionGreedy/2/3]  thr=0.0869565  acc=0.4  22562ms
+    [eval Kyoto_Medium/InsertionGreedy/3/3]  thr=0.0973451  acc=0.415929  18209ms
+    [eval Kyoto_Medium/LaCAM/1/3]  thr=0.204301  acc=0.591398  27559ms
+    [eval Kyoto_Medium/LaCAM/2/3]  thr=0.124031  acc=0.403101  22660ms
+    [eval Kyoto_Medium/LaCAM/3/3]  thr=0.108108  acc=0.432432  22563ms
+    [eval Kyoto_Medium/PIBT/1/3]  thr=0.0927835  acc=0.463918  8800ms
+    [eval Kyoto_Medium/PIBT/2/3]  thr=0.08  acc=0.44  8744ms
+    [eval Kyoto_Medium/PIBT/3/3]  thr=0.0683761  acc=0.376068  9517ms
+    [eval Kyoto_Medium/CongestionAware/1/3]  thr=0.0884956  acc=0.40708  20193ms
+    [eval Kyoto_Medium/CongestionAware/2/3]  thr=0.126126  acc=0.45045  21617ms
+    [eval Kyoto_Medium/CongestionAware/3/3]  thr=0.127119  acc=0.432203  24620ms
+    [eval LosAngeles_Small/MAPPO/1/3]  thr=0.171642  acc=0.343284  43680ms
+    [eval LosAngeles_Small/MAPPO/2/3]  thr=0.216216  acc=0.378378  26842ms
+    [eval LosAngeles_Small/MAPPO/3/3]  thr=0.216783  acc=0.384615  28866ms
+    [eval LosAngeles_Small/TamAlwaysAccept/1/3]  thr=0.236111  acc=0.402778  21016ms
+    [eval LosAngeles_Small/TamAlwaysAccept/2/3]  thr=0.178808  acc=0.337748  23571ms
+    [eval LosAngeles_Small/TamAlwaysAccept/3/3]  thr=0.19209  acc=0.327684  36184ms
+    [eval LosAngeles_Small/Greedy/1/3]  thr=0.151079  acc=0.323741  7038ms
+    [eval LosAngeles_Small/Greedy/2/3]  thr=0.159091  acc=0.325758  2765ms
+    [eval LosAngeles_Small/Greedy/3/3]  thr=0.139706  acc=0.316176  4216ms
+    [eval LosAngeles_Small/Random/1/3]  thr=0.151316  acc=0.309211  3736ms
+    [eval LosAngeles_Small/Random/2/3]  thr=0.141026  acc=0.294872  2690ms
+    [eval LosAngeles_Small/Random/3/3]  thr=0.132867  acc=0.293706  3048ms
+    [eval LosAngeles_Small/InsertionGreedy/1/3]  thr=0.151899  acc=0.303797  6058ms
+    [eval LosAngeles_Small/InsertionGreedy/2/3]  thr=0.125786  acc=0.27673  4020ms
+    [eval LosAngeles_Small/InsertionGreedy/3/3]  thr=0.181102  acc=0.362205  3888ms
+    [eval LosAngeles_Small/LaCAM/1/3]  thr=0.150327  acc=0.30719  6175ms
+    [eval LosAngeles_Small/LaCAM/2/3]  thr=0.142857  acc=0.323308  4830ms
+    [eval LosAngeles_Small/LaCAM/3/3]  thr=0.13245  acc=0.291391  7438ms
+    [eval LosAngeles_Small/PIBT/1/3]  thr=0.145833  acc=0.3125  3622ms
+    [eval LosAngeles_Small/PIBT/2/3]  thr=0.114865  acc=0.277027  2875ms
+    [eval LosAngeles_Small/PIBT/3/3]  thr=0.130719  acc=0.287582  3545ms
+    [eval LosAngeles_Small/CongestionAware/1/3]  thr=0.130435  acc=0.273292  6688ms
+    [eval LosAngeles_Small/CongestionAware/2/3]  thr=0.179856  acc=0.352518  6048ms
+    [eval LosAngeles_Small/CongestionAware/3/3]  thr=0.174825  acc=0.342657  3807ms
+    [eval LosAngeles_Medium/MAPPO/1/3]  thr=0.158333  acc=0.458333  157907ms
+    [eval LosAngeles_Medium/MAPPO/2/3]  thr=0.198198  acc=0.522523  46391ms
+    [eval LosAngeles_Medium/MAPPO/3/3]  thr=0.141593  acc=0.451327  44414ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/1/3]  thr=0.138889  acc=0.472222  49185ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/2/3]  thr=0.163265  acc=0.530612  41811ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/3/3]  thr=0.215054  acc=0.602151  35896ms
+    [eval LosAngeles_Medium/Greedy/1/3]  thr=0.0865385  acc=0.432692  12364ms
+    [eval LosAngeles_Medium/Greedy/2/3]  thr=0.1  acc=0.488889  8447ms
+    [eval LosAngeles_Medium/Greedy/3/3]  thr=0.0792079  acc=0.435644  9275ms
+    [eval LosAngeles_Medium/Random/1/3]  thr=0.0789474  acc=0.394737  10092ms
+    [eval LosAngeles_Medium/Random/2/3]  thr=0.075  acc=0.375  9663ms
+    [eval LosAngeles_Medium/Random/3/3]  thr=0.11215  acc=0.448598  9021ms
+    [eval LosAngeles_Medium/InsertionGreedy/1/3]  thr=0.0792079  acc=0.435644  16755ms
+    [eval LosAngeles_Medium/InsertionGreedy/2/3]  thr=0.097561  acc=0.390244  22259ms
+    [eval LosAngeles_Medium/InsertionGreedy/3/3]  thr=0.118182  acc=0.445455  18709ms
+    [eval LosAngeles_Medium/LaCAM/1/3]  thr=0.10989  acc=0.505495  22177ms
+    [eval LosAngeles_Medium/LaCAM/2/3]  thr=0.12931  acc=0.439655  20732ms
+    [eval LosAngeles_Medium/LaCAM/3/3]  thr=0.1  acc=0.391667  21003ms
+    [eval LosAngeles_Medium/PIBT/1/3]  thr=0.0943396  acc=0.433962  8728ms
+    [eval LosAngeles_Medium/PIBT/2/3]  thr=0.0645161  acc=0.451613  10001ms
+    [eval LosAngeles_Medium/PIBT/3/3]  thr=0.0720721  acc=0.396396  10437ms
+    [eval LosAngeles_Medium/CongestionAware/1/3]  thr=0.118182  acc=0.445455  22617ms
+    [eval LosAngeles_Medium/CongestionAware/2/3]  thr=0.0991736  acc=0.396694  21829ms
+    [eval LosAngeles_Medium/CongestionAware/3/3]  thr=0.132812  acc=0.414062  20567ms
+  -- Stress Eval (density=2 agents=0.6) --
+    [stress Tokyo_Small/MAPPO/1/3]  thr=0.201389  acc=0.368056  18853ms
+    [stress Tokyo_Small/MAPPO/2/3]  thr=0.246377  acc=0.42029  21780ms
+    [stress Tokyo_Small/MAPPO/3/3]  thr=0.221519  acc=0.360759  24019ms
+    [stress Tokyo_Small/TamAlwaysAccept/1/3]  thr=0.22069  acc=0.386207  26348ms
+    [stress Tokyo_Small/TamAlwaysAccept/2/3]  thr=0.138686  acc=0.313869  25298ms
+    [stress Tokyo_Small/TamAlwaysAccept/3/3]  thr=0.157895  acc=0.292398  26475ms
+    [stress Tokyo_Small/Greedy/1/3]  thr=0.0827586  acc=0.186207  6213ms
+    [stress Tokyo_Small/Greedy/2/3]  thr=0.0612245  acc=0.163265  1434ms
+    [stress Tokyo_Small/Greedy/3/3]  thr=0.0636943  acc=0.159236  1957ms
+    [stress Tokyo_Small/Random/1/3]  thr=0.070922  acc=0.170213  1772ms
+    [stress Tokyo_Small/Random/2/3]  thr=0.1  acc=0.207143  1642ms
+    [stress Tokyo_Small/Random/3/3]  thr=0.0748299  acc=0.176871  1788ms
+    [stress Tokyo_Small/InsertionGreedy/1/3]  thr=0.0628931  acc=0.157233  5059ms
+    [stress Tokyo_Small/InsertionGreedy/2/3]  thr=0.0472973  acc=0.148649  3304ms
+    [stress Tokyo_Small/InsertionGreedy/3/3]  thr=0.044586  acc=0.140127  2621ms
+    [stress Tokyo_Small/LaCAM/1/3]  thr=0.0878378  acc=0.189189  2716ms
+    [stress Tokyo_Small/LaCAM/2/3]  thr=0.0679012  acc=0.160494  3721ms
+    [stress Tokyo_Small/LaCAM/3/3]  thr=0.0808824  acc=0.183824  3345ms
+    [stress Tokyo_Small/PIBT/1/3]  thr=0.0604027  acc=0.161074  2221ms
+    [stress Tokyo_Small/PIBT/2/3]  thr=0.0875912  acc=0.19708  1445ms
+    [stress Tokyo_Small/PIBT/3/3]  thr=0.0898204  acc=0.179641  2015ms
+    [stress Tokyo_Small/CongestionAware/1/3]  thr=0.0675676  acc=0.168919  2913ms
+    [stress Tokyo_Small/CongestionAware/2/3]  thr=0.0714286  acc=0.168831  3198ms
+    [stress Tokyo_Small/CongestionAware/3/3]  thr=0.0930233  acc=0.209302  2241ms
+    [stress Tokyo_Medium/MAPPO/1/3]  thr=0.122642  acc=0.462264  50653ms
+    [stress Tokyo_Medium/MAPPO/2/3]  thr=0.169643  acc=0.491071  75533ms
+    [stress Tokyo_Medium/MAPPO/3/3]  thr=0.153061  acc=0.520408  62147ms
+    [stress Tokyo_Medium/TamAlwaysAccept/1/3]  thr=0.181034  acc=0.465517  73921ms
+    [stress Tokyo_Medium/TamAlwaysAccept/2/3]  thr=0.184615  acc=0.461538  65932ms
+    [stress Tokyo_Medium/TamAlwaysAccept/3/3]  thr=0.163462  acc=0.5  51333ms
+    [stress Tokyo_Medium/Greedy/1/3]  thr=0.0714286  acc=0.285714  13663ms
+    [stress Tokyo_Medium/Greedy/2/3]  thr=0.0603448  acc=0.241379  8948ms
+    [stress Tokyo_Medium/Greedy/3/3]  thr=0.0736842  acc=0.294737  7634ms
+    [stress Tokyo_Medium/Random/1/3]  thr=0.046729  acc=0.242991  5940ms
+    [stress Tokyo_Medium/Random/2/3]  thr=0.05  acc=0.216667  7692ms
+    [stress Tokyo_Medium/Random/3/3]  thr=0.0862069  acc=0.267241  7298ms
+    [stress Tokyo_Medium/InsertionGreedy/1/3]  thr=0.0550459  acc=0.247706  12724ms
+    [stress Tokyo_Medium/InsertionGreedy/2/3]  thr=0.0849057  acc=0.283019  13694ms
+    [stress Tokyo_Medium/InsertionGreedy/3/3]  thr=0.0598291  acc=0.230769  9945ms
+    [stress Tokyo_Medium/LaCAM/1/3]  thr=0.0733945  acc=0.266055  15189ms
+    [stress Tokyo_Medium/LaCAM/2/3]  thr=0.0238095  acc=0.190476  13616ms
+    [stress Tokyo_Medium/LaCAM/3/3]  thr=0.0747664  acc=0.271028  13682ms
+    [stress Tokyo_Medium/PIBT/1/3]  thr=0.0601504  acc=0.218045  7739ms
+    [stress Tokyo_Medium/PIBT/2/3]  thr=0.0614035  acc=0.245614  6906ms
+    [stress Tokyo_Medium/PIBT/3/3]  thr=0.0854701  acc=0.264957  7942ms
+    [stress Tokyo_Medium/CongestionAware/1/3]  thr=0.0608696  acc=0.243478  11665ms
+    [stress Tokyo_Medium/CongestionAware/2/3]  thr=0.0588235  acc=0.264706  12707ms
+    [stress Tokyo_Medium/CongestionAware/3/3]  thr=0.0616438  acc=0.205479  12251ms
+    [stress Kyoto_Small/MAPPO/1/3]  thr=0.282051  acc=0.435897  13828ms
+    [stress Kyoto_Small/MAPPO/2/3]  thr=0.234043  acc=0.404255  13883ms
+    [stress Kyoto_Small/MAPPO/3/3]  thr=0.192053  acc=0.350993  19078ms
+    [stress Kyoto_Small/TamAlwaysAccept/1/3]  thr=0.233129  acc=0.374233  18696ms
+    [stress Kyoto_Small/TamAlwaysAccept/2/3]  thr=0.227273  acc=0.383117  16865ms
+    [stress Kyoto_Small/TamAlwaysAccept/3/3]  thr=0.208054  acc=0.362416  17844ms
+    [stress Kyoto_Small/Greedy/1/3]  thr=0.0628931  acc=0.157233  4765ms
+    [stress Kyoto_Small/Greedy/2/3]  thr=0.0880503  acc=0.176101  1096ms
+    [stress Kyoto_Small/Greedy/3/3]  thr=0.0921053  acc=0.190789  1239ms
+    [stress Kyoto_Small/Random/1/3]  thr=0.0814815  acc=0.192593  1214ms
+    [stress Kyoto_Small/Random/2/3]  thr=0.107143  acc=0.214286  1041ms
+    [stress Kyoto_Small/Random/3/3]  thr=0.0774194  acc=0.174194  1991ms
+    [stress Kyoto_Small/InsertionGreedy/1/3]  thr=0.103896  acc=0.201299  1762ms
+    [stress Kyoto_Small/InsertionGreedy/2/3]  thr=0.0821918  acc=0.184932  1862ms
+    [stress Kyoto_Small/InsertionGreedy/3/3]  thr=0.0700637  acc=0.165605  2008ms
+    [stress Kyoto_Small/LaCAM/1/3]  thr=0.104895  acc=0.20979  2829ms
+    [stress Kyoto_Small/LaCAM/2/3]  thr=0.111111  acc=0.215278  2132ms
+    [stress Kyoto_Small/LaCAM/3/3]  thr=0.075  acc=0.16875  1995ms
+    [stress Kyoto_Small/PIBT/1/3]  thr=0.0653595  acc=0.163399  1732ms
+    [stress Kyoto_Small/PIBT/2/3]  thr=0.110294  acc=0.220588  1080ms
+    [stress Kyoto_Small/PIBT/3/3]  thr=0.0896552  acc=0.193103  1100ms
+    [stress Kyoto_Small/CongestionAware/1/3]  thr=0.0769231  acc=0.173077  2048ms
+    [stress Kyoto_Small/CongestionAware/2/3]  thr=0.0843373  acc=0.174699  2052ms
+    [stress Kyoto_Small/CongestionAware/3/3]  thr=0.109589  acc=0.212329  1819ms
+    [stress Kyoto_Medium/MAPPO/1/3]  thr=0.224299  acc=0.560748  34909ms
+    [stress Kyoto_Medium/MAPPO/2/3]  thr=0.186916  acc=0.523364  38377ms
+    [stress Kyoto_Medium/MAPPO/3/3]  thr=0.2  acc=0.542857  36763ms
+    [stress Kyoto_Medium/TamAlwaysAccept/1/3]  thr=0.184783  acc=0.532609  31842ms
+    [stress Kyoto_Medium/TamAlwaysAccept/2/3]  thr=0.152  acc=0.44  47149ms
+    [stress Kyoto_Medium/TamAlwaysAccept/3/3]  thr=0.190909  acc=0.490909  41232ms
+    [stress Kyoto_Medium/Greedy/1/3]  thr=0.0423729  acc=0.211864  9666ms
+    [stress Kyoto_Medium/Greedy/2/3]  thr=0.0471698  acc=0.245283  5348ms
+    [stress Kyoto_Medium/Greedy/3/3]  thr=0.0727273  acc=0.263636  5344ms
+    [stress Kyoto_Medium/Random/1/3]  thr=0.0825688  acc=0.275229  4704ms
+    [stress Kyoto_Medium/Random/2/3]  thr=0.0438596  acc=0.22807  5454ms
+    [stress Kyoto_Medium/Random/3/3]  thr=0.0729167  acc=0.28125  5666ms
+    [stress Kyoto_Medium/InsertionGreedy/1/3]  thr=0.0776699  acc=0.271845  7501ms
+    [stress Kyoto_Medium/InsertionGreedy/2/3]  thr=0.105263  acc=0.315789  10262ms
+    [stress Kyoto_Medium/InsertionGreedy/3/3]  thr=0.0540541  acc=0.243243  9436ms
+    [stress Kyoto_Medium/LaCAM/1/3]  thr=0.078125  acc=0.242188  10492ms
+    [stress Kyoto_Medium/LaCAM/2/3]  thr=0.0973451  acc=0.283186  12470ms
+    [stress Kyoto_Medium/LaCAM/3/3]  thr=0.0538462  acc=0.215385  12648ms
+    [stress Kyoto_Medium/PIBT/1/3]  thr=0.0487805  acc=0.219512  5095ms
+    [stress Kyoto_Medium/PIBT/2/3]  thr=0.0530973  acc=0.238938  4936ms
+    [stress Kyoto_Medium/PIBT/3/3]  thr=0.0689655  acc=0.25  4179ms
+    [stress Kyoto_Medium/CongestionAware/1/3]  thr=0.0819672  acc=0.254098  9277ms
+    [stress Kyoto_Medium/CongestionAware/2/3]  thr=0.0555556  acc=0.25  10722ms
+    [stress Kyoto_Medium/CongestionAware/3/3]  thr=0.1  acc=0.3  9469ms
+    [stress LosAngeles_Small/MAPPO/1/3]  thr=0.196319  acc=0.343558  25316ms
+    [stress LosAngeles_Small/MAPPO/2/3]  thr=0.246667  acc=0.406667  22604ms
+    [stress LosAngeles_Small/MAPPO/3/3]  thr=0.217687  acc=0.380952  23399ms
+    [stress LosAngeles_Small/TamAlwaysAccept/1/3]  thr=0.189655  acc=0.327586  24436ms
+    [stress LosAngeles_Small/TamAlwaysAccept/2/3]  thr=0.242647  acc=0.419118  21875ms
+    [stress LosAngeles_Small/TamAlwaysAccept/3/3]  thr=0.20915  acc=0.366013  25698ms
+    [stress LosAngeles_Small/Greedy/1/3]  thr=0.0849673  acc=0.183007  5430ms
+    [stress LosAngeles_Small/Greedy/2/3]  thr=0.0700637  acc=0.165605  2222ms
+    [stress LosAngeles_Small/Greedy/3/3]  thr=0.0779221  acc=0.175325  1824ms
+    [stress LosAngeles_Small/Random/1/3]  thr=0.10219  acc=0.211679  1607ms
+    [stress LosAngeles_Small/Random/2/3]  thr=0.0714286  acc=0.168831  1504ms
+    [stress LosAngeles_Small/Random/3/3]  thr=0.0607735  acc=0.143646  1722ms
+    [stress LosAngeles_Small/InsertionGreedy/1/3]  thr=0.0784314  acc=0.169935  3481ms
+    [stress LosAngeles_Small/InsertionGreedy/2/3]  thr=0.05  acc=0.14375  3563ms
+    [stress LosAngeles_Small/InsertionGreedy/3/3]  thr=0.0986842  acc=0.197368  2862ms
+    [stress LosAngeles_Small/LaCAM/1/3]  thr=0.106918  acc=0.201258  2122ms
+    [stress LosAngeles_Small/LaCAM/2/3]  thr=0.0727273  acc=0.163636  2651ms
+    [stress LosAngeles_Small/LaCAM/3/3]  thr=0.0849673  acc=0.183007  2989ms
+    [stress LosAngeles_Small/PIBT/1/3]  thr=0.0460526  acc=0.144737  2228ms
+    [stress LosAngeles_Small/PIBT/2/3]  thr=0.0774648  acc=0.183099  1723ms
+    [stress LosAngeles_Small/PIBT/3/3]  thr=0.0705882  acc=0.158824  2489ms
+    [stress LosAngeles_Small/CongestionAware/1/3]  thr=0.0828025  acc=0.178344  2521ms
+    [stress LosAngeles_Small/CongestionAware/2/3]  thr=0.107383  acc=0.208054  2218ms
+    [stress LosAngeles_Small/CongestionAware/3/3]  thr=0.118056  acc=0.222222  2276ms
+    [stress LosAngeles_Medium/MAPPO/1/3]  thr=0.183486  acc=0.513761  46439ms
+    [stress LosAngeles_Medium/MAPPO/2/3]  thr=0.134454  acc=0.436975  58883ms
+    [stress LosAngeles_Medium/MAPPO/3/3]  thr=0.165138  acc=0.495413  57361ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/1/3]  thr=0.179245  acc=0.509434  49018ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/2/3]  thr=0.172414  acc=0.482759  49825ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/3/3]  thr=0.135135  acc=0.45045  52352ms
+    [stress LosAngeles_Medium/Greedy/1/3]  thr=0.0431034  acc=0.224138  10881ms
+    [stress LosAngeles_Medium/Greedy/2/3]  thr=0.0373832  acc=0.233645  6697ms
+    [stress LosAngeles_Medium/Greedy/3/3]  thr=0.0490196  acc=0.254902  6129ms
+    [stress LosAngeles_Medium/Random/1/3]  thr=0.0535714  acc=0.241071  5505ms
+    [stress LosAngeles_Medium/Random/2/3]  thr=0.0703125  acc=0.234375  5664ms
+    [stress LosAngeles_Medium/Random/3/3]  thr=0.0550459  acc=0.247706  5459ms
+    [stress LosAngeles_Medium/InsertionGreedy/1/3]  thr=0.0583333  acc=0.233333  16406ms
+    [stress LosAngeles_Medium/InsertionGreedy/2/3]  thr=0.0517241  acc=0.232759  7903ms
+    [stress LosAngeles_Medium/InsertionGreedy/3/3]  thr=0.0630631  acc=0.252252  10212ms
+    [stress LosAngeles_Medium/LaCAM/1/3]  thr=0.0583333  acc=0.233333  12242ms
+    [stress LosAngeles_Medium/LaCAM/2/3]  thr=0.11215  acc=0.308411  13943ms
+    [stress LosAngeles_Medium/LaCAM/3/3]  thr=0.0737705  acc=0.245902  12477ms
+    [stress LosAngeles_Medium/PIBT/1/3]  thr=0.0403226  acc=0.209677  6619ms
+    [stress LosAngeles_Medium/PIBT/2/3]  thr=0.0701754  acc=0.254386  6151ms
+    [stress LosAngeles_Medium/PIBT/3/3]  thr=0.0454545  acc=0.236364  6199ms
+    [stress LosAngeles_Medium/CongestionAware/1/3]  thr=0.0619469  acc=0.247788  9896ms
+    [stress LosAngeles_Medium/CongestionAware/2/3]  thr=0.1  acc=0.290909  10105ms
+    [stress LosAngeles_Medium/CongestionAware/3/3]  thr=0.0841122  acc=0.280374  9825ms
+  [s0 r20 Tokyo_Small normal]  thr=0.171975  acc=0.324841  aloss=0.000462511  closs=1.13512  ent=0.380432  kl=6.56813e-05  cf=0  ep=10/10  n=56  24583ms
+  [s0 r20 Tokyo_Medium stress_heavy]  thr=0.184466  acc=0.533981  aloss=0.00150814  closs=6.52774  ent=0.366278  kl=0.000529523  cf=0  ep=10/10  n=61  46959ms
+  [s0 r20 Kyoto_Small stress_light]  thr=0.191781  acc=0.349315  aloss=0.00146377  closs=1.2893  ent=0.388072  kl=0.000670376  cf=0  ep=10/10  n=55  25382ms
+  [s0 r20 Kyoto_Medium normal]  thr=0.166667  acc=0.482456  aloss=0.176175  closs=11.688  ent=0.369791  kl=0.000252634  cf=0  ep=10/10  n=67  124188ms
+  [s0 r20 LosAngeles_Small normal]  thr=0.197279  acc=0.353741  aloss=-0.0112879  closs=1.24665  ent=0.396584  kl=-0.000132792  cf=0  ep=10/10  n=59  65021ms
+  [s0 r20 LosAngeles_Medium normal]  thr=0.169118  acc=0.433824  aloss=0.0188702  closs=5.29124  ent=0.372423  kl=0.000149508  cf=0  ep=10/10  n=68  174708ms
+  [s0 r21 Tokyo_Small stress_light]  thr=0.211921  acc=0.370861  aloss=0.00235589  closs=2.76997  ent=0.383373  kl=-0.000775099  cf=0  ep=10/10  n=60  34578ms
+  [s0 r21 Tokyo_Medium stress_heavy]  thr=0.125  acc=0.471154  aloss=0.00556374  closs=14.7852  ent=0.354867  kl=-1.35725e-05  cf=0  ep=10/10  n=55  100787ms
+  [s0 r21 Kyoto_Small stress_light]  thr=0.267974  acc=0.424837  aloss=0.146898  closs=1.34475  ent=0.383455  kl=-7.66077e-05  cf=0  ep=10/10  n=75  27762ms
+  [s0 r21 Kyoto_Medium normal]  thr=0.22449  acc=0.581633  aloss=5.03831e-05  closs=7.42475  ent=0.363855  kl=1.44637e-05  cf=0  ep=10/10  n=64  44934ms
+  [s0 r21 LosAngeles_Small normal]  thr=0.220126  acc=0.36478  aloss=3.87341e-05  closs=1.72259  ent=0.38611  kl=0.000137322  cf=0  ep=10/10  n=64  41940ms
+  [s0 r21 LosAngeles_Medium normal]  thr=0.133929  acc=0.446429  aloss=-0.00254629  closs=5.26863  ent=0.372523  kl=-0.000392803  cf=0  ep=10/10  n=59  109898ms
+  [s0 r22 Tokyo_Small stress_heavy]  thr=0.234043  acc=0.404255  aloss=-0.111956  closs=1.15672  ent=0.391185  kl=0.000208539  cf=0  ep=10/10  n=68  34042ms
+  [s0 r22 Tokyo_Medium normal]  thr=0.176471  acc=0.529412  aloss=0.000609322  closs=7.13523  ent=0.374976  kl=-0.000155903  cf=0  ep=10/10  n=62  81595ms
+  [s0 r22 Kyoto_Small normal]  thr=0.21118  acc=0.360248  aloss=-0.000667354  closs=1.38711  ent=0.402741  kl=-0.00049637  cf=0  ep=10/10  n=63  30657ms
+  [s0 r22 Kyoto_Medium normal]  thr=0.180952  acc=0.52381  aloss=-6.63847e-06  closs=5.1252  ent=0.381055  kl=5.27224e-06  cf=0  ep=10/10  n=64  48868ms
+  [s0 r22 LosAngeles_Small normal]  thr=0.180723  acc=0.325301  aloss=-0.00264036  closs=1.54409  ent=0.401994  kl=-2.07483e-05  cf=0  ep=10/10  n=63  40522ms
+  [s0 r22 LosAngeles_Medium normal]  thr=0.195652  acc=0.586957  aloss=-0.000774663  closs=9.50924  ent=0.378027  kl=0.000162005  cf=0  ep=10/10  n=61  68338ms
+  [s0 r23 Tokyo_Small stress_light]  thr=0.201299  acc=0.357143  aloss=0.0807706  closs=1.10471  ent=0.402015  kl=-4.82162e-05  cf=0  ep=10/10  n=66  40380ms
+  [s0 r23 Tokyo_Medium stress_heavy]  thr=0.168067  acc=0.470588  aloss=-0.0234777  closs=10.4625  ent=0.37034  kl=0.00131433  cf=0  ep=10/10  n=70  89937ms
+  [s0 r23 Kyoto_Small normal]  thr=0.234043  acc=0.404255  aloss=-0.139782  closs=1.45064  ent=0.395337  kl=-6.3591e-05  cf=0  ep=10/10  n=65  29466ms
+  [s0 r23 Kyoto_Medium stress_heavy]  thr=0.163793  acc=0.465517  aloss=-0.00407251  closs=6.43159  ent=0.376398  kl=-0.000131288  cf=0  ep=10/10  n=62  55980ms
+  [s0 r23 LosAngeles_Small stress_heavy]  thr=0.202614  acc=0.359477  aloss=-0.00329054  closs=1.14709  ent=0.402783  kl=-8.60603e-05  cf=0  ep=10/10  n=62  39084ms
+  [s0 r23 LosAngeles_Medium stress_light]  thr=0.13913  acc=0.443478  aloss=-0.000295391  closs=13.7402  ent=0.380191  kl=6.23388e-05  cf=0  ep=10/10  n=63  89696ms
+  [s0 r24 Tokyo_Small normal]  thr=0.246479  acc=0.415493  aloss=0.0560186  closs=1.57558  ent=0.407978  kl=0.000129749  cf=0  ep=10/10  n=68  35663ms
+  [s0 r24 Tokyo_Medium stress_light]  thr=0.144928  acc=0.398551  aloss=0.118448  closs=15.323  ent=0.381541  kl=-9.29691e-05  cf=0  ep=10/10  n=68  114806ms
+  [s0 r24 Kyoto_Small stress_heavy]  thr=0.210884  acc=0.37415  aloss=-0.260855  closs=1.45031  ent=0.405722  kl=0.000637527  cf=0  ep=10/10  n=66  31186ms
+  [s0 r24 Kyoto_Medium stress_heavy]  thr=0.138614  acc=0.49505  aloss=-0.00504573  closs=6.61285  ent=0.379879  kl=-0.000115134  cf=0  ep=10/10  n=56  48469ms
+  [s0 r24 LosAngeles_Small stress_heavy]  thr=0.248322  acc=0.409396  aloss=-0.0985864  closs=1.07067  ent=0.395618  kl=0.000806732  cf=0  ep=10/10  n=75  35836ms
+  [s0 r24 LosAngeles_Medium normal]  thr=0.207207  acc=0.522523  aloss=0.121865  closs=5.2612  ent=0.354974  kl=0.00130125  cf=0  ep=10/10  n=69  69763ms
+  [s0 r25 Tokyo_Small normal]  thr=0.21831  acc=0.387324  aloss=0.00444448  closs=1.93096  ent=0.375957  kl=0.000175192  cf=0  ep=10/10  n=60  38745ms
+  [s0 r25 Tokyo_Medium normal]  thr=0.133929  acc=0.455357  aloss=0.0146216  closs=8.26053  ent=0.345104  kl=3.44706e-05  cf=0  ep=10/10  n=51  134438ms
+  [s0 r25 Kyoto_Small stress_light]  thr=0.242424  acc=0.409091  aloss=0.00627162  closs=1.71576  ent=0.371081  kl=0.000572872  cf=0  ep=10/10  n=57  28221ms
+  [s0 r25 Kyoto_Medium normal]  thr=0.157407  acc=0.490741  aloss=-0.0075448  closs=10.8242  ent=0.359525  kl=1.92173e-06  cf=0  ep=10/10  n=59  69799ms
+  [s0 r25 LosAngeles_Small normal]  thr=0.216561  acc=0.369427  aloss=-0.156057  closs=0.879005  ent=0.374092  kl=-0.000612654  cf=0  ep=10/10  n=66  73068ms
+  [s0 r25 LosAngeles_Medium stress_heavy]  thr=0.19802  acc=0.544554  aloss=-4.61723e-05  closs=11.9194  ent=0.343009  kl=-1.30459e-05  cf=0  ep=10/10  n=62  70259ms
+  [s0 r26 Tokyo_Small stress_light]  thr=0.202186  acc=0.333333  aloss=0.0370654  closs=0.624702  ent=0.370891  kl=0.000157465  cf=0  ep=10/10  n=70  38486ms
+  [s0 r26 Tokyo_Medium normal]  thr=0.163793  acc=0.474138  aloss=-0.00143218  closs=6.84059  ent=0.331771  kl=0.000317901  cf=0  ep=10/10  n=63  96699ms
+  [s0 r26 Kyoto_Small normal]  thr=0.228758  acc=0.385621  aloss=-0.145499  closs=1.63445  ent=0.352063  kl=0.000503893  cf=0  ep=10/10  n=68  39577ms
+  [s0 r26 Kyoto_Medium stress_light]  thr=0.186813  acc=0.582418  aloss=0.00110295  closs=9.31592  ent=0.320696  kl=7.54564e-06  cf=0  ep=10/10  n=59  48216ms
+  [s0 r26 LosAngeles_Small stress_heavy]  thr=0.217742  acc=0.41129  aloss=0.000994053  closs=1.70809  ent=0.343569  kl=-0.000262414  cf=0  ep=10/10  n=61  40694ms
+  [s0 r26 LosAngeles_Medium normal]  thr=0.125  acc=0.425  aloss=-0.000433423  closs=13.502  ent=0.321658  kl=-0.00026157  cf=0  ep=10/10  n=55  83516ms
+  [s0 r27 Tokyo_Small normal]  thr=0.208589  acc=0.355828  aloss=-0.000169413  closs=1.37699  ent=0.33667  kl=0.000276678  cf=0  ep=10/10  n=62  44515ms
+  [s0 r27 Tokyo_Medium normal]  thr=0.134021  acc=0.505155  aloss=0.00774529  closs=17.0059  ent=0.317658  kl=0.000404639  cf=0  ep=10/10  n=56  95603ms
+  [s0 r27 Kyoto_Small normal]  thr=0.209945  acc=0.337017  aloss=-0.00438937  closs=1.17779  ent=0.340594  kl=0.000680311  cf=0  ep=10/10  n=72  42234ms
+  [s0 r27 Kyoto_Medium stress_heavy]  thr=0.111111  acc=0.444444  aloss=-0.0225887  closs=9.04782  ent=0.306199  kl=7.77075e-07  cf=0  ep=10/10  n=53  64391ms
+  [s0 r27 LosAngeles_Small normal]  thr=0.201149  acc=0.33908  aloss=0.0451008  closs=1.57341  ent=0.32612  kl=0.000182862  cf=0  ep=10/10  n=69  56057ms
+  [s0 r27 LosAngeles_Medium normal]  thr=0.165289  acc=0.46281  aloss=-0.00202348  closs=6.49361  ent=0.291821  kl=-0.000396256  cf=0  ep=10/10  n=59  91552ms
+  [s0 r28 Tokyo_Small normal]  thr=0.212121  acc=0.393939  aloss=-0.00142095  closs=1.71545  ent=0.319885  kl=-0.000448954  cf=0  ep=10/10  n=55  38593ms
+  [s0 r28 Tokyo_Medium stress_heavy]  thr=0.183673  acc=0.55102  aloss=0.0029997  closs=11.5599  ent=0.301065  kl=-2.57784e-05  cf=0  ep=10/10  n=62  89900ms
+  [s0 r28 Kyoto_Small normal]  thr=0.189024  acc=0.335366  aloss=1.10798e-05  closs=1.37247  ent=0.311219  kl=-6.93295e-05  cf=0  ep=10/10  n=64  41057ms
+  [s0 r28 Kyoto_Medium stress_light]  thr=0.163636  acc=0.490909  aloss=-0.00178511  closs=5.91121  ent=0.303742  kl=-0.000689516  cf=0  ep=10/10  n=63  64423ms
+  [s0 r28 LosAngeles_Small normal]  thr=0.180645  acc=0.329032  aloss=0.0103214  closs=1.25461  ent=0.318345  kl=-0.000126074  cf=0  ep=10/10  n=56  42923ms
+  [s0 r28 LosAngeles_Medium normal]  thr=0.171171  acc=0.495495  aloss=-0.00552066  closs=6.46944  ent=0.289442  kl=0.000445444  cf=0  ep=10/10  n=62  80721ms
+  [s0 r29 Tokyo_Small normal]  thr=0.189189  acc=0.351351  aloss=0.0137376  closs=0.836318  ent=0.300249  kl=1.61416e-05  cf=0  ep=10/10  n=58  36267ms
+  [s0 r29 Tokyo_Medium normal]  thr=0.133333  acc=0.4  aloss=0.00819588  closs=30.0999  ent=0.294368  kl=-5.39909e-05  cf=0  ep=10/10  n=60  132766ms
+  [s0 r29 Kyoto_Small normal]  thr=0.261194  acc=0.432836  aloss=0.00227204  closs=1.58912  ent=0.323555  kl=6.74205e-05  cf=0  ep=10/10  n=63  31325ms
+  [s0 r29 Kyoto_Medium stress_light]  thr=0.145455  acc=0.472727  aloss=-0.00318923  closs=17.1664  ent=0.29095  kl=1.84152e-05  cf=0  ep=10/10  n=57  64915ms
+  [s0 r29 LosAngeles_Small stress_light]  thr=0.201493  acc=0.380597  aloss=0.00943918  closs=3.28724  ent=0.317554  kl=4.38764e-05  cf=0  ep=10/10  n=57  43233ms
+  [s0 r29 LosAngeles_Medium normal]  thr=0.188119  acc=0.504951  aloss=0.00403978  closs=9.23298  ent=0.290262  kl=0.000180527  cf=0  ep=10/10  n=57  65250ms
+  [s0 r30 Tokyo_Small stress_light]  thr=0.18125  acc=0.33125  aloss=0.000595078  closs=1.78593  ent=0.311357  kl=0.000482508  cf=0  ep=10/10  n=62  43431ms
+  [s0 r30 Tokyo_Medium stress_heavy]  thr=0.109244  acc=0.411765  aloss=-0.0110383  closs=15.1694  ent=0.283576  kl=7.10643e-05  cf=0  ep=10/10  n=53  152744ms
+  [s0 r30 Kyoto_Small stress_heavy]  thr=0.215686  acc=0.372549  aloss=0.00582578  closs=1.2486  ent=0.306716  kl=0.000416182  cf=0  ep=10/10  n=60  33707ms
+  [s0 r30 Kyoto_Medium stress_light]  thr=0.172932  acc=0.443609  aloss=-0.0647182  closs=9.30293  ent=0.297358  kl=-1.37443e-05  cf=0  ep=10/10  n=65  78538ms
+  [s0 r30 LosAngeles_Small stress_light]  thr=0.192593  acc=0.37037  aloss=-0.00211748  closs=1.50654  ent=0.310696  kl=0.000322243  cf=0  ep=10/10  n=54  50445ms
+  [s0 r30 LosAngeles_Medium stress_light]  thr=0.153846  acc=0.5  aloss=0.000520156  closs=10.8147  ent=0.301161  kl=-0.00116746  cf=0  ep=10/10  n=63  100992ms
+  [s0 r31 Tokyo_Small normal]  thr=0.241935  acc=0.435484  aloss=-0.0685081  closs=1.48781  ent=0.312783  kl=0.00306104  cf=0  ep=6/10  n=66  40443ms
+  [s0 r31 Tokyo_Medium normal]  thr=0.104762  acc=0.447619  aloss=0.00168269  closs=7.06254  ent=0.293384  kl=0.000870553  cf=0  ep=10/10  n=58  90813ms
+  [s0 r31 Kyoto_Small stress_light]  thr=0.192053  acc=0.350993  aloss=-0.0243028  closs=1.48084  ent=0.316063  kl=-0.000566437  cf=0  ep=10/10  n=56  36235ms
+  [s0 r31 Kyoto_Medium normal]  thr=0.181818  acc=0.509091  aloss=0.0044731  closs=9.336  ent=0.289408  kl=4.90371e-05  cf=0  ep=10/10  n=62  61745ms
+  [s0 r31 LosAngeles_Small normal]  thr=0.2  acc=0.36  aloss=8.26657e-05  closs=1.47444  ent=0.307234  kl=0.000615101  cf=0  ep=10/10  n=63  41054ms
+  [s0 r31 LosAngeles_Medium stress_light]  thr=0.142857  acc=0.464286  aloss=0.0221984  closs=9.77119  ent=0.276118  kl=0.000224486  cf=0  ep=10/10  n=53  95202ms
+  [s0 r32 Tokyo_Small stress_light]  thr=0.179487  acc=0.333333  aloss=0.0126116  closs=1.0806  ent=0.302743  kl=0.000179572  cf=0  ep=10/10  n=54  40529ms
+  [s0 r32 Tokyo_Medium normal]  thr=0.1875  acc=0.508929  aloss=-0.00663292  closs=17.0685  ent=0.284637  kl=7.00015e-05  cf=0  ep=10/10  n=62  97415ms
+  [s0 r32 Kyoto_Small normal]  thr=0.238411  acc=0.397351  aloss=-0.0997989  closs=0.796471  ent=0.308234  kl=5.2459e-05  cf=0  ep=10/10  n=67  34373ms
+  [s0 r32 Kyoto_Medium normal]  thr=0.159574  acc=0.542553  aloss=-0.0065581  closs=3.32465  ent=0.286338  kl=7.04365e-05  cf=0  ep=10/10  n=56  50416ms
+  [s0 r32 LosAngeles_Small normal]  thr=0.214815  acc=0.392593  aloss=0.00495374  closs=1.26045  ent=0.302023  kl=1.80401e-05  cf=0  ep=10/10  n=59  39567ms
+  [s0 r32 LosAngeles_Medium normal]  thr=0.146552  acc=0.456897  aloss=-0.00491825  closs=4.30225  ent=0.28392  kl=-0.000353888  cf=0  ep=10/10  n=60  80719ms
+  [s0 r33 Tokyo_Small normal]  thr=0.234483  acc=0.4  aloss=0.00193212  closs=0.791268  ent=0.295626  kl=3.35353e-07  cf=0  ep=10/10  n=61  40490ms
+  [s0 r33 Tokyo_Medium normal]  thr=0.175926  acc=0.509259  aloss=0.0068014  closs=6.7826  ent=0.277051  kl=-3.30403e-05  cf=0  ep=10/10  n=61  94645ms
+  [s0 r33 Kyoto_Small normal]  thr=0.214724  acc=0.361963  aloss=-0.00158356  closs=1.3285  ent=0.311595  kl=-0.000328355  cf=0  ep=10/10  n=63  36933ms
+  [s0 r33 Kyoto_Medium normal]  thr=0.112069  acc=0.422414  aloss=-0.0109358  closs=4.92423  ent=0.27461  kl=-0.000132813  cf=0  ep=10/10  n=52  118687ms
+  [s0 r33 LosAngeles_Small stress_light]  thr=0.224359  acc=0.378205  aloss=-0.0910684  closs=1.12986  ent=0.297821  kl=0.000748069  cf=0  ep=10/10  n=67  49004ms
+  [s0 r33 LosAngeles_Medium stress_light]  thr=0.154545  acc=0.481818  aloss=0.00634319  closs=9.32545  ent=0.266872  kl=8.55709e-05  cf=0  ep=10/10  n=60  86116ms
+  [s0 r34 Tokyo_Small stress_heavy]  thr=0.251799  acc=0.42446  aloss=0.00526526  closs=0.887592  ent=0.290419  kl=0.000319889  cf=0  ep=10/10  n=62  37306ms
+  [s0 r34 Tokyo_Medium stress_light]  thr=0.196078  acc=0.54902  aloss=-5.1856e-07  closs=15.5441  ent=0.274279  kl=-0.000130376  cf=0  ep=10/10  n=64  93827ms
+  [s0 r34 Kyoto_Small stress_heavy]  thr=0.226027  acc=0.390411  aloss=-0.00115025  closs=1.00125  ent=0.297127  kl=4.48921e-06  cf=0  ep=10/10  n=62  36603ms
+  [s0 r34 Kyoto_Medium stress_light]  thr=0.21  acc=0.57  aloss=-0.00108355  closs=9.6094  ent=0.278837  kl=-4.63543e-05  cf=0  ep=10/10  n=63  62840ms
+  [s0 r34 LosAngeles_Small stress_heavy]  thr=0.187919  acc=0.348993  aloss=0.012789  closs=1.26553  ent=0.299591  kl=0.000392523  cf=0  ep=10/10  n=54  46350ms
+  [s0 r34 LosAngeles_Medium stress_heavy]  thr=0.159664  acc=0.453782  aloss=0.000519718  closs=9.58831  ent=0.273295  kl=-5.09574e-05  cf=0  ep=10/10  n=60  108971ms
+  [s0 r35 Tokyo_Small normal]  thr=0.22  acc=0.38  aloss=0.0138946  closs=0.767085  ent=0.298393  kl=-0.000286758  cf=0  ep=10/10  n=60  43200ms
+  [s0 r35 Tokyo_Medium stress_light]  thr=0.115702  acc=0.413223  aloss=-0.0215348  closs=10.3419  ent=0.269876  kl=-5.23853e-05  cf=0  ep=10/10  n=53  99461ms
+  [s0 r35 Kyoto_Small normal]  thr=0.193103  acc=0.358621  aloss=-0.0125503  closs=2.73107  ent=0.292461  kl=-1.86249e-05  cf=0  ep=10/10  n=55  34358ms
+  [s0 r35 Kyoto_Medium normal]  thr=0.20202  acc=0.555556  aloss=0.000841106  closs=10.4552  ent=0.269442  kl=0.000359391  cf=0  ep=10/10  n=61  56792ms
+  [s0 r35 LosAngeles_Small normal]  thr=0.228188  acc=0.389262  aloss=-0.000527614  closs=1.38558  ent=0.286881  kl=-1.55682e-05  cf=0  ep=10/10  n=63  43024ms
+  [s0 r35 LosAngeles_Medium normal]  thr=0.216216  acc=0.531532  aloss=-0.00146064  closs=18.334  ent=0.258846  kl=-9.83236e-06  cf=0  ep=10/10  n=63  83688ms
+  [s0 r36 Tokyo_Small normal]  thr=0.245283  acc=0.396226  aloss=-0.105136  closs=1.26179  ent=0.285601  kl=-0.000464222  cf=0  ep=10/10  n=68  43598ms
+  [s0 r36 Tokyo_Medium stress_light]  thr=0.174757  acc=0.524272  aloss=-0.00624483  closs=15.5941  ent=0.253663  kl=9.93514e-06  cf=0  ep=10/10  n=58  84942ms
+  [s0 r36 Kyoto_Small normal]  thr=0.248366  acc=0.398693  aloss=0.0612065  closs=2.06542  ent=0.279796  kl=-0.000184749  cf=0  ep=10/10  n=67  36808ms
+  [s0 r36 Kyoto_Medium stress_light]  thr=0.125984  acc=0.401575  aloss=0.0125021  closs=10.5999  ent=0.248454  kl=-7.82331e-07  cf=0  ep=10/10  n=55  99290ms
+  [s0 r36 LosAngeles_Small stress_light]  thr=0.221519  acc=0.367089  aloss=-0.00636189  closs=1.80365  ent=0.269869  kl=-0.000129391  cf=0  ep=10/10  n=62  48025ms
+  [s0 r36 LosAngeles_Medium normal]  thr=0.140496  acc=0.438017  aloss=-0.00824773  closs=15.7249  ent=0.249845  kl=-0.000148923  cf=0  ep=10/10  n=58  79297ms
+  [s0 r37 Tokyo_Small stress_heavy]  thr=0.193548  acc=0.348387  aloss=-0.00358366  closs=1.16757  ent=0.262687  kl=0.000813688  cf=0  ep=10/10  n=61  46109ms
+  [s0 r37 Tokyo_Medium normal]  thr=0.147541  acc=0.442623  aloss=-0.0106577  closs=15.104  ent=0.240946  kl=-1.0202e-05  cf=0  ep=10/10  n=60  186720ms
+  [s0 r37 Kyoto_Small normal]  thr=0.269231  acc=0.446154  aloss=0.00458914  closs=2.13625  ent=0.268026  kl=5.76019e-06  cf=0  ep=10/10  n=59  33456ms
+  [s0 r37 Kyoto_Medium normal]  thr=0.231481  acc=0.555556  aloss=0.0471218  closs=4.37446  ent=0.237745  kl=0.000111332  cf=0  ep=10/10  n=65  71721ms
+  [s0 r37 LosAngeles_Small stress_heavy]  thr=0.207317  acc=0.353659  aloss=0.00146248  closs=2.40738  ent=0.261936  kl=0.000164053  cf=0  ep=10/10  n=61  50354ms
+  [s0 r37 LosAngeles_Medium stress_light]  thr=0.163462  acc=0.509615  aloss=0.00239978  closs=7.13341  ent=0.245112  kl=0.000274717  cf=0  ep=10/10  n=55  79400ms
+  [s0 r38 Tokyo_Small normal]  thr=0.17931  acc=0.344828  aloss=-0.0238095  closs=1.61872  ent=0.259258  kl=7.09989e-06  cf=0  ep=10/10  n=54  47987ms
+  [s0 r38 Tokyo_Medium stress_light]  thr=0.163043  acc=0.543478  aloss=-0.0144466  closs=6.20836  ent=0.238478  kl=-7.02203e-06  cf=0  ep=10/10  n=53  130578ms
+  [s0 r38 Kyoto_Small stress_light]  thr=0.222973  acc=0.385135  aloss=-0.000794923  closs=1.65018  ent=0.267497  kl=3.02812e-05  cf=0  ep=10/10  n=60  33567ms
+  [s0 r38 Kyoto_Medium normal]  thr=0.157025  acc=0.454545  aloss=-0.00757409  closs=9.62194  ent=0.239826  kl=0.000177073  cf=0  ep=10/10  n=58  81152ms
+  [s0 r38 LosAngeles_Small normal]  thr=0.194805  acc=0.350649  aloss=-0.00379625  closs=2.24177  ent=0.267104  kl=0.000426293  cf=0  ep=10/10  n=60  48376ms
+  [s0 r38 LosAngeles_Medium stress_light]  thr=0.168067  acc=0.470588  aloss=-0.00712543  closs=10.3697  ent=0.241197  kl=5.19387e-05  cf=0  ep=10/10  n=58  110827ms
+  [s0 r39 Tokyo_Small normal]  thr=0.204082  acc=0.367347  aloss=0.00542027  closs=1.60932  ent=0.256494  kl=-1.65554e-05  cf=0  ep=10/10  n=58  46099ms
+  [s0 r39 Tokyo_Medium normal]  thr=0.182609  acc=0.486957  aloss=-0.000505592  closs=10.1183  ent=0.23651  kl=-0.000385515  cf=0  ep=10/10  n=63  93020ms
+  [s0 r39 Kyoto_Small stress_light]  thr=0.229814  acc=0.36646  aloss=-0.00362978  closs=1.79821  ent=0.256965  kl=-0.00059285  cf=0  ep=10/10  n=60  44331ms
+  [s0 r39 Kyoto_Medium normal]  thr=0.185567  acc=0.556701  aloss=-0.0153896  closs=3.79312  ent=0.2425  kl=2.74784e-07  cf=0  ep=10/10  n=58  64301ms
+  [s0 r39 LosAngeles_Small normal]  thr=0.239726  acc=0.40411  aloss=-0.00150433  closs=1.23626  ent=0.26619  kl=0.000139189  cf=0  ep=10/10  n=70  40481ms
+  [s0 r39 LosAngeles_Medium normal]  thr=0.117647  acc=0.470588  aloss=0.00654425  closs=10.8252  ent=0.237248  kl=-9.83273e-05  cf=0  ep=10/10  n=50  79237ms
+  -- Eval @ round 40 --
+    [eval Tokyo_Small/MAPPO/1/3]  thr=0.184524  acc=0.327381  58141ms
+    [eval Tokyo_Small/MAPPO/2/3]  thr=0.204082  acc=0.367347  42369ms
+    [eval Tokyo_Small/MAPPO/3/3]  thr=0.202614  acc=0.352941  36209ms
+    [eval Tokyo_Small/TamAlwaysAccept/1/3]  thr=0.235669  acc=0.382166  36895ms
+    [eval Tokyo_Small/TamAlwaysAccept/2/3]  thr=0.165605  acc=0.318471  41839ms
+    [eval Tokyo_Small/TamAlwaysAccept/3/3]  thr=0.238806  acc=0.41791  31239ms
+    [eval Tokyo_Small/Greedy/1/3]  thr=0.121212  acc=0.30303  9127ms
+    [eval Tokyo_Small/Greedy/2/3]  thr=0.108696  acc=0.282609  5710ms
+    [eval Tokyo_Small/Greedy/3/3]  thr=0.144928  acc=0.318841  4569ms
+    [eval Tokyo_Small/Random/1/3]  thr=0.131387  acc=0.306569  6252ms
+    [eval Tokyo_Small/Random/2/3]  thr=0.124183  acc=0.27451  5116ms
+    [eval Tokyo_Small/Random/3/3]  thr=0.138365  acc=0.289308  5474ms
+    [eval Tokyo_Small/InsertionGreedy/1/3]  thr=0.128834  acc=0.276074  8137ms
+    [eval Tokyo_Small/InsertionGreedy/2/3]  thr=0.104167  acc=0.270833  8251ms
+    [eval Tokyo_Small/InsertionGreedy/3/3]  thr=0.141791  acc=0.320896  8566ms
+    [eval Tokyo_Small/LaCAM/1/3]  thr=0.143885  acc=0.316547  11084ms
+    [eval Tokyo_Small/LaCAM/2/3]  thr=0.18125  acc=0.33125  10635ms
+    [eval Tokyo_Small/LaCAM/3/3]  thr=0.147651  acc=0.308725  9091ms
+    [eval Tokyo_Small/PIBT/1/3]  thr=0.15625  acc=0.335938  5266ms
+    [eval Tokyo_Small/PIBT/2/3]  thr=0.112426  acc=0.254438  5462ms
+    [eval Tokyo_Small/PIBT/3/3]  thr=0.108696  acc=0.282609  5873ms
+    [eval Tokyo_Small/CongestionAware/1/3]  thr=0.169231  acc=0.353846  9847ms
+    [eval Tokyo_Small/CongestionAware/2/3]  thr=0.116279  acc=0.255814  10466ms
+    [eval Tokyo_Small/CongestionAware/3/3]  thr=0.150943  acc=0.301887  9763ms
+    [eval Tokyo_Medium/MAPPO/1/3]  thr=0.163636  acc=0.490909  96505ms
+    [eval Tokyo_Medium/MAPPO/2/3]  thr=0.122642  acc=0.45283  87052ms
+    [eval Tokyo_Medium/MAPPO/3/3]  thr=0.160377  acc=0.481132  73366ms
+    [eval Tokyo_Medium/TamAlwaysAccept/1/3]  thr=0.155963  acc=0.46789  73977ms
+    [eval Tokyo_Medium/TamAlwaysAccept/2/3]  thr=0.134615  acc=0.471154  71915ms
+    [eval Tokyo_Medium/TamAlwaysAccept/3/3]  thr=0.146552  acc=0.456897  69642ms
+    [eval Tokyo_Medium/Greedy/1/3]  thr=0.0555556  acc=0.388889  23098ms
+    [eval Tokyo_Medium/Greedy/2/3]  thr=0.0854701  acc=0.393162  16555ms
+    [eval Tokyo_Medium/Greedy/3/3]  thr=0.0900901  acc=0.414414  16706ms
+    [eval Tokyo_Medium/Random/1/3]  thr=0.0819672  acc=0.377049  16347ms
+    [eval Tokyo_Medium/Random/2/3]  thr=0.0638298  acc=0.446809  14823ms
+    [eval Tokyo_Medium/Random/3/3]  thr=0.0679612  acc=0.417476  17006ms
+    [eval Tokyo_Medium/InsertionGreedy/1/3]  thr=0.125  acc=0.471154  38484ms
+    [eval Tokyo_Medium/InsertionGreedy/2/3]  thr=0.0695652  acc=0.382609  34587ms
+    [eval Tokyo_Medium/InsertionGreedy/3/3]  thr=0.10101  acc=0.454545  33563ms
+    [eval Tokyo_Medium/LaCAM/1/3]  thr=0.163636  acc=0.490909  43576ms
+    [eval Tokyo_Medium/LaCAM/2/3]  thr=0.0813008  acc=0.373984  40805ms
+    [eval Tokyo_Medium/LaCAM/3/3]  thr=0.113043  acc=0.426087  44321ms
+    [eval Tokyo_Medium/PIBT/1/3]  thr=0.111111  acc=0.444444  15412ms
+    [eval Tokyo_Medium/PIBT/2/3]  thr=0.0538462  acc=0.330769  16241ms
+    [eval Tokyo_Medium/PIBT/3/3]  thr=0.0862069  acc=0.396552  14175ms
+    [eval Tokyo_Medium/CongestionAware/1/3]  thr=0.153061  acc=0.520408  41656ms
+    [eval Tokyo_Medium/CongestionAware/2/3]  thr=0.122449  acc=0.489796  39376ms
+    [eval Tokyo_Medium/CongestionAware/3/3]  thr=0.171171  acc=0.495495  40708ms
+    [eval Kyoto_Small/MAPPO/1/3]  thr=0.285714  acc=0.487395  30087ms
+    [eval Kyoto_Small/MAPPO/2/3]  thr=0.196429  acc=0.333333  31738ms
+    [eval Kyoto_Small/MAPPO/3/3]  thr=0.183007  acc=0.339869  33560ms
+    [eval Kyoto_Small/TamAlwaysAccept/1/3]  thr=0.183908  acc=0.310345  32632ms
+    [eval Kyoto_Small/TamAlwaysAccept/2/3]  thr=0.205298  acc=0.364238  26385ms
+    [eval Kyoto_Small/TamAlwaysAccept/3/3]  thr=0.226415  acc=0.377358  30896ms
+    [eval Kyoto_Small/Greedy/1/3]  thr=0.128788  acc=0.310606  8846ms
+    [eval Kyoto_Small/Greedy/2/3]  thr=0.15942  acc=0.333333  4469ms
+    [eval Kyoto_Small/Greedy/3/3]  thr=0.194245  acc=0.366906  4392ms
+    [eval Kyoto_Small/Random/1/3]  thr=0.127517  acc=0.288591  4580ms
+    [eval Kyoto_Small/Random/2/3]  thr=0.135802  acc=0.283951  3924ms
+    [eval Kyoto_Small/Random/3/3]  thr=0.134228  acc=0.288591  4639ms
+    [eval Kyoto_Small/InsertionGreedy/1/3]  thr=0.120805  acc=0.281879  6881ms
+    [eval Kyoto_Small/InsertionGreedy/2/3]  thr=0.125  acc=0.275  7910ms
+    [eval Kyoto_Small/InsertionGreedy/3/3]  thr=0.158621  acc=0.310345  7309ms
+    [eval Kyoto_Small/LaCAM/1/3]  thr=0.208  acc=0.4  8632ms
+    [eval Kyoto_Small/LaCAM/2/3]  thr=0.159509  acc=0.306748  9190ms
+    [eval Kyoto_Small/LaCAM/3/3]  thr=0.126582  acc=0.278481  9144ms
+    [eval Kyoto_Small/PIBT/1/3]  thr=0.130719  acc=0.287582  4358ms
+    [eval Kyoto_Small/PIBT/2/3]  thr=0.162791  acc=0.348837  3603ms
+    [eval Kyoto_Small/PIBT/3/3]  thr=0.145833  acc=0.3125  2834ms
+    [eval Kyoto_Small/CongestionAware/1/3]  thr=0.15  acc=0.3  8608ms
+    [eval Kyoto_Small/CongestionAware/2/3]  thr=0.14  acc=0.3  8153ms
+    [eval Kyoto_Small/CongestionAware/3/3]  thr=0.147059  acc=0.323529  8553ms
+    [eval Kyoto_Medium/MAPPO/1/3]  thr=0.141593  acc=0.460177  114180ms
+    [eval Kyoto_Medium/MAPPO/2/3]  thr=0.145299  acc=0.452991  66013ms
+    [eval Kyoto_Medium/MAPPO/3/3]  thr=0.21978  acc=0.615385  39932ms
+    [eval Kyoto_Medium/TamAlwaysAccept/1/3]  thr=0.143939  acc=0.416667  69896ms
+    [eval Kyoto_Medium/TamAlwaysAccept/2/3]  thr=0.160377  acc=0.490566  49721ms
+    [eval Kyoto_Medium/TamAlwaysAccept/3/3]  thr=0.244898  acc=0.612245  43064ms
+    [eval Kyoto_Medium/Greedy/1/3]  thr=0.0654206  acc=0.401869  14926ms
+    [eval Kyoto_Medium/Greedy/2/3]  thr=0.0508475  acc=0.347458  11962ms
+    [eval Kyoto_Medium/Greedy/3/3]  thr=0.0650406  acc=0.357724  12623ms
+    [eval Kyoto_Medium/Random/1/3]  thr=0.072  acc=0.36  16082ms
+    [eval Kyoto_Medium/Random/2/3]  thr=0.104762  acc=0.447619  14355ms
+    [eval Kyoto_Medium/Random/3/3]  thr=0.121212  acc=0.484848  11583ms
+    [eval Kyoto_Medium/InsertionGreedy/1/3]  thr=0.0961538  acc=0.442308  29155ms
+    [eval Kyoto_Medium/InsertionGreedy/2/3]  thr=0.10101  acc=0.464646  23267ms
+    [eval Kyoto_Medium/InsertionGreedy/3/3]  thr=0.103093  acc=0.474227  21871ms
+    [eval Kyoto_Medium/LaCAM/1/3]  thr=0.140351  acc=0.447368  28301ms
+    [eval Kyoto_Medium/LaCAM/2/3]  thr=0.133333  acc=0.47619  33576ms
+    [eval Kyoto_Medium/LaCAM/3/3]  thr=0.111111  acc=0.418803  34410ms
+    [eval Kyoto_Medium/PIBT/1/3]  thr=0.0982143  acc=0.419643  15175ms
+    [eval Kyoto_Medium/PIBT/2/3]  thr=0.0860215  acc=0.473118  12928ms
+    [eval Kyoto_Medium/PIBT/3/3]  thr=0.0952381  acc=0.438095  13411ms
+    [eval Kyoto_Medium/CongestionAware/1/3]  thr=0.140187  acc=0.476636  30709ms
+    [eval Kyoto_Medium/CongestionAware/2/3]  thr=0.0955882  acc=0.360294  32073ms
+    [eval Kyoto_Medium/CongestionAware/3/3]  thr=0.109091  acc=0.436364  33226ms
+    [eval LosAngeles_Small/MAPPO/1/3]  thr=0.221374  acc=0.396947  56767ms
+    [eval LosAngeles_Small/MAPPO/2/3]  thr=0.213836  acc=0.36478  43557ms
+    [eval LosAngeles_Small/MAPPO/3/3]  thr=0.206667  acc=0.366667  42504ms
+    [eval LosAngeles_Small/TamAlwaysAccept/1/3]  thr=0.245161  acc=0.4  34301ms
+    [eval LosAngeles_Small/TamAlwaysAccept/2/3]  thr=0.23871  acc=0.393548  36121ms
+    [eval LosAngeles_Small/TamAlwaysAccept/3/3]  thr=0.238372  acc=0.377907  42719ms
+    [eval LosAngeles_Small/Greedy/1/3]  thr=0.126866  acc=0.30597  11489ms
+    [eval LosAngeles_Small/Greedy/2/3]  thr=0.146853  acc=0.307692  4510ms
+    [eval LosAngeles_Small/Greedy/3/3]  thr=0.131783  acc=0.317829  5758ms
+    [eval LosAngeles_Small/Random/1/3]  thr=0.121429  acc=0.292857  6424ms
+    [eval LosAngeles_Small/Random/2/3]  thr=0.152174  acc=0.326087  6958ms
+    [eval LosAngeles_Small/Random/3/3]  thr=0.136986  acc=0.30137  5408ms
+    [eval LosAngeles_Small/InsertionGreedy/1/3]  thr=0.151515  acc=0.333333  9168ms
+    [eval LosAngeles_Small/InsertionGreedy/2/3]  thr=0.114865  acc=0.27027  10765ms
+    [eval LosAngeles_Small/InsertionGreedy/3/3]  thr=0.125  acc=0.294118  8767ms
+    [eval LosAngeles_Small/LaCAM/1/3]  thr=0.176056  acc=0.34507  9003ms
+    [eval LosAngeles_Small/LaCAM/2/3]  thr=0.152866  acc=0.305732  7912ms
+    [eval LosAngeles_Small/LaCAM/3/3]  thr=0.16  acc=0.32  10076ms
+    [eval LosAngeles_Small/PIBT/1/3]  thr=0.161972  acc=0.330986  5878ms
+    [eval LosAngeles_Small/PIBT/2/3]  thr=0.126667  acc=0.286667  5393ms
+    [eval LosAngeles_Small/PIBT/3/3]  thr=0.141892  acc=0.304054  5129ms
+    [eval LosAngeles_Small/CongestionAware/1/3]  thr=0.146497  acc=0.299363  7975ms
+    [eval LosAngeles_Small/CongestionAware/2/3]  thr=0.184615  acc=0.369231  8875ms
+    [eval LosAngeles_Small/CongestionAware/3/3]  thr=0.179856  acc=0.352518  9158ms
+    [eval LosAngeles_Medium/MAPPO/1/3]  thr=0.150943  acc=0.490566  223469ms
+    [eval LosAngeles_Medium/MAPPO/2/3]  thr=0.241071  acc=0.553571  59474ms
+    [eval LosAngeles_Medium/MAPPO/3/3]  thr=0.185841  acc=0.504425  63991ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/1/3]  thr=0.181034  acc=0.482759  60891ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/2/3]  thr=0.128  acc=0.416  76810ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/3/3]  thr=0.205882  acc=0.539216  59922ms
+    [eval LosAngeles_Medium/Greedy/1/3]  thr=0.0480769  acc=0.394231  16501ms
+    [eval LosAngeles_Medium/Greedy/2/3]  thr=0.0818182  acc=0.4  12361ms
+    [eval LosAngeles_Medium/Greedy/3/3]  thr=0.0846154  acc=0.361538  13163ms
+    [eval LosAngeles_Medium/Random/1/3]  thr=0.0894309  acc=0.382114  15219ms
+    [eval LosAngeles_Medium/Random/2/3]  thr=0.0882353  acc=0.441176  12941ms
+    [eval LosAngeles_Medium/Random/3/3]  thr=0.117647  acc=0.470588  12399ms
+    [eval LosAngeles_Medium/InsertionGreedy/1/3]  thr=0.0857143  acc=0.428571  36067ms
+    [eval LosAngeles_Medium/InsertionGreedy/2/3]  thr=0.147368  acc=0.526316  27397ms
+    [eval LosAngeles_Medium/InsertionGreedy/3/3]  thr=0.0862069  acc=0.396552  28745ms
+    [eval LosAngeles_Medium/LaCAM/1/3]  thr=0.125  acc=0.5  34147ms
+    [eval LosAngeles_Medium/LaCAM/2/3]  thr=0.114035  acc=0.429825  29797ms
+    [eval LosAngeles_Medium/LaCAM/3/3]  thr=0.158879  acc=0.495327  37980ms
+    [eval LosAngeles_Medium/PIBT/1/3]  thr=0.0961538  acc=0.442308  15220ms
+    [eval LosAngeles_Medium/PIBT/2/3]  thr=0.0934579  acc=0.429907  13944ms
+    [eval LosAngeles_Medium/PIBT/3/3]  thr=0.096  acc=0.384  14648ms
+    [eval LosAngeles_Medium/CongestionAware/1/3]  thr=0.103774  acc=0.433962  35160ms
+    [eval LosAngeles_Medium/CongestionAware/2/3]  thr=0.157407  acc=0.490741  33727ms
+    [eval LosAngeles_Medium/CongestionAware/3/3]  thr=0.102804  acc=0.439252  34309ms
+  -- Stress Eval (density=2 agents=0.6) --
+    [stress Tokyo_Small/MAPPO/1/3]  thr=0.205479  acc=0.363014  37732ms
+    [stress Tokyo_Small/MAPPO/2/3]  thr=0.210145  acc=0.376812  36984ms
+    [stress Tokyo_Small/MAPPO/3/3]  thr=0.194805  acc=0.344156  36415ms
+    [stress Tokyo_Small/TamAlwaysAccept/1/3]  thr=0.171053  acc=0.328947  40659ms
+    [stress Tokyo_Small/TamAlwaysAccept/2/3]  thr=0.207547  acc=0.358491  38571ms
+    [stress Tokyo_Small/TamAlwaysAccept/3/3]  thr=0.218543  acc=0.377483  38943ms
+    [stress Tokyo_Small/Greedy/1/3]  thr=0.084507  acc=0.190141  6998ms
+    [stress Tokyo_Small/Greedy/2/3]  thr=0.0614525  acc=0.145251  3003ms
+    [stress Tokyo_Small/Greedy/3/3]  thr=0.0718954  acc=0.169935  2968ms
+    [stress Tokyo_Small/Random/1/3]  thr=0.0680272  acc=0.170068  3674ms
+    [stress Tokyo_Small/Random/2/3]  thr=0.0769231  acc=0.166667  2113ms
+    [stress Tokyo_Small/Random/3/3]  thr=0.0636943  acc=0.159236  2742ms
+    [stress Tokyo_Small/InsertionGreedy/1/3]  thr=0.0512821  acc=0.147436  5816ms
+    [stress Tokyo_Small/InsertionGreedy/2/3]  thr=0.0584416  acc=0.155844  5410ms
+    [stress Tokyo_Small/InsertionGreedy/3/3]  thr=0.0621118  acc=0.15528  5121ms
+    [stress Tokyo_Small/LaCAM/1/3]  thr=0.08  acc=0.18  6313ms
+    [stress Tokyo_Small/LaCAM/2/3]  thr=0.0958904  acc=0.19863  5576ms
+    [stress Tokyo_Small/LaCAM/3/3]  thr=0.0822785  acc=0.177215  6646ms
+    [stress Tokyo_Small/PIBT/1/3]  thr=0.0680272  acc=0.170068  2772ms
+    [stress Tokyo_Small/PIBT/2/3]  thr=0.0787879  acc=0.163636  3041ms
+    [stress Tokyo_Small/PIBT/3/3]  thr=0.056962  acc=0.151899  4012ms
+    [stress Tokyo_Small/CongestionAware/1/3]  thr=0.0784314  acc=0.176471  3822ms
+    [stress Tokyo_Small/CongestionAware/2/3]  thr=0.0649351  acc=0.162338  4307ms
+    [stress Tokyo_Small/CongestionAware/3/3]  thr=0.0609756  acc=0.152439  5444ms
+    [stress Tokyo_Medium/MAPPO/1/3]  thr=0.163934  acc=0.459016  81973ms
+    [stress Tokyo_Medium/MAPPO/2/3]  thr=0.188119  acc=0.544554  75864ms
+    [stress Tokyo_Medium/MAPPO/3/3]  thr=0.148515  acc=0.504951  60879ms
+    [stress Tokyo_Medium/TamAlwaysAccept/1/3]  thr=0.146552  acc=0.456897  80492ms
+    [stress Tokyo_Medium/TamAlwaysAccept/2/3]  thr=0.126126  acc=0.45045  83339ms
+    [stress Tokyo_Medium/TamAlwaysAccept/3/3]  thr=0.197917  acc=0.572917  65909ms
+    [stress Tokyo_Medium/Greedy/1/3]  thr=0.0530973  acc=0.238938  15014ms
+    [stress Tokyo_Medium/Greedy/2/3]  thr=0.0701754  acc=0.254386  8742ms
+    [stress Tokyo_Medium/Greedy/3/3]  thr=0.0491803  acc=0.221311  8410ms
+    [stress Tokyo_Medium/Random/1/3]  thr=0.0636364  acc=0.254545  8916ms
+    [stress Tokyo_Medium/Random/2/3]  thr=0.0442478  acc=0.221239  8779ms
+    [stress Tokyo_Medium/Random/3/3]  thr=0.0707965  acc=0.247788  10177ms
+    [stress Tokyo_Medium/InsertionGreedy/1/3]  thr=0.0441176  acc=0.198529  15831ms
+    [stress Tokyo_Medium/InsertionGreedy/2/3]  thr=0.027027  acc=0.216216  17414ms
+    [stress Tokyo_Medium/InsertionGreedy/3/3]  thr=0.064  acc=0.232  19393ms
+    [stress Tokyo_Medium/LaCAM/1/3]  thr=0.0393701  acc=0.204724  24716ms
+    [stress Tokyo_Medium/LaCAM/2/3]  thr=0.0344828  acc=0.215517  23841ms
+    [stress Tokyo_Medium/LaCAM/3/3]  thr=0.0650406  acc=0.235772  25647ms
+    [stress Tokyo_Medium/PIBT/1/3]  thr=0.0526316  acc=0.273684  10004ms
+    [stress Tokyo_Medium/PIBT/2/3]  thr=0.042735  acc=0.222222  9438ms
+    [stress Tokyo_Medium/PIBT/3/3]  thr=0.0437956  acc=0.19708  11486ms
+    [stress Tokyo_Medium/CongestionAware/1/3]  thr=0.0583333  acc=0.233333  19743ms
+    [stress Tokyo_Medium/CongestionAware/2/3]  thr=0.0747664  acc=0.271028  17869ms
+    [stress Tokyo_Medium/CongestionAware/3/3]  thr=0.0336134  acc=0.210084  19734ms
+    [stress Kyoto_Small/MAPPO/1/3]  thr=0.227586  acc=0.393103  20855ms
+    [stress Kyoto_Small/MAPPO/2/3]  thr=0.169492  acc=0.305085  34329ms
+    [stress Kyoto_Small/MAPPO/3/3]  thr=0.228188  acc=0.389262  28209ms
+    [stress Kyoto_Small/TamAlwaysAccept/1/3]  thr=0.240876  acc=0.416058  24112ms
+    [stress Kyoto_Small/TamAlwaysAccept/2/3]  thr=0.264286  acc=0.428571  22086ms
+    [stress Kyoto_Small/TamAlwaysAccept/3/3]  thr=0.264901  acc=0.423841  24872ms
+    [stress Kyoto_Small/Greedy/1/3]  thr=0.0769231  acc=0.173077  6956ms
+    [stress Kyoto_Small/Greedy/2/3]  thr=0.0714286  acc=0.171429  2673ms
+    [stress Kyoto_Small/Greedy/3/3]  thr=0.0816327  acc=0.183673  3734ms
+    [stress Kyoto_Small/Random/1/3]  thr=0.0696203  acc=0.164557  2987ms
+    [stress Kyoto_Small/Random/2/3]  thr=0.0778443  acc=0.167665  1988ms
+    [stress Kyoto_Small/Random/3/3]  thr=0.0828025  acc=0.178344  2562ms
+    [stress Kyoto_Small/InsertionGreedy/1/3]  thr=0.08125  acc=0.175  3607ms
+    [stress Kyoto_Small/InsertionGreedy/2/3]  thr=0.0855263  acc=0.184211  3116ms
+    [stress Kyoto_Small/InsertionGreedy/3/3]  thr=0.0820896  acc=0.19403  3623ms
+    [stress Kyoto_Small/LaCAM/1/3]  thr=0.11811  acc=0.23622  3947ms
+    [stress Kyoto_Small/LaCAM/2/3]  thr=0.107383  acc=0.208054  3697ms
+    [stress Kyoto_Small/LaCAM/3/3]  thr=0.0778443  acc=0.167665  4726ms
+    [stress Kyoto_Small/PIBT/1/3]  thr=0.112583  acc=0.205298  2255ms
+    [stress Kyoto_Small/PIBT/2/3]  thr=0.0617284  acc=0.154321  3194ms
+    [stress Kyoto_Small/PIBT/3/3]  thr=0.0733333  acc=0.173333  2824ms
+    [stress Kyoto_Small/CongestionAware/1/3]  thr=0.0797101  acc=0.188406  3971ms
+    [stress Kyoto_Small/CongestionAware/2/3]  thr=0.0880503  acc=0.18239  3148ms
+    [stress Kyoto_Small/CongestionAware/3/3]  thr=0.1  acc=0.2  3034ms
+    [stress Kyoto_Medium/MAPPO/1/3]  thr=0.121212  acc=0.393939  61816ms
+    [stress Kyoto_Medium/MAPPO/2/3]  thr=0.198198  acc=0.522523  58218ms
+    [stress Kyoto_Medium/MAPPO/3/3]  thr=0.145631  acc=0.495146  48946ms
+    [stress Kyoto_Medium/TamAlwaysAccept/1/3]  thr=0.202128  acc=0.585106  42432ms
+    [stress Kyoto_Medium/TamAlwaysAccept/2/3]  thr=0.214876  acc=0.512397  52166ms
+    [stress Kyoto_Medium/TamAlwaysAccept/3/3]  thr=0.169492  acc=0.474576  53741ms
+    [stress Kyoto_Medium/Greedy/1/3]  thr=0.0769231  acc=0.278846  13242ms
+    [stress Kyoto_Medium/Greedy/2/3]  thr=0.0630631  acc=0.252252  7974ms
+    [stress Kyoto_Medium/Greedy/3/3]  thr=0.0614035  acc=0.236842  7660ms
+    [stress Kyoto_Medium/Random/1/3]  thr=0.0434783  acc=0.271739  8197ms
+    [stress Kyoto_Medium/Random/2/3]  thr=0.0387597  acc=0.20155  8328ms
+    [stress Kyoto_Medium/Random/3/3]  thr=0.0727273  acc=0.263636  7080ms
+    [stress Kyoto_Medium/InsertionGreedy/1/3]  thr=0.0306122  acc=0.244898  15329ms
+    [stress Kyoto_Medium/InsertionGreedy/2/3]  thr=0.0701754  acc=0.254386  14873ms
+    [stress Kyoto_Medium/InsertionGreedy/3/3]  thr=0.0740741  acc=0.259259  16186ms
+    [stress Kyoto_Medium/LaCAM/1/3]  thr=0.0695652  acc=0.252174  13785ms
+    [stress Kyoto_Medium/LaCAM/2/3]  thr=0.0661157  acc=0.239669  16803ms
+    [stress Kyoto_Medium/LaCAM/3/3]  thr=0.0520833  acc=0.270833  15498ms
+    [stress Kyoto_Medium/PIBT/1/3]  thr=0.0408163  acc=0.255102  7944ms
+    [stress Kyoto_Medium/PIBT/2/3]  thr=0.0571429  acc=0.257143  7938ms
+    [stress Kyoto_Medium/PIBT/3/3]  thr=0.0396825  acc=0.198413  8842ms
+    [stress Kyoto_Medium/CongestionAware/1/3]  thr=0.0634921  acc=0.230159  13406ms
+    [stress Kyoto_Medium/CongestionAware/2/3]  thr=0.0555556  acc=0.222222  12027ms
+    [stress Kyoto_Medium/CongestionAware/3/3]  thr=0.0892857  acc=0.276786  12952ms
+    [stress LosAngeles_Small/MAPPO/1/3]  thr=0.243421  acc=0.388158  25997ms
+    [stress LosAngeles_Small/MAPPO/2/3]  thr=0.234483  acc=0.4  30526ms
+    [stress LosAngeles_Small/MAPPO/3/3]  thr=0.234043  acc=0.404255  30395ms
+    [stress LosAngeles_Small/TamAlwaysAccept/1/3]  thr=0.181818  acc=0.327273  39557ms
+    [stress LosAngeles_Small/TamAlwaysAccept/2/3]  thr=0.212903  acc=0.367742  36884ms
+    [stress LosAngeles_Small/TamAlwaysAccept/3/3]  thr=0.21519  acc=0.360759  36838ms
+    [stress LosAngeles_Small/Greedy/1/3]  thr=0.0884354  acc=0.190476  5825ms
+    [stress LosAngeles_Small/Greedy/2/3]  thr=0.0839161  acc=0.188811  3129ms
+    [stress LosAngeles_Small/Greedy/3/3]  thr=0.0625  acc=0.166667  3700ms
+    [stress LosAngeles_Small/Random/1/3]  thr=0.0679012  acc=0.160494  3448ms
+    [stress LosAngeles_Small/Random/2/3]  thr=0.0705128  acc=0.166667  2628ms
+    [stress LosAngeles_Small/Random/3/3]  thr=0.0588235  acc=0.169118  3064ms
+    [stress LosAngeles_Small/InsertionGreedy/1/3]  thr=0.0718563  acc=0.161677  4288ms
+    [stress LosAngeles_Small/InsertionGreedy/2/3]  thr=0.0925926  acc=0.185185  3763ms
+    [stress LosAngeles_Small/InsertionGreedy/3/3]  thr=0.0822785  acc=0.177215  5175ms
+    [stress LosAngeles_Small/LaCAM/1/3]  thr=0.0992908  acc=0.205674  5260ms
+    [stress LosAngeles_Small/LaCAM/2/3]  thr=0.0972222  acc=0.201389  5569ms
+    [stress LosAngeles_Small/LaCAM/3/3]  thr=0.111842  acc=0.210526  4312ms
+    [stress LosAngeles_Small/PIBT/1/3]  thr=0.0860927  acc=0.18543  2520ms
+    [stress LosAngeles_Small/PIBT/2/3]  thr=0.0849673  acc=0.183007  2145ms
+    [stress LosAngeles_Small/PIBT/3/3]  thr=0.1  acc=0.215385  3163ms
+    [stress LosAngeles_Small/CongestionAware/1/3]  thr=0.0694444  acc=0.173611  4038ms
+    [stress LosAngeles_Small/CongestionAware/2/3]  thr=0.0555556  acc=0.148148  4758ms
+    [stress LosAngeles_Small/CongestionAware/3/3]  thr=0.0780142  acc=0.177305  4145ms
+    [stress LosAngeles_Medium/MAPPO/1/3]  thr=0.190476  acc=0.533333  49239ms
+    [stress LosAngeles_Medium/MAPPO/2/3]  thr=0.173913  acc=0.478261  72505ms
+    [stress LosAngeles_Medium/MAPPO/3/3]  thr=0.158416  acc=0.49505  55495ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/1/3]  thr=0.212766  acc=0.574468  40071ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/2/3]  thr=0.162393  acc=0.470085  61552ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/3/3]  thr=0.169811  acc=0.509434  56278ms
+    [stress LosAngeles_Medium/Greedy/1/3]  thr=0.0618557  acc=0.278351  12732ms
+    [stress LosAngeles_Medium/Greedy/2/3]  thr=0.0608696  acc=0.243478  8651ms
+    [stress LosAngeles_Medium/Greedy/3/3]  thr=0.056  acc=0.224  8868ms
+    [stress LosAngeles_Medium/Random/1/3]  thr=0.0396825  acc=0.206349  9236ms
+    [stress LosAngeles_Medium/Random/2/3]  thr=0.0578512  acc=0.231405  9834ms
+    [stress LosAngeles_Medium/Random/3/3]  thr=0.0630631  acc=0.252252  8420ms
+    [stress LosAngeles_Medium/InsertionGreedy/1/3]  thr=0.046729  acc=0.242991  14482ms
+    [stress LosAngeles_Medium/InsertionGreedy/2/3]  thr=0.059322  acc=0.237288  13864ms
+    [stress LosAngeles_Medium/InsertionGreedy/3/3]  thr=0.0566038  acc=0.254717  17860ms
+    [stress LosAngeles_Medium/LaCAM/1/3]  thr=0.114583  acc=0.333333  18210ms
+    [stress LosAngeles_Medium/LaCAM/2/3]  thr=0.0661765  acc=0.220588  20921ms
+    [stress LosAngeles_Medium/LaCAM/3/3]  thr=0.0517241  acc=0.232759  22089ms
+    [stress LosAngeles_Medium/PIBT/1/3]  thr=0.0603448  acc=0.241379  9048ms
+    [stress LosAngeles_Medium/PIBT/2/3]  thr=0.07  acc=0.28  9767ms
+    [stress LosAngeles_Medium/PIBT/3/3]  thr=0.06  acc=0.27  8164ms
+    [stress LosAngeles_Medium/CongestionAware/1/3]  thr=0.0538462  acc=0.215385  15463ms
+    [stress LosAngeles_Medium/CongestionAware/2/3]  thr=0.0813008  acc=0.243902  15422ms
+    [stress LosAngeles_Medium/CongestionAware/3/3]  thr=0.0756303  acc=0.243697  15651ms
+  [s0 r40 Tokyo_Small stress_heavy]  thr=0.190789  acc=0.342105  aloss=0.00552155  closs=1.31918  ent=0.242103  kl=-0.000142156  cf=0  ep=10/10  n=54  29609ms
+  [s0 r40 Tokyo_Medium normal]  thr=0.175926  acc=0.509259  aloss=-0.0180265  closs=18.3568  ent=0.236668  kl=-0.000140199  cf=0  ep=10/10  n=57  69037ms
+  [s0 r40 Kyoto_Small normal]  thr=0.228395  acc=0.376543  aloss=-0.000213151  closs=1.27309  ent=0.255874  kl=-0.000157001  cf=0  ep=10/10  n=64  28951ms
+  [s0 r40 Kyoto_Medium normal]  thr=0.176991  acc=0.495575  aloss=0.0117938  closs=6.57082  ent=0.232433  kl=3.9796e-05  cf=0  ep=10/10  n=60  101481ms
+  [s0 r40 LosAngeles_Small normal]  thr=0.177515  acc=0.319527  aloss=0.00328047  closs=2.28126  ent=0.254441  kl=0.000107663  cf=0  ep=10/10  n=60  93402ms
+  [s0 r40 LosAngeles_Medium normal]  thr=0.190909  acc=0.509091  aloss=-0.0021758  closs=9.4579  ent=0.225555  kl=-0.000438799  cf=0  ep=10/10  n=63  244553ms
+  [s0 r41 Tokyo_Small stress_light]  thr=0.192771  acc=0.337349  aloss=0.00609152  closs=1.44745  ent=0.246917  kl=0.000107265  cf=0  ep=10/10  n=58  76493ms
+  [s0 r41 Tokyo_Medium stress_light]  thr=0.138889  acc=0.472222  aloss=-0.00611889  closs=16.2462  ent=0.227448  kl=3.00969e-05  cf=0  ep=10/10  n=55  90556ms
+  [s0 r41 Kyoto_Small normal]  thr=0.1875  acc=0.3375  aloss=0.00456923  closs=1.09481  ent=0.251612  kl=0.000166567  cf=0  ep=10/10  n=60  40841ms
+  [s0 r41 Kyoto_Medium normal]  thr=0.224719  acc=0.606742  aloss=-0.0065305  closs=16.2865  ent=0.226157  kl=-7.0411e-05  cf=0  ep=10/10  n=57  54849ms
+  [s0 r41 LosAngeles_Small normal]  thr=0.241611  acc=0.402685  aloss=0.218427  closs=1.77329  ent=0.248216  kl=0.000503296  cf=0  ep=10/10  n=66  51092ms
+  [s0 r41 LosAngeles_Medium stress_light]  thr=0.155172  acc=0.465517  aloss=-0.00526163  closs=5.56225  ent=0.21358  kl=-0.000216615  cf=0  ep=10/10  n=58  82318ms
+  [s0 r42 Tokyo_Small normal]  thr=0.246479  acc=0.415493  aloss=-0.00238442  closs=1.26837  ent=0.243234  kl=-0.000299886  cf=0  ep=10/10  n=62  42746ms
+  [s0 r42 Tokyo_Medium stress_light]  thr=0.198198  acc=0.522523  aloss=-0.00525411  closs=12.4685  ent=0.219831  kl=0.000352539  cf=0  ep=10/10  n=60  98414ms
+  [s0 r42 Kyoto_Small normal]  thr=0.294574  acc=0.465116  aloss=0.000618633  closs=1.06016  ent=0.244731  kl=-0.000151273  cf=0  ep=10/10  n=63  33742ms
+  [s0 r42 Kyoto_Medium normal]  thr=0.134021  acc=0.505155  aloss=0.0417748  closs=4.26705  ent=0.221338  kl=-5.33603e-05  cf=0  ep=10/10  n=51  59032ms
+  [s0 r42 LosAngeles_Small normal]  thr=0.210526  acc=0.383459  aloss=-0.00714915  closs=1.13937  ent=0.244489  kl=0.000154086  cf=0  ep=10/10  n=54  40689ms
+  [s0 r42 LosAngeles_Medium normal]  thr=0.2  acc=0.518182  aloss=-0.000421721  closs=15.5945  ent=0.219826  kl=-4.02576e-05  cf=0  ep=10/10  n=60  77368ms
+  [s0 r43 Tokyo_Small normal]  thr=0.207547  acc=0.358491  aloss=-0.00635328  closs=0.83401  ent=0.236901  kl=2.14609e-05  cf=0  ep=10/10  n=61  50227ms
+  [s0 r43 Tokyo_Medium normal]  thr=0.150442  acc=0.469027  aloss=0.00949306  closs=9.94734  ent=0.221903  kl=-0.000386945  cf=0  ep=10/10  n=60  100238ms
+  [s0 r43 Kyoto_Small normal]  thr=0.197674  acc=0.331395  aloss=0.000208879  closs=1.79079  ent=0.247964  kl=8.00191e-05  cf=0  ep=10/10  n=59  75490ms
+  [s0 r43 Kyoto_Medium stress_heavy]  thr=0.183333  acc=0.475  aloss=-0.00138801  closs=8.10022  ent=0.227611  kl=-0.00013485  cf=0  ep=10/10  n=62  97490ms
+  [s0 r43 LosAngeles_Small stress_heavy]  thr=0.211268  acc=0.380282  aloss=0.00872362  closs=2.43636  ent=0.246919  kl=-2.52729e-05  cf=0  ep=10/10  n=58  71879ms
+  [s0 r43 LosAngeles_Medium stress_light]  thr=0.131783  acc=0.403101  aloss=0.0104294  closs=5.4816  ent=0.224597  kl=-0.000258616  cf=0  ep=10/10  n=57  164088ms
+  [s0 r44 Tokyo_Small stress_light]  thr=0.168539  acc=0.303371  aloss=-0.0179718  closs=1.16224  ent=0.248338  kl=-7.13992e-05  cf=0  ep=10/10  n=57  67249ms
+  [s0 r44 Tokyo_Medium normal]  thr=0.161905  acc=0.504762  aloss=-0.0076101  closs=9.23711  ent=0.223169  kl=7.40077e-06  cf=0  ep=10/10  n=53  103151ms
+  [s0 r44 Kyoto_Small stress_light]  thr=0.255319  acc=0.425532  aloss=-0.000198457  closs=1.36831  ent=0.258587  kl=9.85648e-05  cf=0  ep=10/10  n=64  37347ms
+  [s0 r44 Kyoto_Medium normal]  thr=0.149123  acc=0.45614  aloss=0.00182129  closs=8.76914  ent=0.234123  kl=8.94105e-06  cf=0  ep=10/10  n=55  75680ms
+  [s0 r44 LosAngeles_Small stress_heavy]  thr=0.23741  acc=0.410072  aloss=-9.39392e-05  closs=1.57772  ent=0.25255  kl=-7.63782e-05  cf=0  ep=10/10  n=61  50245ms
+  [s0 r44 LosAngeles_Medium normal]  thr=0.154639  acc=0.515464  aloss=0.0245132  closs=2.41676  ent=0.220129  kl=0.000119804  cf=0  ep=10/10  n=51  94154ms
+  [s0 r45 Tokyo_Small normal]  thr=0.171975  acc=0.324841  aloss=-0.0101796  closs=1.71862  ent=0.240715  kl=0.000140259  cf=0  ep=10/10  n=53  59945ms
+  [s0 r45 Tokyo_Medium stress_light]  thr=0.147541  acc=0.442623  aloss=0.011743  closs=12.5904  ent=0.233927  kl=0.000163415  cf=0  ep=10/10  n=56  119955ms
+  [s0 r45 Kyoto_Small normal]  thr=0.262069  acc=0.42069  aloss=0.0012609  closs=1.1139  ent=0.251492  kl=-0.000397235  cf=0  ep=10/10  n=62  39454ms
+  [s0 r45 Kyoto_Medium normal]  thr=0.188034  acc=0.478632  aloss=-0.00207853  closs=6.71122  ent=0.230923  kl=-0.000238802  cf=0  ep=10/10  n=62  71888ms
+  [s0 r45 LosAngeles_Small normal]  thr=0.219512  acc=0.359756  aloss=-0.0625227  closs=1.48346  ent=0.246586  kl=0.00125867  cf=0  ep=10/10  n=70  57785ms
+  [s0 r45 LosAngeles_Medium normal]  thr=0.12931  acc=0.439655  aloss=0.00761827  closs=6.71349  ent=0.215531  kl=0.000131082  cf=0  ep=10/10  n=53  154572ms
+  [s0 r46 Tokyo_Small stress_light]  thr=0.177515  acc=0.319527  aloss=-0.00493543  closs=2.4847  ent=0.23765  kl=-5.38671e-06  cf=0  ep=10/10  n=59  63537ms
+  [s0 r46 Tokyo_Medium stress_light]  thr=0.144231  acc=0.490385  aloss=0.00705796  closs=14.8397  ent=0.227904  kl=-2.65702e-05  cf=0  ep=10/10  n=55  106647ms
+  [s0 r46 Kyoto_Small normal]  thr=0.265625  acc=0.453125  aloss=-0.00166796  closs=0.912037  ent=0.248316  kl=0.000294026  cf=0  ep=10/10  n=64  34839ms
+  [s0 r46 Kyoto_Medium normal]  thr=0.160714  acc=0.482143  aloss=-0.0213429  closs=5.66039  ent=0.221014  kl=-0.000311066  cf=0  ep=10/10  n=56  67358ms
+  [s0 r46 LosAngeles_Small normal]  thr=0.245283  acc=0.396226  aloss=0.0546696  closs=1.53339  ent=0.235491  kl=0.000333769  cf=0  ep=10/10  n=69  54889ms
+  [s0 r46 LosAngeles_Medium normal]  thr=0.142857  acc=0.464286  aloss=0.00853713  closs=11.2591  ent=0.216246  kl=2.00996e-05  cf=0  ep=10/10  n=53  144816ms
+  [s0 r47 Tokyo_Small stress_light]  thr=0.189189  acc=0.318919  aloss=-0.00180805  closs=1.48044  ent=0.22834  kl=-2.53228e-05  cf=0  ep=10/10  n=62  60915ms
+  [s0 r47 Tokyo_Medium stress_light]  thr=0.145038  acc=0.419847  aloss=-0.0106012  closs=7.09928  ent=0.207828  kl=-0.000197645  cf=0  ep=10/10  n=57  134354ms
+  [s0 r47 Kyoto_Small normal]  thr=0.189542  acc=0.346405  aloss=0.0101474  closs=2.45724  ent=0.238928  kl=-0.000106546  cf=0  ep=10/10  n=58  40015ms
+  [s0 r47 Kyoto_Medium normal]  thr=0.15534  acc=0.504854  aloss=-0.00258733  closs=8.06555  ent=0.210142  kl=0.000640023  cf=0  ep=10/10  n=58  81427ms
+  [s0 r47 LosAngeles_Small normal]  thr=0.195122  acc=0.335366  aloss=0.00382869  closs=2.10208  ent=0.223697  kl=-4.52722e-06  cf=0  ep=10/10  n=58  90802ms
+  [s0 r47 LosAngeles_Medium normal]  thr=0.166667  acc=0.466667  aloss=-0.00789065  closs=5.67687  ent=0.210202  kl=-1.30238e-05  cf=0  ep=10/10  n=60  177083ms
+  [s0 r48 Tokyo_Small stress_light]  thr=0.197531  acc=0.345679  aloss=-0.00408702  closs=1.41385  ent=0.228973  kl=6.13706e-05  cf=0  ep=10/10  n=60  55634ms
+  [s0 r48 Tokyo_Medium stress_light]  thr=0.179487  acc=0.470085  aloss=-0.0108255  closs=6.61304  ent=0.199704  kl=0.000164934  cf=0  ep=10/10  n=56  128372ms
+  [s0 r48 Kyoto_Small stress_heavy]  thr=0.170588  acc=0.305882  aloss=0.00768487  closs=1.78371  ent=0.225665  kl=-0.000247164  cf=0  ep=10/10  n=53  55067ms
+  [s0 r48 Kyoto_Medium normal]  thr=0.160377  acc=0.5  aloss=-0.0140525  closs=4.9114  ent=0.206062  kl=-1.32233e-05  cf=0  ep=10/10  n=54  72708ms
+  [s0 r48 LosAngeles_Small stress_light]  thr=0.235294  acc=0.392157  aloss=0.00035646  closs=2.51782  ent=0.218466  kl=-0.000114348  cf=0  ep=10/10  n=63  47238ms
+  [s0 r48 LosAngeles_Medium stress_heavy]  thr=0.157407  acc=0.481481  aloss=0.0197904  closs=3.174  ent=0.198981  kl=-3.57204e-05  cf=0  ep=10/10  n=57  105692ms
+  [s0 r49 Tokyo_Small normal]  thr=0.224638  acc=0.398551  aloss=-0.00327607  closs=1.1148  ent=0.230009  kl=0.0001701  cf=0  ep=10/10  n=57  56098ms
+  [s0 r49 Tokyo_Medium normal]  thr=0.136364  acc=0.463636  aloss=-0.0154571  closs=9.7626  ent=0.194545  kl=-9.35946e-05  cf=0  ep=10/10  n=56  109031ms
+  [s0 r49 Kyoto_Small normal]  thr=0.226415  acc=0.371069  aloss=-0.000766107  closs=1.84826  ent=0.219573  kl=-0.000113168  cf=0  ep=10/10  n=63  47868ms
+  [s0 r49 Kyoto_Medium stress_light]  thr=0.159292  acc=0.469027  aloss=0.0117329  closs=9.70606  ent=0.209698  kl=1.05042e-05  cf=0  ep=10/10  n=55  86192ms
+  [s0 r49 LosAngeles_Small stress_light]  thr=0.183007  acc=0.339869  aloss=-0.0181203  closs=1.96931  ent=0.231787  kl=2.23606e-05  cf=0  ep=10/10  n=55  53783ms
+  [s0 r49 LosAngeles_Medium normal]  thr=0.169643  acc=0.491071  aloss=0.000636369  closs=6.21813  ent=0.210379  kl=-1.89857e-05  cf=0  ep=10/10  n=55  85047ms
+  [s0 r50 Tokyo_Small normal]  thr=0.22  acc=0.38  aloss=-0.00394065  closs=0.966652  ent=0.22688  kl=-0.00013771  cf=0  ep=10/10  n=58  52140ms
+  [s0 r50 Tokyo_Medium normal]  thr=0.151786  acc=0.473214  aloss=-0.00577406  closs=4.65329  ent=0.199902  kl=-0.000170681  cf=0  ep=10/10  n=54  85450ms
+  [s0 r50 Kyoto_Small normal]  thr=0.186747  acc=0.331325  aloss=0.0200641  closs=1.35254  ent=0.223972  kl=-7.64825e-05  cf=0  ep=10/10  n=56  48080ms
+  [s0 r50 Kyoto_Medium normal]  thr=0.228571  acc=0.571429  aloss=-0.000234996  closs=7.10165  ent=0.19697  kl=6.37767e-05  cf=0  ep=10/10  n=64  65248ms
+  [s0 r50 LosAngeles_Small stress_light]  thr=0.236842  acc=0.394737  aloss=0.192059  closs=1.06033  ent=0.2304  kl=0.000509754  cf=0  ep=10/10  n=68  54551ms
+  [s0 r50 LosAngeles_Medium normal]  thr=0.15  acc=0.51  aloss=0.000991798  closs=10.1401  ent=0.198379  kl=9.24879e-05  cf=0  ep=10/10  n=55  133701ms
+  [s0 r51 Tokyo_Small stress_light]  thr=0.2  acc=0.354839  aloss=-0.00386314  closs=0.850761  ent=0.226421  kl=-0.000225454  cf=0  ep=10/10  n=57  52012ms
+  [s0 r51 Tokyo_Medium normal]  thr=0.117188  acc=0.390625  aloss=0.00594013  closs=9.47093  ent=0.193596  kl=0.000166151  cf=0  ep=10/10  n=54  115787ms
+  [s0 r51 Kyoto_Small normal]  thr=0.286667  acc=0.446667  aloss=0.0678438  closs=1.1471  ent=0.224693  kl=0.00012848  cf=0  ep=10/10  n=69  36830ms
+  [s0 r51 Kyoto_Medium normal]  thr=0.158879  acc=0.495327  aloss=0.00360011  closs=4.93663  ent=0.192955  kl=0.000251645  cf=0  ep=10/10  n=57  65680ms
+  [s0 r51 LosAngeles_Small normal]  thr=0.20915  acc=0.366013  aloss=0.00648562  closs=1.7659  ent=0.211107  kl=0.000312172  cf=0  ep=10/10  n=61  50111ms
+  [s0 r51 LosAngeles_Medium normal]  thr=0.151786  acc=0.464286  aloss=0.0110966  closs=6.49207  ent=0.183804  kl=-3.11374e-05  cf=0  ep=10/10  n=55  82427ms
+  [s0 r52 Tokyo_Small stress_light]  thr=0.234375  acc=0.414062  aloss=-4.83677e-05  closs=3.05736  ent=0.218631  kl=0.000106329  cf=0  ep=10/10  n=59  42577ms
+  [s0 r52 Tokyo_Medium normal]  thr=0.15625  acc=0.4375  aloss=0.0248542  closs=10.1778  ent=0.190779  kl=1.94001e-06  cf=0  ep=10/10  n=58  143795ms
+  [s0 r52 Kyoto_Small stress_heavy]  thr=0.203947  acc=0.355263  aloss=-0.00811602  closs=0.936475  ent=0.216986  kl=-4.69362e-05  cf=0  ep=10/10  n=57  53745ms
+  [s0 r52 Kyoto_Medium normal]  thr=0.2  acc=0.488  aloss=0.00104188  closs=3.70657  ent=0.18958  kl=4.37069e-06  cf=0  ep=10/10  n=61  62430ms
+  [s0 r52 LosAngeles_Small stress_light]  thr=0.257576  acc=0.439394  aloss=0.000416433  closs=1.23546  ent=0.211048  kl=-5.3935e-05  cf=0  ep=10/10  n=60  41405ms
+  [s0 r52 LosAngeles_Medium normal]  thr=0.160377  acc=0.5  aloss=-0.0120879  closs=5.57093  ent=0.187024  kl=0.000105935  cf=0  ep=10/10  n=56  77600ms
+  [s0 r53 Tokyo_Small stress_light]  thr=0.153333  acc=0.313333  aloss=0.0082705  closs=0.830458  ent=0.206672  kl=1.43199e-05  cf=0  ep=10/10  n=53  51688ms
+  [s0 r53 Tokyo_Medium stress_heavy]  thr=0.130137  acc=0.376712  aloss=0.000855543  closs=11.5465  ent=0.186473  kl=4.49564e-05  cf=0  ep=10/10  n=56  116023ms
+  [s0 r53 Kyoto_Small stress_heavy]  thr=0.224242  acc=0.363636  aloss=-0.00364837  closs=1.55188  ent=0.204674  kl=-5.70776e-05  cf=0  ep=10/10  n=63  47214ms
+  [s0 r53 Kyoto_Medium normal]  thr=0.132743  acc=0.451327  aloss=0.0114442  closs=4.84581  ent=0.171731  kl=4.5875e-05  cf=0  ep=10/10  n=54  83937ms
+  [s0 r53 LosAngeles_Small stress_light]  thr=0.210843  acc=0.355422  aloss=-0.00474392  closs=2.27593  ent=0.196554  kl=1.989e-05  cf=0  ep=10/10  n=59  54402ms
+  [s0 r53 LosAngeles_Medium stress_heavy]  thr=0.132231  acc=0.429752  aloss=0.0135493  closs=13.7896  ent=0.17935  kl=4.77974e-05  cf=0  ep=10/10  n=53  180330ms
+  [s0 r54 Tokyo_Small normal]  thr=0.205882  acc=0.382353  aloss=-0.0236313  closs=0.96566  ent=0.200082  kl=7.30123e-05  cf=0  ep=10/10  n=53  53234ms
+  [s0 r54 Tokyo_Medium stress_heavy]  thr=0.12069  acc=0.431034  aloss=-0.0225663  closs=8.24321  ent=0.171966  kl=0.000141972  cf=0  ep=10/10  n=53  118661ms
+  [s0 r54 Kyoto_Small normal]  thr=0.22  acc=0.38  aloss=-0.00784208  closs=1.68369  ent=0.19734  kl=1.25125e-05  cf=0  ep=10/10  n=58  46560ms
+  [s0 r54 Kyoto_Medium stress_light]  thr=0.191667  acc=0.491667  aloss=0.00101979  closs=3.56495  ent=0.185059  kl=-0.00016248  cf=0  ep=10/10  n=60  77221ms
+  [s0 r54 LosAngeles_Small normal]  thr=0.264286  acc=0.435714  aloss=-4.83863e-05  closs=1.23377  ent=0.195711  kl=-3.38634e-06  cf=0  ep=10/10  n=64  52021ms
+  [s0 r54 LosAngeles_Medium stress_light]  thr=0.104167  acc=0.354167  aloss=0.0141561  closs=7.86084  ent=0.169986  kl=1.77295e-05  cf=0  ep=10/10  n=53  176263ms
+  [s0 r55 Tokyo_Small stress_light]  thr=0.183099  acc=0.352113  aloss=-0.00109535  closs=1.4557  ent=0.193366  kl=-3.28702e-05  cf=0  ep=10/10  n=51  73247ms
+  [s0 r55 Tokyo_Medium normal]  thr=0.148515  acc=0.504951  aloss=-0.0211431  closs=12.4275  ent=0.177469  kl=-1.1611e-05  cf=0  ep=10/10  n=52  109264ms
+  [s0 r55 Kyoto_Small normal]  thr=0.258333  acc=0.458333  aloss=-0.00453507  closs=2.25521  ent=0.196941  kl=0.000184255  cf=0  ep=10/10  n=60  38127ms
+  [s0 r55 Kyoto_Medium normal]  thr=0.142857  acc=0.385714  aloss=0.00591405  closs=3.67906  ent=0.171235  kl=1.26154e-06  cf=0  ep=10/10  n=56  102675ms
+  [s0 r55 LosAngeles_Small stress_heavy]  thr=0.192053  acc=0.350993  aloss=-0.00230934  closs=2.38317  ent=0.198666  kl=6.60025e-06  cf=0  ep=10/10  n=54  55940ms
+  [s0 r55 LosAngeles_Medium stress_heavy]  thr=0.145985  acc=0.408759  aloss=-0.0104722  closs=5.67068  ent=0.1682  kl=-7.12755e-06  cf=0  ep=10/10  n=58  136602ms
+  [s0 r56 Tokyo_Small normal]  thr=0.208054  acc=0.369128  aloss=0.00345442  closs=1.10217  ent=0.195335  kl=2.20945e-05  cf=0  ep=10/10  n=58  56805ms
+  [s0 r56 Tokyo_Medium stress_light]  thr=0.134021  acc=0.505155  aloss=-0.050625  closs=15.1509  ent=0.174812  kl=3.3603e-07  cf=0  ep=10/10  n=51  103254ms
+  [s0 r56 Kyoto_Small stress_light]  thr=0.238095  acc=0.401361  aloss=-0.000761838  closs=1.29548  ent=0.191005  kl=0.00014331  cf=0  ep=10/10  n=64  43110ms
+  [s0 r56 Kyoto_Medium stress_light]  thr=0.141667  acc=0.441667  aloss=0.000961203  closs=6.71854  ent=0.168577  kl=-1.92601e-05  cf=0  ep=10/10  n=54  91639ms
+  [s0 r56 LosAngeles_Small stress_light]  thr=0.288889  acc=0.466667  aloss=-0.0018077  closs=1.12431  ent=0.197041  kl=-1.22663e-05  cf=0  ep=10/10  n=66  49643ms
+  [s0 r56 LosAngeles_Medium stress_light]  thr=0.196581  acc=0.495726  aloss=-0.00884063  closs=4.19724  ent=0.166133  kl=-1.21854e-05  cf=0  ep=10/10  n=58  110235ms
+  [s0 r57 Tokyo_Small stress_heavy]  thr=0.206452  acc=0.36129  aloss=0.012939  closs=1.57994  ent=0.190809  kl=2.33381e-06  cf=0  ep=10/10  n=58  54472ms
+  [s0 r57 Tokyo_Medium normal]  thr=0.211009  acc=0.541284  aloss=-0.00647553  closs=3.36336  ent=0.172728  kl=4.37243e-05  cf=0  ep=10/10  n=60  94606ms
+  [s0 r57 Kyoto_Small stress_heavy]  thr=0.25  acc=0.409722  aloss=-0.00251908  closs=2.42342  ent=0.197834  kl=9.49281e-07  cf=0  ep=10/10  n=62  40712ms
+  [s0 r57 Kyoto_Medium stress_light]  thr=0.123967  acc=0.421488  aloss=0.0448004  closs=7.27773  ent=0.166451  kl=1.66542e-05  cf=0  ep=10/10  n=53  108654ms
+  [s0 r57 LosAngeles_Small normal]  thr=0.2  acc=0.371429  aloss=0.00946399  closs=1.75797  ent=0.197749  kl=-1.83138e-05  cf=0  ep=10/10  n=56  52658ms
+  [s0 r57 LosAngeles_Medium stress_light]  thr=0.20202  acc=0.565657  aloss=-0.00726477  closs=7.78248  ent=0.182476  kl=-3.25936e-07  cf=0  ep=10/10  n=59  97799ms
+  [s0 r58 Tokyo_Small normal]  thr=0.217105  acc=0.375  aloss=0.000915289  closs=3.94893  ent=0.187069  kl=2.25957e-06  cf=0  ep=10/10  n=62  51764ms
+  [s0 r58 Tokyo_Medium normal]  thr=0.238095  acc=0.580952  aloss=-0.00191294  closs=10.3427  ent=0.17213  kl=-4.53698e-05  cf=0  ep=10/10  n=63  87032ms
+  [s0 r58 Kyoto_Small normal]  thr=0.213836  acc=0.358491  aloss=-0.00649787  closs=1.86213  ent=0.187345  kl=7.87444e-06  cf=0  ep=10/10  n=60  47146ms
+  [s0 r58 Kyoto_Medium normal]  thr=0.161017  acc=0.466102  aloss=0.0158829  closs=9.86116  ent=0.169547  kl=-4.68933e-07  cf=0  ep=10/10  n=57  82747ms
+  [s0 r58 LosAngeles_Small normal]  thr=0.191011  acc=0.325843  aloss=-0.00105483  closs=1.69766  ent=0.18773  kl=3.7834e-05  cf=0  ep=10/10  n=62  63773ms
+  [s0 r58 LosAngeles_Medium stress_light]  thr=0.16129  acc=0.443548  aloss=-0.01614  closs=9.32156  ent=0.16645  kl=-5.3489e-05  cf=0  ep=10/10  n=56  89458ms
+  [s0 r59 Tokyo_Small normal]  thr=0.222222  acc=0.4  aloss=-0.00339016  closs=1.48355  ent=0.185271  kl=-1.3251e-05  cf=0  ep=10/10  n=57  54716ms
+  [s0 r59 Tokyo_Medium stress_heavy]  thr=0.108108  acc=0.432432  aloss=-0.0353127  closs=19.8634  ent=0.172781  kl=0.000117841  cf=0  ep=10/10  n=52  147282ms
+  [s0 r59 Kyoto_Small stress_light]  thr=0.178808  acc=0.337748  aloss=0.00169858  closs=1.38505  ent=0.181594  kl=1.45316e-05  cf=0  ep=10/10  n=51  50778ms
+  [s0 r59 Kyoto_Medium stress_light]  thr=0.202128  acc=0.585106  aloss=0.000657137  closs=7.12839  ent=0.166163  kl=2.64479e-05  cf=0  ep=10/10  n=57  64644ms
+  [s0 r59 LosAngeles_Small normal]  thr=0.201258  acc=0.352201  aloss=0.000862732  closs=1.03872  ent=0.187593  kl=2.26952e-05  cf=0  ep=10/10  n=60  66618ms
+  [s0 r59 LosAngeles_Medium stress_heavy]  thr=0.137615  acc=0.46789  aloss=-0.0170639  closs=14.2248  ent=0.163903  kl=4.05973e-05  cf=0  ep=10/10  n=52  90263ms
+  -- Eval @ round 60 --
+    [eval Tokyo_Small/MAPPO/1/3]  thr=0.220859  acc=0.368098  61085ms
+    [eval Tokyo_Small/MAPPO/2/3]  thr=0.207547  acc=0.358491  53012ms
+    [eval Tokyo_Small/MAPPO/3/3]  thr=0.211538  acc=0.365385  49441ms
+    [eval Tokyo_Small/TamAlwaysAccept/1/3]  thr=0.212329  acc=0.376712  42162ms
+    [eval Tokyo_Small/TamAlwaysAccept/2/3]  thr=0.151899  acc=0.303797  48241ms
+    [eval Tokyo_Small/TamAlwaysAccept/3/3]  thr=0.226027  acc=0.390411  38679ms
+    [eval Tokyo_Small/Greedy/1/3]  thr=0.113821  acc=0.308943  11464ms
+    [eval Tokyo_Small/Greedy/2/3]  thr=0.111842  acc=0.269737  5998ms
+    [eval Tokyo_Small/Greedy/3/3]  thr=0.126761  acc=0.295775  7514ms
+    [eval Tokyo_Small/Random/1/3]  thr=0.112583  acc=0.258278  6950ms
+    [eval Tokyo_Small/Random/2/3]  thr=0.119718  acc=0.28169  6805ms
+    [eval Tokyo_Small/Random/3/3]  thr=0.102041  acc=0.265306  7106ms
+    [eval Tokyo_Small/InsertionGreedy/1/3]  thr=0.141791  acc=0.313433  10941ms
+    [eval Tokyo_Small/InsertionGreedy/2/3]  thr=0.126582  acc=0.278481  12027ms
+    [eval Tokyo_Small/InsertionGreedy/3/3]  thr=0.120253  acc=0.272152  14695ms
+    [eval Tokyo_Small/LaCAM/1/3]  thr=0.130178  acc=0.272189  13140ms
+    [eval Tokyo_Small/LaCAM/2/3]  thr=0.120253  acc=0.272152  15096ms
+    [eval Tokyo_Small/LaCAM/3/3]  thr=0.125  acc=0.282895  12848ms
+    [eval Tokyo_Small/PIBT/1/3]  thr=0.138889  acc=0.305556  7580ms
+    [eval Tokyo_Small/PIBT/2/3]  thr=0.146667  acc=0.3  7884ms
+    [eval Tokyo_Small/PIBT/3/3]  thr=0.106383  acc=0.276596  8183ms
+    [eval Tokyo_Small/CongestionAware/1/3]  thr=0.124138  acc=0.289655  11825ms
+    [eval Tokyo_Small/CongestionAware/2/3]  thr=0.153333  acc=0.313333  13168ms
+    [eval Tokyo_Small/CongestionAware/3/3]  thr=0.180451  acc=0.360902  11196ms
+    [eval Tokyo_Medium/MAPPO/1/3]  thr=0.131579  acc=0.438596  109776ms
+    [eval Tokyo_Medium/MAPPO/2/3]  thr=0.162162  acc=0.486486  98438ms
+    [eval Tokyo_Medium/MAPPO/3/3]  thr=0.153153  acc=0.477477  91176ms
+    [eval Tokyo_Medium/TamAlwaysAccept/1/3]  thr=0.242424  acc=0.59596  61346ms
+    [eval Tokyo_Medium/TamAlwaysAccept/2/3]  thr=0.178295  acc=0.457364  94352ms
+    [eval Tokyo_Medium/TamAlwaysAccept/3/3]  thr=0.150442  acc=0.469027  93199ms
+    [eval Tokyo_Medium/Greedy/1/3]  thr=0.08  acc=0.44  25525ms
+    [eval Tokyo_Medium/Greedy/2/3]  thr=0.0614035  acc=0.377193  18898ms
+    [eval Tokyo_Medium/Greedy/3/3]  thr=0.0693069  acc=0.425743  18435ms
+    [eval Tokyo_Medium/Random/1/3]  thr=0.0526316  acc=0.368421  20234ms
+    [eval Tokyo_Medium/Random/2/3]  thr=0.0818182  acc=0.409091  21270ms
+    [eval Tokyo_Medium/Random/3/3]  thr=0.0882353  acc=0.441176  19430ms
+    [eval Tokyo_Medium/InsertionGreedy/1/3]  thr=0.116071  acc=0.4375  46758ms
+    [eval Tokyo_Medium/InsertionGreedy/2/3]  thr=0.12766  acc=0.478723  38711ms
+    [eval Tokyo_Medium/InsertionGreedy/3/3]  thr=0.0762712  acc=0.381356  39597ms
+    [eval Tokyo_Medium/LaCAM/1/3]  thr=0.130841  acc=0.457944  56571ms
+    [eval Tokyo_Medium/LaCAM/2/3]  thr=0.107143  acc=0.428571  47240ms
+    [eval Tokyo_Medium/LaCAM/3/3]  thr=0.153061  acc=0.520408  46656ms
+    [eval Tokyo_Medium/PIBT/1/3]  thr=0.0471698  acc=0.386792  21095ms
+    [eval Tokyo_Medium/PIBT/2/3]  thr=0.1  acc=0.5  16985ms
+    [eval Tokyo_Medium/PIBT/3/3]  thr=0.106383  acc=0.489362  22016ms
+    [eval Tokyo_Medium/CongestionAware/1/3]  thr=0.0967742  acc=0.379032  42832ms
+    [eval Tokyo_Medium/CongestionAware/2/3]  thr=0.122807  acc=0.438596  47333ms
+    [eval Tokyo_Medium/CongestionAware/3/3]  thr=0.10084  acc=0.403361  44875ms
+    [eval Kyoto_Small/MAPPO/1/3]  thr=0.186747  acc=0.331325  54896ms
+    [eval Kyoto_Small/MAPPO/2/3]  thr=0.164557  acc=0.316456  43437ms
+    [eval Kyoto_Small/MAPPO/3/3]  thr=0.253165  acc=0.405063  39678ms
+    [eval Kyoto_Small/TamAlwaysAccept/1/3]  thr=0.22973  acc=0.391892  36543ms
+    [eval Kyoto_Small/TamAlwaysAccept/2/3]  thr=0.232258  acc=0.380645  37235ms
+    [eval Kyoto_Small/TamAlwaysAccept/3/3]  thr=0.217877  acc=0.351955  46714ms
+    [eval Kyoto_Small/Greedy/1/3]  thr=0.120482  acc=0.26506  11737ms
+    [eval Kyoto_Small/Greedy/2/3]  thr=0.136986  acc=0.30137  5964ms
+    [eval Kyoto_Small/Greedy/3/3]  thr=0.138686  acc=0.313869  5798ms
+    [eval Kyoto_Small/Random/1/3]  thr=0.127389  acc=0.273885  4916ms
+    [eval Kyoto_Small/Random/2/3]  thr=0.121212  acc=0.266667  5001ms
+    [eval Kyoto_Small/Random/3/3]  thr=0.136054  acc=0.292517  4573ms
+    [eval Kyoto_Small/InsertionGreedy/1/3]  thr=0.118421  acc=0.276316  9377ms
+    [eval Kyoto_Small/InsertionGreedy/2/3]  thr=0.150376  acc=0.315789  8571ms
+    [eval Kyoto_Small/InsertionGreedy/3/3]  thr=0.127168  acc=0.265896  10204ms
+    [eval Kyoto_Small/LaCAM/1/3]  thr=0.197183  acc=0.359155  14943ms
+    [eval Kyoto_Small/LaCAM/2/3]  thr=0.138728  acc=0.277457  11336ms
+    [eval Kyoto_Small/LaCAM/3/3]  thr=0.2  acc=0.358621  10618ms
+    [eval Kyoto_Small/PIBT/1/3]  thr=0.107345  acc=0.242938  6107ms
+    [eval Kyoto_Small/PIBT/2/3]  thr=0.13125  acc=0.28125  4891ms
+    [eval Kyoto_Small/PIBT/3/3]  thr=0.133333  acc=0.293333  6195ms
+    [eval Kyoto_Small/CongestionAware/1/3]  thr=0.170213  acc=0.333333  8134ms
+    [eval Kyoto_Small/CongestionAware/2/3]  thr=0.143791  acc=0.300654  9699ms
+    [eval Kyoto_Small/CongestionAware/3/3]  thr=0.158273  acc=0.330935  10449ms
+    [eval Kyoto_Medium/MAPPO/1/3]  thr=0.12  acc=0.48  93394ms
+    [eval Kyoto_Medium/MAPPO/2/3]  thr=0.122807  acc=0.438596  70985ms
+    [eval Kyoto_Medium/MAPPO/3/3]  thr=0.178218  acc=0.534653  75714ms
+    [eval Kyoto_Medium/TamAlwaysAccept/1/3]  thr=0.149123  acc=0.464912  75566ms
+    [eval Kyoto_Medium/TamAlwaysAccept/2/3]  thr=0.148148  acc=0.414815  90135ms
+    [eval Kyoto_Medium/TamAlwaysAccept/3/3]  thr=0.140187  acc=0.476636  70918ms
+    [eval Kyoto_Medium/Greedy/1/3]  thr=0.0884956  acc=0.40708  25287ms
+    [eval Kyoto_Medium/Greedy/2/3]  thr=0.0769231  acc=0.384615  22025ms
+    [eval Kyoto_Medium/Greedy/3/3]  thr=0.0873786  acc=0.436893  21078ms
+    [eval Kyoto_Medium/Random/1/3]  thr=0.0909091  acc=0.38843  16663ms
+    [eval Kyoto_Medium/Random/2/3]  thr=0.11  acc=0.47  17580ms
+    [eval Kyoto_Medium/Random/3/3]  thr=0.0992366  acc=0.374046  16561ms
+    [eval Kyoto_Medium/InsertionGreedy/1/3]  thr=0.102564  acc=0.410256  31070ms
+    [eval Kyoto_Medium/InsertionGreedy/2/3]  thr=0.0869565  acc=0.4  32768ms
+    [eval Kyoto_Medium/InsertionGreedy/3/3]  thr=0.118182  acc=0.445455  25608ms
+    [eval Kyoto_Medium/LaCAM/1/3]  thr=0.103448  acc=0.413793  40769ms
+    [eval Kyoto_Medium/LaCAM/2/3]  thr=0.104  acc=0.392  36760ms
+    [eval Kyoto_Medium/LaCAM/3/3]  thr=0.134615  acc=0.480769  37235ms
+    [eval Kyoto_Medium/PIBT/1/3]  thr=0.0948276  acc=0.405172  15480ms
+    [eval Kyoto_Medium/PIBT/2/3]  thr=0.08  acc=0.44  15924ms
+    [eval Kyoto_Medium/PIBT/3/3]  thr=0.1  acc=0.46  19858ms
+    [eval Kyoto_Medium/CongestionAware/1/3]  thr=0.165138  acc=0.495413  58541ms
+    [eval Kyoto_Medium/CongestionAware/2/3]  thr=0.0961538  acc=0.442308  48743ms
+    [eval Kyoto_Medium/CongestionAware/3/3]  thr=0.0761905  acc=0.419048  58058ms
+    [eval LosAngeles_Small/MAPPO/1/3]  thr=0.235669  acc=0.388535  132661ms
+    [eval LosAngeles_Small/MAPPO/2/3]  thr=0.214286  acc=0.35119  96327ms
+    [eval LosAngeles_Small/MAPPO/3/3]  thr=0.245033  acc=0.403974  90545ms
+    [eval LosAngeles_Small/TamAlwaysAccept/1/3]  thr=0.225352  acc=0.394366  71296ms
+    [eval LosAngeles_Small/TamAlwaysAccept/2/3]  thr=0.238095  acc=0.401361  48712ms
+    [eval LosAngeles_Small/TamAlwaysAccept/3/3]  thr=0.237288  acc=0.440678  43754ms
+    [eval LosAngeles_Small/Greedy/1/3]  thr=0.123457  acc=0.271605  13659ms
+    [eval LosAngeles_Small/Greedy/2/3]  thr=0.10828  acc=0.261146  9571ms
+    [eval LosAngeles_Small/Greedy/3/3]  thr=0.11875  acc=0.26875  8863ms
+    [eval LosAngeles_Small/Random/1/3]  thr=0.105882  acc=0.247059  9208ms
+    [eval LosAngeles_Small/Random/2/3]  thr=0.143836  acc=0.294521  7575ms
+    [eval LosAngeles_Small/Random/3/3]  thr=0.161677  acc=0.305389  6882ms
+    [eval LosAngeles_Small/InsertionGreedy/1/3]  thr=0.119497  acc=0.27044  13741ms
+    [eval LosAngeles_Small/InsertionGreedy/2/3]  thr=0.11039  acc=0.25974  17052ms
+    [eval LosAngeles_Small/InsertionGreedy/3/3]  thr=0.143836  acc=0.30137  11798ms
+    [eval LosAngeles_Small/LaCAM/1/3]  thr=0.139073  acc=0.298013  17051ms
+    [eval LosAngeles_Small/LaCAM/2/3]  thr=0.141935  acc=0.296774  18654ms
+    [eval LosAngeles_Small/LaCAM/3/3]  thr=0.141892  acc=0.304054  16021ms
+    [eval LosAngeles_Small/PIBT/1/3]  thr=0.122581  acc=0.277419  9560ms
+    [eval LosAngeles_Small/PIBT/2/3]  thr=0.139394  acc=0.284848  8679ms
+    [eval LosAngeles_Small/PIBT/3/3]  thr=0.134228  acc=0.295302  9733ms
+    [eval LosAngeles_Small/CongestionAware/1/3]  thr=0.125874  acc=0.293706  14866ms
+    [eval LosAngeles_Small/CongestionAware/2/3]  thr=0.165517  acc=0.324138  15851ms
+    [eval LosAngeles_Small/CongestionAware/3/3]  thr=0.144828  acc=0.310345  15409ms
+    [eval LosAngeles_Medium/MAPPO/1/3]  thr=0.157895  acc=0.536842  355603ms
+    [eval LosAngeles_Medium/MAPPO/2/3]  thr=0.166667  acc=0.519608  99021ms
+    [eval LosAngeles_Medium/MAPPO/3/3]  thr=0.212963  acc=0.537037  104283ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/1/3]  thr=0.172727  acc=0.5  122704ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/2/3]  thr=0.16  acc=0.448  183302ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/3/3]  thr=0.181818  acc=0.509091  158782ms
+    [eval LosAngeles_Medium/Greedy/1/3]  thr=0.057554  acc=0.316547  48646ms
+    [eval LosAngeles_Medium/Greedy/2/3]  thr=0.0707965  acc=0.389381  44178ms
+    [eval LosAngeles_Medium/Greedy/3/3]  thr=0.0857143  acc=0.428571  41115ms
+    [eval LosAngeles_Medium/Random/1/3]  thr=0.0964912  acc=0.412281  36953ms
+    [eval LosAngeles_Medium/Random/2/3]  thr=0.0762712  acc=0.372881  42039ms
+    [eval LosAngeles_Medium/Random/3/3]  thr=0.0491803  acc=0.336066  34162ms
+    [eval LosAngeles_Medium/InsertionGreedy/1/3]  thr=0.0603448  acc=0.37069  97708ms
+    [eval LosAngeles_Medium/InsertionGreedy/2/3]  thr=0.0808081  acc=0.434343  88574ms
+    [eval LosAngeles_Medium/InsertionGreedy/3/3]  thr=0.114035  acc=0.429825  86657ms
+    [eval LosAngeles_Medium/LaCAM/1/3]  thr=0.137405  acc=0.412214  106039ms
+    [eval LosAngeles_Medium/LaCAM/2/3]  thr=0.178218  acc=0.524752  96349ms
+    [eval LosAngeles_Medium/LaCAM/3/3]  thr=0.145161  acc=0.427419  97298ms
+    [eval LosAngeles_Medium/PIBT/1/3]  thr=0.0990991  acc=0.423423  41086ms
+    [eval LosAngeles_Medium/PIBT/2/3]  thr=0.0731707  acc=0.365854  40023ms
+    [eval LosAngeles_Medium/PIBT/3/3]  thr=0.0862069  acc=0.396552  36411ms
+    [eval LosAngeles_Medium/CongestionAware/1/3]  thr=0.14  acc=0.5  86386ms
+    [eval LosAngeles_Medium/CongestionAware/2/3]  thr=0.134454  acc=0.436975  82385ms
+    [eval LosAngeles_Medium/CongestionAware/3/3]  thr=0.114035  acc=0.429825  103454ms
+  -- Stress Eval (density=2 agents=0.6) --
+    [stress Tokyo_Small/MAPPO/1/3]  thr=0.190184  acc=0.337423  107910ms
+    [stress Tokyo_Small/MAPPO/2/3]  thr=0.210526  acc=0.368421  105934ms
+    [stress Tokyo_Small/MAPPO/3/3]  thr=0.184211  acc=0.342105  109411ms
+    [stress Tokyo_Small/TamAlwaysAccept/1/3]  thr=0.194245  acc=0.366906  100842ms
+    [stress Tokyo_Small/TamAlwaysAccept/2/3]  thr=0.21875  acc=0.35625  95943ms
+    [stress Tokyo_Small/TamAlwaysAccept/3/3]  thr=0.170732  acc=0.317073  120934ms
+    [stress Tokyo_Small/Greedy/1/3]  thr=0.0691824  acc=0.163522  24508ms
+    [stress Tokyo_Small/Greedy/2/3]  thr=0.0860927  acc=0.18543  11123ms
+    [stress Tokyo_Small/Greedy/3/3]  thr=0.0814815  acc=0.192593  9143ms
+    [stress Tokyo_Small/Random/1/3]  thr=0.0662252  acc=0.165563  10182ms
+    [stress Tokyo_Small/Random/2/3]  thr=0.0571429  acc=0.142857  10048ms
+    [stress Tokyo_Small/Random/3/3]  thr=0.0437956  acc=0.153285  11687ms
+    [stress Tokyo_Small/InsertionGreedy/1/3]  thr=0.0516129  acc=0.148387  16715ms
+    [stress Tokyo_Small/InsertionGreedy/2/3]  thr=0.0551724  acc=0.151724  16535ms
+    [stress Tokyo_Small/InsertionGreedy/3/3]  thr=0.0748299  acc=0.170068  16467ms
+    [stress Tokyo_Small/LaCAM/1/3]  thr=0.0612245  acc=0.163265  17176ms
+    [stress Tokyo_Small/LaCAM/2/3]  thr=0.0718563  acc=0.161677  17299ms
+    [stress Tokyo_Small/LaCAM/3/3]  thr=0.0958904  acc=0.19863  18434ms
+    [stress Tokyo_Small/PIBT/1/3]  thr=0.0636943  acc=0.159236  12437ms
+    [stress Tokyo_Small/PIBT/2/3]  thr=0.0641026  acc=0.160256  8869ms
+    [stress Tokyo_Small/PIBT/3/3]  thr=0.0827068  acc=0.195489  9314ms
+    [stress Tokyo_Small/CongestionAware/1/3]  thr=0.0857143  acc=0.192857  10819ms
+    [stress Tokyo_Small/CongestionAware/2/3]  thr=0.0685714  acc=0.154286  11702ms
+    [stress Tokyo_Small/CongestionAware/3/3]  thr=0.0753425  acc=0.178082  10884ms
+    [stress Tokyo_Medium/MAPPO/1/3]  thr=0.168142  acc=0.486726  187214ms
+    [stress Tokyo_Medium/MAPPO/2/3]  thr=0.16  acc=0.51  96569ms
+    [stress Tokyo_Medium/MAPPO/3/3]  thr=0.149123  acc=0.447368  119662ms
+    [stress Tokyo_Medium/TamAlwaysAccept/1/3]  thr=0.157407  acc=0.490741  116731ms
+    [stress Tokyo_Medium/TamAlwaysAccept/2/3]  thr=0.144144  acc=0.468468  105497ms
+    [stress Tokyo_Medium/TamAlwaysAccept/3/3]  thr=0.148515  acc=0.49505  85101ms
+    [stress Tokyo_Medium/Greedy/1/3]  thr=0.0462963  acc=0.240741  25498ms
+    [stress Tokyo_Medium/Greedy/2/3]  thr=0.0350877  acc=0.219298  14578ms
+    [stress Tokyo_Medium/Greedy/3/3]  thr=0.0485437  acc=0.252427  19497ms
+    [stress Tokyo_Medium/Random/1/3]  thr=0.0336134  acc=0.210084  14284ms
+    [stress Tokyo_Medium/Random/2/3]  thr=0.0471698  acc=0.245283  13437ms
+    [stress Tokyo_Medium/Random/3/3]  thr=0.0285714  acc=0.228571  13752ms
+    [stress Tokyo_Medium/InsertionGreedy/1/3]  thr=0.0350877  acc=0.219298  25152ms
+    [stress Tokyo_Medium/InsertionGreedy/2/3]  thr=0.0714286  acc=0.258929  32440ms
+    [stress Tokyo_Medium/InsertionGreedy/3/3]  thr=0.0583333  acc=0.233333  30587ms
+    [stress Tokyo_Medium/LaCAM/1/3]  thr=0.0462963  acc=0.240741  33340ms
+    [stress Tokyo_Medium/LaCAM/2/3]  thr=0.0769231  acc=0.307692  30215ms
+    [stress Tokyo_Medium/LaCAM/3/3]  thr=0.0645161  acc=0.233871  36631ms
+    [stress Tokyo_Medium/PIBT/1/3]  thr=0.0521739  acc=0.226087  12762ms
+    [stress Tokyo_Medium/PIBT/2/3]  thr=0.0512821  acc=0.230769  14290ms
+    [stress Tokyo_Medium/PIBT/3/3]  thr=0.0438596  acc=0.22807  16323ms
+    [stress Tokyo_Medium/CongestionAware/1/3]  thr=0.0666667  acc=0.3  23532ms
+    [stress Tokyo_Medium/CongestionAware/2/3]  thr=0.0483871  acc=0.217742  26610ms
+    [stress Tokyo_Medium/CongestionAware/3/3]  thr=0.0504202  acc=0.226891  25779ms
+    [stress Kyoto_Small/MAPPO/1/3]  thr=0.201389  acc=0.368056  43381ms
+    [stress Kyoto_Small/MAPPO/2/3]  thr=0.217391  acc=0.36646  40871ms
+    [stress Kyoto_Small/MAPPO/3/3]  thr=0.3  acc=0.5  28221ms
+    [stress Kyoto_Small/TamAlwaysAccept/1/3]  thr=0.2  acc=0.36  38990ms
+    [stress Kyoto_Small/TamAlwaysAccept/2/3]  thr=0.24183  acc=0.398693  38791ms
+    [stress Kyoto_Small/TamAlwaysAccept/3/3]  thr=0.239264  acc=0.386503  42584ms
+    [stress Kyoto_Small/Greedy/1/3]  thr=0.0888889  acc=0.2  10836ms
+    [stress Kyoto_Small/Greedy/2/3]  thr=0.0939597  acc=0.194631  4035ms
+    [stress Kyoto_Small/Greedy/3/3]  thr=0.0755814  acc=0.156977  3068ms
+    [stress Kyoto_Small/Random/1/3]  thr=0.0952381  acc=0.197279  2717ms
+    [stress Kyoto_Small/Random/2/3]  thr=0.0629371  acc=0.167832  3611ms
+    [stress Kyoto_Small/Random/3/3]  thr=0.105263  acc=0.218045  3480ms
+    [stress Kyoto_Small/InsertionGreedy/1/3]  thr=0.0745342  acc=0.167702  4694ms
+    [stress Kyoto_Small/InsertionGreedy/2/3]  thr=0.0764706  acc=0.164706  4650ms
+    [stress Kyoto_Small/InsertionGreedy/3/3]  thr=0.0722892  acc=0.162651  7340ms
+    [stress Kyoto_Small/LaCAM/1/3]  thr=0.113636  acc=0.227273  6736ms
+    [stress Kyoto_Small/LaCAM/2/3]  thr=0.0869565  acc=0.195652  7487ms
+    [stress Kyoto_Small/LaCAM/3/3]  thr=0.0855263  acc=0.184211  6754ms
+    [stress Kyoto_Small/PIBT/1/3]  thr=0.0810811  acc=0.182432  4120ms
+    [stress Kyoto_Small/PIBT/2/3]  thr=0.0878378  acc=0.189189  4064ms
+    [stress Kyoto_Small/PIBT/3/3]  thr=0.06875  acc=0.1625  4883ms
+    [stress Kyoto_Small/CongestionAware/1/3]  thr=0.0769231  acc=0.16568  6156ms
+    [stress Kyoto_Small/CongestionAware/2/3]  thr=0.103448  acc=0.206897  4661ms
+    [stress Kyoto_Small/CongestionAware/3/3]  thr=0.0948905  acc=0.20438  4899ms
+    [stress Kyoto_Medium/MAPPO/1/3]  thr=0.149533  acc=0.476636  83511ms
+    [stress Kyoto_Medium/MAPPO/2/3]  thr=0.153226  acc=0.443548  78592ms
+    [stress Kyoto_Medium/MAPPO/3/3]  thr=0.163636  acc=0.490909  70723ms
+    [stress Kyoto_Medium/TamAlwaysAccept/1/3]  thr=0.131579  acc=0.447368  63268ms
+    [stress Kyoto_Medium/TamAlwaysAccept/2/3]  thr=0.176991  acc=0.495575  57194ms
+    [stress Kyoto_Medium/TamAlwaysAccept/3/3]  thr=0.12  acc=0.47  56787ms
+    [stress Kyoto_Medium/Greedy/1/3]  thr=0.0350877  acc=0.219298  14386ms
+    [stress Kyoto_Medium/Greedy/2/3]  thr=0.049505  acc=0.257426  9761ms
+    [stress Kyoto_Medium/Greedy/3/3]  thr=0.0472441  acc=0.212598  8401ms
+    [stress Kyoto_Medium/Random/1/3]  thr=0.0555556  acc=0.25  9390ms
+    [stress Kyoto_Medium/Random/2/3]  thr=0.0526316  acc=0.22807  8926ms
+    [stress Kyoto_Medium/Random/3/3]  thr=0.0789474  acc=0.263158  11386ms
+    [stress Kyoto_Medium/InsertionGreedy/1/3]  thr=0.0576923  acc=0.259615  16664ms
+    [stress Kyoto_Medium/InsertionGreedy/2/3]  thr=0.0483871  acc=0.209677  16969ms
+    [stress Kyoto_Medium/InsertionGreedy/3/3]  thr=0.101852  acc=0.296296  24667ms
+    [stress Kyoto_Medium/LaCAM/1/3]  thr=0.0569106  acc=0.227642  22190ms
+    [stress Kyoto_Medium/LaCAM/2/3]  thr=0.0743802  acc=0.247934  21277ms
+    [stress Kyoto_Medium/LaCAM/3/3]  thr=0.079646  acc=0.265487  19301ms
+    [stress Kyoto_Medium/PIBT/1/3]  thr=0.0636364  acc=0.254545  9851ms
+    [stress Kyoto_Medium/PIBT/2/3]  thr=0.036036  acc=0.225225  10473ms
+    [stress Kyoto_Medium/PIBT/3/3]  thr=0.0521739  acc=0.226087  10875ms
+    [stress Kyoto_Medium/CongestionAware/1/3]  thr=0.0647482  acc=0.215827  18909ms
+    [stress Kyoto_Medium/CongestionAware/2/3]  thr=0.0784314  acc=0.284314  17925ms
+    [stress Kyoto_Medium/CongestionAware/3/3]  thr=0.0485437  acc=0.252427  18256ms
+    [stress LosAngeles_Small/MAPPO/1/3]  thr=0.25  acc=0.401316  41608ms
+    [stress LosAngeles_Small/MAPPO/2/3]  thr=0.163636  acc=0.309091  51217ms
+    [stress LosAngeles_Small/MAPPO/3/3]  thr=0.226994  acc=0.361963  54488ms
+    [stress LosAngeles_Small/TamAlwaysAccept/1/3]  thr=0.176471  acc=0.333333  45674ms
+    [stress LosAngeles_Small/TamAlwaysAccept/2/3]  thr=0.246269  acc=0.425373  40453ms
+    [stress LosAngeles_Small/TamAlwaysAccept/3/3]  thr=0.253425  acc=0.417808  42180ms
+    [stress LosAngeles_Small/Greedy/1/3]  thr=0.0875  acc=0.18125  8489ms
+    [stress LosAngeles_Small/Greedy/2/3]  thr=0.1  acc=0.2  4214ms
+    [stress LosAngeles_Small/Greedy/3/3]  thr=0.0780142  acc=0.184397  3708ms
+    [stress LosAngeles_Small/Random/1/3]  thr=0.0666667  acc=0.166667  4704ms
+    [stress LosAngeles_Small/Random/2/3]  thr=0.0774194  acc=0.174194  3653ms
+    [stress LosAngeles_Small/Random/3/3]  thr=0.116438  acc=0.219178  2368ms
+    [stress LosAngeles_Small/InsertionGreedy/1/3]  thr=0.0849673  acc=0.183007  7049ms
+    [stress LosAngeles_Small/InsertionGreedy/2/3]  thr=0.0828402  acc=0.171598  5216ms
+    [stress LosAngeles_Small/InsertionGreedy/3/3]  thr=0.0869565  acc=0.180124  5286ms
+    [stress LosAngeles_Small/LaCAM/1/3]  thr=0.0705128  acc=0.166667  7851ms
+    [stress LosAngeles_Small/LaCAM/2/3]  thr=0.124031  acc=0.24031  7200ms
+    [stress LosAngeles_Small/LaCAM/3/3]  thr=0.0930233  acc=0.174419  8771ms
+    [stress LosAngeles_Small/PIBT/1/3]  thr=0.0886076  acc=0.177215  4018ms
+    [stress LosAngeles_Small/PIBT/2/3]  thr=0.0769231  acc=0.173077  5240ms
+    [stress LosAngeles_Small/PIBT/3/3]  thr=0.0723684  acc=0.171053  3884ms
+    [stress LosAngeles_Small/CongestionAware/1/3]  thr=0.112676  acc=0.21831  6408ms
+    [stress LosAngeles_Small/CongestionAware/2/3]  thr=0.09375  acc=0.1875  4917ms
+    [stress LosAngeles_Small/CongestionAware/3/3]  thr=0.0972222  acc=0.194444  6590ms
+    [stress LosAngeles_Medium/MAPPO/1/3]  thr=0.149606  acc=0.433071  86303ms
+    [stress LosAngeles_Medium/MAPPO/2/3]  thr=0.136752  acc=0.42735  68340ms
+    [stress LosAngeles_Medium/MAPPO/3/3]  thr=0.168421  acc=0.547368  58816ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/1/3]  thr=0.136752  acc=0.444444  88662ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/2/3]  thr=0.132231  acc=0.429752  116176ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/3/3]  thr=0.146789  acc=0.46789  88340ms
+    [stress LosAngeles_Medium/Greedy/1/3]  thr=0.046729  acc=0.242991  23996ms
+    [stress LosAngeles_Medium/Greedy/2/3]  thr=0.0636364  acc=0.254545  13925ms
+    [stress LosAngeles_Medium/Greedy/3/3]  thr=0.0545455  acc=0.245455  12742ms
+    [stress LosAngeles_Medium/Random/1/3]  thr=0.0490196  acc=0.254902  12512ms
+    [stress LosAngeles_Medium/Random/2/3]  thr=0.0654206  acc=0.242991  10547ms
+    [stress LosAngeles_Medium/Random/3/3]  thr=0.0462963  acc=0.240741  12278ms
+    [stress LosAngeles_Medium/InsertionGreedy/1/3]  thr=0.04  acc=0.208  25070ms
+    [stress LosAngeles_Medium/InsertionGreedy/2/3]  thr=0.0555556  acc=0.222222  19145ms
+    [stress LosAngeles_Medium/InsertionGreedy/3/3]  thr=0.0672269  acc=0.243697  25604ms
+    [stress LosAngeles_Medium/LaCAM/1/3]  thr=0.0608696  acc=0.243478  39242ms
+    [stress LosAngeles_Medium/LaCAM/2/3]  thr=0.0661157  acc=0.239669  38695ms
+    [stress LosAngeles_Medium/LaCAM/3/3]  thr=0.048  acc=0.216  44387ms
+    [stress LosAngeles_Medium/PIBT/1/3]  thr=0.0598291  acc=0.239316  19277ms
+    [stress LosAngeles_Medium/PIBT/2/3]  thr=0.03125  acc=0.195312  16524ms
+    [stress LosAngeles_Medium/PIBT/3/3]  thr=0.0277778  acc=0.173611  19941ms
+    [stress LosAngeles_Medium/CongestionAware/1/3]  thr=0.0869565  acc=0.269565  34366ms
+    [stress LosAngeles_Medium/CongestionAware/2/3]  thr=0.0775862  acc=0.258621  20843ms
+    [stress LosAngeles_Medium/CongestionAware/3/3]  thr=0.08  acc=0.29  21162ms
+  -- Generalisation Eval (5 cities) --
+    [gen Tokyo_Large/MAPPO/1/3]  thr=0.0366972  acc=0.568807  353054ms
+    [gen Tokyo_Large/MAPPO/2/3]  thr=0.0571429  acc=0.6  253413ms
+    [gen Tokyo_Large/MAPPO/3/3]  thr=0.0869565  acc=0.608696  187291ms
+    [gen Tokyo_Large/TamAlwaysAccept/1/3]  thr=0.0840336  acc=0.588235  542605ms
+    [gen Tokyo_Large/TamAlwaysAccept/2/3]  thr=0.111111  acc=0.555556  461077ms
+    [gen Tokyo_Large/TamAlwaysAccept/3/3]  thr=0.0756303  acc=0.579832  547219ms
+    [gen Tokyo_Large/LaCAM/1/3]  thr=0.0978261  acc=0.75  363753ms
+    [gen Tokyo_Large/LaCAM/2/3]  thr=0.150943  acc=0.716981  210734ms
+    [gen Tokyo_Large/LaCAM/3/3]  thr=0.0983607  acc=0.590164  177413ms
+    [gen Tokyo_Large/CongestionAware/1/3]  thr=0.0634921  acc=0.539683  167962ms
+    [gen Tokyo_Large/CongestionAware/2/3]  thr=0.0714286  acc=0.683673  191326ms
+    [gen Tokyo_Large/CongestionAware/3/3]  thr=0.0900901  acc=0.630631  174999ms
+    [gen Fukuoka/MAPPO/1/3]  thr=0.027027  acc=0.567568  67024ms
+    [gen Fukuoka/MAPPO/2/3]  thr=0.0747664  acc=0.635514  51149ms
+    [gen Fukuoka/MAPPO/3/3]  thr=0.0948276  acc=0.612069  61150ms
+    [gen Fukuoka/TamAlwaysAccept/1/3]  thr=0.108911  acc=0.70297  50937ms
+    [gen Fukuoka/TamAlwaysAccept/2/3]  thr=0.1  acc=0.6  55834ms
+    [gen Fukuoka/TamAlwaysAccept/3/3]  thr=0.140351  acc=0.666667  57202ms
+    [gen Fukuoka/LaCAM/1/3]  thr=0.129032  acc=0.774194  103132ms
+    [gen Fukuoka/LaCAM/2/3]  thr=0.1  acc=0.6  84417ms
+    [gen Fukuoka/LaCAM/3/3]  thr=0.136364  acc=0.681818  106000ms
+    [gen Fukuoka/CongestionAware/1/3]  thr=0.079646  acc=0.610619  81569ms
+    [gen Fukuoka/CongestionAware/2/3]  thr=0.118644  acc=0.618644  76717ms
+    [gen Fukuoka/CongestionAware/3/3]  thr=0.148515  acc=0.742574  88528ms
+    [gen NewYork/MAPPO/1/3]  thr=0.0245902  acc=0.516393  237507ms
+    [gen NewYork/MAPPO/2/3]  thr=0.0731707  acc=0.560976  171271ms
+    [gen NewYork/MAPPO/3/3]  thr=0.146789  acc=0.697248  118426ms
+    [gen NewYork/TamAlwaysAccept/1/3]  thr=0.0757576  acc=0.530303  148642ms
+    [gen NewYork/TamAlwaysAccept/2/3]  thr=0.0720721  acc=0.603604  135291ms
+    [gen NewYork/TamAlwaysAccept/3/3]  thr=0.0841122  acc=0.64486  114855ms
+    [gen NewYork/LaCAM/1/3]  thr=0.0816327  acc=0.693878  176614ms
+    [gen NewYork/LaCAM/2/3]  thr=0.0925926  acc=0.648148  155592ms
+    [gen NewYork/LaCAM/3/3]  thr=0.13913  acc=0.652174  160480ms
+    [gen NewYork/CongestionAware/1/3]  thr=0.115385  acc=0.576923  165023ms
+    [gen NewYork/CongestionAware/2/3]  thr=0.103093  acc=0.721649  154394ms
+    [gen NewYork/CongestionAware/3/3]  thr=0.11  acc=0.71  166297ms
+    [gen Paris/MAPPO/1/3]  thr=0.123894  acc=0.442478  118629ms
+    [gen Paris/MAPPO/2/3]  thr=0.294737  acc=0.673684  75194ms
+    [gen Paris/MAPPO/3/3]  thr=0.151786  acc=0.473214  98672ms
+    [gen Paris/TamAlwaysAccept/1/3]  thr=0.188119  acc=0.544554  98403ms
+    [gen Paris/TamAlwaysAccept/2/3]  thr=0.181818  acc=0.509091  115340ms
+    [gen Paris/TamAlwaysAccept/3/3]  thr=0.115702  acc=0.413223  147612ms
+    [gen Paris/LaCAM/1/3]  thr=0.178947  acc=0.557895  68756ms
+    [gen Paris/LaCAM/2/3]  thr=0.133929  acc=0.446429  54349ms
+    [gen Paris/LaCAM/3/3]  thr=0.140351  acc=0.45614  59960ms
+    [gen Paris/CongestionAware/1/3]  thr=0.11811  acc=0.401575  48975ms
+    [gen Paris/CongestionAware/2/3]  thr=0.179487  acc=0.487179  52615ms
+    [gen Paris/CongestionAware/3/3]  thr=0.144231  acc=0.490385  56233ms
+    [gen London/MAPPO/1/3]  thr=0.0560748  acc=0.616822  176769ms
+    [gen London/MAPPO/2/3]  thr=0.154545  acc=0.7  167648ms
+    [gen London/MAPPO/3/3]  thr=0.158879  acc=0.719626  150888ms
+    [gen London/TamAlwaysAccept/1/3]  thr=0.148148  acc=0.703704  120399ms
+    [gen London/TamAlwaysAccept/2/3]  thr=0.212121  acc=0.777778  95862ms
+    [gen London/TamAlwaysAccept/3/3]  thr=0.132743  acc=0.663717  155072ms
+    [gen London/LaCAM/1/3]  thr=0.171429  acc=0.742857  214086ms
+    [gen London/LaCAM/2/3]  thr=0.125  acc=0.660714  220049ms
+    [gen London/LaCAM/3/3]  thr=0.17  acc=0.76  296215ms

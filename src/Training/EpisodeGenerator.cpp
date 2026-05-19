@@ -97,6 +97,21 @@ std::vector<ScheduledTask> EpisodeGenerator::generate() {
     std::uniform_real_distribution<float> unit(0.f, 1.f);
     std::uniform_real_distribution<float> imp_dist(0.5f, 2.0f);
 
+    // Episode horizon — used for the feasibility filter below.
+    const int total_episode_steps = cfg_.total_steps();
+    const float speed = std::max(cfg_.speed_mps, 0.1f);
+
+    // Feasibility-margin multiplier on the minimum delivery time. Accounts for
+    //   (i) the pickup leg (agent → pickup), unknown at generation time but
+    //       comparable in scale to the delivery leg
+    //   (ii) the road-vs-haversine factor (real road distance is typically
+    //        1.3–1.6× the great-circle distance)
+    // Tasks that need more than `feasibility_margin × haversine_steps` of
+    // remaining episode time are physically un-deliverable; we skip them at
+    // generation rather than letting them pollute the buffer with un-finishable
+    // accept decisions. A logical pickup-then-delivery task must be doable.
+    constexpr float kFeasibilityMargin = 2.2f;
+
     for (const auto& ph : phases) {
         // Resample hot zones at each phase boundary so spatial clusters
         // shift with demand (commercial morning peak → residential evening).
@@ -106,6 +121,7 @@ std::vector<ScheduledTask> EpisodeGenerator::generate() {
         std::poisson_distribution<int> poisson(ph.lambda);
 
         for (int step = ph.step_begin; step < ph.step_end; ++step) {
+            const int steps_remaining = total_episode_steps - step;
             int n_arrive = (ph.lambda > 0.f) ? poisson(rng_) : 0;
             for (int k = 0; k < n_arrive; ++k) {
                 bool clustered = (!hot_zones_.empty()) && (unit(rng_) < cfg_.cluster_prob);
@@ -113,6 +129,25 @@ std::vector<ScheduledTask> EpisodeGenerator::generate() {
                 auto pu  = sample_pickup(clustered);
                 auto del = sample_delivery(pu, clustered);
                 if (pu == 0 || del == 0 || pu == del) continue;
+
+                // Feasibility filter: drop tasks that cannot logically finish
+                // before the episode ends. Computes the lower-bound delivery
+                // time from the great-circle distance and rejects when even
+                // the most generous margin overshoots the remaining horizon.
+                const float dist_m       = haversine_m(pu, del);
+                const float min_steps    = dist_m / speed;
+                const float needed_steps = min_steps * kFeasibilityMargin;
+                if (needed_steps > static_cast<float>(steps_remaining)) {
+                    // Try one fallback: resample a closer delivery once. If
+                    // still infeasible, drop the task entirely (rather than
+                    // ship an impossible pickup-then-delivery).
+                    auto alt = sample_delivery(pu, false);
+                    if (alt == 0 || alt == pu) continue;
+                    const float alt_dist = haversine_m(pu, alt);
+                    if ((alt_dist / speed) * kFeasibilityMargin >
+                        static_cast<float>(steps_remaining)) continue;
+                    del = alt;
+                }
 
                 ScheduledTask t;
                 t.arrival_step     = step;

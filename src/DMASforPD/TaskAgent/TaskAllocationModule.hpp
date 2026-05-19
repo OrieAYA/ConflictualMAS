@@ -48,6 +48,13 @@ public:
         float recall_import_mult   = 1.2f;   // importance multiplier on each recall round
         int   max_tasks_per_agent  = 1;       // capacity guard — TAM won't offer to full agents
         bool  always_accept        = false;   // bypass policy: accept unconditionally (TamAlwaysAccept ablation)
+
+        // Spatial pruning: bound the Dijkstra expansion (per side) to
+        //   haversine(pickup, delivery) * search_radius_mult.
+        // Each recall multiplies the budget by recall_radius_grow so the search
+        // resumes past the previous frontier when more agents are needed.
+        float search_radius_mult   = 3.0f;
+        float recall_radius_grow   = 2.0f;
     };
 
     explicit TaskAllocationModule(PDPTask& task, Params p = {});
@@ -87,6 +94,19 @@ private:
 
     bool allocated_ = false;
     bool exhausted_ = false;
+
+    // Spatial pruning budget for both Dijkstra searches (meters).
+    // Initialised lazily on first step() using haversine(pickup, delivery)
+    // * params_.search_radius_mult. Each recall multiplies it by recall_radius_grow.
+    // Negative sentinel means "not yet initialised".
+    float max_search_cost_ = -1.0f;
+
+    // Cached snapshot of agents with capacity for this TAM session. Computed
+    // once per session (or per recall) instead of once per step() — the fleet
+    // state does not change inside one TAM allocation, so re-scanning all
+    // agents on every Dijkstra expansion is pure waste (up to 300×/task).
+    std::unordered_set<osmium::object_id_type> idle_positions_cache_;
+    bool                                       idle_positions_dirty_ = true;
 
     // ---- Helpers ----------------------------------------------------------
 

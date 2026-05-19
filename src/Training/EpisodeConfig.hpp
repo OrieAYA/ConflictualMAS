@@ -83,6 +83,21 @@ struct EpisodeConfig {
     float refuse_penalty_w   = 0.15f;
     float unfinished_factor  = 1.0f;  // full value loss → indifference at p* ≈ 0.42
 
+    // Reward shaping: split task reward between pickup and delivery events.
+    // Shortens credit-assignment delay (decisions get partial signal already
+    // when the agent reaches the pickup, not only at delivery 1000+ steps later).
+    //
+    //   buffer.reward at decision time     = 0
+    //   ... agent reaches pickup           : +pickup_reward_frac × imp × reward
+    //   ... agent reaches delivery         : +(1 − pickup_reward_frac) × imp × reward  (total = imp × reward)
+    //   ... episode ends without delivery,
+    //         pickup REACHED               : -unfinished_factor × (1 − pickup_reward_frac) × imp × reward
+    //         pickup NOT reached           : -unfinished_factor × imp × reward
+    //
+    // Picking up therefore protects the agent from the worst penalty and the
+    // refusal threshold becomes more informative for capacity-constrained cases.
+    float pickup_reward_frac = 0.3f;  // fraction of total reward given at pickup
+
     // ── InsertionGreedy threshold ──────────────────────────────────────────
     // Accept task if (reward * importance) / max(insertion_cost_m, ε) > threshold.
     // Insertion cost is in meters, reward*importance ∈ [0.05, 10]. Typical bids
@@ -203,6 +218,10 @@ struct ComparisonMetrics {
     float latency_per_agent= 0.f;   // latency_mean / mean_active_agents
     float agent_utilisation= 0.f;   // mean fraction of steps with active work
     float refuse_rate      = 0.f;   // tasks_refused / tasks_appeared
+
+    // Metric 3: network congestion & travel efficiency
+    float mean_congestion  = 0.f;   // mean edge load (mean_load_now) over all steps
+    float mean_trip_steps  = 0.f;   // mean pickup→delivery travel time (steps)
 
     // ── RL policy ──────────────────────────────────────────────────────────
     float accept_rate      = 0.f;

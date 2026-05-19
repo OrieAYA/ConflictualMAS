@@ -76,6 +76,16 @@ private:
                                    std::vector<std::unique_ptr<EpisodeRunner>>& gen_runners,
                                    int global_ep, int seed,
                                    TrainingLogger& logger);
+
+    // Stress evaluation: forced over-saturation scenario (density 2.0, agents 0.6×).
+    // The system cannot deliver all tasks → tests whether the learned policy
+    // refuses intelligently or collapses (always-accept agents waste capacity
+    // on undeliverables, smart policies reserve capacity for feasible tasks).
+    static int run_stress_eval(const TrainingConfig& cfg,
+                               const std::vector<std::unique_ptr<CityAssets>>& assets,
+                               std::vector<std::unique_ptr<EpisodeRunner>>& runners,
+                               int global_ep, int seed,
+                               TrainingLogger& logger);
 };
 
 #endif // MULTI_CITY_TRAINER_HPP

@@ -1,10 +1,15 @@
 #include "MultiCityTrainer.hpp"
 #include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
+#include "DMASforPD/Policy/IPPOPolicy.hpp"
+#include "DMASforPD/Policy/MapperPolicy.hpp"
+#include "DMASforPD/Policy/HybridPolicy.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
+#include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <random>
+#include <stdexcept>
 
 namespace fs = std::filesystem;
 
@@ -19,38 +24,38 @@ static void customize_episode_for_city(EpisodeConfig& ep, const CityConfig& cc) 
     // Multi-task FIFO queue per agent — safe after the receive_task() reorder
     // fix. Bigger graph ⇒ deeper queue so agents stay busy across long trips.
     if (a < 50.0) {
-        // Small (~25 km²): short trips, dense flow.
+        // Small (~25 km²): ~150m–1500m trips, ~150 tasks/episode.
         ep.phases = {
-            { 1000,  60.f, 4,  5, 0.0f, 3 },
-            { 1500, 100.f, 5,  7, 0.5f, 4 },
-            { 1100, 140.f, 7,  8, 1.0f, 5 },
+            { 1000,  6.f, 4, 5, 0.0f, 3 },
+            { 1500,  8.f, 5, 7, 0.5f, 4 },
+            { 1100, 10.f, 7, 8, 1.0f, 5 },
         };
         ep.min_task_dist_m = 150.f;
         ep.max_task_dist_m = 1500.f;
         ep.hot_zone_radius = 300.f;
-        ep.max_tasks_per_agent = 5;
+        ep.max_tasks_per_agent = 3;
     } else if (a < 300.0) {
-        // Medium (~144 km²): mixed scale.
+        // Medium (~144 km²): ~250m–3500m trips, ~90 tasks/episode.
         ep.phases = {
-            { 1000, 100.f,  6,  8, 0.0f, 4 },
-            { 1500, 150.f,  8, 10, 0.5f, 6 },
-            { 1100, 200.f, 10, 12, 1.0f, 7 },
+            { 1000, 3.f,  6,  8, 0.0f, 4 },
+            { 1500, 4.f,  8, 10, 0.5f, 6 },
+            { 1100, 5.f, 10, 12, 1.0f, 7 },
         };
         ep.min_task_dist_m = 250.f;
         ep.max_task_dist_m = 3500.f;
         ep.hot_zone_radius = 500.f;
-        ep.max_tasks_per_agent = 6;
+        ep.max_tasks_per_agent = 3;
     } else {
-        // Large (>=300 km²): Amazon-scale density, long task queues.
+        // Large (>=300 km²): ~400m–5000m trips, ~80 tasks/episode.
         ep.phases = {
-            { 1000, 120.f,  8, 10, 0.0f, 4 },
-            { 1500, 200.f, 10, 13, 0.5f, 6 },
-            { 1100, 280.f, 13, 15, 1.0f, 8 },
+            { 1000, 2.f,  8, 10, 0.0f, 4 },
+            { 1500, 3.f, 10, 13, 0.5f, 6 },
+            { 1100, 4.f, 13, 15, 1.0f, 8 },
         };
         ep.min_task_dist_m = 400.f;
         ep.max_task_dist_m = 5000.f;
         ep.hot_zone_radius = 800.f;
-        ep.max_tasks_per_agent = 8;
+        ep.max_tasks_per_agent = 4;
     }
 }
 
@@ -84,6 +89,89 @@ std::unique_ptr<CityAssets> MultiCityTrainer::load_city(
     return std::make_unique<CityAssets>(&cc, idx, std::move(ep), std::move(gb));
 }
 
+// ── Per-episode scenario sampler ──────────────────────────────────────────────
+//
+// Returns an EpisodeScenario with random density × agent multipliers. Compared
+// to the previous version, the distribution now spans four regimes and applies
+// the multipliers more broadly (agents may also exceed 1.0). This gives the
+// policy gradient signal across the full saturation spectrum:
+//
+//   15 % slack         : density ~ U(0.3, 0.6),  agents ~ U(1.0, 1.4)
+//                        Plenty of agents, few tasks. Policy learns when to
+//                        be picky about task quality (low-profit refusals).
+//   35 % normal        : density ~ U(0.7, 1.3),  agents ~ U(0.8, 1.2)
+//                        Balanced regime — most realistic.
+//   30 % stress-light  : density ~ U(1.3, 1.8),  agents ~ U(0.6, 0.9)
+//                        Demand exceeds supply lightly — selective acceptance
+//                        starts mattering.
+//   20 % stress-heavy  : density ~ U(1.8, 2.8),  agents ~ U(0.4, 0.7)
+//                        Strong over-saturation — refusal becomes essential
+//                        and the deliverability feature decides which tasks
+//                        are worth committing to.
+//
+// All multipliers stack on top of the city-specific phase config produced by
+// customize_episode_for_city, so a "slack" episode on Tokyo_Small (4-8 agents
+// nominal) and the same on LosAngeles_Medium (8-15 nominal) both scale
+// proportionally to the city's problem size.
+static EpisodeScenario sample_scenario(std::mt19937& rng) {
+    std::uniform_real_distribution<float> u01(0.f, 1.f);
+    const float p = u01(rng);
+    auto sample_uniform = [&](float a, float b){
+        return a + u01(rng) * (b - a);
+    };
+    EpisodeScenario s;
+    if (p < 0.15f) {
+        s.density_mult = sample_uniform(0.3f, 0.6f);
+        s.agents_mult  = sample_uniform(1.0f, 1.4f);
+        s.label        = "slack";
+    } else if (p < 0.50f) {
+        s.density_mult = sample_uniform(0.7f, 1.3f);
+        s.agents_mult  = sample_uniform(0.8f, 1.2f);
+        s.label        = "normal";
+    } else if (p < 0.80f) {
+        s.density_mult = sample_uniform(1.3f, 1.8f);
+        s.agents_mult  = sample_uniform(0.6f, 0.9f);
+        s.label        = "stress_light";
+    } else {
+        s.density_mult = sample_uniform(1.8f, 2.8f);
+        s.agents_mult  = sample_uniform(0.4f, 0.7f);
+        s.label        = "stress_heavy";
+    }
+    return s;
+}
+
+// Fixed stress scenario for stress evaluation: ~4× over-saturation.
+static const EpisodeScenario kStressScenario{ 2.0f, 0.6f, "stress" };
+
+// ── PolicyMode <-> string helper for flexible eval mode subsets ───────────────
+static const char* policy_mode_label(PolicyMode m) {
+    switch (m) {
+        case PolicyMode::MAPPO:           return "MAPPO";
+        case PolicyMode::IPPO:            return "IPPO";
+        case PolicyMode::MAPPER:          return "MAPPER";
+        case PolicyMode::Hybrid:          return "Hybrid";
+        case PolicyMode::TamAlwaysAccept: return "TamAlwaysAccept";
+        case PolicyMode::Greedy:          return "Greedy";
+        case PolicyMode::Random:          return "Random";
+        case PolicyMode::InsertionGreedy: return "InsertionGreedy";
+        case PolicyMode::LaCAM:           return "LaCAM";
+        case PolicyMode::PIBT:            return "PIBT";
+        case PolicyMode::CongestionAware: return "CongestionAware";
+        case PolicyMode::MCA:             return "MCA";
+        case PolicyMode::TrafficFlow:     return "TrafficFlow";
+        case PolicyMode::TokenPassing:    return "TokenPassing";
+    }
+    return "Unknown";
+}
+
+// Resolve which modes to evaluate: cfg.eval_modes if non-empty, else `default_modes`.
+static std::vector<PolicyMode> resolve_eval_modes(
+    const TrainingConfig& cfg, std::initializer_list<PolicyMode> default_modes)
+{
+    if (!cfg.eval_modes.empty()) return cfg.eval_modes;
+    return std::vector<PolicyMode>(default_modes);
+}
+
 // ── Evaluation (train cities) ─────────────────────────────────────────────────
 //
 // 5 eval modes per city:
@@ -105,11 +193,15 @@ int MultiCityTrainer::run_eval(
 {
     const int num_cities = static_cast<int>(assets.size());
 
-    static constexpr std::array<PolicyMode, 5> k_modes = {
-        PolicyMode::MAPPO, PolicyMode::TamAlwaysAccept,
-        PolicyMode::Greedy, PolicyMode::Random, PolicyMode::InsertionGreedy };
-    static constexpr std::array<const char*, 5> k_mode_strs = {
-        "MAPPO", "TamAlwaysAccept", "Greedy", "Random", "InsertionGreedy" };
+    // Eval line-up: full default = 3 RL baselines + 9 non-learning, sweeps the
+    // design axes (centralised critic, decentralised actor, evolutionary RL).
+    // Override via cfg.eval_modes for a lighter targeted comparison.
+    const std::vector<PolicyMode> modes = resolve_eval_modes(cfg, {
+        PolicyMode::MAPPO, PolicyMode::IPPO, PolicyMode::MAPPER,
+        PolicyMode::TamAlwaysAccept,
+        PolicyMode::Greedy, PolicyMode::Random, PolicyMode::InsertionGreedy,
+        PolicyMode::PIBT, PolicyMode::CongestionAware,
+        PolicyMode::MCA, PolicyMode::TrafficFlow, PolicyMode::TokenPassing });
 
     for (int ci = 0; ci < num_cities; ++ci) {
         const CityAssets& ca     = *assets[ci];
@@ -117,16 +209,17 @@ int MultiCityTrainer::run_eval(
 
         runner.train_mode = false;
 
-        for (int mi = 0; mi < 5; ++mi) {
-            runner.policy_mode = k_modes[mi];
+        for (PolicyMode m : modes) {
+            const char* name = policy_mode_label(m);
+            runner.policy_mode = m;
             for (int e = 0; e < cfg.n_eval_episodes; ++e) {
                 RunResult res = runner.run(ca.index, num_cities);
                 EpisodeRecord rec = make_record(
                     res, seed, global_ep++,
-                    ca.config->name, "eval", k_mode_strs[mi],
+                    ca.config->name, "eval", name,
                     ca.ep_cfg.max_agents());
                 logger.push(rec);
-                std::cout << "    [eval " << ca.config->name << "/" << k_mode_strs[mi]
+                std::cout << "    [eval " << ca.config->name << "/" << name
                           << "/" << (e + 1) << "/" << cfg.n_eval_episodes
                           << "]  thr=" << res.metrics.throughput_rate
                           << "  acc=" << res.metrics.accept_rate
@@ -155,10 +248,12 @@ int MultiCityTrainer::run_generalize_eval(
 
     const int num_gen = static_cast<int>(gen_assets.size());
 
-    static constexpr std::array<PolicyMode, 3> k_modes = {
-        PolicyMode::MAPPO, PolicyMode::TamAlwaysAccept, PolicyMode::InsertionGreedy };
-    static constexpr std::array<const char*, 3> k_mode_strs = {
-        "MAPPO", "TamAlwaysAccept", "InsertionGreedy" };
+    // Default generalisation modes: 3 RL + 5 strongest non-learning references.
+    // Override via cfg.eval_modes.
+    const std::vector<PolicyMode> modes = resolve_eval_modes(cfg, {
+        PolicyMode::MAPPO, PolicyMode::IPPO, PolicyMode::MAPPER,
+        PolicyMode::TamAlwaysAccept, PolicyMode::CongestionAware,
+        PolicyMode::MCA, PolicyMode::TrafficFlow, PolicyMode::TokenPassing });
 
     std::cout << "  -- Generalisation Eval (" << num_gen << " cities) --\n";
     for (int ci = 0; ci < num_gen; ++ci) {
@@ -167,16 +262,73 @@ int MultiCityTrainer::run_generalize_eval(
 
         runner.train_mode = false;
 
-        for (int mi = 0; mi < 3; ++mi) {
-            runner.policy_mode = k_modes[mi];
+        for (PolicyMode m : modes) {
+            const char* name = policy_mode_label(m);
+            runner.policy_mode = m;
             for (int e = 0; e < cfg.n_eval_episodes; ++e) {
                 RunResult res = runner.run(ca.index, num_gen);
                 EpisodeRecord rec = make_record(
                     res, seed, global_ep++,
-                    ca.config->name, "generalize", k_mode_strs[mi],
+                    ca.config->name, "generalize", name,
                     ca.ep_cfg.max_agents());
                 logger.push(rec);
-                std::cout << "    [gen " << ca.config->name << "/" << k_mode_strs[mi]
+                std::cout << "    [gen " << ca.config->name << "/" << name
+                          << "/" << (e + 1) << "/" << cfg.n_eval_episodes
+                          << "]  thr=" << res.metrics.throughput_rate
+                          << "  acc=" << res.metrics.accept_rate
+                          << "  " << res.wallclock_ms << "ms\n";
+            }
+        }
+    }
+
+    return global_ep;
+}
+
+// ── Stress evaluation (oversaturated scenarios) ───────────────────────────────
+//
+// Runs all 8 modes on each train city with the kStressScenario applied
+// (density_mult=2.0, agents_mult=0.6). With ~4× over-saturation the system
+// cannot deliver every task; the policy must learn to be selective.
+//
+// Logged with phase = "stress" so the analysis script can separate normal-
+// load vs over-saturated performance.
+
+int MultiCityTrainer::run_stress_eval(
+    const TrainingConfig& cfg,
+    const std::vector<std::unique_ptr<CityAssets>>& assets,
+    std::vector<std::unique_ptr<EpisodeRunner>>& runners,
+    int global_ep, int seed,
+    TrainingLogger& logger)
+{
+    const int num_cities = static_cast<int>(assets.size());
+
+    const std::vector<PolicyMode> modes = resolve_eval_modes(cfg, {
+        PolicyMode::MAPPO, PolicyMode::IPPO, PolicyMode::MAPPER,
+        PolicyMode::TamAlwaysAccept,
+        PolicyMode::Greedy, PolicyMode::Random, PolicyMode::InsertionGreedy,
+        PolicyMode::PIBT, PolicyMode::CongestionAware,
+        PolicyMode::MCA, PolicyMode::TrafficFlow, PolicyMode::TokenPassing });
+
+    std::cout << "  -- Stress Eval (density="
+              << kStressScenario.density_mult << " agents="
+              << kStressScenario.agents_mult << ") --\n";
+
+    for (int ci = 0; ci < num_cities; ++ci) {
+        const CityAssets& ca     = *assets[ci];
+        EpisodeRunner&    runner = *runners[ci];
+        runner.train_mode = false;
+
+        for (PolicyMode m : modes) {
+            const char* name = policy_mode_label(m);
+            runner.policy_mode = m;
+            for (int e = 0; e < cfg.n_eval_episodes; ++e) {
+                RunResult res = runner.run(ca.index, num_cities, kStressScenario);
+                EpisodeRecord rec = make_record(
+                    res, seed, global_ep++,
+                    ca.config->name, "stress", name,
+                    ca.ep_cfg.max_agents());
+                logger.push(rec);
+                std::cout << "    [stress " << ca.config->name << "/" << name
                           << "/" << (e + 1) << "/" << cfg.n_eval_episodes
                           << "]  thr=" << res.metrics.throughput_rate
                           << "  acc=" << res.metrics.accept_rate
@@ -205,21 +357,25 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
     std::cout << "All train cities loaded.\n\n";
 
     // ── 2. Load generalisation cities (skip gracefully if OSM missing) ────
-    const auto gen_ptrs = CityRegistry::comparison_cities();
     std::vector<std::unique_ptr<CityAssets>> gen_assets;
-    if (!gen_ptrs.empty()) {
-        std::cout << "Loading generalisation cities (skip if missing)...\n";
-        for (int i = 0; i < (int)gen_ptrs.size(); ++i) {
-            try {
-                gen_assets.push_back(
-                    load_city(*gen_ptrs[i], num_cities + i, cfg.episode_cfg, cfg.cache_root));
-            } catch (const std::exception& e) {
-                std::cout << "  [Skip] " << gen_ptrs[i]->name
-                          << " — " << e.what() << "\n";
+    if (cfg.enable_generalization) {
+        const auto gen_ptrs = CityRegistry::comparison_cities();
+        if (!gen_ptrs.empty()) {
+            std::cout << "Loading generalisation cities (skip if missing)...\n";
+            for (int i = 0; i < (int)gen_ptrs.size(); ++i) {
+                try {
+                    gen_assets.push_back(
+                        load_city(*gen_ptrs[i], num_cities + i, cfg.episode_cfg, cfg.cache_root));
+                } catch (const std::exception& e) {
+                    std::cout << "  [Skip] " << gen_ptrs[i]->name
+                              << " — " << e.what() << "\n";
+                }
             }
+            std::cout << gen_assets.size() << "/" << gen_ptrs.size()
+                      << " generalisation cities loaded.\n\n";
         }
-        std::cout << gen_assets.size() << "/" << gen_ptrs.size()
-                  << " generalisation cities loaded.\n\n";
+    } else {
+        std::cout << "Generalisation eval disabled (Tokyo-only run).\n\n";
     }
 
     std::vector<int> train_indices;
@@ -242,11 +398,85 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
         policy.critic.init_xavier(init_rng);
         policy.clear_buffer();
 
-        if (cfg.load_policy && !cfg.policy_path.empty()) {
-            if (!policy.load(cfg.policy_path))
-                std::cerr << "[Warn] Could not load policy from " << cfg.policy_path << "\n";
-            else
-                std::cout << "[Policy] Loaded from " << cfg.policy_path << "\n";
+        // Re-initialise IPPO (shared actor + per-agent local critics) for this seed.
+        auto& ippo = IPPOPolicy::shared();
+        int learning_pool = 0;
+        for (int i = 0; i < num_cities; ++i)
+            learning_pool = std::max(learning_pool,
+                static_cast<int>(std::ceil(assets[i]->ep_cfg.max_agents() * 1.5)));
+        ippo.ensure_agents(learning_pool);
+        ippo.init_xavier(init_rng);
+        ippo.clear_buffer_all();
+
+        // Re-initialise MAPPER (per-agent decentralised + Ev) for this seed.
+        // Same pool size — slots are mapped to the same agent ids used by IPPO.
+        auto& mapper = MapperPolicy::shared();
+        mapper.ensure_agents(learning_pool);
+        mapper.init_xavier_all(init_rng);
+        mapper.clear_buffer_all();
+
+        if (cfg.load_policy) {
+            auto try_load = [&](const char* name, const std::string& path,
+                                auto loader) {
+                if (path.empty()) return;
+                if (!loader(path)) {
+                    const std::string msg = std::string("Could not load ") + name
+                                          + " from " + path;
+                    if (cfg.eval_only)
+                        throw std::runtime_error("[eval_only] " + msg
+                            + " — aborting to avoid evaluating Xavier-init weights");
+                    std::cerr << "[Warn] " << msg << "\n";
+                } else {
+                    std::cout << "[Policy] Loaded " << name << " from " << path << "\n";
+                }
+            };
+            try_load("MAPPO ", cfg.policy_path,
+                     [&](const std::string& p){ return policy.load(p); });
+            try_load("IPPO  ", cfg.ippo_policy_path,
+                     [&](const std::string& p){ return ippo.load(p); });
+            try_load("MAPPER", cfg.mapper_policy_path,
+                     [&](const std::string& p){ return mapper.load(p); });
+        }
+
+        // ── Hybrid base initialisation ──────────────────────────────────────
+        // Hybrid uses MAPPO's actor as its frozen base. Wire it up here so that
+        // any episode running with policy_mode = Hybrid sees the correct base.
+        // If MAPPO was loaded from checkpoint just above, the base is now the
+        // trained policy. Otherwise it inherits the Xavier-init MAPPO.
+        HybridPolicy::shared().set_base_from(policy);
+        HybridPolicy::shared().ensure_agents(learning_pool);
+        HybridPolicy::shared().clear_buffer_all();
+        std::cout << "[Policy] Hybrid base set from MAPPO actor "
+                  << "(" << learning_pool << " agent slots)\n";
+
+        // ── Safety check for eval_only mode ─────────────────────────────────
+        // If a policy is in eval_modes but its checkpoint path is empty, the
+        // eval would silently run on Xavier-init weights — invalidating the
+        // comparison. Detect and abort.
+        if (cfg.eval_only && !cfg.eval_modes.empty()) {
+            auto has_mode = [&](PolicyMode m){
+                return std::find(cfg.eval_modes.begin(),
+                                  cfg.eval_modes.end(), m)
+                       != cfg.eval_modes.end();
+            };
+            auto check = [&](const char* name, PolicyMode m,
+                             const std::string& p) {
+                if (has_mode(m) && p.empty()) {
+                    throw std::runtime_error(
+                        std::string("[eval_only] ") + name
+                        + " is in eval_modes but its checkpoint path is empty"
+                        + " — set the corresponding *_policy_path in cfg");
+                }
+            };
+            check("MAPPO",  PolicyMode::MAPPO,  cfg.policy_path);
+            check("IPPO",   PolicyMode::IPPO,   cfg.ippo_policy_path);
+            check("MAPPER", PolicyMode::MAPPER, cfg.mapper_policy_path);
+            // Hybrid base derives from MAPPO, so check MAPPO path for it too.
+            if (has_mode(PolicyMode::Hybrid) && cfg.policy_path.empty()) {
+                throw std::runtime_error(
+                    "[eval_only] Hybrid is in eval_modes but its base (MAPPO) "
+                    "path is empty — set cfg.policy_path");
+            }
         }
 
         // Per-city runners for train cities (reused across rounds — A* cache warms up).
@@ -270,64 +500,167 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
         TrainingLogger logger(cfg.output_dir, seed);
         int global_ep = 0;
 
+        // Independent RNG for scenario sampling so per-episode difficulty
+        // randomisation does not perturb policy weight init reproducibility.
+        std::mt19937 scenario_rng(static_cast<uint32_t>(seed) ^ 0x9E3779B9u);
+
         // ── 4. Training rounds ────────────────────────────────────────────
-        for (int round = 0; round < cfg.n_rounds; ++round) {
+        // In eval_only mode the training loop is skipped entirely: we drop
+        // straight to the post-training eval phase with the loaded weights.
+        // This is the protocol for the final "general eval on 7 cities with
+        // the best policy" — re-run with eval_only=true after a training run.
+        const int n_train_rounds = cfg.eval_only ? 0 : cfg.n_rounds;
+        for (int round = 0; round < n_train_rounds; ++round) {
+            // Linear anneal: lr_actor, lr_critic, ent_w decay toward their
+            // *_min values over the seed's training horizon. SoTA PPO/MAPPO
+            // recipe: high lr + high entropy early for exploration, both
+            // taper off so the policy can commit to a strategy.
+            const float progress = (cfg.n_rounds > 1)
+                ? static_cast<float>(round) / (cfg.n_rounds - 1) : 0.f;
+            policy.set_progress(progress);
+            ippo.set_progress(progress);
+            mapper.set_progress(progress);
+
+            // Helper to log one training episode's stats line uniformly.
+            auto log_train = [&](const RunResult& res, const char* tag,
+                                  int max_ep_h) {
+                if (!cfg.verbose) return;
+                std::cout << "  [s" << s << " r" << round
+                          << " " << (cfg.verbose ? "" : "")
+                          << " " << tag << "]"
+                          << "  thr="   << res.metrics.throughput_rate
+                          << "  acc="   << res.metrics.accept_rate
+                          << "  aloss=" << res.train_stats.actor_loss
+                          << "  closs=" << res.train_stats.critic_loss
+                          << "  ent="   << res.train_stats.entropy
+                          << "  kl="    << res.train_stats.kl_approx
+                          << "  cf="    << res.train_stats.clip_frac
+                          << "  ep="    << res.train_stats.n_epochs
+                                        << "/" << max_ep_h
+                          << "  n="     << res.train_stats.n_exp
+                          << "  "       << res.wallclock_ms << "ms\n";
+            };
 
             for (int ci : train_indices) {
                 CityAssets&    ca     = *assets[ci];
                 EpisodeRunner& runner = *runners[ci];
+
+                // The three learning baselines see the SAME scenario draw so
+                // their training conditions are directly comparable. The
+                // EpisodeRunner resets GlobalMemory state in run(), so the
+                // three back-to-back episodes are independent except for the
+                // persistent A* path cache.
+                //
+                // Order: IPPO first (warms A* cache), then MAPPER, then MAPPO.
+                // MAPPO's centralised critic is the most expensive to train;
+                // running it last lets it benefit from a fully warmed cache,
+                // balancing wall-clock time across the three policies.
+                const EpisodeScenario sc = sample_scenario(scenario_rng);
+
+                // ── IPPO training episode ───────────────────────────────────
                 runner.train_mode  = true;
+                runner.policy_mode = PolicyMode::IPPO;
+                {
+                    RunResult res = runner.run(ca.index, num_cities, sc);
+                    logger.push(make_record(
+                        res, seed, global_ep++,
+                        ca.config->name, "train", "IPPO",
+                        ca.ep_cfg.max_agents()));
+                    if (global_ep % cfg.log_every == 0)
+                        log_train(res, "IPPO", ippo.hparams.epochs);
+                }
+
+                // ── MAPPER training episode (same scenario, cache warm) ─────
+                runner.policy_mode = PolicyMode::MAPPER;
+                {
+                    RunResult res = runner.run(ca.index, num_cities, sc);
+                    logger.push(make_record(
+                        res, seed, global_ep++,
+                        ca.config->name, "train", "MAPPER",
+                        ca.ep_cfg.max_agents()));
+                    if (global_ep % cfg.log_every == 0)
+                        log_train(res, "MAPPER", mapper.hparams.epochs);
+                }
+
+                // ── MAPPO training episode (same scenario, cache warm) ──────
                 runner.policy_mode = PolicyMode::MAPPO;
-
-                RunResult     res = runner.run(ca.index, num_cities);
-                EpisodeRecord rec = make_record(
-                    res, seed, global_ep++,
-                    ca.config->name, "train", "MAPPO",
-                    ca.ep_cfg.max_agents());
-                logger.push(rec);
-
-                if (cfg.verbose && global_ep % cfg.log_every == 0) {
-                    std::cout << "  [s" << s << " r" << round
-                              << " " << ca.config->name << "]"
-                              << "  thr="   << res.metrics.throughput_rate
-                              << "  acc="   << res.metrics.accept_rate
-                              << "  aloss=" << res.train_stats.actor_loss
-                              << "  closs=" << res.train_stats.critic_loss
-                              << "  ent="   << res.train_stats.entropy
-                              << "  kl="    << res.train_stats.kl_approx
-                              << "  cf="    << res.train_stats.clip_frac
-                              << "  ep="    << res.train_stats.n_epochs
-                                            << "/" << policy.hparams.epochs
-                              << "  n="     << res.train_stats.n_exp
-                              << "  "       << res.wallclock_ms << "ms\n";
+                {
+                    RunResult res = runner.run(ca.index, num_cities, sc);
+                    logger.push(make_record(
+                        res, seed, global_ep++,
+                        ca.config->name, "train", "MAPPO",
+                        ca.ep_cfg.max_agents()));
+                    if (global_ep % cfg.log_every == 0)
+                        log_train(res, "MAPPO", policy.hparams.epochs);
                 }
             }
 
-            // Periodic eval on train cities.
+            // ── MAPPER Evolutionary RL step ───────────────────────────────
+            // Every `ev_params.period_rounds` rounds, rank decentralised
+            // policies by their rolling fitness and replace the worst with
+            // mutated copies of the best (Liu et al., IROS 2020). Combines
+            // gradient-based PPO updates with genetic-style exploration,
+            // letting stuck policies escape local optima via the elite gene
+            // pool. This is the "Ev" in MAPPER and must run on a multi-
+            // episode cadence (single-episode fitness is too noisy).
+            const int ev_period = std::max(1, mapper.ev_params.period_rounds);
+            if ((round + 1) % ev_period == 0) {
+                const int n_mut = mapper.evolutionary_step();
+                if (n_mut > 0 && cfg.verbose) {
+                    std::cout << "  [MAPPER-Ev @ round " << (round + 1)
+                              << "] mutated " << n_mut << "/"
+                              << mapper.n_agents() << " policies\n";
+                }
+            }
+
+            // Periodic eval on train cities (normal + stress scenarios).
             if ((round + 1) % cfg.eval_every == 0) {
                 std::cout << "  -- Eval @ round " << (round + 1) << " --\n";
                 global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger);
+                if (!cfg.skip_stress_eval)
+                    global_ep = run_stress_eval(cfg, assets, runners, global_ep, seed, logger);
                 logger.flush();
             }
         }
 
-        // ── 5. Final evaluation (skipped if last round already eval'd) ────
-        if (cfg.n_rounds % cfg.eval_every != 0) {
+        // ── 5. Final evaluation ───────────────────────────────────────────
+        // In eval_only mode we ALWAYS run the final eval (no training rounds
+        // happened, so no periodic eval triggered). In training mode we run
+        // it only if the last round did not already eval (avoid duplicates).
+        if (cfg.eval_only || cfg.n_rounds == 0 ||
+            cfg.n_rounds % cfg.eval_every != 0) {
             std::cout << "  -- Final Eval --\n";
             global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger);
+            if (!cfg.skip_stress_eval)
+                global_ep = run_stress_eval(cfg, assets, runners, global_ep, seed, logger);
         }
 
         // ── 6. Generalisation evaluation (unseen cities, end of seed) ─────
-        global_ep = run_generalize_eval(
-            cfg, gen_assets, gen_runners, global_ep, seed, logger);
+        if (!cfg.skip_generalize_eval)
+            global_ep = run_generalize_eval(
+                cfg, gen_assets, gen_runners, global_ep, seed, logger);
         logger.flush();
 
-        // ── 7. Policy checkpoint ──────────────────────────────────────────
-        if (cfg.save_policy) {
-            const std::string ckpt = cfg.output_dir + "/policy_seed"
-                                   + std::to_string(seed) + ".bin";
-            policy.save(ckpt);
-            std::cout << "  [Checkpoint] saved to " << ckpt << "\n";
+        // ── 7. Policy checkpoints (all three learning baselines) ──────────
+        // Skip saving in eval_only mode to avoid overwriting valid trained
+        // checkpoints if the loaded paths were wrong / incomplete.
+        if (cfg.save_policy && !cfg.eval_only) {
+            const std::string ckpt_mappo = cfg.output_dir + "/policy_seed"
+                                         + std::to_string(seed) + ".bin";
+            policy.save(ckpt_mappo);
+            std::cout << "  [Checkpoint] MAPPO  saved to " << ckpt_mappo << "\n";
+
+            const std::string ckpt_ippo = cfg.output_dir + "/ippo_seed"
+                                        + std::to_string(seed) + ".bin";
+            ippo.save(ckpt_ippo);
+            std::cout << "  [Checkpoint] IPPO   saved to " << ckpt_ippo
+                      << "  (" << ippo.n_agents() << " critics)\n";
+
+            const std::string ckpt_mapper = cfg.output_dir + "/mapper_seed"
+                                          + std::to_string(seed) + ".bin";
+            mapper.save(ckpt_mapper);
+            std::cout << "  [Checkpoint] MAPPER saved to " << ckpt_mapper
+                      << "  (" << mapper.n_agents() << " agents)\n";
         }
 
         // ── 8. Per-seed summary ───────────────────────────────────────────

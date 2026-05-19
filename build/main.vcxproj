@@ -427,6 +427,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\IVNSSolver.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\ComparisonTest.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\ObjectiveDMPolicy.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\IPPOPolicy.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MapperPolicy.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Training\CityConfig.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeConfig.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeGenerator.cpp" />

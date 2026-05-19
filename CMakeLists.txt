@@ -33,6 +33,9 @@ set(SOURCES
     src/Comparisons/DbVNS_vs_LKH/IVNSSolver.cpp
     src/Comparisons/DbVNS_vs_LKH/ComparisonTest.cpp
     src/DMASforPD/Policy/ObjectiveDMPolicy.cpp
+    src/DMASforPD/Policy/IPPOPolicy.cpp
+    src/DMASforPD/Policy/MapperPolicy.cpp
+    src/DMASforPD/Policy/HybridPolicy.cpp
     src/Training/CityConfig.cpp
     src/Training/EpisodeConfig.cpp
     src/Training/EpisodeGenerator.cpp

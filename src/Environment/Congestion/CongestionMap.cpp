@@ -71,3 +71,16 @@ void CongestionMap::reset() {
     load_.clear();
     t_now_ = 0;
 }
+
+float CongestionMap::mean_load_now() const {
+    if (load_.empty()) return 0.f;
+    int   sum_load = 0;
+    int   n_edges  = 0;
+    for (const auto& [way_id, steps] : load_) {
+        auto jt = steps.find(t_now_);
+        if (jt != steps.end()) { sum_load += jt->second; ++n_edges; }
+    }
+    return (n_edges > 0)
+        ? static_cast<float>(sum_load) / static_cast<float>(n_edges)
+        : 0.f;
+}

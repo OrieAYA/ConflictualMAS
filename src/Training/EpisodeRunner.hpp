@@ -21,6 +21,27 @@ struct RunResult {
     long long                            wallclock_ms = 0;
 };
 
+// ── Episode difficulty scenario ───────────────────────────────────────────────
+//
+// Scales the per-phase task-arrival lambda and active-agent count to expose
+// the policy to a wide range of agent-to-task ratios within a single training
+// session. The MAPPO refusal action is meaningful only when the system is at
+// or beyond capacity — under-saturated episodes give no gradient signal for
+// "refuse this task". Sampling scenarios per episode produces buffers with
+// mixed-difficulty experiences, which the global advantage normaliser then
+// brings to comparable scales.
+//
+//   density_mult ~ Uniform[0.5, 2.5]   →  task arrival rate × this
+//   agents_mult  ~ Uniform[0.5, 1.0]   →  active-agent count × this  (rounded)
+//
+// Stress eval: density_mult=2.0, agents_mult=0.6  →  ~4× over-saturation,
+// most tasks cannot be delivered, the policy must learn to refuse.
+struct EpisodeScenario {
+    float       density_mult = 1.0f;  // multiplies phase lambdas
+    float       agents_mult  = 1.0f;  // multiplies phase n_agents
+    const char* label        = "normal";
+};
+
 // ════════════════════════════════════════════════════════════════════════════
 // EpisodeRunner
 // ════════════════════════════════════════════════════════════════════════════
@@ -48,12 +69,89 @@ struct RunResult {
 // Random and Greedy do NOT call try_accept_task() and do NOT write to the
 // training buffer — safe for use as baselines without contaminating MAPPO.
 enum class PolicyMode {
-    MAPPO,            // full system: MAPPO policy + TAM routing
+    MAPPO,            // full system: shared-actor + centralised critic MAPPO
+                      // (CTDE: centralised training, decentralised execution)
+    IPPO,             // Independent PPO [de Witt+2020]: shared actor +
+                      // per-agent local critics. Ablation between MAPPO's
+                      // centralised critic and MAPPER's decentralised actor.
+    MAPPER,           // decentralised RL baseline [Liu+IROS2020 adapted]:
+                      // per-agent actor + per-agent critic + Evolutionary RL
+                      // (selection/mutation of per-agent policy weights).
+    Hybrid,           // frozen MAPPO base + per-agent online linear residual.
+                      // Combines MAPPO's hot-start for new agents with
+                      // MAPPER's specialisation, plus an explicit rollback
+                      // safety net (residual shrinks/resets when fitness
+                      // drops below fleet mean − threshold).
     TamAlwaysAccept,  // ablation: TAM routing only, always accept (no policy learning)
                       // isolates TAM routing contribution from MAPPO learning
     Greedy,           // always accept first idle agent (sequential scan)
     Random,           // accept with p=0.5 (random baseline)
-    InsertionGreedy   // accept if reward / insertion_cost > threshold (cost-aware heuristic)
+    InsertionGreedy,  // accept if reward / insertion_cost > threshold (cost-aware heuristic)
+
+    // ── SoTA-adapted baselines (related-works comparisons) ────────────────
+    // Mapping to the three directions surveyed in our related works:
+    //
+    //   MAS-based (PIBT) [Okumura+2022]:
+    //     PIBT     — priority-based: least-loaded eligible agent wins.
+    //                Captures PIBT priority-coordination spirit, adapted to PDP
+    //                where "priority" = load-balancing instead of grid conflicts.
+    //
+    //   Adaptation/Prevention (congestion-aware MAPP) [Liu, Saha, ...]:
+    //     CongestionAware — picks agent whose route to pickup has the lowest
+    //                       congestion-adjusted (dynamic) cost. Reuses
+    //                       PDPServerMemory::refresh_dynamic_cost / TD-A*.
+    //
+    //   MCA [Chen+2021, ICRA] — Marginal-Cost Assignment adapted for L-GPDP:
+    //     Scans ALL eligible agents and assigns to the one with the minimum
+    //     TRUE marginal insertion cost (cheapest capacity-aware insertion over
+    //     all valid (pos_P, pos_D) positions in the agent's current route).
+    //     Unlike LaCAM (which ignores the existing route) and InsertionGreedy
+    //     (which stops at the first bid above a threshold), MCA gives the
+    //     globally optimal single-task assignment under real route costs.
+    //     RMCA (regret-based variant) is equivalent to MCA in the online
+    //     single-task-at-a-time setting and is therefore not implemented
+    //     separately.
+    //
+    //   TrafficFlow [Chen+2024, AAAI] — GP-PIBT routing adapted for L-GPDP:
+    //     Extends CongestionAware by using the congestion-adjusted (dynamic)
+    //     cost for BOTH the current→pickup leg AND the pickup→delivery leg.
+    //     CongestionAware only congestion-weights the first leg; TrafficFlow
+    //     captures the full planned trip cost under current traffic conditions,
+    //     mapping to the "guide path" spirit of GP-PIBT without requiring a
+    //     grid map or explicit flow-refinement iterations.
+    //
+    //   PIBT-Matsui [Matsui+2025] — NOT adapted: requires a biconnected grid
+    //     graph with dead-end aisles and physical agent collisions, none of
+    //     which apply to OSM road-network delivery. The load-balancing intent
+    //     is already covered by the PIBT baseline above.
+    //
+    //   Token Passing [Ma+2017, AAMAS] — decoupled MAPD adapted for L-GPDP:
+    //     In the original TP, agents take turns holding a shared token; the
+    //     token holder picks the task with the smallest h(loc(a), pickup) from
+    //     the set of unassigned tasks whose pickup/delivery is not blocked by
+    //     another agent's planned path. In our online single-task arrival
+    //     setting, this reduces to: for each arriving task, assign it to the
+    //     agent with minimum static A* distance from current_node to pickup.
+    //     The collision-filter T' from the paper is trivial in our model
+    //     (no physical collisions on OSM road networks). The well-formed
+    //     instance hypothesis (non-task endpoints for parking) is not needed
+    //     either — capacity is enforced by receive_task() and lifelong
+    //     idle-rest is handled implicitly (idle agents stay at their last
+    //     delivered node). TPTS (Task Swaps) is omitted: in online single-
+    //     task arrival, the swap reduces to "pick the agent with min h" —
+    //     identical to TP unless we batch multiple arriving tasks, which we
+    //     don't. TP differs from LaCAM (which uses c_pu + c_del) by using
+    //     only the pickup-leg cost, matching the paper's h-value criterion.
+    //
+    // LaCAM was dropped from the comparison set in favour of MAPPER, which
+    // is more relevant in the RL category and gives a meaningful axis of
+    // comparison against MAPPO's centralised-critic design.
+    LaCAM,            // kept in the enum for source compatibility (unused branch)
+    PIBT,
+    CongestionAware,
+    MCA,              // [Chen+2021] true marginal-cost assignment over all agents
+    TrafficFlow,      // [Chen+2024] GP-PIBT spirit: full-trip congestion-aware cost
+    TokenPassing      // [Ma+2017]   decoupled MAPD: min h(current, pickup) selection
 };
 
 class EpisodeRunner {
@@ -71,7 +169,9 @@ public:
     // Run one complete episode.
     //   city_index  : index of this city in the full registry (for city_id_norm feature).
     //   num_cities  : total number of cities (for normalisation).
-    RunResult run(int city_index = 0, int num_cities = 1);
+    //   scenario    : optional difficulty multipliers (density × agents). Default = 1.0/1.0.
+    RunResult run(int city_index = 0, int num_cities = 1,
+                  EpisodeScenario scenario = {});
 
 private:
     const EpisodeConfig& cfg_;
@@ -103,23 +203,41 @@ private:
     std::vector<ScheduledArrival> arrivals_;
 
     // Running accumulators reset in run().
-    int  n_accepted_     = 0;
-    int  n_refused_      = 0;
-    long latency_sum_    = 0;
-    int  latency_count_  = 0;
-    int  active_sum_     = 0;
-    int  active_steps_   = 0;
+    int   n_accepted_     = 0;
+    int   n_refused_      = 0;
+    long  latency_sum_    = 0;
+    int   latency_count_  = 0;
+    int   active_sum_     = 0;
+    int   active_steps_   = 0;
+
+    // Running mean of reward_original / insertion_cost (m) for delivered tasks.
+    // Feeds GlobalState::avg_efficiency so the critic gets a real route-quality
+    // signal instead of the 0-placeholder previously used.
+    double efficiency_sum_   = 0.0;
+    int    efficiency_count_ = 0;
+
+    // Congestion level (mean edge load) accumulated per step — used to compute
+    // mean_congestion for the episode-level metric logged to CSV.
+    double congestion_sum_   = 0.0;
+    int    congestion_steps_ = 0;
+
+    // Pickup→delivery traversal time (steps) for completed tasks.
+    // mean_trip_steps = trip_sum_ / trip_count_ at episode end.
+    long   trip_sum_         = 0;
+    int    trip_count_       = 0;
 
     // Result of offering a task.
     //   agent_id  : winning agent (>= 0) or -1 if refused
     //   tam_owned : true if the TAM already performed assign_task + receive_task
-    //               + commit_plan inside offer_to_agent (MAPPO path). The caller
-    //               must skip those operations to avoid double-bookkeeping.
+    //               + commit_plan inside offer_to_agent (MAPPO/TamAlwaysAccept path).
+    //               The caller must skip those operations to avoid double-bookkeeping.
     struct OfferResult { int agent_id; bool tam_owned; };
 
     // Offer task following the policy_mode protocol:
-    //   MAPPO            → drive the real TAM (two Dijkstra + consensus + recall)
-    //   Greedy/Random/IG → simple capacity-based sequential scan
+    //   MAPPO/TamAlwaysAccept → drive the TAM (incremental Dijkstra from pickup
+    //                            and delivery; agents discovered via objective
+    //                            nodes of their assigned tasks).
+    //   Greedy/Random/IG      → simple capacity-based sequential scan.
     OfferResult offer_task(int task_id, float reward, float importance, int n_active,
                            const std::array<float, kGlobSz>& gs);
 
@@ -145,6 +263,12 @@ private:
     // Haversine-based fallback cost (road-factor adjusted) when A* fails.
     float fallback_cost(osmium::object_id_type from,
                         osmium::object_id_type to) const;
+
+    // Dry-run cheapest insertion: returns the minimum route-cost delta incurred
+    // by inserting task into agent a's current sequence, without modifying it.
+    // Mirrors DeliveryAgent::receive_task() capacity-aware (pos_P, pos_D) search.
+    // Used by PolicyMode::MCA to pick the globally best agent per arriving task.
+    float compute_marginal_cost(const DeliveryAgent& a, const PDPTask& task);
 
     // Process all due arrivals (arrival_step <= current_step).
     void process_arrivals(int current_step);

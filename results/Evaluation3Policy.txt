@@ -1,0 +1,1607 @@
+[s0 r0  MAPPO]  thr=0.316547  acc=0.928058  aloss=-0.0230508  closs=11.5542  ent=0.693101  kl=-0.000429269  cf=0  ep=10/10  n=290  29996ms
+  [s0 r0  IPPO]  thr=0.429907  acc=0.841121  aloss=0.00137718  closs=4.18745  ent=0.693147  kl=0.000165173  cf=0  ep=10/10  n=157  5859ms
+  [s0 r0  MAPPER]  thr=0.479675  acc=0.951219  aloss=-0.0142225  closs=3.24369  ent=0.693138  kl=0.000374107  cf=0  ep=6/10  n=220  5990ms
+  [s0 r0  MAPPO]  thr=0.0675676  acc=0.756757  aloss=0.00310221  closs=91.4213  ent=0.692555  kl=6.89658e-05  cf=0  ep=10/10  n=114  349650ms
+  [s0 r0  IPPO]  thr=0.1375  acc=0.7875  aloss=0.00785137  closs=20.1192  ent=0.693142  kl=-0.000192764  cf=0  ep=10/10  n=133  44354ms
+  [s0 r0  MAPPER]  thr=0.242857  acc=0.814286  aloss=0.0650053  closs=23.5065  ent=0.693053  kl=-0.000419852  cf=0  ep=4/10  n=108  15752ms
+  [s0 r0  MAPPO]  thr=0.188406  acc=0.891304  aloss=-0.0135027  closs=18.5328  ent=0.691946  kl=0.000305168  cf=0  ep=10/10  n=238  33847ms
+  [s0 r0  IPPO]  thr=0.442748  acc=0.946565  aloss=-0.000326785  closs=4.53718  ent=0.693132  kl=0.000226104  cf=0  ep=10/10  n=255  7353ms
+  [s0 r0  MAPPER]  thr=0.409836  acc=0.97541  aloss=0.0374684  closs=14.8253  ent=0.693065  kl=0.000114111  cf=0  ep=6/10  n=223  7392ms
+  [s0 r0  MAPPO]  thr=0.0119048  acc=0.833333  aloss=0.0184112  closs=114.472  ent=0.690388  kl=0.000252156  cf=0  ep=10/10  n=144  145071ms
+  [s0 r0  IPPO]  thr=0.156627  acc=0.843373  aloss=-0.000337996  closs=33.277  ent=0.693124  kl=-0.000610209  cf=0  ep=10/10  n=147  140606ms
+  [s0 r0  MAPPER]  thr=0.142857  acc=0.857143  aloss=-0.024154  closs=43.2342  ent=0.692952  kl=-0.000763607  cf=0  ep=2/10  n=103  26965ms
+  [s0 r0  MAPPO]  thr=0.0875912  acc=0.912409  aloss=0.00856555  closs=26.9792  ent=0.687814  kl=0.000579244  cf=0  ep=10/10  n=267  85358ms
+  [s0 r0  IPPO]  thr=0.286957  acc=0.93913  aloss=-0.00160725  closs=11.038  ent=0.693132  kl=0.000236186  cf=0  ep=10/10  n=238  19517ms
+  [s0 r0  MAPPER]  thr=0.296  acc=0.96  aloss=0.00548207  closs=14.3891  ent=0.693009  kl=0.000203642  cf=0  ep=5/10  n=230  35243ms
+  [s0 r0  MAPPO]  thr=0.130952  acc=0.928571  aloss=-0.0808742  closs=48.255  ent=0.68293  kl=0.0014927  cf=0  ep=10/10  n=161  65919ms
+  [s0 r0  IPPO]  thr=0.217949  acc=0.846154  aloss=-0.0003862  closs=9.58102  ent=0.69313  kl=8.09001e-05  cf=0  ep=10/10  n=128  13600ms
+  [s0 r0  MAPPER]  thr=0.202532  acc=0.898734  aloss=0.033472  closs=59.5263  ent=0.693006  kl=0.000969774  cf=0  ep=7/10  n=135  87927ms
+  [s0 r1  MAPPO]  thr=0.342282  acc=0.966443  aloss=0.00192349  closs=11.0796  ent=0.683752  kl=2.78595e-05  cf=0  ep=10/10  n=328  36238ms
+  [s0 r1  IPPO]  thr=0.390244  acc=0.894309  aloss=0.00200524  closs=3.496  ent=0.693138  kl=0.000294498  cf=0  ep=10/10  n=236  13454ms
+  [s0 r1  MAPPER]  thr=0.541353  acc=0.962406  aloss=-0.00748649  closs=9.32095  ent=0.692986  kl=-9.18528e-05  cf=0  ep=6/10  n=242  29031ms
+  [s0 r1  MAPPO]  thr=0.2125  acc=0.9  aloss=-0.0099446  closs=63.5663  ent=0.682731  kl=0.00113907  cf=0  ep=10/10  n=149  167814ms
+  [s0 r1  IPPO]  thr=0.236111  acc=0.888889  aloss=1.40443e-05  closs=9.32617  ent=0.693147  kl=4.56544e-06  cf=0  ep=10/10  n=128  34482ms
+  [s0 r1  MAPPER]  thr=0.322581  acc=0.919355  aloss=0.0192996  closs=66.5673  ent=0.692879  kl=0.000457012  cf=0  ep=7/10  n=125  132324ms
+  [s0 r1  MAPPO]  thr=0.328125  acc=0.914062  aloss=-0.000170443  closs=10.5465  ent=0.680384  kl=-8.7701e-05  cf=0  ep=10/10  n=278  27714ms
+  [s0 r1  IPPO]  thr=0.478571  acc=0.978571  aloss=-0.000704799  closs=4.62839  ent=0.693137  kl=0.000497608  cf=0  ep=10/10  n=250  6022ms
+  [s0 r1  MAPPER]  thr=0.536765  acc=0.963235  aloss=-0.0755498  closs=8.81862  ent=0.69294  kl=-0.00020638  cf=0  ep=6/10  n=230  13030ms
+  [s0 r1  MAPPO]  thr=0.075  acc=0.7875  aloss=0.00203581  closs=35.9746  ent=0.670426  kl=-0.00163037  cf=0  ep=10/10  n=175  48185ms
+  [s0 r1  IPPO]  thr=0.154762  acc=0.892857  aloss=0.0467176  closs=21.6074  ent=0.693085  kl=9.70166e-05  cf=0  ep=10/10  n=138  98714ms
+  [s0 r1  MAPPER]  thr=0.105882  acc=0.941176  aloss=-0.0534755  closs=78.7928  ent=0.692831  kl=0.00218272  cf=0  ep=2/10  n=150  311566ms
+  [s0 r1  MAPPO]  thr=0.44186  acc=0.953488  aloss=-0.0412658  closs=10.8832  ent=0.676184  kl=0.00182536  cf=0  ep=10/10  n=324  22664ms
+  [s0 r1  IPPO]  thr=0.410959  acc=0.972603  aloss=-9.23653e-05  closs=4.41103  ent=0.693114  kl=1.34027e-05  cf=0  ep=10/10  n=288  17707ms
+  [s0 r1  MAPPER]  thr=0.362963  acc=0.925926  aloss=-0.0545101  closs=13.1501  ent=0.692344  kl=0.000268604  cf=0  ep=6/10  n=257  17572ms
+  [s0 r1  MAPPO]  thr=0.218391  acc=0.896552  aloss=-0.00307094  closs=28.3541  ent=0.676446  kl=0.00101199  cf=0  ep=10/10  n=175  40941ms
+  [s0 r1  IPPO]  thr=0.258427  acc=0.966292  aloss=0.0137668  closs=8.66515  ent=0.69307  kl=0.000306217  cf=0  ep=10/10  n=168  64178ms
+  [s0 r1  MAPPER]  thr=0.3  acc=0.914286  aloss=-0.022843  closs=36.6262  ent=0.69296  kl=5.31103e-05  cf=0  ep=8/10  n=111  43259ms
+  [s0 r2  MAPPO]  thr=0.376  acc=0.928  aloss=0.000105239  closs=8.8018  ent=0.677563  kl=6.30741e-05  cf=0  ep=10/10  n=256  11864ms
+  [s0 r2  IPPO]  thr=0.354331  acc=0.96063  aloss=-0.00903105  closs=6.18244  ent=0.692928  kl=8.38203e-05  cf=0  ep=10/10  n=245  10720ms
+  [s0 r2  MAPPER]  thr=0.384615  acc=0.940171  aloss=0.000846167  closs=9.17269  ent=0.692161  kl=-7.05134e-05  cf=0  ep=6/10  n=190  6705ms
+  [s0 r2  MAPPO]  thr=0.304348  acc=0.869565  aloss=-0.00262379  closs=22.458  ent=0.6744  kl=-0.000101002  cf=0  ep=10/10  n=154  54888ms
+  [s0 r2  IPPO]  thr=0.506329  acc=0.924051  aloss=0.0408224  closs=4.74543  ent=0.692653  kl=0.000374018  cf=0  ep=10/10  n=131  24571ms
+  [s0 r2  MAPPER]  thr=0.376812  acc=0.942029  aloss=-0.00831737  closs=19.2414  ent=0.692071  kl=-0.000129476  cf=0  ep=8/10  n=121  27272ms
+  [s0 r2  MAPPO]  thr=0.41129  acc=0.959677  aloss=-0.0127467  closs=8.41287  ent=0.682212  kl=0.00173611  cf=0  ep=10/10  n=298  9847ms
+  [s0 r2  IPPO]  thr=0.415254  acc=0.949153  aloss=-0.0136651  closs=5.04401  ent=0.692281  kl=0.000244838  cf=0  ep=10/10  n=227  10936ms
+  [s0 r2  MAPPER]  thr=0.452381  acc=0.968254  aloss=0.0241604  closs=8.83356  ent=0.692375  kl=0.000145214  cf=0  ep=6/10  n=220  11638ms
+  [s0 r2  MAPPO]  thr=0.205882  acc=0.838235  aloss=-0.0109442  closs=31.4079  ent=0.68389  kl=-0.000111581  cf=0  ep=10/10  n=110  16405ms
+  [s0 r2  IPPO]  thr=0.111111  acc=0.922222  aloss=-0.00557712  closs=30.9979  ent=0.69087  kl=-0.000452991  cf=0  ep=10/10  n=184  74708ms
+  [s0 r2  MAPPER]  thr=0.197368  acc=0.907895  aloss=-0.0131352  closs=20.5438  ent=0.691253  kl=0.00059608  cf=0  ep=3/10  n=120  25088ms
+  [s0 r2  MAPPO]  thr=0.396552  acc=0.913793  aloss=0.000917514  closs=9.32119  ent=0.687897  kl=0.00153413  cf=0  ep=10/10  n=267  16149ms
+  [s0 r2  IPPO]  thr=0.567797  acc=0.974576  aloss=-0.00991491  closs=3.24877  ent=0.691111  kl=-6.85825e-05  cf=0  ep=10/10  n=240  10277ms
+  [s0 r2  MAPPER]  thr=0.253731  acc=0.962687  aloss=0.00287462  closs=17.7828  ent=0.692493  kl=8.63999e-05  cf=0  ep=5/10  n=263  50951ms
+  [s0 r2  MAPPO]  thr=0.403226  acc=0.951613  aloss=0.00393161  closs=9.48892  ent=0.689237  kl=-0.000120312  cf=0  ep=10/10  n=125  16552ms
+  [s0 r2  IPPO]  thr=0.472973  acc=0.959459  aloss=-0.00753986  closs=9.59465  ent=0.690976  kl=1.26776e-05  cf=0  ep=10/10  n=155  15760ms
+  [s0 r2  MAPPER]  thr=0.292135  acc=0.853933  aloss=-0.0108667  closs=19.2117  ent=0.692607  kl=0.000565426  cf=0  ep=10/10  n=149  12092ms
+  [s0 r3  MAPPO]  thr=0.444444  acc=0.968254  aloss=0.0159421  closs=11.6874  ent=0.690269  kl=0.000135116  cf=0  ep=10/10  n=290  19716ms
+  [s0 r3  IPPO]  thr=0.422414  acc=0.931035  aloss=-0.00255407  closs=2.60485  ent=0.691533  kl=2.05557e-05  cf=0  ep=10/10  n=234  17572ms
+  [s0 r3  MAPPER]  thr=0.294643  acc=0.892857  aloss=-0.00382869  closs=10.2936  ent=0.691817  kl=0.000243158  cf=0  ep=6/10  n=194  13577ms
+  [s0 r3  MAPPO]  thr=0.394366  acc=0.901408  aloss=-0.0164698  closs=26.3105  ent=0.690733  kl=0.000305675  cf=0  ep=10/10  n=137  27421ms
+  [s0 r3  IPPO]  thr=0.370968  acc=0.919355  aloss=0.0218862  closs=7.42918  ent=0.690875  kl=-0.00105984  cf=0  ep=10/10  n=131  18424ms
+  [s0 r3  MAPPER]  thr=0.380952  acc=0.888889  aloss=-0.00251127  closs=8.11244  ent=0.692036  kl=0.000169051  cf=0  ep=8/10  n=116  13157ms
+  [s0 r3  MAPPO]  thr=0.480916  acc=0.938931  aloss=-0.000425475  closs=5.37167  ent=0.69219  kl=0.000667212  cf=0  ep=10/10  n=288  6815ms
+  [s0 r3  IPPO]  thr=0.423729  acc=0.983051  aloss=-9.53636e-05  closs=5.10612  ent=0.69052  kl=0.000187425  cf=0  ep=10/10  n=223  7803ms
+  [s0 r3  MAPPER]  thr=0.525862  acc=0.965517  aloss=0.00522732  closs=7.56594  ent=0.692059  kl=0.000141883  cf=0  ep=6/10  n=219  4019ms
+  [s0 r3  MAPPO]  thr=0.125  acc=0.863636  aloss=0.0543299  closs=54.0172  ent=0.691594  kl=-0.000336022  cf=0  ep=10/10  n=168  39453ms
+  [s0 r3  IPPO]  thr=0.189189  acc=0.864865  aloss=0.0023457  closs=18.6903  ent=0.689034  kl=-0.000124011  cf=0  ep=10/10  n=142  30338ms
+  [s0 r3  MAPPER]  thr=0.295082  acc=0.901639  aloss=-3.61948e-05  closs=12.4071  ent=0.691181  kl=0.000289462  cf=0  ep=6/10  n=91  17208ms
+  [s0 r3  MAPPO]  thr=0.41791  acc=0.91791  aloss=-0.0146545  closs=5.68859  ent=0.690799  kl=0.00161054  cf=0  ep=10/10  n=238  6465ms
+  [s0 r3  IPPO]  thr=0.459459  acc=0.963964  aloss=-0.000462327  closs=5.7301  ent=0.689736  kl=0.000440201  cf=0  ep=10/10  n=256  11585ms
+  [s0 r3  MAPPER]  thr=0.576087  acc=0.945652  aloss=0.033821  closs=3.85844  ent=0.690941  kl=0.000497799  cf=0  ep=6/10  n=178  2636ms
+  [s0 r3  MAPPO]  thr=0.283784  acc=0.837838  aloss=-0.0488948  closs=20.2372  ent=0.688186  kl=0.000321377  cf=0  ep=10/10  n=130  15234ms
+  [s0 r3  IPPO]  thr=0.457143  acc=0.9  aloss=1.24052e-05  closs=7.88748  ent=0.689717  kl=-7.193e-05  cf=0  ep=10/10  n=128  27315ms
+  [s0 r3  MAPPER]  thr=0.3  acc=0.871429  aloss=-0.00755707  closs=22.2347  ent=0.692192  kl=0.000435344  cf=0  ep=9/10  n=125  23885ms
+  [s0 r4  MAPPO]  thr=0.265152  acc=0.954545  aloss=-0.00565901  closs=17.6664  ent=0.684371  kl=0.00347304  cf=0  ep=10/10  n=250  30134ms
+  [s0 r4  IPPO]  thr=0.323308  acc=0.977444  aloss=-0.00876531  closs=5.22197  ent=0.690086  kl=-3.6954e-05  cf=0  ep=10/10  n=303  24376ms
+  [s0 r4  MAPPER]  thr=0.512  acc=0.936  aloss=0.0112235  closs=7.36766  ent=0.690618  kl=-0.000354373  cf=0  ep=6/10  n=231  6576ms
+  [s0 r4  MAPPO]  thr=0.319444  acc=0.777778  aloss=-0.00141946  closs=20.0821  ent=0.680205  kl=-0.00021961  cf=0  ep=10/10  n=126  19918ms
+  [s0 r4  IPPO]  thr=0.430556  acc=0.888889  aloss=0.000461095  closs=8.43305  ent=0.689501  kl=0.000192962  cf=0  ep=10/10  n=125  131268ms
+  [s0 r4  MAPPER]  thr=0.460526  acc=0.934211  aloss=-0.00118733  closs=7.78388  ent=0.691482  kl=5.56865e-05  cf=0  ep=8/10  n=126  13269ms
+  [s0 r4  MAPPO]  thr=0.382114  acc=0.98374  aloss=-0.00428594  closs=10.0235  ent=0.683595  kl=-3.84371e-05  cf=0  ep=10/10  n=269  7305ms
+  [s0 r4  IPPO]  thr=0.485981  acc=0.934579  aloss=0.010583  closs=2.63009  ent=0.690195  kl=-4.28438e-05  cf=0  ep=10/10  n=242  3556ms
+  [s0 r4  MAPPER]  thr=0.423358  acc=0.948905  aloss=0.0131906  closs=10.5275  ent=0.689641  kl=0.000485146  cf=0  ep=6/10  n=253  37034ms
+  [s0 r4  MAPPO]  thr=0.271429  acc=0.957143  aloss=-0.0106254  closs=31.8475  ent=0.677807  kl=-0.00235235  cf=0  ep=10/10  n=184  27340ms
+  [s0 r4  IPPO]  thr=0.355263  acc=0.907895  aloss=-0.00665563  closs=7.21965  ent=0.688965  kl=1.56506e-05  cf=0  ep=10/10  n=150  14424ms
+  [s0 r4  MAPPER]  thr=0.358974  acc=0.948718  aloss=0.000396171  closs=11.735  ent=0.690982  kl=0.000402573  cf=0  ep=7/10  n=136  16074ms
+  [s0 r4  MAPPO]  thr=0.395161  acc=0.959677  aloss=-0.0097992  closs=12.8819  ent=0.676178  kl=-0.000104539  cf=0  ep=10/10  n=263  9977ms
+  [s0 r4  IPPO]  thr=0.459459  acc=0.963964  aloss=-0.00262115  closs=2.87473  ent=0.689116  kl=-0.000126307  cf=0  ep=10/10  n=251  15741ms
+  [s0 r4  MAPPER]  thr=0.355932  acc=0.923729  aloss=0.000501699  closs=15.7108  ent=0.691432  kl=-2.61147e-05  cf=0  ep=5/10  n=195  13718ms
+  [s0 r4  MAPPO]  thr=0.283951  acc=0.91358  aloss=0.0173839  closs=26.1606  ent=0.670597  kl=-0.00123495  cf=0  ep=10/10  n=203  28095ms
+  [s0 r4  IPPO]  thr=0.392857  acc=0.928571  aloss=-0.046502  closs=6.55603  ent=0.687953  kl=0.000152861  cf=0  ep=10/10  n=107  12227ms
+  [s0 r4  MAPPER]  thr=0.291667  acc=0.833333  aloss=-0.033219  closs=18.3486  ent=0.691051  kl=0.000141114  cf=0  ep=7/10  n=118  23243ms
+  [MAPPER-Ev @ round 5] mutated 4/18 policies
+  [s0 r5  MAPPO]  thr=0.561538  acc=0.961538  aloss=-0.00313401  closs=6.99166  ent=0.6737  kl=0.00212373  cf=0  ep=10/10  n=376  6773ms
+  [s0 r5  IPPO]  thr=0.295082  acc=0.92623  aloss=-0.00481151  closs=6.20964  ent=0.688092  kl=-4.31137e-05  cf=0  ep=10/10  n=245  30405ms
+  [s0 r5  MAPPER]  thr=0.414062  acc=0.921875  aloss=0.00712257  closs=8.06885  ent=0.690723  kl=0.000210541  cf=0  ep=5/10  n=211  10890ms
+  [s0 r5  MAPPO]  thr=0.509091  acc=0.763636  aloss=-0.0841525  closs=8.533  ent=0.673164  kl=-1.93272e-06  cf=0  ep=10/10  n=102  11953ms
+  [s0 r5  IPPO]  thr=0.329268  acc=0.914634  aloss=0.0136268  closs=12.5626  ent=0.686702  kl=0.001592  cf=0  ep=10/10  n=142  42917ms
+  [s0 r5  MAPPER]  thr=0.45679  acc=0.925926  aloss=-0.00221271  closs=20.0697  ent=0.688122  kl=0.000143962  cf=0  ep=8/10  n=130  17883ms
+  [s0 r5  MAPPO]  thr=0.34375  acc=0.984375  aloss=-0.0174739  closs=15.4087  ent=0.669668  kl=0.00134393  cf=0  ep=10/10  n=299  15329ms
+  [s0 r5  IPPO]  thr=0.370968  acc=0.983871  aloss=0.00470275  closs=3.78288  ent=0.68503  kl=-0.000656532  cf=0  ep=10/10  n=300  23439ms
+  [s0 r5  MAPPER]  thr=0.215827  acc=0.978417  aloss=-0.0314194  closs=19.0123  ent=0.68731  kl=0.000698028  cf=0  ep=6/10  n=265  46046ms
+  [s0 r5  MAPPO]  thr=0.393939  acc=0.757576  aloss=0.00321496  closs=19.1214  ent=0.661632  kl=-9.2383e-05  cf=0  ep=10/10  n=122  7666ms
+  [s0 r5  IPPO]  thr=0.302326  acc=0.906977  aloss=-0.00393827  closs=8.41463  ent=0.679361  kl=0.00012968  cf=0  ep=10/10  n=184  85578ms
+  [s0 r5  MAPPER]  thr=0.288889  acc=0.933333  aloss=0.0305502  closs=13.0618  ent=0.69056  kl=9.4164e-05  cf=0  ep=6/10  n=160  28386ms
+  [s0 r5  MAPPO]  thr=0.427481  acc=0.954198  aloss=-0.000939842  closs=10.4497  ent=0.667157  kl=-0.000261529  cf=0  ep=10/10  n=311  21850ms
+  [s0 r5  IPPO]  thr=0.41844  acc=0.964539  aloss=-0.00404352  closs=7.22106  ent=0.682225  kl=0.000642641  cf=0  ep=10/10  n=337  21163ms
+  [s0 r5  MAPPER]  thr=0.439189  acc=0.918919  aloss=0.0235031  closs=11.4711  ent=0.689151  kl=0.000243968  cf=0  ep=6/10  n=263  11686ms
+  [s0 r5  MAPPO]  thr=0.484375  acc=0.859375  aloss=-0.00730029  closs=12.1723  ent=0.664845  kl=-0.000638096  cf=0  ep=10/10  n=153  9361ms
+  [s0 r5  IPPO]  thr=0.265823  acc=0.911392  aloss=-0.00492667  closs=8.13448  ent=0.681639  kl=-0.00024064  cf=0  ep=10/10  n=181  52071ms
+  [s0 r5  MAPPER]  thr=0.362319  acc=0.869565  aloss=-0.00228523  closs=12.2366  ent=0.689797  kl=0.000307994  cf=0  ep=8/10  n=136  12029ms
+  [s0 r6  MAPPO]  thr=0.357143  acc=0.944444  aloss=0.000197733  closs=14.3969  ent=0.663675  kl=0.000101352  cf=0  ep=10/10  n=287  16962ms
+  [s0 r6  IPPO]  thr=0.402878  acc=0.956835  aloss=-0.00113815  closs=4.90242  ent=0.68275  kl=-1.64346e-05  cf=0  ep=10/10  n=313  27037ms
+  [s0 r6  MAPPER]  thr=0.382979  acc=0.978723  aloss=0.00356897  closs=10.5036  ent=0.688405  kl=-0.000222999  cf=0  ep=5/10  n=261  19809ms
+  [s0 r6  MAPPO]  thr=0.481013  acc=0.936709  aloss=-0.00276188  closs=16.4142  ent=0.66534  kl=-0.000846315  cf=0  ep=10/10  n=183  17505ms
+  [s0 r6  IPPO]  thr=0.349398  acc=0.903614  aloss=-0.0321942  closs=7.6932  ent=0.680365  kl=0.000298063  cf=0  ep=10/10  n=169  28810ms
+  [s0 r6  MAPPER]  thr=0.391892  acc=0.905405  aloss=-0.00171842  closs=10.9905  ent=0.688419  kl=0.000133551  cf=0  ep=9/10  n=114  12251ms
+  [s0 r6  MAPPO]  thr=0.366667  acc=0.966667  aloss=0.00986003  closs=13.6111  ent=0.671586  kl=0.000101573  cf=0  ep=10/10  n=359  19869ms
+  [s0 r6  IPPO]  thr=0.507692  acc=0.976923  aloss=0.00154565  closs=3.47149  ent=0.681305  kl=5.2804e-05  cf=0  ep=10/10  n=311  11935ms
+  [s0 r6  MAPPER]  thr=0.521739  acc=0.971014  aloss=-0.0717228  closs=4.63733  ent=0.688523  kl=6.10661e-05  cf=0  ep=6/10  n=232  5549ms
+  [s0 r6  MAPPO]  thr=0.426471  acc=0.941176  aloss=-0.00892926  closs=21.5512  ent=0.66845  kl=1.56601e-05  cf=0  ep=10/10  n=147  15158ms
+  [s0 r6  IPPO]  thr=0.424658  acc=0.931507  aloss=0.0614276  closs=4.12216  ent=0.681727  kl=0.000348992  cf=0  ep=10/10  n=167  8351ms
+  [s0 r6  MAPPER]  thr=0.307692  acc=0.907692  aloss=-0.00206457  closs=20.1526  ent=0.69002  kl=-0.00040638  cf=0  ep=8/10  n=107  8076ms
+  [s0 r6  MAPPO]  thr=0.487805  acc=0.951219  aloss=0.00127216  closs=11.1221  ent=0.672936  kl=-0.00117479  cf=0  ep=10/10  n=253  13184ms
+  [s0 r6  IPPO]  thr=0.315385  acc=0.938462  aloss=0.000432649  closs=6.63878  ent=0.683676  kl=-5.71713e-05  cf=0  ep=10/10  n=282  16533ms
+  [s0 r6  MAPPER]  thr=0.478992  acc=0.94958  aloss=-0.00169277  closs=6.89178  ent=0.687942  kl=0.000171931  cf=0  ep=6/10  n=203  11579ms
+  [s0 r6  MAPPO]  thr=0.269231  acc=0.846154  aloss=0.016584  closs=39.4312  ent=0.669847  kl=-4.43456e-05  cf=0  ep=10/10  n=168  44822ms
+  [s0 r6  IPPO]  thr=0.355263  acc=0.907895  aloss=0.00119254  closs=8.26878  ent=0.682788  kl=-1.67555e-05  cf=0  ep=10/10  n=152  16634ms
+  [s0 r6  MAPPER]  thr=0.413333  acc=0.84  aloss=0.0186936  closs=15.0685  ent=0.688243  kl=0.000205607  cf=0  ep=9/10  n=121  15932ms
+  [s0 r7  MAPPO]  thr=0.372881  acc=0.983051  aloss=-0.00238009  closs=17.0654  ent=0.670572  kl=0.000194603  cf=0  ep=10/10  n=307  56110ms
+  [s0 r7  IPPO]  thr=0.298246  acc=0.95614  aloss=0.0822946  closs=3.81398  ent=0.683352  kl=-0.000433183  cf=0  ep=10/10  n=289  27874ms
+  [s0 r7  MAPPER]  thr=0.361905  acc=0.904762  aloss=-0.0195164  closs=9.7666  ent=0.684897  kl=0.000100064  cf=0  ep=6/10  n=173  10433ms
+  [s0 r7  MAPPO]  thr=0.453333  acc=0.933333  aloss=-0.0171784  closs=10.1394  ent=0.672238  kl=0.000271665  cf=0  ep=10/10  n=166  17534ms
+  [s0 r7  IPPO]  thr=0.538462  acc=0.871795  aloss=0.00473259  closs=3.57506  ent=0.682815  kl=5.63017e-05  cf=0  ep=10/10  n=150  10713ms
+  [s0 r7  MAPPER]  thr=0.432432  acc=0.905405  aloss=-0.00210724  closs=5.99283  ent=0.689157  kl=0.00019952  cf=0  ep=8/10  n=129  13554ms
+  [s0 r7  MAPPO]  thr=0.416  acc=0.976  aloss=-0.00139587  closs=19.6553  ent=0.668855  kl=0.00112205  cf=0  ep=10/10  n=248  28212ms
+  [s0 r7  IPPO]  thr=0.419118  acc=0.977941  aloss=0.00220854  closs=6.27054  ent=0.683307  kl=-8.01339e-06  cf=0  ep=10/10  n=306  11578ms
+  [s0 r7  MAPPER]  thr=0.495575  acc=0.938053  aloss=-0.0469109  closs=5.16112  ent=0.687487  kl=0.000104877  cf=0  ep=6/10  n=187  4630ms
+  [s0 r7  MAPPO]  thr=0.328125  acc=0.828125  aloss=-0.0270141  closs=16.3643  ent=0.6669  kl=0.000624831  cf=0  ep=10/10  n=165  19510ms
+  [s0 r7  IPPO]  thr=0.363636  acc=0.920455  aloss=-0.0204392  closs=8.6845  ent=0.682198  kl=-0.000156542  cf=0  ep=10/10  n=199  11686ms
+  [s0 r7  MAPPER]  thr=0.381579  acc=0.907895  aloss=-0.00298128  closs=14.9833  ent=0.689412  kl=0.000209387  cf=0  ep=7/10  n=122  11486ms
+  [s0 r7  MAPPO]  thr=0.349206  acc=0.992063  aloss=-0.00105003  closs=13.3503  ent=0.669136  kl=8.26019e-05  cf=0  ep=10/10  n=316  43940ms
+  [s0 r7  IPPO]  thr=0.528926  acc=0.933884  aloss=-0.0259245  closs=1.75032  ent=0.683272  kl=0.000101673  cf=0  ep=10/10  n=238  11875ms
+  [s0 r7  MAPPER]  thr=0.528  acc=0.944  aloss=0.0102757  closs=6.23273  ent=0.685338  kl=5.39504e-05  cf=0  ep=6/10  n=232  5748ms
+  [s0 r7  MAPPO]  thr=0.458333  acc=0.861111  aloss=-0.00825832  closs=11.6744  ent=0.670875  kl=0.00331804  cf=0  ep=10/10  n=186  10025ms
+  [s0 r7  IPPO]  thr=0.376623  acc=0.922078  aloss=0.000410348  closs=5.36817  ent=0.68145  kl=0.000157442  cf=0  ep=10/10  n=176  12148ms
+  [s0 r7  MAPPER]  thr=0.403226  acc=0.935484  aloss=-0.0029936  closs=7.6222  ent=0.68009  kl=0.00013826  cf=0  ep=9/10  n=78  9567ms
+  [s0 r8  MAPPO]  thr=0.300813  acc=0.95935  aloss=-0.00637254  closs=14.7341  ent=0.674927  kl=0.000571558  cf=0  ep=10/10  n=271  29005ms
+  [s0 r8  IPPO]  thr=0.348837  acc=0.914729  aloss=0.00505807  closs=4.18345  ent=0.683106  kl=2.36525e-05  cf=0  ep=10/10  n=299  17416ms
+  [s0 r8  MAPPER]  thr=0.401639  acc=0.967213  aloss=0.0177185  closs=6.35791  ent=0.686126  kl=1.451e-05  cf=0  ep=6/10  n=212  7261ms
+  [s0 r8  MAPPO]  thr=0.390625  acc=0.921875  aloss=-0.0333764  closs=13.2502  ent=0.672009  kl=0.000190331  cf=0  ep=10/10  n=141  15417ms
+  [s0 r8  IPPO]  thr=0.470588  acc=0.882353  aloss=0.00862827  closs=6.78191  ent=0.682384  kl=-8.40491e-05  cf=0  ep=10/10  n=181  13296ms
+  [s0 r8  MAPPER]  thr=0.428571  acc=0.942857  aloss=-0.00244888  closs=8.6153  ent=0.684839  kl=-6.82115e-05  cf=0  ep=8/10  n=120  12221ms
+  [s0 r8  MAPPO]  thr=0.567568  acc=0.936937  aloss=0.0527152  closs=7.15133  ent=0.674679  kl=-4.6976e-05  cf=0  ep=10/10  n=258  5272ms
+  [s0 r8  IPPO]  thr=0.467532  acc=0.967532  aloss=0.00630025  closs=4.21695  ent=0.684785  kl=0.000845153  cf=0  ep=10/10  n=363  10853ms
+  [s0 r8  MAPPER]  thr=0.444444  acc=0.982906  aloss=0.040477  closs=8.77295  ent=0.682456  kl=0.000242786  cf=0  ep=6/10  n=220  8637ms
+  [s0 r8  MAPPO]  thr=0.526316  acc=0.947368  aloss=-0.0063742  closs=16.6487  ent=0.675184  kl=0.000813995  cf=0  ep=10/10  n=155  13911ms
+  [s0 r8  IPPO]  thr=0.285714  acc=0.904762  aloss=0.00874351  closs=8.76527  ent=0.685008  kl=0.000556166  cf=0  ep=10/10  n=167  26785ms
+  [s0 r8  MAPPER]  thr=0.367647  acc=0.867647  aloss=-0.0220552  closs=24.8435  ent=0.690473  kl=3.60336e-05  cf=0  ep=7/10  n=112  12989ms
+  [s0 r8  MAPPO]  thr=0.350427  acc=0.940171  aloss=-0.0163172  closs=11.1099  ent=0.673685  kl=2.39402e-05  cf=0  ep=10/10  n=270  18848ms
+  [s0 r8  IPPO]  thr=0.318519  acc=0.918519  aloss=0.0188353  closs=4.44836  ent=0.683814  kl=0.000400863  cf=0  ep=10/10  n=270  36131ms
+  [s0 r8  MAPPER]  thr=0.359649  acc=0.991228  aloss=-0.00783556  closs=14.4495  ent=0.687788  kl=-0.000114594  cf=0  ep=6/10  n=209  25935ms
+  [s0 r8  MAPPO]  thr=0.636364  acc=0.878788  aloss=0.0015841  closs=9.58154  ent=0.673978  kl=0.000121648  cf=0  ep=10/10  n=147  7213ms
+  [s0 r8  IPPO]  thr=0.261905  acc=0.904762  aloss=-0.0389085  closs=11.8818  ent=0.680077  kl=-0.000231875  cf=0  ep=10/10  n=193  33979ms
+  [s0 r8  MAPPER]  thr=0.333333  acc=0.888889  aloss=-0.000795255  closs=15.8188  ent=0.680622  kl=-0.000266986  cf=0  ep=8/10  n=122  15265ms
+  [s0 r9  MAPPO]  thr=0.491935  acc=0.959677  aloss=-0.0227152  closs=9.76503  ent=0.673578  kl=0.000502493  cf=0  ep=10/10  n=293  7886ms
+  [s0 r9  IPPO]  thr=0.445312  acc=0.96875  aloss=0.00246486  closs=5.38987  ent=0.680606  kl=-4.5056e-06  cf=0  ep=10/10  n=281  11986ms
+  [s0 r9  MAPPER]  thr=0.362963  acc=0.97037  aloss=0.00135211  closs=6.58397  ent=0.679918  kl=0.000131828  cf=0  ep=6/10  n=212  8474ms
+  [s0 r9  MAPPO]  thr=0.353846  acc=0.846154  aloss=-0.00397348  closs=7.67173  ent=0.664297  kl=1.82742e-05  cf=0  ep=10/10  n=143  14127ms
+  [s0 r9  IPPO]  thr=0.319444  acc=0.902778  aloss=0.00540909  closs=8.39138  ent=0.677476  kl=-0.000531916  cf=0  ep=10/10  n=186  32351ms
+  [s0 r9  MAPPER]  thr=0.224299  acc=0.859813  aloss=-0.0332306  closs=31.511  ent=0.680724  kl=-4.31267e-05  cf=0  ep=7/10  n=141  36526ms
+  [s0 r9  MAPPO]  thr=0.288136  acc=0.940678  aloss=-0.00819036  closs=11.1558  ent=0.666382  kl=0.00033603  cf=0  ep=10/10  n=270  12384ms
+  [s0 r9  IPPO]  thr=0.311111  acc=0.962963  aloss=-0.00296198  closs=4.48597  ent=0.678461  kl=0.000273747  cf=0  ep=10/10  n=281  14720ms
+  [s0 r9  MAPPER]  thr=0.244094  acc=0.992126  aloss=0.00500402  closs=23.3377  ent=0.683448  kl=-0.000276052  cf=0  ep=6/10  n=216  75102ms
+  [s0 r9  MAPPO]  thr=0.411765  acc=0.941176  aloss=0.0101842  closs=17.0188  ent=0.66243  kl=-4.48788e-05  cf=0  ep=10/10  n=184  10211ms
+  [s0 r9  IPPO]  thr=0.453488  acc=0.906977  aloss=0.00704492  closs=5.08639  ent=0.678642  kl=0.00021129  cf=0  ep=10/10  n=207  7461ms
+  [s0 r9  MAPPER]  thr=0.379747  acc=0.936709  aloss=-0.00806427  closs=13.9234  ent=0.681618  kl=0.000312591  cf=0  ep=9/10  n=145  19860ms
+  [s0 r9  MAPPO]  thr=0.486486  acc=0.945946  aloss=0.00130817  closs=7.30438  ent=0.66666  kl=-0.000311613  cf=0  ep=10/10  n=252  5492ms
+  [s0 r9  IPPO]  thr=0.394958  acc=0.966387  aloss=0.00304841  closs=4.28938  ent=0.678655  kl=3.04885e-05  cf=0  ep=10/10  n=276  23266ms
+  [s0 r9  MAPPER]  thr=0.423358  acc=0.956204  aloss=-0.0760177  closs=11.7075  ent=0.683665  kl=0.000203473  cf=0  ep=5/10  n=227  26981ms
+  [s0 r9  MAPPO]  thr=0.220779  acc=0.896104  aloss=-0.0256495  closs=27.6512  ent=0.661445  kl=-2.42909e-05  cf=0  ep=10/10  n=193  44948ms
+  [s0 r9  IPPO]  thr=0.333333  acc=0.903226  aloss=0.009842  closs=9.91684  ent=0.674034  kl=0.000550975  cf=0  ep=10/10  n=199  93246ms
+  [s0 r9  MAPPER]  thr=0.388235  acc=0.917647  aloss=-0.0126701  closs=11.9109  ent=0.686788  kl=-6.46896e-05  cf=0  ep=9/10  n=137  19438ms
+  [MAPPER-Ev @ round 10] mutated 4/18 policies
+  [s0 r10  MAPPO]  thr=0.554745  acc=0.963504  aloss=-0.00156835  closs=6.68634  ent=0.672075  kl=0.00017335  cf=0  ep=10/10  n=333  9444ms
+  [s0 r10  IPPO]  thr=0.431818  acc=0.863636  aloss=-0.000859684  closs=3.39385  ent=0.677922  kl=-6.83691e-05  cf=0  ep=10/10  n=249  6231ms
+  [s0 r10  MAPPER]  thr=0.423358  acc=0.956204  aloss=0.000981396  closs=8.78076  ent=0.686911  kl=0.000634981  cf=0  ep=6/10  n=236  24740ms
+  [s0 r10  MAPPO]  thr=0.448718  acc=0.897436  aloss=0.146704  closs=30.6822  ent=0.675956  kl=0.000344064  cf=0  ep=10/10  n=194  32867ms
+  [s0 r10  IPPO]  thr=0.413333  acc=0.88  aloss=-0.0331643  closs=6.48819  ent=0.67464  kl=-3.79479e-05  cf=0  ep=10/10  n=164  19675ms
+  [s0 r10  MAPPER]  thr=0.370787  acc=0.910112  aloss=-0.0013474  closs=22.3348  ent=0.683073  kl=0.000215765  cf=0  ep=8/10  n=139  28272ms
+  [s0 r10  MAPPO]  thr=0.34058  acc=0.971014  aloss=-0.00338288  closs=10.6586  ent=0.680876  kl=4.76406e-05  cf=0  ep=10/10  n=310  14431ms
+  [s0 r10  IPPO]  thr=0.480315  acc=0.968504  aloss=0.00462911  closs=4.03356  ent=0.675357  kl=0.000207643  cf=0  ep=10/10  n=281  17312ms
+  [s0 r10  MAPPER]  thr=0.576  acc=0.976  aloss=-0.0618119  closs=6.93241  ent=0.682525  kl=8.50292e-05  cf=0  ep=6/10  n=209  12966ms
+  [s0 r10  MAPPO]  thr=0.265306  acc=0.969388  aloss=-0.00896566  closs=45.681  ent=0.67461  kl=-0.00030369  cf=0  ep=10/10  n=238  123394ms
+  [s0 r10  IPPO]  thr=0.329114  acc=0.898734  aloss=0.0331347  closs=10.9671  ent=0.669763  kl=-0.000141342  cf=0  ep=10/10  n=194  29158ms
+  [s0 r10  MAPPER]  thr=0.488372  acc=0.953488  aloss=-0.00181392  closs=6.77522  ent=0.683482  kl=2.53923e-05  cf=0  ep=9/10  n=130  10816ms
+  [s0 r10  MAPPO]  thr=0.542857  acc=0.964286  aloss=-0.000706502  closs=8.79691  ent=0.674878  kl=-0.000513617  cf=0  ep=10/10  n=315  16654ms
+  [s0 r10  IPPO]  thr=0.57971  acc=0.978261  aloss=-0.00449131  closs=3.6796  ent=0.674418  kl=9.31397e-05  cf=0  ep=10/10  n=342  10690ms
+  [s0 r10  MAPPER]  thr=0.358974  acc=0.974359  aloss=-0.0466985  closs=17.5579  ent=0.683332  kl=-0.000325341  cf=0  ep=5/10  n=208  21887ms
+  [s0 r10  MAPPO]  thr=0.277778  acc=0.911111  aloss=-0.00347521  closs=38.3929  ent=0.673945  kl=-0.000285958  cf=0  ep=10/10  n=184  56881ms
+  [s0 r10  IPPO]  thr=0.434783  acc=0.956522  aloss=-0.000101775  closs=8.33862  ent=0.672412  kl=4.93618e-05  cf=0  ep=10/10  n=159  16794ms
+  [s0 r10  MAPPER]  thr=0.275  acc=0.875  aloss=-0.00648796  closs=33.5268  ent=0.68033  kl=0.000467001  cf=0  ep=8/10  n=122  29247ms
+  [s0 r11  MAPPO]  thr=0.6  acc=0.942857  aloss=-0.00834789  closs=6.17141  ent=0.67958  kl=0.000115574  cf=0  ep=10/10  n=231  4119ms
+  [s0 r11  IPPO]  thr=0.40625  acc=0.921875  aloss=0.0171762  closs=3.97862  ent=0.674482  kl=7.41065e-06  cf=0  ep=10/10  n=298  24838ms
+  [s0 r11  MAPPER]  thr=0.472441  acc=0.96063  aloss=0.0012782  closs=8.43735  ent=0.674133  kl=-0.000142901  cf=0  ep=6/10  n=202  9353ms
+  [s0 r11  MAPPO]  thr=0.414634  acc=0.951219  aloss=0.00211359  closs=10.3354  ent=0.677368  kl=-0.00064878  cf=0  ep=10/10  n=158  21755ms
+  [s0 r11  IPPO]  thr=0.278689  acc=0.885246  aloss=-0.0213843  closs=5.02023  ent=0.671092  kl=-0.000405953  cf=0  ep=10/10  n=143  19301ms
+  [s0 r11  MAPPER]  thr=0.646341  acc=0.963415  aloss=-0.0670117  closs=5.96501  ent=0.679912  kl=2.75973e-05  cf=0  ep=9/10  n=146  13464ms
+  [s0 r11  MAPPO]  thr=0.437956  acc=0.985401  aloss=-0.00811571  closs=10.9845  ent=0.678818  kl=-8.42021e-05  cf=0  ep=10/10  n=308  14635ms
+  [s0 r11  IPPO]  thr=0.484848  acc=0.977273  aloss=-0.00889162  closs=3.27075  ent=0.673734  kl=-0.000281189  cf=0  ep=10/10  n=309  7007ms
+  [s0 r11  MAPPER]  thr=0.304348  acc=0.927536  aloss=-0.011682  closs=16.3871  ent=0.661737  kl=0.000217992  cf=0  ep=6/10  n=223  36767ms
+  [s0 r11  MAPPO]  thr=0.297297  acc=0.959459  aloss=-0.000353298  closs=30.2489  ent=0.677344  kl=-0.000398579  cf=0  ep=10/10  n=158  54434ms
+  [s0 r11  IPPO]  thr=0.57377  acc=0.934426  aloss=-0.0216155  closs=2.1379  ent=0.674276  kl=-9.54945e-05  cf=0  ep=10/10  n=130  5007ms
+  [s0 r11  MAPPER]  thr=0.37931  acc=0.885057  aloss=-0.00229291  closs=7.84362  ent=0.68146  kl=0.000438978  cf=0  ep=9/10  n=129  11952ms
+  [s0 r11  MAPPO]  thr=0.404762  acc=0.97619  aloss=-0.00273144  closs=13.9606  ent=0.682472  kl=-0.000692515  cf=0  ep=10/10  n=272  14267ms
+  [s0 r11  IPPO]  thr=0.462585  acc=0.938776  aloss=0.005204  closs=3.80204  ent=0.676992  kl=-0.000111805  cf=0  ep=10/10  n=331  13034ms
+  [s0 r11  MAPPER]  thr=0.323529  acc=0.955882  aloss=0.00943685  closs=18.5965  ent=0.677259  kl=-7.55143e-05  cf=0  ep=6/10  n=222  66766ms
+  [s0 r11  MAPPO]  thr=0.176471  acc=0.882353  aloss=-0.00539399  closs=52.6662  ent=0.681064  kl=-0.00025793  cf=0  ep=10/10  n=147  53113ms
+  [s0 r11  IPPO]  thr=0.306452  acc=0.935484  aloss=-0.0188328  closs=11.2507  ent=0.673698  kl=-0.000416992  cf=0  ep=10/10  n=164  42060ms
+  [s0 r11  MAPPER]  thr=0.296703  acc=0.934066  aloss=-0.0206167  closs=49.3708  ent=0.68061  kl=0.000618392  cf=0  ep=8/10  n=139  61428ms
+  [s0 r12  MAPPO]  thr=0.430657  acc=0.970803  aloss=-0.00417983  closs=11.3462  ent=0.681966  kl=4.06484e-05  cf=0  ep=10/10  n=358  24727ms
+  [s0 r12  IPPO]  thr=0.410853  acc=0.96124  aloss=-0.0188135  closs=4.05857  ent=0.677903  kl=-2.03936e-05  cf=0  ep=10/10  n=302  14862ms
+  [s0 r12  MAPPER]  thr=0.436975  acc=0.991597  aloss=0.031852  closs=9.72195  ent=0.669844  kl=0.000302996  cf=0  ep=6/10  n=183  14536ms
+  [s0 r12  MAPPO]  thr=0.369863  acc=0.890411  aloss=0.000378993  closs=25.1557  ent=0.679111  kl=0.000492129  cf=0  ep=10/10  n=141  47975ms
+  [s0 r12  IPPO]  thr=0.486842  acc=0.921053  aloss=0.00184677  closs=5.71875  ent=0.676157  kl=6.77029e-05  cf=0  ep=10/10  n=186  19250ms
+  [s0 r12  MAPPER]  thr=0.298507  acc=0.850746  aloss=-0.00575097  closs=20.2953  ent=0.681618  kl=-1.54733e-05  cf=0  ep=7/10  n=107  32101ms
+  [s0 r12  MAPPO]  thr=0.40708  acc=0.955752  aloss=0.00209243  closs=11.6734  ent=0.680228  kl=4.74249e-05  cf=0  ep=10/10  n=236  8749ms
+  [s0 r12  IPPO]  thr=0.389381  acc=0.938053  aloss=-0.0415574  closs=6.74265  ent=0.678517  kl=-1.79226e-06  cf=0  ep=10/10  n=260  10583ms
+  [s0 r12  MAPPER]  thr=0.403361  acc=0.941176  aloss=-0.00119083  closs=17.6474  ent=0.684146  kl=4.22571e-05  cf=0  ep=6/10  n=194  13420ms
+  [s0 r12  MAPPO]  thr=0.461538  acc=0.923077  aloss=-0.013259  closs=15.3442  ent=0.67941  kl=-0.000431123  cf=0  ep=10/10  n=151  11342ms
+  [s0 r12  IPPO]  thr=0.304348  acc=0.927536  aloss=-6.56095e-05  closs=10.3111  ent=0.675947  kl=-3.49492e-05  cf=0  ep=10/10  n=160  14724ms
+  [s0 r12  MAPPER]  thr=0.430556  acc=0.944444  aloss=-0.0017663  closs=10.5216  ent=0.678455  kl=6.0502e-05  cf=0  ep=7/10  n=117  9143ms
+  [s0 r12  MAPPO]  thr=0.356522  acc=0.921739  aloss=0.0247894  closs=10.9368  ent=0.680751  kl=0.000831853  cf=0  ep=10/10  n=231  8437ms
+  [s0 r12  IPPO]  thr=0.327731  acc=0.941176  aloss=0.00853362  closs=5.94175  ent=0.676338  kl=-0.000913056  cf=0  ep=10/10  n=295  16004ms
+  [s0 r12  MAPPER]  thr=0.28777  acc=0.978417  aloss=0.0111104  closs=14.2693  ent=0.673904  kl=-4.24872e-05  cf=0  ep=5/10  n=240  18519ms
+  [s0 r12  MAPPO]  thr=0.355263  acc=0.947368  aloss=-0.00894515  closs=19.4951  ent=0.675195  kl=-5.22005e-06  cf=0  ep=10/10  n=175  25735ms
+  [s0 r12  IPPO]  thr=0.309859  acc=0.915493  aloss=0.00445617  closs=7.44542  ent=0.67044  kl=-0.000198345  cf=0  ep=10/10  n=152  34817ms
+  [s0 r12  MAPPER]  thr=0.462687  acc=0.880597  aloss=-0.00228864  closs=4.84593  ent=0.676161  kl=0.000746371  cf=0  ep=9/10  n=93  8992ms
+  [s0 r13  MAPPO]  thr=0.564885  acc=0.961832  aloss=0.0315519  closs=4.48261  ent=0.680665  kl=-0.000788278  cf=0  ep=10/10  n=291  9260ms
+  [s0 r13  IPPO]  thr=0.386207  acc=0.972414  aloss=-0.00752821  closs=5.78825  ent=0.676038  kl=-0.000334451  cf=0  ep=10/10  n=338  16526ms
+  [s0 r13  MAPPER]  thr=0.4375  acc=0.955357  aloss=-0.0374027  closs=7.4617  ent=0.679609  kl=0.000399651  cf=0  ep=6/10  n=182  12221ms
+  [s0 r13  MAPPO]  thr=0.314286  acc=0.828571  aloss=0.000372182  closs=12.0127  ent=0.682846  kl=-0.00124699  cf=0  ep=10/10  n=121  16024ms
+  [s0 r13  IPPO]  thr=0.347826  acc=0.902174  aloss=-0.00196294  closs=9.31142  ent=0.674903  kl=-0.000276318  cf=0  ep=10/10  n=216  58363ms
+  [s0 r13  MAPPER]  thr=0.21978  acc=0.934066  aloss=0.00799697  closs=54.8196  ent=0.665257  kl=0.000425204  cf=0  ep=8/10  n=140  235324ms
+  [s0 r13  MAPPO]  thr=0.253846  acc=0.984615  aloss=0.0142469  closs=17.1327  ent=0.685883  kl=-2.70465e-05  cf=0  ep=10/10  n=295  36794ms
+  [s0 r13  IPPO]  thr=0.390625  acc=0.929688  aloss=-0.00246435  closs=3.58647  ent=0.676068  kl=-0.000196922  cf=0  ep=10/10  n=297  11484ms
+  [s0 r13  MAPPER]  thr=0.358108  acc=0.966216  aloss=0.000107053  closs=18.7698  ent=0.687298  kl=0.000261785  cf=0  ep=6/10  n=277  84776ms
+  [s0 r13  MAPPO]  thr=0.38961  acc=0.896104  aloss=-0.0114189  closs=16.4792  ent=0.683249  kl=0.00103923  cf=0  ep=10/10  n=146  11969ms
+  [s0 r13  IPPO]  thr=0.321429  acc=0.880952  aloss=0.0111516  closs=5.88927  ent=0.670792  kl=-0.000101453  cf=0  ep=10/10  n=206  15748ms
+  [s0 r13  MAPPER]  thr=0.282353  acc=0.870588  aloss=-0.00131045  closs=9.6978  ent=0.676301  kl=0.000392363  cf=0  ep=7/10  n=124  10568ms
+  [s0 r13  MAPPO]  thr=0.5  acc=0.929688  aloss=-0.00634369  closs=6.80463  ent=0.684496  kl=-7.44933e-05  cf=0  ep=10/10  n=271  7598ms
+  [s0 r13  IPPO]  thr=0.512397  acc=0.950413  aloss=-0.000113561  closs=4.15658  ent=0.675086  kl=-0.0002089  cf=0  ep=10/10  n=268  6221ms
+  [s0 r13  MAPPER]  thr=0.369748  acc=0.932773  aloss=-0.0264297  closs=10.7336  ent=0.682022  kl=-0.000120245  cf=0  ep=6/10  n=182  13183ms
+  [s0 r13  MAPPO]  thr=0.333333  acc=0.884058  aloss=-0.0216454  closs=16.2403  ent=0.683924  kl=0.000124542  cf=0  ep=10/10  n=138  11107ms
+  [s0 r13  IPPO]  thr=0.352113  acc=0.915493  aloss=-0.0214538  closs=9.74627  ent=0.666834  kl=0.000339773  cf=0  ep=10/10  n=164  134262ms
+  [s0 r13  MAPPER]  thr=0.350649  acc=0.883117  aloss=-0.0117189  closs=17.011  ent=0.675641  kl=0.000322159  cf=0  ep=8/10  n=122  25266ms
+  [s0 r14  MAPPO]  thr=0.303704  acc=0.925926  aloss=0.00580801  closs=10.392  ent=0.683244  kl=-0.000190675  cf=0  ep=10/10  n=338  14618ms
+  [s0 r14  IPPO]  thr=0.567797  acc=0.957627  aloss=-0.143117  closs=2.71922  ent=0.674719  kl=-6.36053e-06  cf=0  ep=10/10  n=257  7460ms
+  [s0 r14  MAPPER]  thr=0.435897  acc=0.940171  aloss=-0.0040188  closs=9.23543  ent=0.676743  kl=-7.47393e-05  cf=0  ep=6/10  n=201  6358ms
+  [s0 r14  MAPPO]  thr=0.338028  acc=0.830986  aloss=0.0414681  closs=9.72384  ent=0.681845  kl=9.44401e-05  cf=0  ep=10/10  n=161  17449ms
+  [s0 r14  IPPO]  thr=0.342857  acc=0.914286  aloss=0.00365454  closs=8.56662  ent=0.667817  kl=0.000445271  cf=0  ep=10/10  n=149  34101ms
+  [s0 r14  MAPPER]  thr=0.405797  acc=0.927536  aloss=-0.0745192  closs=8.44353  ent=0.669188  kl=-0.000166102  cf=0  ep=9/10  n=97  26070ms
+  [s0 r14  MAPPO]  thr=0.451613  acc=0.943548  aloss=0.00468828  closs=6.1607  ent=0.685167  kl=0.000225938  cf=0  ep=10/10  n=279  5118ms
+  [s0 r14  IPPO]  thr=0.420168  acc=0.991597  aloss=-0.0183014  closs=4.03388  ent=0.674365  kl=-0.000141021  cf=0  ep=10/10  n=295  13376ms
+  [s0 r14  MAPPER]  thr=0.540323  acc=0.967742  aloss=-0.000431295  closs=7.54261  ent=0.677833  kl=-0.000186471  cf=0  ep=6/10  n=202  9205ms
+  [s0 r14  MAPPO]  thr=0.375  acc=0.863636  aloss=-0.0113928  closs=12.2616  ent=0.684812  kl=-3.9108e-05  cf=0  ep=10/10  n=175  14492ms
+  [s0 r14  IPPO]  thr=0.25  acc=0.777778  aloss=0.0362904  closs=11.3476  ent=0.671473  kl=0.000354001  cf=0  ep=10/10  n=131  33009ms
+  [s0 r14  MAPPER]  thr=0.238636  acc=0.897727  aloss=0.00357657  closs=40.6083  ent=0.674685  kl=-7.57299e-05  cf=0  ep=8/10  n=131  47958ms
+  [s0 r14  MAPPO]  thr=0.576577  acc=0.972973  aloss=-0.00127143  closs=4.85013  ent=0.686878  kl=-0.00039098  cf=0  ep=10/10  n=286  5057ms
+  [s0 r14  IPPO]  thr=0.384615  acc=0.9  aloss=0.00577963  closs=5.04599  ent=0.673008  kl=-0.000151784  cf=0  ep=10/10  n=304  14532ms
+  [s0 r14  MAPPER]  thr=0.569231  acc=0.976923  aloss=-0.0228709  closs=5.32313  ent=0.664829  kl=-0.000303936  cf=0  ep=6/10  n=206  5653ms
+  [s0 r14  MAPPO]  thr=0.361446  acc=0.855422  aloss=-2.4294e-05  closs=36.2642  ent=0.683967  kl=-0.000489501  cf=0  ep=10/10  n=144  34211ms
+  [s0 r14  IPPO]  thr=0.30137  acc=0.863014  aloss=0.0576969  closs=6.34627  ent=0.668465  kl=0.000304828  cf=0  ep=10/10  n=162  36431ms
+  [s0 r14  MAPPER]  thr=0.379747  acc=0.898734  aloss=-0.00266305  closs=18.1718  ent=0.672668  kl=0.000639703  cf=0  ep=7/10  n=121  25403ms
+  [MAPPER-Ev @ round 15] mutated 4/18 policies
+  [s0 r15  MAPPO]  thr=0.423077  acc=0.9  aloss=0.00980502  closs=8.57689  ent=0.685818  kl=-3.90806e-05  cf=0  ep=10/10  n=264  19516ms
+  [s0 r15  IPPO]  thr=0.278196  acc=0.932331  aloss=-0.00336214  closs=5.19543  ent=0.669954  kl=9.89423e-05  cf=0  ep=10/10  n=314  42266ms
+  [s0 r15  MAPPER]  thr=0.449612  acc=0.945736  aloss=-0.0233925  closs=13.2848  ent=0.677535  kl=0.000297185  cf=0  ep=6/10  n=246  14609ms
+  [s0 r15  MAPPO]  thr=0.719298  acc=0.947368  aloss=0.00409895  closs=7.37695  ent=0.685071  kl=0.000272642  cf=0  ep=10/10  n=132  8674ms
+  [s0 r15  IPPO]  thr=0.32967  acc=0.945055  aloss=-0.00444117  closs=10.879  ent=0.65591  kl=-0.000627937  cf=0  ep=10/10  n=252  82626ms
+  [s0 r15  MAPPER]  thr=0.471264  acc=0.908046  aloss=-0.0188776  closs=6.43738  ent=0.682684  kl=0.000286952  cf=0  ep=8/10  n=136  23282ms
+  [s0 r15  MAPPO]  thr=0.440298  acc=0.947761  aloss=0.000268609  closs=7.04727  ent=0.685835  kl=-0.000136394  cf=0  ep=10/10  n=301  7078ms
+  [s0 r15  IPPO]  thr=0.434483  acc=0.951724  aloss=-0.0111263  closs=5.89577  ent=0.664151  kl=0.000336385  cf=0  ep=10/10  n=370  14037ms
+  [s0 r15  MAPPER]  thr=0.5  acc=0.985075  aloss=0.0232102  closs=10.1837  ent=0.672896  kl=-2.10199e-05  cf=0  ep=6/10  n=228  7783ms
+  [s0 r15  MAPPO]  thr=0.477612  acc=0.80597  aloss=0.0322331  closs=9.14539  ent=0.684744  kl=0.00027431  cf=0  ep=10/10  n=130  7300ms
+  [s0 r15  IPPO]  thr=0.36  acc=0.893333  aloss=-0.0059865  closs=6.74187  ent=0.665136  kl=0.000247129  cf=0  ep=10/10  n=183  13223ms
+  [s0 r15  MAPPER]  thr=0.371795  acc=0.884615  aloss=-0.0514446  closs=22.703  ent=0.677294  kl=0.000356059  cf=0  ep=9/10  n=115  15103ms
+  [s0 r15  MAPPO]  thr=0.421488  acc=0.966942  aloss=0.00873906  closs=5.80316  ent=0.687087  kl=2.55159e-05  cf=0  ep=10/10  n=259  15668ms
+  [s0 r15  IPPO]  thr=0.444444  acc=0.940741  aloss=-0.00277097  closs=4.55923  ent=0.668009  kl=-0.000302166  cf=0  ep=10/10  n=343  17014ms
+  [s0 r15  MAPPER]  thr=0.383333  acc=0.941667  aloss=-0.020878  closs=7.41459  ent=0.666693  kl=5.6695e-05  cf=0  ep=6/10  n=201  23821ms
+  [s0 r15  MAPPO]  thr=0.217391  acc=0.913043  aloss=-0.0290317  closs=59.097  ent=0.682057  kl=0.00122188  cf=0  ep=10/10  n=129  103806ms
+  [s0 r15  IPPO]  thr=0.470588  acc=0.882353  aloss=0.0323392  closs=5.07374  ent=0.664196  kl=-0.000302967  cf=0  ep=10/10  n=138  12229ms
+  [s0 r15  MAPPER]  thr=0.263736  acc=0.901099  aloss=-0.0123242  closs=25.3592  ent=0.671957  kl=0.000309448  cf=0  ep=7/10  n=128  47769ms
+  [s0 r16  MAPPO]  thr=0.317829  acc=0.937984  aloss=0.00446073  closs=10.728  ent=0.685144  kl=0.000535601  cf=0  ep=10/10  n=292  19217ms
+  [s0 r16  IPPO]  thr=0.464567  acc=0.92126  aloss=0.0146087  closs=4.3801  ent=0.670297  kl=-0.000663368  cf=0  ep=10/10  n=266  11587ms
+  [s0 r16  MAPPER]  thr=0.539216  acc=0.95098  aloss=-0.000812906  closs=1.43208  ent=0.670308  kl=0.000361862  cf=0  ep=6/10  n=141  4866ms
+  [s0 r16  MAPPO]  thr=0.394366  acc=0.915493  aloss=0.00572673  closs=14.3564  ent=0.68437  kl=-0.000376543  cf=0  ep=10/10  n=162  64629ms
+  [s0 r16  IPPO]  thr=0.343284  acc=0.850746  aloss=0.0353651  closs=5.17084  ent=0.667478  kl=-0.000134713  cf=0  ep=10/10  n=174  20200ms
+  [s0 r16  MAPPER]  thr=0.337662  acc=0.857143  aloss=0.0321851  closs=14.4531  ent=0.685238  kl=-7.01506e-05  cf=0  ep=7/10  n=119  27074ms
+  [s0 r16  MAPPO]  thr=0.485915  acc=0.957747  aloss=0.00138753  closs=6.93592  ent=0.683539  kl=-5.30535e-05  cf=0  ep=10/10  n=328  11696ms
+  [s0 r16  IPPO]  thr=0.328571  acc=0.942857  aloss=0.00513948  closs=6.10154  ent=0.668407  kl=0.000255784  cf=0  ep=10/10  n=328  20448ms
+  [s0 r16  MAPPER]  thr=0.398148  acc=0.981481  aloss=-0.00220589  closs=8.63765  ent=0.66413  kl=-0.000141697  cf=0  ep=5/10  n=176  11731ms
+  [s0 r16  MAPPO]  thr=0.350649  acc=0.87013  aloss=-0.0393934  closs=14.1964  ent=0.681819  kl=4.85278e-05  cf=0  ep=10/10  n=141  10736ms
+  [s0 r16  IPPO]  thr=0.328947  acc=0.921053  aloss=-0.0172916  closs=7.25779  ent=0.663521  kl=0.000160158  cf=0  ep=10/10  n=200  38743ms
+  [s0 r16  MAPPER]  thr=0.318681  acc=0.967033  aloss=-0.0209721  closs=55.4027  ent=0.672583  kl=0.000509277  cf=0  ep=8/10  n=140  40659ms
+  [s0 r16  MAPPO]  thr=0.45082  acc=0.901639  aloss=-0.0146694  closs=7.83005  ent=0.682935  kl=1.41505e-05  cf=0  ep=10/10  n=263  19168ms
+  [s0 r16  IPPO]  thr=0.381579  acc=0.921053  aloss=0.00446164  closs=4.77035  ent=0.668996  kl=-6.31558e-05  cf=0  ep=10/10  n=356  29850ms
+  [s0 r16  MAPPER]  thr=0.476562  acc=0.921875  aloss=0.0236244  closs=13.3207  ent=0.668048  kl=0.000118414  cf=0  ep=6/10  n=174  16590ms
+  [s0 r16  MAPPO]  thr=0.36  acc=0.84  aloss=0.0195377  closs=12.857  ent=0.681712  kl=-7.56158e-05  cf=0  ep=10/10  n=144  8925ms
+  [s0 r16  IPPO]  thr=0.328358  acc=0.80597  aloss=-0.0669658  closs=4.64438  ent=0.665014  kl=0.000394335  cf=0  ep=10/10  n=134  9477ms
+  [s0 r16  MAPPER]  thr=0.253012  acc=0.855422  aloss=-0.00117069  closs=37.5699  ent=0.659213  kl=-0.00011681  cf=0  ep=8/10  n=115  74664ms
+  [s0 r17  MAPPO]  thr=0.362903  acc=0.91129  aloss=-0.032981  closs=7.59589  ent=0.682543  kl=0.000148064  cf=0  ep=10/10  n=258  16208ms
+  [s0 r17  IPPO]  thr=0.449275  acc=0.978261  aloss=-0.00110789  closs=3.22428  ent=0.665828  kl=1.86667e-06  cf=0  ep=10/10  n=349  13229ms
+  [s0 r17  MAPPER]  thr=0.529915  acc=0.965812  aloss=0.00415388  closs=6.17306  ent=0.67185  kl=0.000351365  cf=0  ep=5/10  n=182  8645ms
+  [s0 r17  MAPPO]  thr=0.459459  acc=0.891892  aloss=-0.00399469  closs=9.41432  ent=0.682011  kl=0.000692756  cf=0  ep=10/10  n=174  12790ms
+  [s0 r17  IPPO]  thr=0.3375  acc=0.8625  aloss=-0.00519415  closs=4.76306  ent=0.659942  kl=0.00166094  cf=0  ep=10/10  n=154  22281ms
+  [s0 r17  MAPPER]  thr=0.333333  acc=0.928571  aloss=-0.00198717  closs=12.5105  ent=0.67701  kl=0.00018679  cf=0  ep=9/10  n=144  18204ms
+  [s0 r17  MAPPO]  thr=0.448598  acc=0.990654  aloss=-0.000524268  closs=7.65501  ent=0.684294  kl=0.000409814  cf=0  ep=10/10  n=223  4876ms
+  [s0 r17  IPPO]  thr=0.384058  acc=0.971014  aloss=0.00288942  closs=5.33247  ent=0.661267  kl=7.07313e-05  cf=0  ep=10/10  n=338  12667ms
+  [s0 r17  MAPPER]  thr=0.423611  acc=0.986111  aloss=0.00917349  closs=13.892  ent=0.663013  kl=0.000178783  cf=0  ep=6/10  n=217  19297ms
+  [s0 r17  MAPPO]  thr=0.404762  acc=0.809524  aloss=-0.0109236  closs=18.898  ent=0.679194  kl=8.35373e-05  cf=0  ep=10/10  n=154  37113ms
+  [s0 r17  IPPO]  thr=0.397059  acc=0.897059  aloss=0.00226901  closs=8.17687  ent=0.653421  kl=0.000426922  cf=0  ep=10/10  n=165  12911ms
+  [s0 r17  MAPPER]  thr=0.325301  acc=0.915663  aloss=-0.00204683  closs=8.5853  ent=0.674006  kl=-8.96965e-05  cf=0  ep=9/10  n=142  8451ms
+  [s0 r17  MAPPO]  thr=0.375  acc=0.958333  aloss=-0.0094188  closs=7.99943  ent=0.680804  kl=0.000291216  cf=0  ep=10/10  n=259  24942ms
+  [s0 r17  IPPO]  thr=0.263158  acc=0.879699  aloss=0.00347589  closs=4.9136  ent=0.653822  kl=-0.00106838  cf=0  ep=10/10  n=354  28592ms
+  [s0 r17  MAPPER]  thr=0.561905  acc=0.885714  aloss=-0.0177119  closs=4.02561  ent=0.661521  kl=0.000158147  cf=0  ep=6/10  n=162  4880ms
+  [s0 r17  MAPPO]  thr=0.323529  acc=0.897059  aloss=-0.00525081  closs=38.227  ent=0.673713  kl=0.000292079  cf=0  ep=10/10  n=134  39434ms
+  [s0 r17  IPPO]  thr=0.485294  acc=0.823529  aloss=0.00118335  closs=2.80947  ent=0.64919  kl=0.000405212  cf=0  ep=10/10  n=185  11220ms
+  [s0 r17  MAPPER]  thr=0.349398  acc=0.855422  aloss=-0.00210282  closs=12.7436  ent=0.663699  kl=0.000186709  cf=0  ep=8/10  n=118  14386ms
+  [s0 r18  MAPPO]  thr=0.433333  acc=0.95  aloss=-0.00104774  closs=11.6414  ent=0.675462  kl=-7.41534e-05  cf=0  ep=10/10  n=285  14676ms
+  [s0 r18  IPPO]  thr=0.311594  acc=0.956522  aloss=0.00100045  closs=4.99263  ent=0.647028  kl=0.00042194  cf=0  ep=10/10  n=368  31786ms
+  [s0 r18  MAPPER]  thr=0.467626  acc=0.956835  aloss=0.0009613  closs=15.351  ent=0.668508  kl=0.000177683  cf=0  ep=6/10  n=200  33322ms
+  [s0 r18  MAPPO]  thr=0.357143  acc=0.8  aloss=0.00284867  closs=9.66829  ent=0.670886  kl=-0.000218522  cf=0  ep=10/10  n=144  19094ms
+  [s0 r18  IPPO]  thr=0.38806  acc=0.731343  aloss=0.0121127  closs=1.68486  ent=0.639529  kl=4.97161e-05  cf=0  ep=10/10  n=140  13417ms
+  [s0 r18  MAPPER]  thr=0.372093  acc=0.883721  aloss=0.0141402  closs=21.7875  ent=0.682364  kl=1.77204e-05  cf=0  ep=10/10  n=141  33563ms
+  [s0 r18  MAPPO]  thr=0.333333  acc=0.904762  aloss=0.00322981  closs=9.5177  ent=0.669241  kl=-0.000251464  cf=0  ep=10/10  n=327  30986ms
+  [s0 r18  IPPO]  thr=0.504132  acc=0.958678  aloss=-0.000417866  closs=2.90931  ent=0.649454  kl=-0.000151999  cf=0  ep=10/10  n=320  15301ms
+  [s0 r18  MAPPER]  thr=0.443662  acc=0.943662  aloss=-0.00643173  closs=5.3104  ent=0.661517  kl=0.000628305  cf=0  ep=6/10  n=216  7874ms
+  [s0 r18  MAPPO]  thr=0.246575  acc=0.945205  aloss=-0.010857  closs=33.8892  ent=0.661282  kl=0.000329884  cf=0  ep=10/10  n=180  66184ms
+  [s0 r18  IPPO]  thr=0.338028  acc=0.943662  aloss=-0.018508  closs=8.9121  ent=0.640245  kl=-8.89051e-05  cf=0  ep=10/10  n=169  25291ms
+  [s0 r18  MAPPER]  thr=0.351351  acc=0.905405  aloss=0.0120607  closs=19.0037  ent=0.671959  kl=0.000265569  cf=0  ep=9/10  n=115  33569ms
+  [s0 r18  MAPPO]  thr=0.2  acc=0.942857  aloss=-0.000740056  closs=14.6689  ent=0.655511  kl=0.000822992  cf=0  ep=10/10  n=342  70814ms
+  [s0 r18  IPPO]  thr=0.323308  acc=0.932331  aloss=-0.00696745  closs=5.01919  ent=0.646912  kl=0.000484387  cf=0  ep=10/10  n=305  51560ms
+  [s0 r18  MAPPER]  thr=0.406504  acc=0.96748  aloss=-0.0221389  closs=12.1058  ent=0.666592  kl=-5.56506e-05  cf=0  ep=6/10  n=205  22085ms
+  [s0 r18  MAPPO]  thr=0.449275  acc=0.942029  aloss=-0.0132182  closs=14.2946  ent=0.648872  kl=0.000201459  cf=0  ep=10/10  n=173  17862ms
+  [s0 r18  IPPO]  thr=0.307692  acc=0.871795  aloss=-0.00623765  closs=9.87465  ent=0.630014  kl=0.00107391  cf=0  ep=10/10  n=191  48151ms
+  [s0 r18  MAPPER]  thr=0.246575  acc=0.876712  aloss=0.0197586  closs=38.4121  ent=0.662649  kl=0.000514144  cf=0  ep=7/10  n=109  87122ms
+  [s0 r19  MAPPO]  thr=0.360544  acc=0.904762  aloss=-0.00392031  closs=10.2121  ent=0.642751  kl=-0.000807001  cf=0  ep=10/10  n=429  53200ms
+  [s0 r19  IPPO]  thr=0.421053  acc=0.932331  aloss=-0.000313077  closs=3.74509  ent=0.640231  kl=-0.000169708  cf=0  ep=10/10  n=411  16316ms
+  [s0 r19  MAPPER]  thr=0.510345  acc=0.910345  aloss=0.0129774  closs=5.64022  ent=0.659718  kl=0.000173596  cf=0  ep=6/10  n=211  8062ms
+  [s0 r19  MAPPO]  thr=0.426667  acc=0.813333  aloss=-0.0267472  closs=13.353  ent=0.640948  kl=-0.000315971  cf=0  ep=10/10  n=170  18888ms
+  [s0 r19  IPPO]  thr=0.346667  acc=0.933333  aloss=-0.00290626  closs=7.5878  ent=0.62357  kl=-0.000631741  cf=0  ep=10/10  n=243  39032ms
+  [s0 r19  MAPPER]  thr=0.348315  acc=0.94382  aloss=-0.00112484  closs=18.723  ent=0.676884  kl=0.000101453  cf=0  ep=8/10  n=131  24964ms
+  [s0 r19  MAPPO]  thr=0.5  acc=0.95  aloss=0.00169915  closs=10.0678  ent=0.646481  kl=0.000494733  cf=0  ep=10/10  n=307  6548ms
+  [s0 r19  IPPO]  thr=0.397351  acc=0.960265  aloss=-0.0196048  closs=3.19973  ent=0.628736  kl=0.000131379  cf=0  ep=10/10  n=483  54867ms
+  [s0 r19  MAPPER]  thr=0.538462  acc=0.958042  aloss=-0.0231521  closs=7.94422  ent=0.664425  kl=2.67592e-05  cf=0  ep=6/10  n=227  9649ms
+  [s0 r19  MAPPO]  thr=0.317647  acc=0.976471  aloss=0.0097576  closs=21.4911  ent=0.633924  kl=-0.000803546  cf=0  ep=10/10  n=215  23760ms
+  [s0 r19  IPPO]  thr=0.345679  acc=0.901235  aloss=0.0398782  closs=11.168  ent=0.615445  kl=0.000944058  cf=0  ep=10/10  n=225  29058ms
+  [s0 r19  MAPPER]  thr=0.202247  acc=0.898876  aloss=0.00283331  closs=32.8761  ent=0.675504  kl=0.000195172  cf=0  ep=8/10  n=146  42456ms
+  [s0 r19  MAPPO]  thr=0.537037  acc=0.925926  aloss=-0.00551263  closs=6.5906  ent=0.643206  kl=-0.000263588  cf=0  ep=10/10  n=306  17357ms
+  [s0 r19  IPPO]  thr=0.116883  acc=0.980519  aloss=-0.00619467  closs=7.65053  ent=0.592206  kl=0.000503235  cf=0  ep=10/10  n=525  87900ms
+  [s0 r19  MAPPER]  thr=0.419847  acc=0.961832  aloss=-0.00564193  closs=7.713  ent=0.655617  kl=0.000162945  cf=0  ep=6/10  n=204  25678ms
+  [s0 r19  MAPPO]  thr=0.298851  acc=0.873563  aloss=-0.00916406  closs=34.5446  ent=0.631253  kl=2.8434e-06  cf=0  ep=10/10  n=205  51050ms
+  [s0 r19  IPPO]  thr=0.296875  acc=0.859375  aloss=0.0343726  closs=9.96304  ent=0.578868  kl=3.75822e-05  cf=0  ep=10/10  n=227  15033ms
+  [s0 r19  MAPPER]  thr=0.282353  acc=0.929412  aloss=0.0124769  closs=27.2803  ent=0.676342  kl=-3.05638e-05  cf=0  ep=7/10  n=125  28206ms
+  [MAPPER-Ev @ round 20] mutated 4/18 policies
+  -- Eval @ round 20 --
+    [eval Tokyo_Small/MAPPO/1/3]  thr=0.408696  acc=0.965217  12672ms
+    [eval Tokyo_Small/MAPPO/2/3]  thr=0.535714  acc=0.946429  9035ms
+    [eval Tokyo_Small/MAPPO/3/3]  thr=0.553571  acc=0.955357  5108ms
+    [eval Tokyo_Small/IPPO/1/3]  thr=0.488889  acc=0.896296  12734ms
+    [eval Tokyo_Small/IPPO/2/3]  thr=0.459677  acc=0.967742  11737ms
+    [eval Tokyo_Small/IPPO/3/3]  thr=0.416  acc=0.912  12904ms
+    [eval Tokyo_Small/MAPPER/1/3]  thr=0.45082  acc=0.918033  10522ms
+    [eval Tokyo_Small/MAPPER/2/3]  thr=0.435374  acc=0.911565  22456ms
+    [eval Tokyo_Small/MAPPER/3/3]  thr=0.441176  acc=0.955882  19275ms
+    [eval Tokyo_Small/TamAlwaysAccept/1/3]  thr=0.569231  acc=0.938462  7253ms
+    [eval Tokyo_Small/TamAlwaysAccept/2/3]  thr=0.518797  acc=0.969925  15085ms
+    [eval Tokyo_Small/TamAlwaysAccept/3/3]  thr=0.307087  acc=0.937008  13496ms
+    [eval Tokyo_Small/Greedy/1/3]  thr=0.0431034  acc=1  161105ms
+    [eval Tokyo_Small/Greedy/2/3]  thr=0.0382166  acc=1  399404ms
+    [eval Tokyo_Small/Greedy/3/3]  thr=0.0518519  acc=1  271848ms
+    [eval Tokyo_Small/Random/1/3]  thr=0.215517  acc=0.982759  67604ms
+    [eval Tokyo_Small/Random/2/3]  thr=0.153846  acc=0.986014  128030ms
+    [eval Tokyo_Small/Random/3/3]  thr=0.131034  acc=0.986207  115203ms
+    [eval Tokyo_Small/InsertionGreedy/1/3]  thr=0.206897  acc=0.793103  43390ms
+    [eval Tokyo_Small/InsertionGreedy/2/3]  thr=0.228571  acc=0.885714  106727ms
+    [eval Tokyo_Small/InsertionGreedy/3/3]  thr=0.235294  acc=0.773109  48268ms
+    [eval Tokyo_Small/PIBT/1/3]  thr=0.219512  acc=1  29762ms
+    [eval Tokyo_Small/PIBT/2/3]  thr=0.247863  acc=1  29198ms
+    [eval Tokyo_Small/PIBT/3/3]  thr=0.303279  acc=1  25425ms
+    [eval Tokyo_Small/CongestionAware/1/3]  thr=0.453782  acc=1  19377ms
+    [eval Tokyo_Small/CongestionAware/2/3]  thr=0.40625  acc=1  25547ms
+    [eval Tokyo_Small/CongestionAware/3/3]  thr=0.463768  acc=1  25874ms
+    [eval Tokyo_Medium/MAPPO/1/3]  thr=0.292683  acc=0.878049  33571ms
+    [eval Tokyo_Medium/MAPPO/2/3]  thr=0.25974  acc=0.818182  35668ms
+    [eval Tokyo_Medium/MAPPO/3/3]  thr=0.426471  acc=0.941176  21425ms
+    [eval Tokyo_Medium/IPPO/1/3]  thr=0.473684  acc=0.907895  16942ms
+    [eval Tokyo_Medium/IPPO/2/3]  thr=0.444444  acc=0.864198  21101ms
+    [eval Tokyo_Medium/IPPO/3/3]  thr=0.433735  acc=0.86747  20852ms
+    [eval Tokyo_Medium/MAPPER/1/3]  thr=0.557143  acc=0.885714  11849ms
+    [eval Tokyo_Medium/MAPPER/2/3]  thr=0.358209  acc=0.865672  22293ms
+    [eval Tokyo_Medium/MAPPER/3/3]  thr=0.381579  acc=0.907895  20566ms
+    [eval Tokyo_Medium/TamAlwaysAccept/1/3]  thr=0.423077  acc=0.807692  19597ms
+    [eval Tokyo_Medium/TamAlwaysAccept/2/3]  thr=0.477778  acc=0.944444  13221ms
+    [eval Tokyo_Medium/TamAlwaysAccept/3/3]  thr=0.344828  acc=0.885057  19564ms
+    [eval Tokyo_Medium/Greedy/1/3]  thr=0.025974  acc=1  868767ms
+    [eval Tokyo_Medium/Greedy/2/3]  thr=0.0135135  acc=1  601995ms
+    [eval Tokyo_Medium/Greedy/3/3]  thr=0.0454545  acc=1  635653ms
+    [eval Tokyo_Medium/Random/1/3]  thr=0.170455  acc=0.988636  443593ms
+    [eval Tokyo_Medium/Random/2/3]  thr=0.103896  acc=1  250223ms
+    [eval Tokyo_Medium/Random/3/3]  thr=0.0759494  acc=0.987342  271081ms
+    [eval Tokyo_Medium/InsertionGreedy/1/3]  thr=0.181818  acc=0.727273  180119ms
+    [eval Tokyo_Medium/InsertionGreedy/2/3]  thr=0.151515  acc=0.787879  145666ms
+    [eval Tokyo_Medium/InsertionGreedy/3/3]  thr=0.191176  acc=0.808824  200524ms
+    [eval Tokyo_Medium/PIBT/1/3]  thr=0.189873  acc=1  52052ms
+    [eval Tokyo_Medium/PIBT/2/3]  thr=0.147059  acc=1  45291ms
+    [eval Tokyo_Medium/PIBT/3/3]  thr=0.175676  acc=1  41795ms
+    [eval Tokyo_Medium/CongestionAware/1/3]  thr=0.355932  acc=1  73109ms
+    [eval Tokyo_Medium/CongestionAware/2/3]  thr=0.414286  acc=1  64148ms
+    [eval Tokyo_Medium/CongestionAware/3/3]  thr=0.396825  acc=1  57916ms
+    [eval Kyoto_Small/MAPPO/1/3]  thr=0.488  acc=0.984  6720ms
+    [eval Kyoto_Small/MAPPO/2/3]  thr=0.361538  acc=0.984615  10931ms
+    [eval Kyoto_Small/MAPPO/3/3]  thr=0.503759  acc=0.947368  6447ms
+    [eval Kyoto_Small/IPPO/1/3]  thr=0.579832  acc=0.983193  6578ms
+    [eval Kyoto_Small/IPPO/2/3]  thr=0.52381  acc=0.952381  5680ms
+    [eval Kyoto_Small/IPPO/3/3]  thr=0.538462  acc=0.937063  7784ms
+    [eval Kyoto_Small/MAPPER/1/3]  thr=0.45045  acc=0.990991  7899ms
+    [eval Kyoto_Small/MAPPER/2/3]  thr=0.350427  acc=0.923077  9018ms
+    [eval Kyoto_Small/MAPPER/3/3]  thr=0.480315  acc=0.944882  7840ms
+    [eval Kyoto_Small/TamAlwaysAccept/1/3]  thr=0.540146  acc=0.963504  23083ms
+    [eval Kyoto_Small/TamAlwaysAccept/2/3]  thr=0.480916  acc=0.977099  7144ms
+    [eval Kyoto_Small/TamAlwaysAccept/3/3]  thr=0.471074  acc=0.933884  8439ms
+    [eval Kyoto_Small/Greedy/1/3]  thr=0.0588235  acc=1  224061ms
+    [eval Kyoto_Small/Greedy/2/3]  thr=0.0743802  acc=1  191559ms
+    [eval Kyoto_Small/Greedy/3/3]  thr=0.0625  acc=1  241431ms
+    [eval Kyoto_Small/Random/1/3]  thr=0.231884  acc=0.985507  65399ms
+    [eval Kyoto_Small/Random/2/3]  thr=0.20354  acc=0.973451  55382ms
+    [eval Kyoto_Small/Random/3/3]  thr=0.203125  acc=0.984375  61030ms
+    [eval Kyoto_Small/InsertionGreedy/1/3]  thr=0.271186  acc=0.889831  49424ms
+    [eval Kyoto_Small/InsertionGreedy/2/3]  thr=0.218045  acc=0.789474  57866ms
+    [eval Kyoto_Small/InsertionGreedy/3/3]  thr=0.284722  acc=0.826389  50565ms
+    [eval Kyoto_Small/PIBT/1/3]  thr=0.276596  acc=1  28896ms
+    [eval Kyoto_Small/PIBT/2/3]  thr=0.274074  acc=1  25060ms
+    [eval Kyoto_Small/PIBT/3/3]  thr=0.260563  acc=1  28439ms
+    [eval Kyoto_Small/CongestionAware/1/3]  thr=0.5  acc=1  15519ms
+    [eval Kyoto_Small/CongestionAware/2/3]  thr=0.357143  acc=1  18465ms
+    [eval Kyoto_Small/CongestionAware/3/3]  thr=0.609524  acc=1  12642ms
+    [eval Kyoto_Medium/MAPPO/1/3]  thr=0.25974  acc=0.844156  26218ms
+    [eval Kyoto_Medium/MAPPO/2/3]  thr=0.333333  acc=0.897436  17405ms
+    [eval Kyoto_Medium/MAPPO/3/3]  thr=0.328571  acc=0.928571  18025ms
+    [eval Kyoto_Medium/IPPO/1/3]  thr=0.487805  acc=0.878049  16331ms
+    [eval Kyoto_Medium/IPPO/2/3]  thr=0.430556  acc=0.916667  20408ms
+    [eval Kyoto_Medium/IPPO/3/3]  thr=0.492537  acc=0.955224  17110ms
+    [eval Kyoto_Medium/MAPPER/1/3]  thr=0.388235  acc=0.929412  49614ms
+    [eval Kyoto_Medium/MAPPER/2/3]  thr=0.419355  acc=0.790323  10167ms
+    [eval Kyoto_Medium/MAPPER/3/3]  thr=0.328571  acc=0.914286  13580ms
+    [eval Kyoto_Medium/TamAlwaysAccept/1/3]  thr=0.446154  acc=0.8  6270ms
+    [eval Kyoto_Medium/TamAlwaysAccept/2/3]  thr=0.279412  acc=0.882353  13203ms
+    [eval Kyoto_Medium/TamAlwaysAccept/3/3]  thr=0.419753  acc=0.91358  13728ms
+    [eval Kyoto_Medium/Greedy/1/3]  thr=0.106667  acc=1  364245ms
+    [eval Kyoto_Medium/Greedy/2/3]  thr=0.0531915  acc=1  662281ms
+    [eval Kyoto_Medium/Greedy/3/3]  thr=0.0277778  acc=1  498153ms
+    [eval Kyoto_Medium/Random/1/3]  thr=0.101449  acc=0.985507  146604ms
+    [eval Kyoto_Medium/Random/2/3]  thr=0.134021  acc=1  249952ms
+    [eval Kyoto_Medium/Random/3/3]  thr=0.1  acc=0.985714  131035ms
+    [eval Kyoto_Medium/InsertionGreedy/1/3]  thr=0.132353  acc=0.823529  76151ms
+    [eval Kyoto_Medium/InsertionGreedy/2/3]  thr=0.131579  acc=0.815789  140617ms
+    [eval Kyoto_Medium/InsertionGreedy/3/3]  thr=0.264706  acc=0.852941  93098ms
+    [eval Kyoto_Medium/PIBT/1/3]  thr=0.205128  acc=1  38330ms
+    [eval Kyoto_Medium/PIBT/2/3]  thr=0.287671  acc=1  24622ms
+    [eval Kyoto_Medium/PIBT/3/3]  thr=0.181818  acc=1  23416ms
+    [eval Kyoto_Medium/CongestionAware/1/3]  thr=0.371795  acc=1  60193ms
+    [eval Kyoto_Medium/CongestionAware/2/3]  thr=0.477612  acc=1  41929ms
+    [eval Kyoto_Medium/CongestionAware/3/3]  thr=0.325581  acc=1  65164ms
+    [eval LosAngeles_Small/MAPPO/1/3]  thr=0.548148  acc=0.948148  13029ms
+    [eval LosAngeles_Small/MAPPO/2/3]  thr=0.419847  acc=0.923664  37238ms
+    [eval LosAngeles_Small/MAPPO/3/3]  thr=0.302521  acc=0.932773  18100ms
+    [eval LosAngeles_Small/IPPO/1/3]  thr=0.359712  acc=0.956835  59243ms
+    [eval LosAngeles_Small/IPPO/2/3]  thr=0.189542  acc=0.901961  42085ms
+    [eval LosAngeles_Small/IPPO/3/3]  thr=0.404412  acc=0.933824  13885ms
+    [eval LosAngeles_Small/MAPPER/1/3]  thr=0.491667  acc=0.966667  9196ms
+    [eval LosAngeles_Small/MAPPER/2/3]  thr=0.369748  acc=0.94958  26571ms
+    [eval LosAngeles_Small/MAPPER/3/3]  thr=0.447761  acc=0.985075  24155ms
+    [eval LosAngeles_Small/TamAlwaysAccept/1/3]  thr=0.348993  acc=0.95302  16929ms
+    [eval LosAngeles_Small/TamAlwaysAccept/2/3]  thr=0.481203  acc=0.977444  9893ms
+    [eval LosAngeles_Small/TamAlwaysAccept/3/3]  thr=0.553719  acc=0.909091  5554ms
+    [eval LosAngeles_Small/Greedy/1/3]  thr=0.08  acc=1  207226ms
+    [eval LosAngeles_Small/Greedy/2/3]  thr=0.0630631  acc=1  176779ms
+    [eval LosAngeles_Small/Greedy/3/3]  thr=0.0540541  acc=1  412997ms
+    [eval LosAngeles_Small/Random/1/3]  thr=0.153846  acc=0.986014  138758ms
+    [eval LosAngeles_Small/Random/2/3]  thr=0.133929  acc=0.973214  87018ms
+    [eval LosAngeles_Small/Random/3/3]  thr=0.147826  acc=0.982609  64530ms
+    [eval LosAngeles_Small/InsertionGreedy/1/3]  thr=0.184397  acc=0.815603  86106ms
+    [eval LosAngeles_Small/InsertionGreedy/2/3]  thr=0.225806  acc=0.814516  71672ms
+    [eval LosAngeles_Small/InsertionGreedy/3/3]  thr=0.176471  acc=0.823529  106988ms
+    [eval LosAngeles_Small/PIBT/1/3]  thr=0.283582  acc=1  35129ms
+    [eval LosAngeles_Small/PIBT/2/3]  thr=0.293103  acc=1  24765ms
+    [eval LosAngeles_Small/PIBT/3/3]  thr=0.270677  acc=1  36383ms
+    [eval LosAngeles_Small/CongestionAware/1/3]  thr=0.370968  acc=1  29776ms
+    [eval LosAngeles_Small/CongestionAware/2/3]  thr=0.336066  acc=1  26962ms
+    [eval LosAngeles_Small/CongestionAware/3/3]  thr=0.439655  acc=1  27057ms
+    [eval LosAngeles_Medium/MAPPO/1/3]  thr=0.416667  acc=0.916667  29267ms
+    [eval LosAngeles_Medium/MAPPO/2/3]  thr=0.336957  acc=0.934783  52186ms
+    [eval LosAngeles_Medium/MAPPO/3/3]  thr=0.328571  acc=0.871429  22091ms
+    [eval LosAngeles_Medium/IPPO/1/3]  thr=0.293333  acc=0.813333  18296ms
+    [eval LosAngeles_Medium/IPPO/2/3]  thr=0.4125  acc=0.8875  88285ms
+    [eval LosAngeles_Medium/IPPO/3/3]  thr=0.272727  acc=0.833333  31233ms
+    [eval LosAngeles_Medium/MAPPER/1/3]  thr=0.282828  acc=0.858586  44120ms
+    [eval LosAngeles_Medium/MAPPER/2/3]  thr=0.252874  acc=0.942529  94741ms
+    [eval LosAngeles_Medium/MAPPER/3/3]  thr=0.444444  acc=0.958333  24029ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/1/3]  thr=0.302632  acc=0.868421  44782ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/2/3]  thr=0.242424  acc=0.893939  73986ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/3/3]  thr=0.333333  acc=0.845238  33839ms
+    [eval LosAngeles_Medium/Greedy/1/3]  thr=0.0133333  acc=1  422582ms
+    [eval LosAngeles_Medium/Greedy/2/3]  thr=0.0543478  acc=1  764835ms
+    [eval LosAngeles_Medium/Greedy/3/3]  thr=0.0625  acc=1  632633ms
+    [eval LosAngeles_Medium/Random/1/3]  thr=0.149254  acc=0.985075  143493ms
+    [eval LosAngeles_Medium/Random/2/3]  thr=0.112676  acc=1  162391ms
+    [eval LosAngeles_Medium/Random/3/3]  thr=0.128205  acc=0.987179  198126ms
+    [eval LosAngeles_Medium/InsertionGreedy/1/3]  thr=0.121622  acc=0.756757  128039ms
+    [eval LosAngeles_Medium/InsertionGreedy/2/3]  thr=0.136364  acc=0.80303  148094ms
+    [eval LosAngeles_Medium/InsertionGreedy/3/3]  thr=0.189873  acc=0.759494  109102ms
+    [eval LosAngeles_Medium/PIBT/1/3]  thr=0.116279  acc=1  62987ms
+    [eval LosAngeles_Medium/PIBT/2/3]  thr=0.0875  acc=1  55432ms
+    [eval LosAngeles_Medium/PIBT/3/3]  thr=0.208333  acc=1  40376ms
+    [eval LosAngeles_Medium/CongestionAware/1/3]  thr=0.38961  acc=1  53288ms
+    [eval LosAngeles_Medium/CongestionAware/2/3]  thr=0.317073  acc=1  67329ms
+    [eval LosAngeles_Medium/CongestionAware/3/3]  thr=0.477273  acc=1  68068ms
+  -- Stress Eval (density=2 agents=0.6) --
+    [stress Tokyo_Small/MAPPO/1/3]  thr=0.433071  acc=0.952756  18958ms
+    [stress Tokyo_Small/MAPPO/2/3]  thr=0.532258  acc=0.943548  13642ms
+    [stress Tokyo_Small/MAPPO/3/3]  thr=0.382114  acc=0.918699  23628ms
+    [stress Tokyo_Small/IPPO/1/3]  thr=0.453333  acc=0.946667  34825ms
+    [stress Tokyo_Small/IPPO/2/3]  thr=0.377622  acc=0.944056  21282ms
+    [stress Tokyo_Small/IPPO/3/3]  thr=0.269231  acc=0.961538  135132ms
+    [stress Tokyo_Small/MAPPER/1/3]  thr=0.435644  acc=0.970297  9630ms
+    [stress Tokyo_Small/MAPPER/2/3]  thr=0.431818  acc=0.94697  13639ms
+    [stress Tokyo_Small/MAPPER/3/3]  thr=0.579439  acc=0.934579  3829ms
+    [stress Tokyo_Small/TamAlwaysAccept/1/3]  thr=0.609023  acc=0.93985  8607ms
+    [stress Tokyo_Small/TamAlwaysAccept/2/3]  thr=0.389313  acc=0.923664  11047ms
+    [stress Tokyo_Small/TamAlwaysAccept/3/3]  thr=0.40411  acc=0.952055  33006ms
+    [stress Tokyo_Small/Greedy/1/3]  thr=0.0471698  acc=1  211449ms
+    [stress Tokyo_Small/Greedy/2/3]  thr=0.0512821  acc=1  333041ms
+    [stress Tokyo_Small/Greedy/3/3]  thr=0.0551181  acc=1  353058ms
+    [stress Tokyo_Small/Random/1/3]  thr=0.132231  acc=0.909091  88966ms
+    [stress Tokyo_Small/Random/2/3]  thr=0.163121  acc=0.900709  110764ms
+    [stress Tokyo_Small/Random/3/3]  thr=0.176923  acc=0.876923  78260ms
+    [stress Tokyo_Small/InsertionGreedy/1/3]  thr=0.185714  acc=0.714286  113103ms
+    [stress Tokyo_Small/InsertionGreedy/2/3]  thr=0.154472  acc=0.739837  72018ms
+    [stress Tokyo_Small/InsertionGreedy/3/3]  thr=0.203704  acc=0.740741  64268ms
+    [stress Tokyo_Small/PIBT/1/3]  thr=0.184  acc=1  55972ms
+    [stress Tokyo_Small/PIBT/2/3]  thr=0.176  acc=1  60500ms
+    [stress Tokyo_Small/PIBT/3/3]  thr=0.183333  acc=1  55818ms
+    [stress Tokyo_Small/CongestionAware/1/3]  thr=0.294118  acc=1  54572ms
+    [stress Tokyo_Small/CongestionAware/2/3]  thr=0.179688  acc=1  69085ms
+    [stress Tokyo_Small/CongestionAware/3/3]  thr=0.251908  acc=1  74999ms
+    [stress Tokyo_Medium/MAPPO/1/3]  thr=0.293478  acc=0.869565  48399ms
+    [stress Tokyo_Medium/MAPPO/2/3]  thr=0.369231  acc=0.923077  35333ms
+    [stress Tokyo_Medium/MAPPO/3/3]  thr=0.355556  acc=0.888889  114202ms
+    [stress Tokyo_Medium/IPPO/1/3]  thr=0.319444  acc=0.916667  31029ms
+    [stress Tokyo_Medium/IPPO/2/3]  thr=0.32  acc=0.773333  25164ms
+    [stress Tokyo_Medium/IPPO/3/3]  thr=0.267606  acc=0.873239  36283ms
+    [stress Tokyo_Medium/MAPPER/1/3]  thr=0.383178  acc=0.953271  41251ms
+    [stress Tokyo_Medium/MAPPER/2/3]  thr=0.285714  acc=0.910714  32112ms
+    [stress Tokyo_Medium/MAPPER/3/3]  thr=0.411765  acc=0.941176  23066ms
+    [stress Tokyo_Medium/TamAlwaysAccept/1/3]  thr=0.384615  acc=0.807692  11758ms
+    [stress Tokyo_Medium/TamAlwaysAccept/2/3]  thr=0.428571  acc=0.920635  26073ms
+    [stress Tokyo_Medium/TamAlwaysAccept/3/3]  thr=0.410959  acc=0.890411  81674ms
+    [stress Tokyo_Medium/Greedy/1/3]  thr=0.0694444  acc=1  694230ms
+    [stress Tokyo_Medium/Greedy/2/3]  thr=0.025641  acc=1  781531ms
+    [stress Tokyo_Medium/Greedy/3/3]  thr=0.0561798  acc=1  999171ms
+    [stress Tokyo_Medium/Random/1/3]  thr=0.0483871  acc=0.967742  145386ms
+    [stress Tokyo_Medium/Random/2/3]  thr=0.1375  acc=0.95  235099ms
+    [stress Tokyo_Medium/Random/3/3]  thr=0.0897436  acc=0.961538  265491ms
+    [stress Tokyo_Medium/InsertionGreedy/1/3]  thr=0.135802  acc=0.716049  96294ms
+    [stress Tokyo_Medium/InsertionGreedy/2/3]  thr=0.129412  acc=0.752941  335080ms
+    [stress Tokyo_Medium/InsertionGreedy/3/3]  thr=0.164384  acc=0.767123  141781ms
+    [stress Tokyo_Medium/PIBT/1/3]  thr=0.0933333  acc=1  120964ms
+    [stress Tokyo_Medium/PIBT/2/3]  thr=0.0833333  acc=1  158538ms
+    [stress Tokyo_Medium/PIBT/3/3]  thr=0.162162  acc=1  116605ms
+    [stress Tokyo_Medium/CongestionAware/1/3]  thr=0.351852  acc=1  53043ms
+    [stress Tokyo_Medium/CongestionAware/2/3]  thr=0.152778  acc=1  113393ms
+    [stress Tokyo_Medium/CongestionAware/3/3]  thr=0.25  acc=1  67430ms
+    [stress Kyoto_Small/MAPPO/1/3]  thr=0.328571  acc=0.978571  75483ms
+    [stress Kyoto_Small/MAPPO/2/3]  thr=0.369565  acc=0.942029  18719ms
+    [stress Kyoto_Small/MAPPO/3/3]  thr=0.44697  acc=0.969697  26809ms
+    [stress Kyoto_Small/IPPO/1/3]  thr=0.532787  acc=0.95082  7753ms
+    [stress Kyoto_Small/IPPO/2/3]  thr=0.346154  acc=0.961538  14914ms
+    [stress Kyoto_Small/IPPO/3/3]  thr=0.396226  acc=0.949686  14907ms
+    [stress Kyoto_Small/MAPPER/1/3]  thr=0.416667  acc=0.94697  13007ms
+    [stress Kyoto_Small/MAPPER/2/3]  thr=0.405405  acc=0.963964  18679ms
+    [stress Kyoto_Small/MAPPER/3/3]  thr=0.309735  acc=0.929204  71836ms
+    [stress Kyoto_Small/TamAlwaysAccept/1/3]  thr=0.475806  acc=0.983871  6209ms
+    [stress Kyoto_Small/TamAlwaysAccept/2/3]  thr=0.435115  acc=0.969466  12148ms
+    [stress Kyoto_Small/TamAlwaysAccept/3/3]  thr=0.423077  acc=0.953846  10963ms
+    [stress Kyoto_Small/Greedy/1/3]  thr=0.0714286  acc=1  203166ms
+    [stress Kyoto_Small/Greedy/2/3]  thr=0.110294  acc=1  245364ms
+    [stress Kyoto_Small/Greedy/3/3]  thr=0.103704  acc=1  235626ms
+    [stress Kyoto_Small/Random/1/3]  thr=0.106557  acc=0.901639  54040ms
+    [stress Kyoto_Small/Random/2/3]  thr=0.162963  acc=0.896296  65720ms
+    [stress Kyoto_Small/Random/3/3]  thr=0.182609  acc=0.904348  47932ms
+    [stress Kyoto_Small/InsertionGreedy/1/3]  thr=0.195312  acc=0.773438  59896ms
+    [stress Kyoto_Small/InsertionGreedy/2/3]  thr=0.221374  acc=0.801527  66045ms
+    [stress Kyoto_Small/InsertionGreedy/3/3]  thr=0.288288  acc=0.774775  23134ms
+    [stress Kyoto_Small/PIBT/1/3]  thr=0.169355  acc=1  48493ms
+    [stress Kyoto_Small/PIBT/2/3]  thr=0.161765  acc=1  53543ms
+    [stress Kyoto_Small/PIBT/3/3]  thr=0.203883  acc=1  35867ms
+    [stress Kyoto_Small/CongestionAware/1/3]  thr=0.25  acc=1  31178ms
+    [stress Kyoto_Small/CongestionAware/2/3]  thr=0.27972  acc=1  49332ms
+    [stress Kyoto_Small/CongestionAware/3/3]  thr=0.229508  acc=1  40991ms
+    [stress Kyoto_Medium/MAPPO/1/3]  thr=0.375  acc=0.916667  33475ms
+    [stress Kyoto_Medium/MAPPO/2/3]  thr=0.337349  acc=0.903614  17461ms
+    [stress Kyoto_Medium/MAPPO/3/3]  thr=0.333333  acc=0.821429  42050ms
+    [stress Kyoto_Medium/IPPO/1/3]  thr=0.308642  acc=0.925926  58208ms
+    [stress Kyoto_Medium/IPPO/2/3]  thr=0.359375  acc=0.84375  11263ms
+    [stress Kyoto_Medium/IPPO/3/3]  thr=0.298701  acc=0.87013  12079ms
+    [stress Kyoto_Medium/MAPPER/1/3]  thr=0.318681  acc=0.912088  21049ms
+    [stress Kyoto_Medium/MAPPER/2/3]  thr=0.326087  acc=0.826087  18927ms
+    [stress Kyoto_Medium/MAPPER/3/3]  thr=0.491525  acc=0.847458  5256ms
+    [stress Kyoto_Medium/TamAlwaysAccept/1/3]  thr=0.477612  acc=0.940298  14979ms
+    [stress Kyoto_Medium/TamAlwaysAccept/2/3]  thr=0.515152  acc=0.909091  4299ms
+    [stress Kyoto_Medium/TamAlwaysAccept/3/3]  thr=0.390625  acc=0.890625  6154ms
+    [stress Kyoto_Medium/Greedy/1/3]  thr=0.0142857  acc=1  348213ms
+    [stress Kyoto_Medium/Greedy/2/3]  thr=0.0689655  acc=1  600918ms
+    [stress Kyoto_Medium/Greedy/3/3]  thr=0.0606061  acc=1  378957ms
+    [stress Kyoto_Medium/Random/1/3]  thr=0.0888889  acc=0.977778  255070ms
+    [stress Kyoto_Medium/Random/2/3]  thr=0.0428571  acc=0.942857  114228ms
+    [stress Kyoto_Medium/Random/3/3]  thr=0.114286  acc=0.971429  130899ms
+    [stress Kyoto_Medium/InsertionGreedy/1/3]  thr=0.084507  acc=0.690141  115325ms
+    [stress Kyoto_Medium/InsertionGreedy/2/3]  thr=0.126761  acc=0.84507  139801ms
+    [stress Kyoto_Medium/InsertionGreedy/3/3]  thr=0.127451  acc=0.784314  183893ms
+    [stress Kyoto_Medium/PIBT/1/3]  thr=0.108108  acc=1  60364ms
+    [stress Kyoto_Medium/PIBT/2/3]  thr=0.0864198  acc=1  96084ms
+    [stress Kyoto_Medium/PIBT/3/3]  thr=0.125  acc=1  69617ms
+    [stress Kyoto_Medium/CongestionAware/1/3]  thr=0.193548  acc=1  43518ms
+    [stress Kyoto_Medium/CongestionAware/2/3]  thr=0.285714  acc=1  40681ms
+    [stress Kyoto_Medium/CongestionAware/3/3]  thr=0.204545  acc=1  72833ms
+    [stress LosAngeles_Small/MAPPO/1/3]  thr=0.553571  acc=0.946429  12134ms
+    [stress LosAngeles_Small/MAPPO/2/3]  thr=0.445255  acc=0.978102  16054ms
+    [stress LosAngeles_Small/MAPPO/3/3]  thr=0.350365  acc=0.941606  43288ms
+    [stress LosAngeles_Small/IPPO/1/3]  thr=0.41129  acc=0.967742  50051ms
+    [stress LosAngeles_Small/IPPO/2/3]  thr=0.391892  acc=0.939189  39575ms
+    [stress LosAngeles_Small/IPPO/3/3]  thr=0.320513  acc=0.967949  99740ms
+    [stress LosAngeles_Small/MAPPER/1/3]  thr=0.3  acc=0.95  17529ms
+    [stress LosAngeles_Small/MAPPER/2/3]  thr=0.377049  acc=0.942623  15583ms
+    [stress LosAngeles_Small/MAPPER/3/3]  thr=0.45082  acc=0.959016  10390ms
+    [stress LosAngeles_Small/TamAlwaysAccept/1/3]  thr=0.398438  acc=0.9375  16159ms
+    [stress LosAngeles_Small/TamAlwaysAccept/2/3]  thr=0.316667  acc=0.983333  46585ms
+    [stress LosAngeles_Small/TamAlwaysAccept/3/3]  thr=0.450382  acc=0.938931  8487ms
+    [stress LosAngeles_Small/Greedy/1/3]  thr=0.0615385  acc=1  340616ms
+    [stress LosAngeles_Small/Greedy/2/3]  thr=0.0428571  acc=1  362869ms
+    [stress LosAngeles_Small/Greedy/3/3]  thr=0.144  acc=1  268065ms
+    [stress LosAngeles_Small/Random/1/3]  thr=0.142857  acc=0.857143  48150ms
+    [stress LosAngeles_Small/Random/2/3]  thr=0.122302  acc=0.899281  115085ms
+    [stress LosAngeles_Small/Random/3/3]  thr=0.140625  acc=0.882812  87965ms
+    [stress LosAngeles_Small/InsertionGreedy/1/3]  thr=0.155556  acc=0.733333  78264ms
+    [stress LosAngeles_Small/InsertionGreedy/2/3]  thr=0.153153  acc=0.702703  61531ms
+    [stress LosAngeles_Small/InsertionGreedy/3/3]  thr=0.219697  acc=0.727273  84399ms
+    [stress LosAngeles_Small/PIBT/1/3]  thr=0.213675  acc=1  45580ms
+    [stress LosAngeles_Small/PIBT/2/3]  thr=0.227723  acc=1  31023ms
+    [stress LosAngeles_Small/PIBT/3/3]  thr=0.166667  acc=1  92948ms
+    [stress LosAngeles_Small/CongestionAware/1/3]  thr=0.24031  acc=1  77165ms
+    [stress LosAngeles_Small/CongestionAware/2/3]  thr=0.305556  acc=1  32419ms
+    [stress LosAngeles_Small/CongestionAware/3/3]  thr=0.353982  acc=1  27798ms
+    [stress LosAngeles_Medium/MAPPO/1/3]  thr=0.52459  acc=0.95082  13238ms
+    [stress LosAngeles_Medium/MAPPO/2/3]  thr=0.378378  acc=0.918919  15350ms
+    [stress LosAngeles_Medium/MAPPO/3/3]  thr=0.26087  acc=0.913043  31294ms
+    [stress LosAngeles_Medium/IPPO/1/3]  thr=0.402439  acc=0.890244  33314ms
+    [stress LosAngeles_Medium/IPPO/2/3]  thr=0.362069  acc=0.913793  39472ms
+    [stress LosAngeles_Medium/IPPO/3/3]  thr=0.397436  acc=0.897436  32774ms
+    [stress LosAngeles_Medium/MAPPER/1/3]  thr=0.3  acc=0.85  36318ms
+    [stress LosAngeles_Medium/MAPPER/2/3]  thr=0.387097  acc=0.956989  113196ms
+    [stress LosAngeles_Medium/MAPPER/3/3]  thr=0.292308  acc=0.830769  15182ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/1/3]  thr=0.333333  acc=0.88  30183ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/2/3]  thr=0.409836  acc=0.786885  6264ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/3/3]  thr=0.492754  acc=0.84058  24861ms
+    [stress LosAngeles_Medium/Greedy/1/3]  thr=0.0125  acc=1  508757ms
+    [stress LosAngeles_Medium/Greedy/2/3]  thr=0.0379747  acc=1  501188ms
+    [stress LosAngeles_Medium/Greedy/3/3]  thr=0.0416667  acc=1  306946ms
+    [stress LosAngeles_Medium/Random/1/3]  thr=0.0581395  acc=0.94186  169466ms
+    [stress LosAngeles_Medium/Random/2/3]  thr=0.1  acc=0.966667  74744ms
+    [stress LosAngeles_Medium/Random/3/3]  thr=0.0985916  acc=0.957747  125826ms
+    [stress LosAngeles_Medium/InsertionGreedy/1/3]  thr=0.1125  acc=0.6875  82083ms
+    [stress LosAngeles_Medium/InsertionGreedy/2/3]  thr=0.136364  acc=0.712121  93315ms
+    [stress LosAngeles_Medium/InsertionGreedy/3/3]  thr=0.0843373  acc=0.771084  110737ms
+    [stress LosAngeles_Medium/PIBT/1/3]  thr=0.142857  acc=1  42302ms
+    [stress LosAngeles_Medium/PIBT/2/3]  thr=0.144928  acc=1  38536ms
+    [stress LosAngeles_Medium/PIBT/3/3]  thr=0.179775  acc=1  78882ms
+    [stress LosAngeles_Medium/CongestionAware/1/3]  thr=0.171429  acc=1  72254ms
+    [stress LosAngeles_Medium/CongestionAware/2/3]  thr=0.291667  acc=1  79182ms
+    [stress LosAngeles_Medium/CongestionAware/3/3]  thr=0.15942  acc=1  59270ms
+  [s0 r20  MAPPO]  thr=0.333333  acc=0.942029  aloss=-0.000364887  closs=12.0918  ent=0.634806  kl=-0.000349404  cf=0  ep=10/10  n=415  69990ms
+  [s0 r20  IPPO]  thr=0.434426  acc=0.934426  aloss=-0.00199208  closs=3.91429  ent=0.596821  kl=-0.000343633  cf=0  ep=10/10  n=439  10735ms
+  [s0 r20  MAPPER]  thr=0.409091  acc=0.963636  aloss=-0.0288225  closs=5.96811  ent=0.673866  kl=0.000114726  cf=0  ep=6/10  n=205  22769ms
+  [s0 r20  MAPPO]  thr=0.287671  acc=0.876712  aloss=-0.0086958  closs=21.9956  ent=0.620349  kl=-0.00117775  cf=0  ep=10/10  n=220  63161ms
+  [s0 r20  IPPO]  thr=0.263158  acc=0.947368  aloss=-0.00358988  closs=8.96727  ent=0.565692  kl=4.68581e-05  cf=0  ep=10/10  n=282  55987ms
+  [s0 r20  MAPPER]  thr=0.520548  acc=0.863014  aloss=-0.00120312  closs=3.06688  ent=0.665184  kl=0.000222676  cf=0  ep=8/10  n=99  16266ms
+  [s0 r20  MAPPO]  thr=0.283186  acc=0.955752  aloss=0.0101366  closs=10.7329  ent=0.62185  kl=0.000539164  cf=0  ep=10/10  n=366  28509ms
+  [s0 r20  IPPO]  thr=0.533333  acc=0.933333  aloss=-0.000233559  closs=2.38007  ent=0.587623  kl=-5.56831e-05  cf=0  ep=10/10  n=384  25664ms
+  [s0 r20  MAPPER]  thr=0.429752  acc=0.966942  aloss=-0.0119282  closs=9.43449  ent=0.659946  kl=5.54716e-06  cf=0  ep=5/10  n=200  20464ms
+  [s0 r20  MAPPO]  thr=0.158537  acc=0.817073  aloss=0.0041283  closs=27.93  ent=0.607047  kl=0.00115439  cf=0  ep=10/10  n=202  136224ms
+  [s0 r20  IPPO]  thr=0.344262  acc=0.934426  aloss=0.00266769  closs=4.97202  ent=0.561404  kl=-3.50189e-05  cf=0  ep=10/10  n=236  36457ms
+  [s0 r20  MAPPER]  thr=0.369863  acc=0.931507  aloss=-0.0350472  closs=17.4089  ent=0.663308  kl=7.80867e-05  cf=0  ep=9/10  n=116  30315ms
+  [s0 r20  MAPPO]  thr=0.375  acc=0.914062  aloss=0.00907396  closs=10.7697  ent=0.608868  kl=-0.00224233  cf=0  ep=10/10  n=450  32044ms
+  [s0 r20  IPPO]  thr=0.453782  acc=0.94958  aloss=-0.00602584  closs=4.68586  ent=0.582846  kl=0.000481206  cf=0  ep=10/10  n=459  38837ms
+  [s0 r20  MAPPER]  thr=0.430556  acc=0.965278  aloss=-0.00125715  closs=11.8603  ent=0.636  kl=0.000255721  cf=0  ep=6/10  n=203  17508ms
+  [s0 r20  MAPPO]  thr=0.382353  acc=0.926471  aloss=0.00683603  closs=14.3916  ent=0.587298  kl=0.000307665  cf=0  ep=10/10  n=269  35861ms
+  [s0 r20  IPPO]  thr=0.290909  acc=0.890909  aloss=-0.0104632  closs=5.12848  ent=0.55086  kl=-0.000627414  cf=0  ep=10/10  n=212  59035ms
+  [s0 r20  MAPPER]  thr=0.3  acc=0.842857  aloss=-0.0421774  closs=24.8622  ent=0.655204  kl=0.000483075  cf=0  ep=7/10  n=97  56090ms
+  [s0 r21  MAPPO]  thr=0.364865  acc=0.97973  aloss=-0.00288494  closs=11.8455  ent=0.592177  kl=-0.000827556  cf=0  ep=10/10  n=536  76785ms
+  [s0 r21  IPPO]  thr=0.384615  acc=0.915385  aloss=0.00327365  closs=6.54597  ent=0.565099  kl=0.000441709  cf=0  ep=10/10  n=451  17623ms
+  [s0 r21  MAPPER]  thr=0.480916  acc=0.961832  aloss=-0.0141082  closs=10.0792  ent=0.651518  kl=0.000163611  cf=0  ep=6/10  n=200  20327ms
+  [s0 r21  MAPPO]  thr=0.209302  acc=0.895349  aloss=-0.0195642  closs=24.6167  ent=0.545148  kl=0.000623472  cf=0  ep=10/10  n=325  68593ms
+  [s0 r21  IPPO]  thr=0.285714  acc=0.896104  aloss=-0.00925714  closs=9.01786  ent=0.515982  kl=-0.00185492  cf=0  ep=10/10  n=373  64101ms
+  [s0 r21  MAPPER]  thr=0.365079  acc=0.857143  aloss=0.0216554  closs=35.2453  ent=0.669585  kl=4.6321e-05  cf=0  ep=8/10  n=95  27586ms
+  [s0 r21  MAPPO]  thr=0.420635  acc=0.952381  aloss=0.0374143  closs=11.7355  ent=0.558716  kl=-7.24196e-05  cf=0  ep=10/10  n=450  25704ms
+  [s0 r21  IPPO]  thr=0.344  acc=0.936  aloss=-0.000505207  closs=3.08846  ent=0.520513  kl=-0.000103982  cf=0  ep=10/10  n=554  73785ms
+  [s0 r21  MAPPER]  thr=0.335938  acc=0.96875  aloss=-0.00558565  closs=19.228  ent=0.662465  kl=0.000419309  cf=0  ep=5/10  n=193  106828ms
+  [s0 r21  MAPPO]  thr=0.366197  acc=0.901408  aloss=-0.00781465  closs=17.8493  ent=0.534956  kl=0.000407834  cf=0  ep=10/10  n=269  17165ms
+  [s0 r21  IPPO]  thr=0.346667  acc=0.946667  aloss=0.0774294  closs=5.00348  ent=0.498075  kl=6.22807e-05  cf=0  ep=10/10  n=322  14166ms
+  [s0 r21  MAPPER]  thr=0.391753  acc=0.948454  aloss=-0.00145922  closs=11.0357  ent=0.659993  kl=7.61455e-05  cf=0  ep=9/10  n=151  20740ms
+  [s0 r21  MAPPO]  thr=0.369565  acc=0.949275  aloss=-0.00157672  closs=7.46889  ent=0.562618  kl=0.00113803  cf=0  ep=10/10  n=606  13747ms
+  [s0 r21  IPPO]  thr=0.209302  acc=0.96124  aloss=-0.012696  closs=5.49324  ent=0.461004  kl=-6.78334e-05  cf=0  ep=10/10  n=691  95079ms
+  [s0 r21  MAPPER]  thr=0.298611  acc=0.930556  aloss=-0.00101435  closs=13.8644  ent=0.645832  kl=8.33867e-05  cf=0  ep=6/10  n=232  48328ms
+  [s0 r21  MAPPO]  thr=0.202247  acc=0.898876  aloss=-0.00511754  closs=21.9973  ent=0.519521  kl=0.00037909  cf=0  ep=10/10  n=360  69386ms
+  [s0 r21  IPPO]  thr=0.223529  acc=0.823529  aloss=-0.00792551  closs=7.31405  ent=0.401473  kl=0.000377238  cf=0  ep=10/10  n=479  71735ms
+  [s0 r21  MAPPER]  thr=0.426667  acc=0.893333  aloss=-0.000951752  closs=18.6063  ent=0.644216  kl=0.00020726  cf=0  ep=7/10  n=103  27209ms
+  [s0 r22  MAPPO]  thr=0.466667  acc=0.903704  aloss=0.0124359  closs=8.71361  ent=0.52405  kl=-0.000828781  cf=0  ep=10/10  n=615  31882ms
+  [s0 r22  IPPO]  thr=0.376923  acc=0.9  aloss=-0.00388652  closs=4.59769  ent=0.426728  kl=-1.17615e-05  cf=0  ep=10/10  n=814  55119ms
+  [s0 r22  MAPPER]  thr=0.515625  acc=0.96875  aloss=0.000699156  closs=4.83541  ent=0.66086  kl=0.000646783  cf=0  ep=6/10  n=195  11339ms
+  [s0 r22  MAPPO]  thr=0.380282  acc=0.774648  aloss=-0.00603203  closs=13.9695  ent=0.495148  kl=2.9947e-06  cf=0  ep=10/10  n=281  37899ms
+  [s0 r22  IPPO]  thr=0.325581  acc=0.895349  aloss=-0.00576847  closs=5.32116  ent=0.364184  kl=0.000691516  cf=0  ep=10/10  n=566  133526ms
+  [s0 r22  MAPPER]  thr=0.32967  acc=0.967033  aloss=-0.00188523  closs=16.7895  ent=0.661639  kl=-9.32694e-05  cf=0  ep=8/10  n=147  40176ms
+  [s0 r22  MAPPO]  thr=0.210145  acc=0.905797  aloss=0.00112723  closs=10.1633  ent=0.485976  kl=0.00153117  cf=0  ep=10/10  n=528  41206ms
+  [s0 r22  IPPO]  thr=0.378571  acc=0.964286  aloss=3.49665e-05  closs=4.98677  ent=0.397519  kl=0.000284246  cf=0  ep=10/10  n=858  32891ms
+  [s0 r22  MAPPER]  thr=0.421875  acc=0.984375  aloss=0.00385282  closs=16.0355  ent=0.642334  kl=7.77793e-06  cf=0  ep=5/10  n=201  30905ms
+  [s0 r22  MAPPO]  thr=0.412698  acc=0.904762  aloss=0.0140299  closs=16.6027  ent=0.466617  kl=9.37443e-05  cf=0  ep=10/10  n=334  23505ms
+  [s0 r22  IPPO]  thr=0.25  acc=0.816667  aloss=-0.00674804  closs=5.11577  ent=0.368907  kl=6.34442e-05  cf=0  ep=10/10  n=392  23890ms
+  [s0 r22  MAPPER]  thr=0.338235  acc=0.882353  aloss=-0.00290844  closs=7.97735  ent=0.650766  kl=0.000433165  cf=0  ep=8/10  n=91  15864ms
+  [s0 r22  MAPPO]  thr=0.335878  acc=0.931298  aloss=-0.0376713  closs=8.92558  ent=0.48324  kl=0.000919875  cf=0  ep=10/10  n=515  74319ms
+  [s0 r22  IPPO]  thr=0.333333  acc=0.914729  aloss=-0.0018947  closs=4.30178  ent=0.358945  kl=0.000558137  cf=0  ep=10/10  n=928  43576ms
+  [s0 r22  MAPPER]  thr=0.522581  acc=0.974194  aloss=0.00224538  closs=9.4712  ent=0.633526  kl=0.000283724  cf=0  ep=5/10  n=235  27576ms
+  [s0 r22  MAPPO]  thr=0.211268  acc=0.788732  aloss=-0.00202677  closs=19.0764  ent=0.430299  kl=-0.000789813  cf=0  ep=10/10  n=428  54116ms
+  [s0 r22  IPPO]  thr=0.220339  acc=0.694915  aloss=-0.0382763  closs=6.71284  ent=0.299795  kl=-0.00167665  cf=0  ep=10/10  n=551  53508ms
+  [s0 r22  MAPPER]  thr=0.310811  acc=0.878378  aloss=-0.00173304  closs=11.6757  ent=0.654615  kl=0.000325545  cf=0  ep=8/10  n=111  29257ms
+  [s0 r23  MAPPO]  thr=0.3  acc=0.9  aloss=-0.000449741  closs=8.01276  ent=0.467593  kl=9.89577e-05  cf=0  ep=10/10  n=575  27300ms
+  [s0 r23  IPPO]  thr=0.340278  acc=0.854167  aloss=-0.00184453  closs=5.23443  ent=0.304354  kl=0.000432106  cf=0  ep=10/10  n=1207  50801ms
+  [s0 r23  MAPPER]  thr=0.476923  acc=0.969231  aloss=-0.0696205  closs=5.17808  ent=0.616337  kl=9.342e-05  cf=0  ep=6/10  n=182  25959ms
+  [s0 r23  MAPPO]  thr=0.3  acc=0.8125  aloss=-0.00271573  closs=15.5014  ent=0.415246  kl=-0.00126423  cf=0  ep=10/10  n=501  50246ms
+  [s0 r23  IPPO]  thr=0.305556  acc=0.805556  aloss=-0.00670144  closs=5.40149  ent=0.251843  kl=-0.000109771  cf=0  ep=10/10  n=941  81633ms
+  [s0 r23  MAPPER]  thr=0.33871  acc=0.903226  aloss=0.0365178  closs=15.8857  ent=0.640566  kl=-1.72189e-05  cf=0  ep=8/10  n=88  48759ms
+  [s0 r23  MAPPO]  thr=0.311111  acc=0.948148  aloss=-0.00245494  closs=8.6901  ent=0.41402  kl=0.0025627  cf=0  ep=10/10  n=700  48325ms
+  [s0 r23  IPPO]  thr=0.259259  acc=0.874074  aloss=-0.00573549  closs=5.09657  ent=0.253404  kl=0.000905851  cf=0.00299202  ep=10/10  n=1485  59106ms
+  [s0 r23  MAPPER]  thr=0.274194  acc=0.967742  aloss=0.0572373  closs=16.7427  ent=0.643612  kl=0.000241937  cf=0  ep=4/10  n=188  65161ms
+  [s0 r23  MAPPO]  thr=0.212121  acc=0.863636  aloss=0.00173669  closs=17.2122  ent=0.365132  kl=0.000170327  cf=0  ep=10/10  n=441  31824ms
+  [s0 r23  IPPO]  thr=0.268817  acc=0.849462  aloss=-0.00269675  closs=6.07068  ent=0.191158  kl=0.000327041  cf=0.0025266  ep=10/10  n=1483  61932ms
+  [s0 r23  MAPPER]  thr=0.409639  acc=0.927711  aloss=-0.00110108  closs=17.2173  ent=0.665822  kl=2.62286e-05  cf=0  ep=7/10  n=127  20461ms
+  [s0 r23  MAPPO]  thr=0.336  acc=0.968  aloss=-0.00301453  closs=9.2895  ent=0.3894  kl=-6.04987e-05  cf=0  ep=10/10  n=915  48474ms
+  [s0 r23  IPPO]  thr=0.218045  acc=0.819549  aloss=-0.00261233  closs=5.54259  ent=0.187172  kl=0.000688206  cf=0.006875  ep=10/10  n=2064  82504ms
+  [s0 r23  MAPPER]  thr=0.326733  acc=0.940594  aloss=-0.0168339  closs=15.8087  ent=0.649055  kl=0.000574821  cf=0  ep=5/10  n=152  66297ms
+  [s0 r23  MAPPO]  thr=0.283333  acc=0.766667  aloss=0.0148658  closs=17.7314  ent=0.358378  kl=0.000186414  cf=0  ep=10/10  n=355  23834ms
+  [s0 r23  IPPO]  thr=0.114754  acc=0.52459  aloss=-0.00540158  closs=5.73641  ent=0.152527  kl=0.000161445  cf=0.00647096  ep=10/10  n=843  27421ms
+  [s0 r23  MAPPER]  thr=0.285714  acc=0.806122  aloss=-0.000563916  closs=36.091  ent=0.632385  kl=-0.000214698  cf=0  ep=7/10  n=109  31356ms
+  [s0 r24  MAPPO]  thr=0.316239  acc=0.905983  aloss=0.000112794  closs=8.40194  ent=0.351772  kl=0.000347542  cf=0  ep=10/10  n=876  51569ms
+  [s0 r24  IPPO]  thr=0.240876  acc=0.817518  aloss=-0.00194665  closs=5.13674  ent=0.151857  kl=0.00134963  cf=0.00220833  ep=10/10  n=2390  39763ms
+  [s0 r24  MAPPER]  thr=0.541284  acc=0.93578  aloss=-0.00421377  closs=4.3892  ent=0.652605  kl=3.57903e-05  cf=0  ep=5/10  n=159  22395ms
+  [s0 r24  MAPPO]  thr=0.402174  acc=0.836957  aloss=-0.00147125  closs=11.8548  ent=0.301458  kl=0.000560617  cf=0  ep=10/10  n=768  42312ms
+  [s0 r24  IPPO]  thr=0.1375  acc=0.7  aloss=-0.00386883  closs=5.10078  ent=0.0996281  kl=0.00211502  cf=0.00720588  ep=10/10  n=1620  100270ms
+  [s0 r24  MAPPER]  thr=0.309524  acc=0.916667  aloss=-0.00210778  closs=17.6807  ent=0.632757  kl=0.000258916  cf=0  ep=8/10  n=115  43058ms
+  [s0 r24  MAPPO]  thr=0.224138  acc=0.853448  aloss=0.00413731  closs=7.86986  ent=0.277887  kl=0.000352705  cf=0.000173611  ep=10/10  n=1130  109500ms
+  [s0 r24  IPPO]  thr=0.201439  acc=0.784173  aloss=-0.00147027  closs=6.29406  ent=0.104167  kl=0.000508103  cf=0.00262019  ep=10/10  n=4160  47039ms
+  [s0 r24  MAPPER]  thr=0.37931  acc=0.944828  aloss=-0.0026312  closs=14.4146  ent=0.628032  kl=-0.000557342  cf=0  ep=5/10  n=208  49165ms
+  [s0 r24  MAPPO]  thr=0.305085  acc=0.864407  aloss=-0.00330637  closs=17.5631  ent=0.246077  kl=-1.89012e-05  cf=0  ep=10/10  n=630  37369ms
+  [s0 r24  IPPO]  thr=0.164384  acc=0.671233  aloss=-0.0105443  closs=4.31891  ent=0.0677402  kl=0.000343437  cf=0.00593112  ep=10/10  n=3105  63784ms
+  [s0 r24  MAPPER]  thr=0.264706  acc=0.926471  aloss=-0.0275093  closs=60.1767  ent=0.645382  kl=-0.000949961  cf=0  ep=8/10  n=112  92490ms
+  [s0 r24  MAPPO]  thr=0.285714  acc=0.920635  aloss=-0.00171945  closs=8.11088  ent=0.277402  kl=0.000616722  cf=0  ep=10/10  n=1294  49140ms
+  [s0 r24  IPPO]  thr=0.166667  acc=0.76  aloss=-0.00157264  closs=4.86264  ent=0.0800616  kl=-5.94741e-05  cf=0.00428404  ep=10/10  n=6814  73954ms
+  [s0 r24  MAPPER]  thr=0.330935  acc=0.94964  aloss=0.00471714  closs=16.666  ent=0.645318  kl=0.000580439  cf=0  ep=5/10  n=190  64158ms
+  [s0 r24  MAPPO]  thr=0.146667  acc=0.733333  aloss=-0.00276803  closs=15.8786  ent=0.19986  kl=0.00010845  cf=0.00380859  ep=10/10  n=1018  93273ms
+  [s0 r24  IPPO]  thr=0.169014  acc=0.56338  aloss=-0.0013367  closs=4.84769  ent=0.050647  kl=0.000384316  cf=0.000991587  ep=10/10  n=3310  92213ms
+  [s0 r24  MAPPER]  thr=0.4  acc=0.909091  aloss=-0.00150428  closs=8.0356  ent=0.65811  kl=-3.76258e-05  cf=0  ep=7/10  n=79  38139ms
+  [MAPPER-Ev @ round 25] mutated 4/18 policies
+  [s0 r25  MAPPO]  thr=0.284672  acc=0.781022  aloss=0.00151489  closs=6.67726  ent=0.208149  kl=0.000706996  cf=0  ep=10/10  n=1675  50204ms
+  [s0 r25  IPPO]  thr=0.140845  acc=0.669014  aloss=-0.00135246  closs=4.37311  ent=0.0545259  kl=0.000244678  cf=0.00358047  ep=10/10  n=7876  95548ms
+  [s0 r25  MAPPER]  thr=0.435115  acc=0.946565  aloss=-0.00777567  closs=12.8843  ent=0.648385  kl=0.000217438  cf=0  ep=6/10  n=181  42236ms
+  [s0 r25  MAPPO]  thr=0.189873  acc=0.708861  aloss=0.000471132  closs=12.7167  ent=0.144275  kl=0.00219303  cf=0.0137669  ep=10/10  n=1161  85222ms
+  [s0 r25  IPPO]  thr=0.117647  acc=0.317647  aloss=0.000143522  closs=5.52923  ent=0.0483014  kl=5.05477e-05  cf=0  ep=10/10  n=2906  96500ms
+  [s0 r25  MAPPER]  thr=0.436782  acc=0.931035  aloss=-0.00186082  closs=19.1018  ent=0.644314  kl=0.000126037  cf=0  ep=7/10  n=129  44628ms
+  [s0 r25  MAPPO]  thr=0.323077  acc=0.815385  aloss=-0.00738059  closs=5.12168  ent=0.149484  kl=0.000330348  cf=0.00665246  ep=10/10  n=2787  27996ms
+  [s0 r25  IPPO]  thr=0.22069  acc=0.689655  aloss=-0.000162638  closs=4.04957  ent=0.0436756  kl=0.000136552  cf=0.00107971  ep=10/10  n=11364  38908ms
+  [s0 r25  MAPPER]  thr=0.286822  acc=0.976744  aloss=-0.00129091  closs=21.426  ent=0.639973  kl=2.55411e-05  cf=0  ep=5/10  n=196  59157ms
+  [s0 r25  MAPPO]  thr=0.161765  acc=0.691176  aloss=-0.00249706  closs=11.7229  ent=0.0982624  kl=0.000630595  cf=0.00684028  ep=10/10  n=1906  63388ms
+  [s0 r25  IPPO]  thr=0.2  acc=0.505882  aloss=-0.00285847  closs=5.72481  ent=0.0302078  kl=0.000540431  cf=0.00115031  ep=10/10  n=5191  48504ms
+  [s0 r25  MAPPER]  thr=0.265957  acc=0.968085  aloss=-0.0166451  closs=14.7573  ent=0.651128  kl=-2.98374e-06  cf=0  ep=9/10  n=144  34703ms
+  [s0 r25  MAPPO]  thr=0.19084  acc=0.748092  aloss=-0.00214885  closs=4.81398  ent=0.102641  kl=0.000936759  cf=0.00721185  ep=10/10  n=3502  75128ms
+  [s0 r25  IPPO]  thr=0.120968  acc=0.5  aloss=-0.000829751  closs=4.24688  ent=0.0356792  kl=-4.55025e-05  cf=0.00169025  ep=10/10  n=10172  35138ms
+  [s0 r25  MAPPER]  thr=0.37037  acc=0.940741  aloss=-0.00333784  closs=11.1621  ent=0.661361  kl=0.000375468  cf=0  ep=6/10  n=201  36154ms
+  [s0 r25  MAPPO]  thr=0.0958904  acc=0.520548  aloss=-0.00311702  closs=11.6721  ent=0.0665253  kl=0.001305  cf=0.0075407  ep=10/10  n=1875  72760ms
+  [s0 r25  IPPO]  thr=0.0714286  acc=0.265306  aloss=-0.000608297  closs=4.79719  ent=0.0229437  kl=0.000190258  cf=0.00131823  ep=10/10  n=5481  83392ms
+  [s0 r25  MAPPER]  thr=0.30137  acc=0.917808  aloss=0.00231306  closs=16.61  ent=0.654816  kl=0.000140793  cf=0  ep=7/10  n=99  47628ms
+  [s0 r26  MAPPO]  thr=0.14094  acc=0.597315  aloss=-0.00156899  closs=4.35712  ent=0.0680193  kl=0.000121215  cf=0.00443241  ep=10/10  n=6091  55893ms
+  [s0 r26  IPPO]  thr=0.0839695  acc=0.381679  aloss=-0.000526401  closs=3.93559  ent=0.0297452  kl=2.50783e-05  cf=0.0022065  ep=10/10  n=9449  38798ms
+  [s0 r26  MAPPER]  thr=0.552  acc=0.944  aloss=0.00990312  closs=7.63109  ent=0.650074  kl=-9.42547e-05  cf=0  ep=6/10  n=168  17317ms
+  [s0 r26  MAPPO]  thr=0.0597015  acc=0.298507  aloss=-0.00135435  closs=8.90066  ent=0.0474777  kl=0.000244875  cf=0.00276639  ep=10/10  n=1941  86232ms
+  [s0 r26  IPPO]  thr=0.0135135  acc=0.027027  aloss=-0.000102598  closs=7.90836  ent=0.0215837  kl=-8.70426e-05  cf=0  ep=10/10  n=1340  115901ms
+  [s0 r26  MAPPER]  thr=0.4  acc=0.893333  aloss=-0.00179328  closs=17.0476  ent=0.646287  kl=0.00025687  cf=0  ep=7/10  n=105  54225ms
+  [s0 r26  MAPPO]  thr=0.185484  acc=0.604839  aloss=7.07636e-05  closs=3.99746  ent=0.0563119  kl=0.000288922  cf=0.000600962  ep=10/10  n=5821  30100ms
+  [s0 r26  IPPO]  thr=0.155556  acc=0.518519  aloss=-0.000441284  closs=3.8638  ent=0.0209569  kl=0.00016124  cf=0.00060307  ep=10/10  n=16391  37590ms
+  [s0 r26  MAPPER]  thr=0.408163  acc=0.965986  aloss=0.0318386  closs=7.3027  ent=0.648126  kl=-0.000104703  cf=0  ep=5/10  n=219  32104ms
+  [s0 r26  MAPPO]  thr=0.0493827  acc=0.345679  aloss=-0.00455252  closs=6.86712  ent=0.0376168  kl=-9.93071e-07  cf=0.00246212  ep=10/10  n=4194  66131ms
+  [s0 r26  IPPO]  thr=0  acc=0.0537634  aloss=0.000634066  closs=7.13615  ent=0.0163951  kl=-5.04919e-05  cf=0  ep=10/10  n=2644  65214ms
+  [s0 r26  MAPPER]  thr=0.711864  acc=0.983051  aloss=-0.00209186  closs=2.27538  ent=0.651874  kl=0.000294122  cf=0  ep=8/10  n=86  15500ms
+  [s0 r26  MAPPO]  thr=0.113636  acc=0.492424  aloss=0.00126993  closs=3.43749  ent=0.0363702  kl=0.000235604  cf=0.000821078  ep=10/10  n=8129  35286ms
+  [s0 r26  IPPO]  thr=0.00746269  acc=0.0970149  aloss=0.000324679  closs=5.12096  ent=0.0187783  kl=-6.58113e-05  cf=0.00116422  ep=10/10  n=4866  25817ms
+  [s0 r26  MAPPER]  thr=0.291045  acc=0.925373  aloss=0.000926043  closs=16.9633  ent=0.601364  kl=0.000259773  cf=0  ep=5/10  n=177  57636ms
+  [s0 r26  MAPPO]  thr=0.0675676  acc=0.243243  aloss=-0.000556653  closs=11.2678  ent=0.0194691  kl=0.000474897  cf=0.00178571  ep=10/10  n=3120  74366ms
+  [s0 r26  IPPO]  thr=0.0126582  acc=0.0126582  aloss=0.000529681  closs=9.36012  ent=0.0123085  kl=-1.54e-05  cf=0  ep=10/10  n=1353  80740ms
+  [s0 r26  MAPPER]  thr=0.280488  acc=0.926829  aloss=0.056585  closs=19.9523  ent=0.648492  kl=1.43339e-05  cf=0  ep=6/10  n=103  59083ms
+  [s0 r27  MAPPO]  thr=0.0381679  acc=0.206107  aloss=-0.0008194  closs=3.47805  ent=0.0291477  kl=-3.47475e-05  cf=0.00169492  ep=10/10  n=5664  25251ms
+  [s0 r27  IPPO]  thr=0.0521739  acc=0.130435  aloss=0.000101971  closs=5.73885  ent=0.0184876  kl=-3.9772e-05  cf=0  ep=10/10  n=6407  23084ms
+  [s0 r27  MAPPER]  thr=0.261194  acc=0.925373  aloss=-0.00160357  closs=17.8597  ent=0.644949  kl=0.000306636  cf=0  ep=6/10  n=201  58402ms
+  [s0 r27  MAPPO]  thr=0  acc=0.012987  aloss=0.00196038  closs=13.7477  ent=0.0152479  kl=-6.93421e-05  cf=0  ep=10/10  n=1432  109497ms
+  [s0 r27  IPPO]  thr=0.0131579  acc=0.0131579  aloss=0.000313552  closs=9.13405  ent=0.00862591  kl=-8.25774e-06  cf=0  ep=10/10  n=2042  157791ms
+  [s0 r27  MAPPER]  thr=0.461538  acc=0.935897  aloss=-0.00195021  closs=5.79767  ent=0.63277  kl=0.000511626  cf=0  ep=7/10  n=117  48238ms
+  [s0 r27  MAPPO]  thr=0.0416667  acc=0.243056  aloss=-0.000382586  closs=2.8966  ent=0.017824  kl=0.000136945  cf=0.000615708  ep=10/10  n=9843  29746ms
+  [s0 r27  IPPO]  thr=0.0166667  acc=0.108333  aloss=-0.00060366  closs=4.51207  ent=0.0153432  kl=1.5328e-05  cf=0.000684172  ep=10/10  n=5384  19421ms
+  [s0 r27  MAPPER]  thr=0.44697  acc=0.954545  aloss=0.0060022  closs=6.06375  ent=0.639686  kl=-0.00057133  cf=0  ep=5/10  n=186  14384ms
+  [s0 r27  MAPPO]  thr=0.0410959  acc=0.0547945  aloss=0.0019118  closs=9.4326  ent=0.0132519  kl=1.17833e-05  cf=0  ep=10/10  n=3013  70305ms
+  [s0 r27  IPPO]  thr=0.0428571  acc=0.0428571  aloss=-0.000217628  closs=8.44273  ent=0.00824381  kl=-5.71335e-07  cf=0  ep=10/10  n=2508  81023ms
+  [s0 r27  MAPPER]  thr=0.324675  acc=0.896104  aloss=0.106005  closs=14.4771  ent=0.657406  kl=0.000268846  cf=0  ep=8/10  n=100  32977ms
+  [s0 r27  MAPPO]  thr=0.125  acc=0.390625  aloss=-0.000127038  closs=2.6534  ent=0.0234992  kl=-2.33785e-05  cf=8.7007e-05  ep=10/10  n=13787  52778ms
+  [s0 r27  IPPO]  thr=0.034188  acc=0.0940171  aloss=-0.000543158  closs=3.9928  ent=0.0130032  kl=-6.14929e-05  cf=0.00031663  ep=10/10  n=7238  44915ms
+  [s0 r27  MAPPER]  thr=0.472441  acc=0.944882  aloss=0.0799049  closs=8.32864  ent=0.61909  kl=-6.82835e-05  cf=0  ep=6/10  n=188  19042ms
+  [s0 r27  MAPPO]  thr=0  acc=0.0266667  aloss=-9.08484e-05  closs=13.1717  ent=0.0161071  kl=-8.56645e-05  cf=0  ep=10/10  n=2034  106045ms
+  [s0 r27  IPPO]  thr=0  acc=0.025  aloss=0.000281075  closs=6.92814  ent=0.00498506  kl=-6.31509e-06  cf=0  ep=10/10  n=3658  194172ms
+  [s0 r27  MAPPER]  thr=0.342466  acc=0.849315  aloss=-0.00122107  closs=4.60762  ent=0.640781  kl=7.19464e-05  cf=0  ep=7/10  n=89  61366ms
+  [s0 r28  MAPPO]  thr=0.0718954  acc=0.294118  aloss=4.91405e-05  closs=4.44219  ent=0.0208501  kl=2.54473e-05  cf=0  ep=10/10  n=12349  51758ms
+  [s0 r28  IPPO]  thr=0.037037  acc=0.0814815  aloss=-0.000420627  closs=4.92825  ent=0.00953787  kl=-6.76179e-07  cf=1.17925e-05  ep=10/10  n=8456  44854ms
+  [s0 r28  MAPPER]  thr=0.492857  acc=0.95  aloss=0.0166478  closs=5.30898  ent=0.64774  kl=-0.000227086  cf=0  ep=6/10  n=206  27095ms
+  [s0 r28  MAPPO]  thr=0.0126582  acc=0.0253165  aloss=-0.000119359  closs=10.7647  ent=0.0112627  kl=-2.08595e-05  cf=0  ep=10/10  n=1631  153795ms
+  [s0 r28  IPPO]  thr=0.0133333  acc=0.0133333  aloss=0.0077334  closs=12.4772  ent=0.00427741  kl=1.94657e-06  cf=0  ep=10/10  n=1416  203696ms
+  [s0 r28  MAPPER]  thr=0.355263  acc=0.921053  aloss=-0.00758548  closs=13.2925  ent=0.638763  kl=0.000565725  cf=0  ep=9/10  n=125  95359ms
+  [s0 r28  MAPPO]  thr=0.00769231  acc=0.0923077  aloss=-0.00107509  closs=3.77241  ent=0.0163457  kl=-1.30481e-05  cf=0  ep=10/10  n=5351  29693ms
+  [s0 r28  IPPO]  thr=0.0444444  acc=0.0888889  aloss=-0.000304295  closs=4.99842  ent=0.00762503  kl=-5.72839e-06  cf=0  ep=10/10  n=9518  26137ms
+  [s0 r28  MAPPER]  thr=0.333333  acc=0.957447  aloss=-0.164758  closs=9.69124  ent=0.639854  kl=-0.000119536  cf=0  ep=5/10  n=216  53926ms
+  [s0 r28  MAPPO]  thr=0  acc=0.0253165  aloss=-0.000998809  closs=16.7448  ent=0.0103554  kl=7.04962e-06  cf=0  ep=10/10  n=1354  52026ms
+  [s0 r28  IPPO]  thr=0.0126582  acc=0.0379747  aloss=-0.000103531  closs=10.5232  ent=0.00510722  kl=3.34741e-05  cf=0  ep=10/10  n=2432  57304ms
+  [s0 r28  MAPPER]  thr=0.43038  acc=0.962025  aloss=-0.0721758  closs=14.5954  ent=0.656785  kl=-0.000298366  cf=0  ep=9/10  n=129  100180ms
+  [s0 r28  MAPPO]  thr=0.04  acc=0.16  aloss=-0.000221107  closs=4.70558  ent=0.0137789  kl=8.51074e-05  cf=0.000420168  ep=10/10  n=7598  40099ms
+  [s0 r28  IPPO]  thr=0.0535714  acc=0.0982143  aloss=1.89931e-06  closs=5.34331  ent=0.00936863  kl=-1.27401e-06  cf=0  ep=10/10  n=9075  29519ms
+  [s0 r28  MAPPER]  thr=0.562963  acc=0.985185  aloss=-0.0229519  closs=4.25432  ent=0.644641  kl=0.000229576  cf=0  ep=6/10  n=211  15707ms
+  [s0 r28  MAPPO]  thr=0  acc=0  aloss=-0.00216634  closs=11.859  ent=0.00919729  kl=-1.21809e-05  cf=0  ep=10/10  n=1840  135006ms
+  [s0 r28  IPPO]  thr=0  acc=0.0289855  aloss=-0.0105968  closs=9.24492  ent=0.00425116  kl=1.75822e-05  cf=0  ep=10/10  n=2500  131018ms
+  [s0 r28  MAPPER]  thr=0.269841  acc=0.952381  aloss=0.00433917  closs=46.5498  ent=0.635971  kl=-0.000292766  cf=0  ep=6/10  n=81  171044ms
+  [s0 r29  MAPPO]  thr=0.0542169  acc=0.156627  aloss=7.34531e-05  closs=3.46319  ent=0.0134352  kl=9.37252e-06  cf=0  ep=10/10  n=11671  38659ms
+  [s0 r29  IPPO]  thr=0  acc=0.0247934  aloss=7.78414e-05  closs=6.8347  ent=0.00921287  kl=-2.49387e-06  cf=0  ep=10/10  n=2558  27627ms
+  [s0 r29  MAPPER]  thr=0.443548  acc=0.959677  aloss=0.000155991  closs=10.928  ent=0.638283  kl=0.000139802  cf=0  ep=6/10  n=187  34132ms
+  [s0 r29  MAPPO]  thr=0  acc=0  aloss=-0.0115915  closs=12.694  ent=0.00772542  kl=-5.60724e-06  cf=0  ep=10/10  n=1188  111889ms
+  [s0 r29  IPPO]  thr=0.0117647  acc=0.0235294  aloss=-0.000822537  closs=10.7676  ent=0.00376339  kl=2.03766e-05  cf=0  ep=10/10  n=2448  154638ms
+  [s0 r29  MAPPER]  thr=0.378788  acc=0.848485  aloss=-0.00144473  closs=15.8602  ent=0.632566  kl=0.000236798  cf=0  ep=7/10  n=81  79291ms
+  [s0 r29  MAPPO]  thr=0.04  acc=0.088  aloss=-0.000172612  closs=3.79461  ent=0.015068  kl=3.41297e-05  cf=0.000107725  ep=10/10  n=6527  25794ms
+  [s0 r29  IPPO]  thr=0.0571429  acc=0.0857143  aloss=0.000800193  closs=4.12375  ent=0.00718334  kl=8.03126e-06  cf=0  ep=10/10  n=9511  26739ms
+  [s0 r29  MAPPER]  thr=0.288732  acc=0.957747  aloss=-0.0234101  closs=12.0197  ent=0.640731  kl=0.000279496  cf=0  ep=5/10  n=212  66110ms
+  [s0 r29  MAPPO]  thr=0.012987  acc=0.0909091  aloss=-0.000584516  closs=5.53456  ent=0.00943017  kl=5.05406e-05  cf=0.000186567  ep=10/10  n=4278  97427ms
+  [s0 r29  IPPO]  thr=0  acc=0.0266667  aloss=0.000983688  closs=13.6343  ent=0.00311613  kl=5.04637e-05  cf=0  ep=10/10  n=1809  57368ms
+  [s0 r29  MAPPER]  thr=0.447368  acc=0.894737  aloss=-0.0137938  closs=10.7027  ent=0.635193  kl=0.000229727  cf=0  ep=10/10  n=115  44610ms
+  [s0 r29  MAPPO]  thr=0.0526316  acc=0.210526  aloss=0.000169757  closs=3.40898  ent=0.0134169  kl=5.69602e-05  cf=0  ep=10/10  n=11118  40891ms
+  [s0 r29  IPPO]  thr=0.00757576  acc=0.00757576  aloss=-0.000737922  closs=5.44808  ent=0.00744749  kl=-1.45871e-05  cf=0  ep=10/10  n=2544  28602ms
+  [s0 r29  MAPPER]  thr=0.402878  acc=0.985611  aloss=-0.020725  closs=15.1128  ent=0.642339  kl=2.7258e-05  cf=0  ep=6/10  n=193  112458ms
+  [s0 r29  MAPPO]  thr=0.0123457  acc=0.0246914  aloss=-0.000317999  closs=13.9306  ent=0.00759072  kl=3.63078e-06  cf=0  ep=10/10  n=1772  92909ms
+  [s0 r29  IPPO]  thr=0.0117647  acc=0.0352941  aloss=0.0012526  closs=9.69931  ent=0.00266298  kl=5.15114e-05  cf=0  ep=10/10  n=2730  126907ms
+  [s0 r29  MAPPER]  thr=0.424658  acc=0.931507  aloss=0.00781888  closs=21.3662  ent=0.655326  kl=0.000495836  cf=0  ep=7/10  n=120  110807ms
+  [MAPPER-Ev @ round 30] mutated 4/18 policies
+  [s0 r30  MAPPO]  thr=0.0482759  acc=0.110345  aloss=-0.0011644  closs=3.98358  ent=0.0085666  kl=8.91973e-05  cf=0.00021829  ep=10/10  n=8676  41130ms
+  [s0 r30  IPPO]  thr=0.00775194  acc=0.00775194  aloss=-0.00656069  closs=6.78274  ent=0.00533665  kl=-1.04147e-07  cf=0  ep=10/10  n=2273  30673ms
+  [s0 r30  MAPPER]  thr=0.56  acc=0.9  aloss=-0.00132819  closs=2.01734  ent=0.628446  kl=7.95922e-06  cf=0  ep=6/10  n=131  9898ms
+  [s0 r30  MAPPO]  thr=0.0123457  acc=0.0123457  aloss=-0.00095475  closs=9.2168  ent=0.00479191  kl=5.48973e-07  cf=0  ep=10/10  n=2061  165309ms
+  [s0 r30  IPPO]  thr=0.0104167  acc=0.0104167  aloss=6.05841e-05  closs=8.79782  ent=0.0025817  kl=1.78319e-06  cf=0  ep=10/10  n=2295  244713ms
+  [s0 r30  MAPPER]  thr=0.285714  acc=0.945055  aloss=-0.0441954  closs=28.9334  ent=0.638014  kl=-9.70285e-05  cf=0  ep=7/10  n=140  166475ms
+  [s0 r30  MAPPO]  thr=0.020979  acc=0.0699301  aloss=0.000370083  closs=2.35353  ent=0.00962176  kl=2.66051e-06  cf=0  ep=10/10  n=8661  30782ms
+  [s0 r30  IPPO]  thr=0  acc=0.0222222  aloss=0.00083718  closs=5.65067  ent=0.00476488  kl=2.46349e-05  cf=0  ep=10/10  n=3143  23909ms
+  [s0 r30  MAPPER]  thr=0.387931  acc=0.939655  aloss=0.0177696  closs=19.5582  ent=0.643769  kl=-2.47524e-05  cf=0  ep=4/10  n=162  63819ms
+  [s0 r30  MAPPO]  thr=0  acc=0  aloss=0.000950359  closs=13.4625  ent=0.00599243  kl=-3.2543e-06  cf=0  ep=10/10  n=1652  49456ms
+  [s0 r30  IPPO]  thr=0.015625  acc=0.015625  aloss=-0.00803686  closs=11.6558  ent=0.00246975  kl=9.25517e-06  cf=0  ep=10/10  n=1539  41233ms
+  [s0 r30  MAPPER]  thr=0.420455  acc=0.909091  aloss=-0.00112882  closs=10.43  ent=0.625445  kl=0.000230562  cf=0  ep=9/10  n=131  30562ms
+  [s0 r30  MAPPO]  thr=0.0472441  acc=0.0866142  aloss=-7.12476e-05  closs=3.47258  ent=0.00889439  kl=3.51492e-06  cf=0  ep=10/10  n=10136  32810ms
+  [s0 r30  IPPO]  thr=0.0310078  acc=0.0697674  aloss=-0.000315113  closs=3.93774  ent=0.00466125  kl=8.78769e-05  cf=0.000341599  ep=10/10  n=7893  38065ms
+  [s0 r30  MAPPER]  thr=0.479675  acc=0.943089  aloss=-0.00172468  closs=6.70215  ent=0.645106  kl=0.00015204  cf=0  ep=6/10  n=194  17916ms
+  [s0 r30  MAPPO]  thr=0.025974  acc=0.0519481  aloss=0.00128451  closs=12.7647  ent=0.00549366  kl=1.78034e-05  cf=0  ep=10/10  n=1804  53526ms
+  [s0 r30  IPPO]  thr=0  acc=0.0326087  aloss=0.0081951  closs=10.0293  ent=0.00136562  kl=0.000117629  cf=0  ep=10/10  n=2211  119738ms
+  [s0 r30  MAPPER]  thr=0.321839  acc=0.896552  aloss=0.00436538  closs=47.4581  ent=0.599192  kl=0.000130999  cf=0  ep=7/10  n=105  168395ms
+  [s0 r31  MAPPO]  thr=0  acc=0  aloss=-0.000432986  closs=3.72824  ent=0.00809648  kl=-9.38081e-06  cf=0  ep=10/10  n=1848  25703ms
+  [s0 r31  IPPO]  thr=0.0275229  acc=0.0458716  aloss=0.00033978  closs=7.61382  ent=0.0024327  kl=5.36315e-05  cf=0  ep=10/10  n=2963  26097ms
+  [s0 r31  MAPPER]  thr=0.398649  acc=0.966216  aloss=0.0297224  closs=15.4632  ent=0.636415  kl=0.000232982  cf=0  ep=6/10  n=216  58521ms
+  [s0 r31  MAPPO]  thr=0  acc=0  aloss=0.000559693  closs=8.54735  ent=0.00543991  kl=-2.9268e-06  cf=0  ep=10/10  n=1212  106709ms
+  [s0 r31  IPPO]  thr=0  acc=0  aloss=0.00115172  closs=11.6931  ent=0.00108527  kl=-1.14239e-07  cf=0  ep=10/10  n=1460  167966ms
+  [s0 r31  MAPPER]  thr=0.466667  acc=0.92  aloss=-0.00196702  closs=5.93607  ent=0.631105  kl=0.000434349  cf=0  ep=7/10  n=101  77872ms
+  [s0 r31  MAPPO]  thr=0  acc=0.024  aloss=9.22712e-05  closs=3.27353  ent=0.00791458  kl=2.68203e-05  cf=0  ep=10/10  n=1652  18725ms
+  [s0 r31  IPPO]  thr=0.0245902  acc=0.0655738  aloss=-0.000317294  closs=4.4841  ent=0.00292924  kl=4.05821e-05  cf=0  ep=10/10  n=8017  24219ms
+  [s0 r31  MAPPER]  thr=0.267717  acc=0.968504  aloss=0.010329  closs=15.0218  ent=0.65698  kl=0.000105367  cf=0  ep=4/10  n=199  89583ms
+  [s0 r31  MAPPO]  thr=0.0105263  acc=0.0315789  aloss=0.000332025  closs=5.59187  ent=0.00595925  kl=1.04884e-05  cf=0  ep=10/10  n=2617  93388ms
+  [s0 r31  IPPO]  thr=0.010989  acc=0.0659341  aloss=0.000299955  closs=5.9717  ent=0.000986641  kl=0.00013866  cf=0.000164474  ep=10/10  n=5448  113136ms
+  [s0 r31  MAPPER]  thr=0.693333  acc=0.92  aloss=-0.00129056  closs=3.13605  ent=0.624867  kl=6.01317e-05  cf=0  ep=10/10  n=100  28727ms
+  [s0 r31  MAPPO]  thr=0.00724638  acc=0.00724638  aloss=-0.000426299  closs=2.7329  ent=0.00727116  kl=-2.17513e-05  cf=0  ep=10/10  n=3545  37809ms
+  [s0 r31  IPPO]  thr=0.00813008  acc=0.0325203  aloss=-0.000177089  closs=4.41876  ent=0.00263664  kl=4.84246e-05  cf=0  ep=10/10  n=4318  26455ms
+  [s0 r31  MAPPER]  thr=0.435714  acc=0.942857  aloss=-0.0698827  closs=9.62386  ent=0.632931  kl=0.000181506  cf=0  ep=6/10  n=185  33058ms
+  [s0 r31  MAPPO]  thr=0  acc=0  aloss=0.00630486  closs=7.39182  ent=0.00474604  kl=-3.95392e-06  cf=0  ep=10/10  n=2116  142212ms
+  [s0 r31  IPPO]  thr=0  acc=0.012987  aloss=9.68953e-05  closs=10.0459  ent=0.000750322  kl=1.78841e-05  cf=0  ep=10/10  n=1750  139499ms
+  [s0 r31  MAPPER]  thr=0.298701  acc=0.896104  aloss=-0.000940217  closs=48.4077  ent=0.649696  kl=0.00187815  cf=0  ep=7/10  n=132  223667ms
+  [s0 r32  MAPPO]  thr=0.0294118  acc=0.0588235  aloss=0.000146527  closs=3.62989  ent=0.00835422  kl=-1.22837e-06  cf=0  ep=10/10  n=7634  41534ms
+  [s0 r32  IPPO]  thr=0.0075188  acc=0.0075188  aloss=-0.00075835  closs=5.6515  ent=0.00206618  kl=2.72489e-06  cf=0  ep=10/10  n=2474  35958ms
+  [s0 r32  MAPPER]  thr=0.504425  acc=0.964602  aloss=0.00463047  closs=7.65605  ent=0.639039  kl=-3.09269e-05  cf=0  ep=6/10  n=161  32243ms
+  [s0 r32  MAPPO]  thr=0  acc=0  aloss=0.000806551  closs=11.0968  ent=0.00483035  kl=-2.43139e-06  cf=0  ep=10/10  n=1148  98376ms
+  [s0 r32  IPPO]  thr=0  acc=0.0410959  aloss=-0.000859983  closs=11.4297  ent=0.000558234  kl=0.000192315  cf=0.000117925  ep=10/10  n=1690  161005ms
+  [s0 r32  MAPPER]  thr=0.449275  acc=0.927536  aloss=-0.00177352  closs=6.9126  ent=0.636774  kl=0.000208677  cf=0  ep=7/10  n=97  63218ms
+  [s0 r32  MAPPO]  thr=0.0151515  acc=0.0530303  aloss=1.31552e-05  closs=3.77673  ent=0.00804471  kl=-2.52237e-06  cf=0  ep=10/10  n=6908  25743ms
+  [s0 r32  IPPO]  thr=0  acc=0.00769231  aloss=-0.0022153  closs=4.83601  ent=0.00128386  kl=9.40162e-06  cf=0  ep=10/10  n=2351  22715ms
+  [s0 r32  MAPPER]  thr=0.344538  acc=0.94958  aloss=-0.011525  closs=19.9069  ent=0.660075  kl=0.000363008  cf=0  ep=4/10  n=167  94148ms
+  [s0 r32  MAPPO]  thr=0  acc=0.0666667  aloss=-0.00533825  closs=5.2658  ent=0.0046889  kl=0.000177628  cf=0.000436047  ep=10/10  n=2724  58905ms
+  [s0 r32  IPPO]  thr=0.0125  acc=0.0625  aloss=-0.000310989  closs=8.33088  ent=0.000497092  kl=0.000102263  cf=0  ep=10/10  n=2515  79406ms
+  [s0 r32  MAPPER]  thr=0.481481  acc=0.907407  aloss=-0.00224563  closs=12.3378  ent=0.641989  kl=0.000524243  cf=0  ep=9/10  n=75  33686ms
+  [s0 r32  MAPPO]  thr=0  acc=0  aloss=0.000816768  closs=2.80671  ent=0.00537303  kl=-2.3633e-06  cf=0  ep=10/10  n=2380  30730ms
+  [s0 r32  IPPO]  thr=0.00787402  acc=0.0314961  aloss=-5.80967e-05  closs=3.23511  ent=0.00138207  kl=2.84831e-05  cf=0  ep=10/10  n=5175  34846ms
+  [s0 r32  MAPPER]  thr=0.466667  acc=0.866667  aloss=0.00112847  closs=4.27873  ent=0.616133  kl=-0.000146151  cf=0  ep=6/10  n=167  21480ms
+  [s0 r32  MAPPO]  thr=0  acc=0  aloss=0.000518418  closs=6.56411  ent=0.00342889  kl=-8.88108e-07  cf=0  ep=10/10  n=1744  140154ms
+  [s0 r32  IPPO]  thr=0.0133333  acc=0.04  aloss=-0.000274886  closs=9.72579  ent=0.000386126  kl=3.29178e-05  cf=0  ep=10/10  n=2483  136895ms
+  [s0 r32  MAPPER]  thr=0.310345  acc=0.896552  aloss=-0.11451  closs=33.8141  ent=0.56849  kl=0.000159016  cf=0  ep=7/10  n=66  110824ms
+  [s0 r33  MAPPO]  thr=0.0165289  acc=0.0247934  aloss=0.00149531  closs=3.88795  ent=0.00584239  kl=1.09837e-06  cf=0  ep=10/10  n=4418  33178ms
+  [s0 r33  IPPO]  thr=0.00740741  acc=0.0148148  aloss=0.000381375  closs=5.7074  ent=0.00103179  kl=1.70629e-05  cf=0  ep=10/10  n=4311  29901ms
+  [s0 r33  MAPPER]  thr=0.496296  acc=0.948148  aloss=0.0158828  closs=5.56798  ent=0.6299  kl=7.79428e-05  cf=0  ep=6/10  n=202  17425ms
+  [s0 r33  MAPPO]  thr=0  acc=0.016129  aloss=-0.0016568  closs=5.40661  ent=0.00328191  kl=7.73699e-06  cf=0  ep=10/10  n=1449  134074ms
+  [s0 r33  IPPO]  thr=0.0263158  acc=0.0394737  aloss=-0.000347196  closs=9.58883  ent=0.000337389  kl=4.52746e-05  cf=0  ep=10/10  n=2643  151604ms
+  [s0 r33  MAPPER]  thr=0.445946  acc=0.918919  aloss=-0.00170065  closs=5.70443  ent=0.615352  kl=0.000459342  cf=0  ep=9/10  n=99  53144ms
+  [s0 r33  MAPPO]  thr=0.0149254  acc=0.0298507  aloss=0.00101079  closs=4.43532  ent=0.00484018  kl=3.3753e-05  cf=0  ep=10/10  n=3495  18336ms
+  [s0 r33  IPPO]  thr=0.064  acc=0.112  aloss=0.0001331  closs=3.72599  ent=0.000752357  kl=-4.99523e-05  cf=0  ep=10/10  n=10640  25515ms
+  [s0 r33  MAPPER]  thr=0.375796  acc=0.987261  aloss=0.00302655  closs=16.2014  ent=0.651172  kl=0.000180874  cf=0  ep=4/10  n=250  58341ms
+  [s0 r33  MAPPO]  thr=0.015873  acc=0.015873  aloss=0.00287531  closs=10.6587  ent=0.00287682  kl=1.37856e-05  cf=0  ep=10/10  n=1359  42014ms
+  [s0 r33  IPPO]  thr=0.0147059  acc=0.0147059  aloss=-0.0001633  closs=12.0435  ent=0.000319421  kl=1.03644e-05  cf=0  ep=10/10  n=1831  45186ms
+  [s0 r33  MAPPER]  thr=0.506329  acc=0.936709  aloss=-0.000962343  closs=7.89776  ent=0.626272  kl=9.90693e-05  cf=0  ep=9/10  n=105  29119ms
+  [s0 r33  MAPPO]  thr=0.0150376  acc=0.0451128  aloss=0.000446538  closs=3.4441  ent=0.00454695  kl=4.46089e-06  cf=0  ep=10/10  n=6705  33422ms
+  [s0 r33  IPPO]  thr=0.0142857  acc=0.0428571  aloss=0.0034143  closs=4.12544  ent=0.000899719  kl=0.00012794  cf=1.96541e-05  ep=10/10  n=5059  35127ms
+  [s0 r33  MAPPER]  thr=0.321918  acc=0.986301  aloss=0.0109866  closs=22.8889  ent=0.55564  kl=0.000139632  cf=0  ep=6/10  n=184  178034ms
+  [s0 r33  MAPPO]  thr=0.0512821  acc=0.0384615  aloss=6.02866e-05  closs=6.31095  ent=0.00242818  kl=-3.04639e-05  cf=0  ep=10/10  n=2791  92644ms
+  [s0 r33  IPPO]  thr=0  acc=0.0131579  aloss=-0.00443097  closs=14.9474  ent=0.000289619  kl=3.09722e-05  cf=0  ep=10/10  n=1069  62316ms
+  [s0 r33  MAPPER]  thr=0.465753  acc=0.863014  aloss=-0.00203599  closs=12.6444  ent=0.636536  kl=0.000143801  cf=0  ep=8/10  n=101  40217ms
+  [s0 r34  MAPPO]  thr=0.0604027  acc=0.120805  aloss=-0.000830076  closs=4.74309  ent=0.00669965  kl=-7.51434e-05  cf=0.000189165  ep=10/10  n=13189  35631ms
+  [s0 r34  IPPO]  thr=0.016  acc=0.032  aloss=-0.000430288  closs=5.23318  ent=0.000812663  kl=-6.5094e-05  cf=0  ep=10/10  n=3853  28966ms
+  [s0 r34  MAPPER]  thr=0.57037  acc=0.940741  aloss=-0.00310618  closs=7.24806  ent=0.621981  kl=0.000106489  cf=0  ep=6/10  n=181  27558ms
+  [s0 r34  MAPPO]  thr=0.030303  acc=0.030303  aloss=5.00057e-05  closs=5.126  ent=0.00322328  kl=-1.08119e-05  cf=0  ep=10/10  n=4205  158815ms
+  [s0 r34  IPPO]  thr=0.0140845  acc=0.028169  aloss=0.000148705  closs=13.9863  ent=0.000306204  kl=4.41914e-05  cf=0  ep=10/10  n=1429  125051ms
+  [s0 r34  MAPPER]  thr=0.28125  acc=0.921875  aloss=-0.00191258  closs=14.0421  ent=0.600681  kl=0.000240958  cf=0  ep=7/10  n=97  52166ms
+  [s0 r34  MAPPO]  thr=0.0145985  acc=0.0145985  aloss=-0.000245014  closs=3.49019  ent=0.00472992  kl=2.17449e-06  cf=0  ep=10/10  n=4106  21446ms
+  [s0 r34  IPPO]  thr=0.0714286  acc=0.166667  aloss=-0.000132714  closs=3.5834  ent=0.00055693  kl=0.000268125  cf=0.00017111  ep=10/10  n=11103  29507ms
+  [s0 r34  MAPPER]  thr=0.301471  acc=0.970588  aloss=0.00965639  closs=23.5078  ent=0.620565  kl=0.000449891  cf=0  ep=4/10  n=194  120657ms
+  [s0 r34  MAPPO]  thr=0.0375  acc=0.05  aloss=-4.14756e-06  closs=7.68199  ent=0.00373041  kl=-1.49746e-05  cf=0  ep=10/10  n=2781  54455ms
+  [s0 r34  IPPO]  thr=0.0135135  acc=0.0405405  aloss=-0.000275661  closs=9.73879  ent=0.000224108  kl=5.70821e-05  cf=0  ep=10/10  n=2140  52798ms
+  [s0 r34  MAPPER]  thr=0.447917  acc=0.927083  aloss=0.00952221  closs=35.7662  ent=0.607953  kl=0.000246055  cf=0  ep=10/10  n=116  116742ms
+  [s0 r34  MAPPO]  thr=0.037594  acc=0.0902256  aloss=-1.73145e-06  closs=3.00924  ent=0.00699504  kl=1.37377e-06  cf=0  ep=10/10  n=9760  40201ms
+  [s0 r34  IPPO]  thr=0  acc=0.00746269  aloss=0.00119047  closs=4.40386  ent=0.000705372  kl=9.56839e-06  cf=0  ep=10/10  n=2481  50634ms
+  [s0 r34  MAPPER]  thr=0.325926  acc=0.933333  aloss=0.00875112  closs=10.9899  ent=0.626655  kl=1.39251e-05  cf=0  ep=6/10  n=186  50369ms
+  [s0 r34  MAPPO]  thr=0.011236  acc=0.011236  aloss=8.31414e-05  closs=11.5385  ent=0.00358158  kl=-4.0613e-06  cf=0  ep=10/10  n=1501  83765ms
+  [s0 r34  IPPO]  thr=0.0126582  acc=0.0126582  aloss=-0.000489403  closs=10.9303  ent=0.000163667  kl=2.39828e-05  cf=0  ep=10/10  n=1553  90171ms
+  [s0 r34  MAPPER]  thr=0.373626  acc=0.912088  aloss=-0.00133609  closs=8.80705  ent=0.628741  kl=9.70318e-05  cf=0  ep=7/10  n=114  58850ms
+  [MAPPER-Ev @ round 35] mutated 4/18 policies
+  [s0 r35  MAPPO]  thr=0  acc=0.036036  aloss=-0.0004006  closs=3.6785  ent=0.00615415  kl=6.30556e-06  cf=0  ep=10/10  n=4549  41115ms
+  [s0 r35  IPPO]  thr=0.0381679  acc=0.0763359  aloss=-0.0001999  closs=4.59306  ent=0.00056493  kl=0.000155373  cf=0.000223976  ep=10/10  n=9376  44887ms
+  [s0 r35  MAPPER]  thr=0.408759  acc=0.905109  aloss=-0.00198376  closs=5.18892  ent=0.646798  kl=0.000135259  cf=0  ep=6/10  n=198  28235ms
+  [s0 r35  MAPPO]  thr=0.0123457  acc=0.0493827  aloss=-8.41885e-06  closs=5.57507  ent=0.0031848  kl=6.51134e-05  cf=0  ep=10/10  n=3098  172791ms
+  [s0 r35  IPPO]  thr=0.025974  acc=0.038961  aloss=0.000395666  closs=12.9292  ent=0.000117479  kl=4.84097e-05  cf=0  ep=10/10  n=2627  131679ms
+  [s0 r35  MAPPER]  thr=0.421053  acc=0.894737  aloss=-0.000564509  closs=12.4414  ent=0.621785  kl=-0.000116773  cf=0  ep=7/10  n=87  72747ms
+  [s0 r35  MAPPO]  thr=0.0273973  acc=0.0547945  aloss=1.33963e-05  closs=3.30715  ent=0.00489508  kl=-9.73236e-07  cf=0  ep=10/10  n=8572  25749ms
+  [s0 r35  IPPO]  thr=0.0245902  acc=0.0327869  aloss=-5.20559e-05  closs=4.63061  ent=0.000381317  kl=6.35395e-05  cf=0  ep=10/10  n=3104  20492ms
+  [s0 r35  MAPPER]  thr=0.266129  acc=0.967742  aloss=0.0496336  closs=12.7737  ent=0.611163  kl=-3.9225e-05  cf=0  ep=3/10  n=175  60782ms
+  [s0 r35  MAPPO]  thr=0.0107527  acc=0.0107527  aloss=0.000515518  closs=7.24669  ent=0.0028024  kl=2.85293e-07  cf=0  ep=10/10  n=2678  63744ms
+  [s0 r35  IPPO]  thr=0.0144928  acc=0.0724638  aloss=0.000416051  closs=10.8537  ent=9.2662e-05  kl=0.000285737  cf=0.000370066  ep=10/10  n=2409  47507ms
+  [s0 r35  MAPPER]  thr=0.539683  acc=0.904762  aloss=-0.0019379  closs=6.22994  ent=0.588794  kl=-8.54213e-05  cf=0  ep=8/10  n=89  15559ms
+  [s0 r35  MAPPO]  thr=0.00917431  acc=0.0183486  aloss=-6.06973e-05  closs=3.58679  ent=0.00430064  kl=7.99756e-07  cf=0  ep=10/10  n=3770  22078ms
+  [s0 r35  IPPO]  thr=0.0359712  acc=0.0503597  aloss=-0.000203066  closs=3.35029  ent=0.000392727  kl=-9.51151e-05  cf=0.000125502  ep=10/10  n=7964  27882ms
+  [s0 r35  MAPPER]  thr=0.434426  acc=0.967213  aloss=-0.0120016  closs=12.74  ent=0.618617  kl=-0.000303255  cf=0  ep=6/10  n=166  23898ms
+  [s0 r35  MAPPO]  thr=0.025974  acc=0.0519481  aloss=0.00401705  closs=7.75859  ent=0.00249409  kl=8.21155e-06  cf=0  ep=10/10  n=2309  69710ms
+  [s0 r35  IPPO]  thr=0  acc=0.0294118  aloss=-0.00010821  closs=15.2931  ent=8.13325e-05  kl=0.000107793  cf=0  ep=10/10  n=1417  56567ms
+  [s0 r35  MAPPER]  thr=0.4  acc=0.830769  aloss=-0.0015729  closs=9.8218  ent=0.631935  kl=8.92466e-05  cf=0  ep=7/10  n=80  33054ms
+  [s0 r36  MAPPO]  thr=0.0268456  acc=0.0402685  aloss=-0.000396118  closs=3.71134  ent=0.00547706  kl=-3.75622e-06  cf=0  ep=10/10  n=7248  30074ms
+  [s0 r36  IPPO]  thr=0.0393701  acc=0.0708661  aloss=-0.00233753  closs=4.17778  ent=0.000306311  kl=5.80849e-05  cf=0  ep=10/10  n=6529  27252ms
+  [s0 r36  MAPPER]  thr=0.453125  acc=0.953125  aloss=-0.074483  closs=9.09079  ent=0.629297  kl=9.7806e-05  cf=0  ep=5/10  n=182  27570ms
+  [s0 r36  MAPPO]  thr=0.015625  acc=0.015625  aloss=0.00274633  closs=10.4566  ent=0.00240828  kl=-6.78853e-06  cf=0  ep=10/10  n=1667  94160ms
+  [s0 r36  IPPO]  thr=0  acc=0.0243902  aloss=0.000238515  closs=14.7285  ent=8.70035e-05  kl=0.000112708  cf=0  ep=10/10  n=1201  71675ms
+  [s0 r36  MAPPER]  thr=0.303797  acc=0.936709  aloss=-0.00133524  closs=11.0439  ent=0.624167  kl=2.62868e-05  cf=0  ep=7/10  n=133  47318ms
+  [s0 r36  MAPPO]  thr=0.00900901  acc=0.00900901  aloss=-0.000668506  closs=4.18491  ent=0.00387622  kl=-9.75701e-06  cf=0  ep=10/10  n=1068  10604ms
+  [s0 r36  IPPO]  thr=0  acc=0  aloss=0.000180068  closs=3.98987  ent=0.000230518  kl=-6.27248e-09  cf=0  ep=10/10  n=1820  19615ms
+  [s0 r36  MAPPER]  thr=0.331034  acc=0.965517  aloss=0.00217856  closs=10.027  ent=0.637777  kl=-5.86942e-05  cf=0  ep=4/10  n=222  27736ms
+  [s0 r36  MAPPO]  thr=0.0307692  acc=0.0307692  aloss=-0.00149849  closs=5.07094  ent=0.0035003  kl=-3.45506e-06  cf=0  ep=10/10  n=3402  49485ms
+  [s0 r36  IPPO]  thr=0  acc=0.0120482  aloss=-0.000242524  closs=7.30616  ent=0.000106673  kl=-1.4911e-05  cf=0  ep=10/10  n=2078  49548ms
+  [s0 r36  MAPPER]  thr=0.411111  acc=0.844444  aloss=-0.000867802  closs=8.48591  ent=0.606238  kl=0.000160254  cf=0  ep=8/10  n=103  21669ms
+  [s0 r36  MAPPO]  thr=0  acc=0.0078125  aloss=9.3913e-05  closs=3.17236  ent=0.00478548  kl=-6.25474e-06  cf=0  ep=10/10  n=2970  23298ms
+  [s0 r36  IPPO]  thr=0.0143885  acc=0.122302  aloss=-0.00051036  closs=3.77762  ent=0.000145061  kl=0.000300739  cf=0.000601341  ep=10/10  n=10130  33831ms
+  [s0 r36  MAPPER]  thr=0.483871  acc=0.983871  aloss=-0.0370933  closs=10.1819  ent=0.627534  kl=0.000251803  cf=0  ep=5/10  n=177  42467ms
+  [s0 r36  MAPPO]  thr=0.046875  acc=0.0625  aloss=-0.000122216  closs=8.93129  ent=0.00256424  kl=6.30022e-05  cf=0  ep=10/10  n=2002  40306ms
+  [s0 r36  IPPO]  thr=0  acc=0  aloss=6.14259e-05  closs=12.9599  ent=6.20498e-05  kl=-1.09683e-10  cf=0  ep=10/10  n=1308  59989ms
+  [s0 r36  MAPPER]  thr=0.352941  acc=0.838235  aloss=-0.00656609  closs=45.3925  ent=0.6291  kl=0.000214723  cf=0  ep=6/10  n=89  55330ms
+  [s0 r37  MAPPO]  thr=0  acc=0.00735294  aloss=8.36465e-05  closs=3.0381  ent=0.00381955  kl=-1.45168e-07  cf=0  ep=10/10  n=1975  26237ms
+  [s0 r37  IPPO]  thr=0.016129  acc=0.0322581  aloss=-0.000276659  closs=5.09874  ent=0.000280878  kl=-7.2076e-06  cf=0  ep=10/10  n=2981  19442ms
+  [s0 r37  MAPPER]  thr=0.385965  acc=0.947368  aloss=0.00863812  closs=7.0784  ent=0.578592  kl=0.000116815  cf=0  ep=6/10  n=167  37786ms
+  [s0 r37  MAPPO]  thr=0.0114943  acc=0.0229885  aloss=0.00215167  closs=4.99344  ent=0.00262737  kl=-1.12087e-05  cf=0  ep=10/10  n=1775  72898ms
+  [s0 r37  IPPO]  thr=0  acc=0  aloss=-0.00155857  closs=11.3864  ent=6.76615e-05  kl=-1.33048e-10  cf=0  ep=10/10  n=1320  104226ms
+  [s0 r37  MAPPER]  thr=0.38961  acc=0.909091  aloss=-0.00148054  closs=10.9826  ent=0.640713  kl=0.000242324  cf=0  ep=7/10  n=107  44809ms
+  [s0 r37  MAPPO]  thr=0.0163934  acc=0.0491803  aloss=0.00225174  closs=4.14521  ent=0.00477728  kl=-1.16806e-05  cf=0  ep=10/10  n=4523  16190ms
+  [s0 r37  IPPO]  thr=0.0136986  acc=0.0273973  aloss=0.00111729  closs=3.35868  ent=0.000209813  kl=6.7204e-05  cf=0  ep=10/10  n=3720  20184ms
+  [s0 r37  MAPPER]  thr=0.378151  acc=0.97479  aloss=0.00302793  closs=23.4614  ent=0.587694  kl=0.000101581  cf=0  ep=4/10  n=158  43446ms
+  [s0 r37  MAPPO]  thr=0.027027  acc=0.0675676  aloss=-0.000345006  closs=5.43299  ent=0.00340416  kl=1.16905e-05  cf=0  ep=10/10  n=3163  45253ms
+  [s0 r37  IPPO]  thr=0  acc=0  aloss=0.000968817  closs=8.48286  ent=7.8672e-05  kl=-2.54325e-10  cf=0  ep=10/10  n=1648  39955ms
+  [s0 r37  MAPPER]  thr=0.424658  acc=0.821918  aloss=-0.001308  closs=9.90567  ent=0.646141  kl=5.7471e-05  cf=0  ep=8/10  n=84  13754ms
+  [s0 r37  MAPPO]  thr=0.00735294  acc=0.00735294  aloss=0.000334411  closs=3.83778  ent=0.00473713  kl=-1.21563e-06  cf=0  ep=10/10  n=2868  20393ms
+  [s0 r37  IPPO]  thr=0.0486111  acc=0.0625  aloss=-4.86931e-05  closs=3.76237  ent=0.000255415  kl=-7.65645e-05  cf=1.81159e-05  ep=10/10  n=11037  26335ms
+  [s0 r37  MAPPER]  thr=0.398496  acc=0.969925  aloss=-0.0294147  closs=6.87124  ent=0.630443  kl=0.000422636  cf=0  ep=6/10  n=208  50228ms
+  [s0 r37  MAPPO]  thr=0  acc=0  aloss=0.000428947  closs=25.1163  ent=0.00249078  kl=-3.54268e-07  cf=0  ep=10/10  n=804  31904ms
+  [s0 r37  IPPO]  thr=0  acc=0  aloss=0.00105884  closs=10.2928  ent=6.80302e-05  kl=-3.25229e-11  cf=0  ep=10/10  n=1336  85227ms
+  [s0 r37  MAPPER]  thr=0.285714  acc=0.934066  aloss=0.0215548  closs=41.0591  ent=0.637022  kl=0.000101971  cf=0  ep=7/10  n=136  135823ms
+  [s0 r38  MAPPO]  thr=0.0144928  acc=0.0507246  aloss=0.000286624  closs=5.96582  ent=0.00518485  kl=-1.59832e-05  cf=0  ep=10/10  n=6433  26737ms
+  [s0 r38  IPPO]  thr=0.00746269  acc=0.0298507  aloss=0.00236572  closs=4.92083  ent=0.000232724  kl=3.10013e-05  cf=0  ep=10/10  n=4387  27223ms
+  [s0 r38  MAPPER]  thr=0.484375  acc=0.914062  aloss=-0.0095038  closs=3.79281  ent=0.622506  kl=-9.53855e-05  cf=0  ep=6/10  n=176  17730ms
+  [s0 r38  MAPPO]  thr=0.0348837  acc=0.0930233  aloss=-0.000258315  closs=3.55407  ent=0.00286408  kl=6.55216e-05  cf=0  ep=10/10  n=4923  133870ms
+  [s0 r38  IPPO]  thr=0.027027  acc=0.0540541  aloss=-0.000740752  closs=11.4272  ent=7.09974e-05  kl=0.000124552  cf=0  ep=10/10  n=2101  99044ms
+  [s0 r38  MAPPER]  thr=0.446154  acc=0.876923  aloss=-0.000860177  closs=18.2857  ent=0.602758  kl=0.000301044  cf=0  ep=7/10  n=82  38432ms
+  [s0 r38  MAPPO]  thr=0  acc=0.0078125  aloss=-0.000653376  closs=2.86033  ent=0.00428294  kl=-1.35502e-06  cf=0  ep=10/10  n=2252  17651ms
+  [s0 r38  IPPO]  thr=0.00840336  acc=0.0252101  aloss=0.00621897  closs=3.91692  ent=0.000221423  kl=4.84772e-05  cf=0  ep=10/10  n=3073  17137ms
+  [s0 r38  MAPPER]  thr=0.345865  acc=0.954887  aloss=0.0452425  closs=11.4235  ent=0.621194  kl=0.000161419  cf=0  ep=3/10  n=170  16843ms
+  [s0 r38  MAPPO]  thr=0.0454545  acc=0.0340909  aloss=-0.00591643  closs=3.7346  ent=0.00254306  kl=-2.849e-05  cf=0  ep=10/10  n=3747  51335ms
+  [s0 r38  IPPO]  thr=0  acc=0  aloss=-3.59877e-08  closs=7.84688  ent=9.05309e-05  kl=-7.13437e-10  cf=0  ep=10/10  n=1696  45287ms
+  [s0 r38  MAPPER]  thr=0.407407  acc=0.888889  aloss=-0.00104226  closs=10.1769  ent=0.624049  kl=3.96011e-05  cf=0  ep=9/10  n=112  37048ms
+  [s0 r38  MAPPO]  thr=0.0230769  acc=0.0230769  aloss=0.000165883  closs=2.82379  ent=0.00495873  kl=6.12681e-06  cf=0  ep=10/10  n=5999  24013ms
+  [s0 r38  IPPO]  thr=0  acc=0  aloss=-8.19898e-05  closs=3.95612  ent=0.000229232  kl=-4.97251e-09  cf=0  ep=10/10  n=2396  27177ms
+  [s0 r38  MAPPER]  thr=0.372263  acc=0.956204  aloss=-0.0064192  closs=11.9375  ent=0.612071  kl=9.77789e-05  cf=0  ep=5/10  n=184  52647ms
+  [s0 r38  MAPPO]  thr=0.028169  acc=0.028169  aloss=8.19356e-05  closs=11.9099  ent=0.00298142  kl=5.36039e-06  cf=0  ep=10/10  n=1530  56136ms
+  [s0 r38  IPPO]  thr=0  acc=0.0111111  aloss=-0.000849725  closs=8.5495  ent=5.56767e-05  kl=1.78134e-05  cf=0  ep=10/10  n=2030  100672ms
+  [s0 r38  MAPPER]  thr=0.426471  acc=0.897059  aloss=-0.00174223  closs=9.33824  ent=0.632046  kl=-0.000151263  cf=0  ep=8/10  n=92  53690ms
+  [s0 r39  MAPPO]  thr=0.00719424  acc=0.00719424  aloss=-0.00186348  closs=3.00301  ent=0.00470351  kl=-5.82764e-06  cf=0  ep=10/10  n=2730  26748ms
+  [s0 r39  IPPO]  thr=0.0147059  acc=0.0367647  aloss=1.49407e-05  closs=4.78539  ent=0.000163935  kl=7.46681e-05  cf=0  ep=10/10  n=4403  30249ms
+  [s0 r39  MAPPER]  thr=0.33913  acc=0.921739  aloss=0.0075643  closs=12.6007  ent=0.601705  kl=0.000130459  cf=0  ep=6/10  n=153  51956ms
+  [s0 r39  MAPPO]  thr=0  acc=0.028169  aloss=-1.2622e-05  closs=6.21504  ent=0.00290431  kl=-5.64332e-06  cf=0  ep=10/10  n=1792  138983ms
+  [s0 r39  IPPO]  thr=0.0285714  acc=0.0428571  aloss=0.000502565  closs=11.6975  ent=3.98355e-05  kl=8.31861e-05  cf=0  ep=10/10  n=1658  146674ms
+  [s0 r39  MAPPER]  thr=0.535211  acc=0.859155  aloss=-0.00123516  closs=7.569  ent=0.59429  kl=0.00037168  cf=0  ep=8/10  n=89  73762ms
+  [s0 r39  MAPPO]  thr=0.0243902  acc=0.0325203  aloss=3.81832e-05  closs=4.10741  ent=0.00540166  kl=1.00178e-06  cf=0  ep=10/10  n=6422  24656ms
+  [s0 r39  IPPO]  thr=0.0555556  acc=0.0714286  aloss=0.00015738  closs=3.42659  ent=0.000164824  kl=-2.5998e-05  cf=0  ep=10/10  n=5626  28085ms
+  [s0 r39  MAPPER]  thr=0.431507  acc=0.972603  aloss=-0.0169609  closs=12.3258  ent=0.635197  kl=7.32836e-05  cf=0  ep=4/10  n=201  91400ms
+  [s0 r39  MAPPO]  thr=0.0166667  acc=0.0333333  aloss=-0.001507  closs=11.3363  ent=0.00350677  kl=3.2616e-05  cf=0  ep=10/10  n=1673  65046ms
+  [s0 r39  IPPO]  thr=0  acc=0  aloss=-0.0016928  closs=7.09143  ent=6.48893e-05  kl=-5.00993e-11  cf=0  ep=10/10  n=1844  94035ms
+  [s0 r39  MAPPER]  thr=0.383562  acc=0.835616  aloss=-0.00105436  closs=3.53536  ent=0.626408  kl=-7.49821e-05  cf=0  ep=9/10  n=101  23636ms
+  [s0 r39  MAPPO]  thr=0.0620155  acc=0.162791  aloss=0.00015961  closs=2.43165  ent=0.00540875  kl=5.42895e-05  cf=0  ep=10/10  n=12951  53693ms
+  [s0 r39  IPPO]  thr=0.0633803  acc=0.126761  aloss=0.000871417  closs=3.30783  ent=0.000134486  kl=0.000143304  cf=3.14386e-05  ep=10/10  n=15876  60645ms
+  [s0 r39  MAPPER]  thr=0.311594  acc=0.942029  aloss=-0.0238215  closs=26.8186  ent=0.665405  kl=6.81352e-05  cf=0  ep=6/10  n=226  321075ms
+  [s0 r39  MAPPO]  thr=0.012987  acc=0.0519481  aloss=-0.00296959  closs=9.03496  ent=0.00249658  kl=-5.28981e-06  cf=0  ep=10/10  n=1990  81029ms
+  [s0 r39  IPPO]  thr=0  acc=0.0147059  aloss=0.00153996  closs=15.5075  ent=2.82182e-05  kl=2.71781e-05  cf=0  ep=10/10  n=1199  62311ms
+  [s0 r39  MAPPER]  thr=0.513889  acc=0.958333  aloss=-0.0015107  closs=10.7955  ent=0.609633  kl=0.000346239  cf=0  ep=6/10  n=101  70406ms
+  [MAPPER-Ev @ round 40] mutated 4/18 policies
+  -- Eval @ round 40 --
+    [eval Tokyo_Small/MAPPO/1/3]  thr=0  acc=0.00862069  38774ms
+    [eval Tokyo_Small/MAPPO/2/3]  thr=0.0327869  acc=0.0901639  53283ms
+    [eval Tokyo_Small/MAPPO/3/3]  thr=0  acc=0  43164ms
+    [eval Tokyo_Small/IPPO/1/3]  thr=0.00757576  acc=0.0681818  55253ms
+    [eval Tokyo_Small/IPPO/2/3]  thr=0.0241935  acc=0.0241935  46245ms
+    [eval Tokyo_Small/IPPO/3/3]  thr=0  acc=0.00769231  36250ms
+    [eval Tokyo_Small/MAPPER/1/3]  thr=0.413534  acc=0.93985  32422ms
+    [eval Tokyo_Small/MAPPER/2/3]  thr=0.426357  acc=0.976744  40853ms
+    [eval Tokyo_Small/MAPPER/3/3]  thr=0.488372  acc=0.930233  29521ms
+    [eval Tokyo_Small/TamAlwaysAccept/1/3]  thr=0.396947  acc=0.969466  47988ms
+    [eval Tokyo_Small/TamAlwaysAccept/2/3]  thr=0.449612  acc=0.968992  125863ms
+    [eval Tokyo_Small/TamAlwaysAccept/3/3]  thr=0.545455  acc=0.936364  31283ms
+    [eval Tokyo_Small/Greedy/1/3]  thr=0.0833333  acc=1  1005086ms
+    [eval Tokyo_Small/Greedy/2/3]  thr=0.0519481  acc=1  1026593ms
+    [eval Tokyo_Small/Greedy/3/3]  thr=0.0606061  acc=1  1205396ms
+    [eval Tokyo_Small/Random/1/3]  thr=0.165468  acc=0.985611  544748ms
+    [eval Tokyo_Small/Random/2/3]  thr=0.186441  acc=0.991525  420145ms
+    [eval Tokyo_Small/Random/3/3]  thr=0.218045  acc=0.969925  573716ms
+    [eval Tokyo_Small/InsertionGreedy/1/3]  thr=0.188976  acc=0.724409  293732ms
+    [eval Tokyo_Small/InsertionGreedy/2/3]  thr=0.253968  acc=0.857143  354489ms
+    [eval Tokyo_Small/InsertionGreedy/3/3]  thr=0.183206  acc=0.801527  273819ms
+    [eval Tokyo_Small/PIBT/1/3]  thr=0.24  acc=1  166727ms
+    [eval Tokyo_Small/PIBT/2/3]  thr=0.258993  acc=1  143133ms
+    [eval Tokyo_Small/PIBT/3/3]  thr=0.25  acc=1  105637ms
+    [eval Tokyo_Small/CongestionAware/1/3]  thr=0.325581  acc=1  109193ms
+    [eval Tokyo_Small/CongestionAware/2/3]  thr=0.331081  acc=1  89549ms
+    [eval Tokyo_Small/CongestionAware/3/3]  thr=0.367647  acc=1  85339ms
+    [eval Tokyo_Medium/MAPPO/1/3]  thr=0  acc=0.025  211740ms
+    [eval Tokyo_Medium/MAPPO/2/3]  thr=0.0238095  acc=0.0357143  209199ms
+    [eval Tokyo_Medium/MAPPO/3/3]  thr=0.0689655  acc=0.0689655  102818ms
+    [eval Tokyo_Medium/IPPO/1/3]  thr=0.030303  acc=0.0454545  126837ms
+    [eval Tokyo_Medium/IPPO/2/3]  thr=0.0147059  acc=0.0294118  104193ms
+    [eval Tokyo_Medium/IPPO/3/3]  thr=0  acc=0  111238ms
+    [eval Tokyo_Medium/MAPPER/1/3]  thr=0.405405  acc=0.945946  64076ms
+    [eval Tokyo_Medium/MAPPER/2/3]  thr=0.430556  acc=0.902778  25513ms
+    [eval Tokyo_Medium/MAPPER/3/3]  thr=0.348485  acc=0.818182  22199ms
+    [eval Tokyo_Medium/TamAlwaysAccept/1/3]  thr=0.492754  acc=0.884058  19916ms
+    [eval Tokyo_Medium/TamAlwaysAccept/2/3]  thr=0.5  acc=0.690476  17126ms
+    [eval Tokyo_Medium/TamAlwaysAccept/3/3]  thr=0.444444  acc=0.746032  15832ms
+    [eval Tokyo_Medium/Greedy/1/3]  thr=0.0540541  acc=1  868985ms
+    [eval Tokyo_Medium/Greedy/2/3]  thr=0.0416667  acc=1  831926ms
+    [eval Tokyo_Medium/Greedy/3/3]  thr=0.0609756  acc=1  937353ms
+    [eval Tokyo_Medium/Random/1/3]  thr=0.0729167  acc=0.979167  533301ms
+    [eval Tokyo_Medium/Random/2/3]  thr=0.0526316  acc=0.986842  331405ms
+    [eval Tokyo_Medium/Random/3/3]  thr=0.0645161  acc=0.983871  194567ms
+    [eval Tokyo_Medium/InsertionGreedy/1/3]  thr=0.142857  acc=0.701299  138494ms
+    [eval Tokyo_Medium/InsertionGreedy/2/3]  thr=0.0609756  acc=0.707317  196479ms
+    [eval Tokyo_Medium/InsertionGreedy/3/3]  thr=0.130952  acc=0.77381  243745ms
+    [eval Tokyo_Medium/PIBT/1/3]  thr=0.168831  acc=1  81492ms
+    [eval Tokyo_Medium/PIBT/2/3]  thr=0.222222  acc=1  42806ms
+    [eval Tokyo_Medium/PIBT/3/3]  thr=0.106667  acc=1  68937ms
+    [eval Tokyo_Medium/CongestionAware/1/3]  thr=0.488095  acc=1  109915ms
+    [eval Tokyo_Medium/CongestionAware/2/3]  thr=0.450549  acc=1  115663ms
+    [eval Tokyo_Medium/CongestionAware/3/3]  thr=0.378378  acc=1  118937ms
+    [eval Kyoto_Small/MAPPO/1/3]  thr=0.00806452  acc=0.016129  21978ms
+    [eval Kyoto_Small/MAPPO/2/3]  thr=0.0166667  acc=0.0583333  20837ms
+    [eval Kyoto_Small/MAPPO/3/3]  thr=0.0215827  acc=0.0215827  22129ms
+    [eval Kyoto_Small/IPPO/1/3]  thr=0.0151515  acc=0.0378788  23661ms
+    [eval Kyoto_Small/IPPO/2/3]  thr=0  acc=0.0162602  20996ms
+    [eval Kyoto_Small/IPPO/3/3]  thr=0.00877193  acc=0.0175439  16854ms
+    [eval Kyoto_Small/MAPPER/1/3]  thr=0.488722  acc=0.93985  18511ms
+    [eval Kyoto_Small/MAPPER/2/3]  thr=0.240876  acc=0.963504  116455ms
+    [eval Kyoto_Small/MAPPER/3/3]  thr=0.284483  acc=0.913793  26834ms
+    [eval Kyoto_Small/TamAlwaysAccept/1/3]  thr=0.448  acc=0.96  43550ms
+    [eval Kyoto_Small/TamAlwaysAccept/2/3]  thr=0.427481  acc=0.954198  40685ms
+    [eval Kyoto_Small/TamAlwaysAccept/3/3]  thr=0.318182  acc=0.954545  81556ms
+    [eval Kyoto_Small/Greedy/1/3]  thr=0.0649351  acc=1  1338996ms
+    [eval Kyoto_Small/Greedy/2/3]  thr=0.115702  acc=1  1036864ms
+    [eval Kyoto_Small/Greedy/3/3]  thr=0.0984849  acc=1  1086421ms
+    [eval Kyoto_Small/Random/1/3]  thr=0.292453  acc=0.962264  159206ms
+    [eval Kyoto_Small/Random/2/3]  thr=0.214953  acc=0.981308  170251ms
+    [eval Kyoto_Small/Random/3/3]  thr=0.206107  acc=0.977099  254296ms
+    [eval Kyoto_Small/InsertionGreedy/1/3]  thr=0.296875  acc=0.898438  216573ms
+    [eval Kyoto_Small/InsertionGreedy/2/3]  thr=0.271318  acc=0.75969  185573ms
+    [eval Kyoto_Small/InsertionGreedy/3/3]  thr=0.257143  acc=0.821429  253517ms
+    [eval Kyoto_Small/PIBT/1/3]  thr=0.267176  acc=1  121338ms
+    [eval Kyoto_Small/PIBT/2/3]  thr=0.30303  acc=1  116974ms
+    [eval Kyoto_Small/PIBT/3/3]  thr=0.272059  acc=1  98245ms
+    [eval Kyoto_Small/CongestionAware/1/3]  thr=0.413043  acc=1  72877ms
+    [eval Kyoto_Small/CongestionAware/2/3]  thr=0.471429  acc=1  70256ms
+    [eval Kyoto_Small/CongestionAware/3/3]  thr=0.430894  acc=1  74174ms
+    [eval Kyoto_Medium/MAPPO/1/3]  thr=0.0133333  acc=0.04  87396ms
+    [eval Kyoto_Medium/MAPPO/2/3]  thr=0  acc=0  59495ms
+    [eval Kyoto_Medium/MAPPO/3/3]  thr=0.0227273  acc=0.0909091  107830ms
+    [eval Kyoto_Medium/IPPO/1/3]  thr=0.010989  acc=0.043956  110339ms
+    [eval Kyoto_Medium/IPPO/2/3]  thr=0.0266667  acc=0.0533333  76221ms
+    [eval Kyoto_Medium/IPPO/3/3]  thr=0.056338  acc=0.056338  78791ms
+    [eval Kyoto_Medium/MAPPER/1/3]  thr=0.411111  acc=0.944444  150482ms
+    [eval Kyoto_Medium/MAPPER/2/3]  thr=0.453333  acc=0.88  36460ms
+    [eval Kyoto_Medium/MAPPER/3/3]  thr=0.364865  acc=0.878378  24525ms
+    [eval Kyoto_Medium/TamAlwaysAccept/1/3]  thr=0.337662  acc=0.961039  51079ms
+    [eval Kyoto_Medium/TamAlwaysAccept/2/3]  thr=0.443038  acc=0.924051  61563ms
+    [eval Kyoto_Medium/TamAlwaysAccept/3/3]  thr=0.531915  acc=0.968085  28674ms
+    [eval Kyoto_Medium/Greedy/1/3]  thr=0.0493827  acc=1  1077705ms
+    [eval Kyoto_Medium/Greedy/2/3]  thr=0.0694444  acc=1  680405ms
+    [eval Kyoto_Medium/Greedy/3/3]  thr=0.0266667  acc=1  964241ms
+    [eval Kyoto_Medium/Random/1/3]  thr=0.113924  acc=0.974684  294730ms
+    [eval Kyoto_Medium/Random/2/3]  thr=0.0724638  acc=0.971014  164492ms
+    [eval Kyoto_Medium/Random/3/3]  thr=0.0921053  acc=0.986842  200755ms
+    [eval Kyoto_Medium/InsertionGreedy/1/3]  thr=0.115385  acc=0.794872  181698ms
+    [eval Kyoto_Medium/InsertionGreedy/2/3]  thr=0.178082  acc=0.835616  175204ms
+    [eval Kyoto_Medium/InsertionGreedy/3/3]  thr=0.197368  acc=0.763158  141832ms
+    [eval Kyoto_Medium/PIBT/1/3]  thr=0.175676  acc=1  53766ms
+    [eval Kyoto_Medium/PIBT/2/3]  thr=0.168539  acc=1  71973ms
+    [eval Kyoto_Medium/PIBT/3/3]  thr=0.0987654  acc=1  70484ms
+    [eval Kyoto_Medium/CongestionAware/1/3]  thr=0.343284  acc=1  69461ms
+    [eval Kyoto_Medium/CongestionAware/2/3]  thr=0.52381  acc=1  55251ms
+    [eval Kyoto_Medium/CongestionAware/3/3]  thr=0.441558  acc=1  67199ms
+    [eval LosAngeles_Small/MAPPO/1/3]  thr=0.0672269  acc=0.12605  29333ms
+    [eval LosAngeles_Small/MAPPO/2/3]  thr=0.00699301  acc=0.048951  36370ms
+    [eval LosAngeles_Small/MAPPO/3/3]  thr=0.0310078  acc=0.0697674  34760ms
+    [eval LosAngeles_Small/IPPO/1/3]  thr=0.0413223  acc=0.0413223  29993ms
+    [eval LosAngeles_Small/IPPO/2/3]  thr=0.0075188  acc=0.0451128  27658ms
+    [eval LosAngeles_Small/IPPO/3/3]  thr=0.0137931  acc=0.0275862  31069ms
+    [eval LosAngeles_Small/MAPPER/1/3]  thr=0.416058  acc=0.934307  54914ms
+    [eval LosAngeles_Small/MAPPER/2/3]  thr=0.468531  acc=0.93007  36111ms
+    [eval LosAngeles_Small/MAPPER/3/3]  thr=0.439024  acc=0.934959  49159ms
+    [eval LosAngeles_Small/TamAlwaysAccept/1/3]  thr=0.452991  acc=0.948718  57262ms
+    [eval LosAngeles_Small/TamAlwaysAccept/2/3]  thr=0.25  acc=0.963235  283528ms
+    [eval LosAngeles_Small/TamAlwaysAccept/3/3]  thr=0.320312  acc=0.953125  57144ms
+    [eval LosAngeles_Small/Greedy/1/3]  thr=0.0610687  acc=1  782400ms
+    [eval LosAngeles_Small/Greedy/2/3]  thr=0.0689655  acc=1  517474ms
+    [eval LosAngeles_Small/Greedy/3/3]  thr=0.0625  acc=1  506886ms
+    [eval LosAngeles_Small/Random/1/3]  thr=0.203125  acc=0.976562  178898ms
+    [eval LosAngeles_Small/Random/2/3]  thr=0.158273  acc=0.992806  219785ms
+    [eval LosAngeles_Small/Random/3/3]  thr=0.193103  acc=0.97931  204733ms
+    [eval LosAngeles_Small/InsertionGreedy/1/3]  thr=0.206897  acc=0.827586  213257ms
+    [eval LosAngeles_Small/InsertionGreedy/2/3]  thr=0.158333  acc=0.825  195482ms
+    [eval LosAngeles_Small/InsertionGreedy/3/3]  thr=0.130769  acc=0.776923  201004ms
+    [eval LosAngeles_Small/PIBT/1/3]  thr=0.283465  acc=1  81751ms
+    [eval LosAngeles_Small/PIBT/2/3]  thr=0.266129  acc=1  65021ms
+    [eval LosAngeles_Small/PIBT/3/3]  thr=0.315789  acc=1  70461ms
+    [eval LosAngeles_Small/CongestionAware/1/3]  thr=0.359155  acc=1  98973ms
+    [eval LosAngeles_Small/CongestionAware/2/3]  thr=0.360294  acc=1  71485ms
+    [eval LosAngeles_Small/CongestionAware/3/3]  thr=0.416667  acc=1  64378ms
+    [eval LosAngeles_Medium/MAPPO/1/3]  thr=0  acc=0.0422535  65089ms
+    [eval LosAngeles_Medium/MAPPO/2/3]  thr=0  acc=0.025  54857ms
+    [eval LosAngeles_Medium/MAPPO/3/3]  thr=0.0243902  acc=0.0853659  61825ms
+    [eval LosAngeles_Medium/IPPO/1/3]  thr=0.0253165  acc=0.0506329  60932ms
+    [eval LosAngeles_Medium/IPPO/2/3]  thr=0  acc=0  39660ms
+    [eval LosAngeles_Medium/IPPO/3/3]  thr=0.0133333  acc=0.0266667  48451ms
+    [eval LosAngeles_Medium/MAPPER/1/3]  thr=0.2125  acc=0.9375  147034ms
+    [eval LosAngeles_Medium/MAPPER/2/3]  thr=0.295775  acc=0.887324  68322ms
+    [eval LosAngeles_Medium/MAPPER/3/3]  thr=0.461538  acc=0.953846  26235ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/1/3]  thr=0.392405  acc=0.911392  34905ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/2/3]  thr=0.348485  acc=0.893939  53255ms
+    [eval LosAngeles_Medium/TamAlwaysAccept/3/3]  thr=0.333333  acc=0.902778  57909ms
+    [eval LosAngeles_Medium/Greedy/1/3]  thr=0.0470588  acc=1  1055895ms
+    [eval LosAngeles_Medium/Greedy/2/3]  thr=0.0273973  acc=1  895621ms
+    [eval LosAngeles_Medium/Greedy/3/3]  thr=0.027027  acc=1  975763ms
+    [eval LosAngeles_Medium/Random/1/3]  thr=0.0588235  acc=0.988235  390280ms
+    [eval LosAngeles_Medium/Random/2/3]  thr=0.0694444  acc=0.972222  315534ms
+    [eval LosAngeles_Medium/Random/3/3]  thr=0.149425  acc=1  424369ms
+    [eval LosAngeles_Medium/InsertionGreedy/1/3]  thr=0.232877  acc=0.753425  237758ms
+    [eval LosAngeles_Medium/InsertionGreedy/2/3]  thr=0.166667  acc=0.736111  217480ms
+    [eval LosAngeles_Medium/InsertionGreedy/3/3]  thr=0.232558  acc=0.825581  254692ms
+    [eval LosAngeles_Medium/PIBT/1/3]  thr=0.162162  acc=1  78707ms
+    [eval LosAngeles_Medium/PIBT/2/3]  thr=0.128205  acc=1  83852ms
+    [eval LosAngeles_Medium/PIBT/3/3]  thr=0.225806  acc=1  43378ms
+    [eval LosAngeles_Medium/CongestionAware/1/3]  thr=0.4  acc=1  57306ms
+    [eval LosAngeles_Medium/CongestionAware/2/3]  thr=0.439394  acc=1  63648ms
+    [eval LosAngeles_Medium/CongestionAware/3/3]  thr=0.444444  acc=1  79240ms
+  -- Stress Eval (density=2 agents=0.6) --
+    [stress Tokyo_Small/MAPPO/1/3]  thr=0.0196078  acc=0.0490196  25994ms
+    [stress Tokyo_Small/MAPPO/2/3]  thr=0.00704225  acc=0.0140845  34862ms
+    [stress Tokyo_Small/MAPPO/3/3]  thr=0.0163934  acc=0.0737705  31585ms
+    [stress Tokyo_Small/IPPO/1/3]  thr=0  acc=0  25633ms
+    [stress Tokyo_Small/IPPO/2/3]  thr=0.0366972  acc=0.0642202  24311ms
+    [stress Tokyo_Small/IPPO/3/3]  thr=0.0183486  acc=0.0275229  25567ms
+    [stress Tokyo_Small/MAPPER/1/3]  thr=0.491071  acc=0.901786  14512ms
+    [stress Tokyo_Small/MAPPER/2/3]  thr=0.326923  acc=0.878205  136848ms
+    [stress Tokyo_Small/MAPPER/3/3]  thr=0.523438  acc=0.945312  37370ms
+    [stress Tokyo_Small/TamAlwaysAccept/1/3]  thr=0.496063  acc=0.968504  15173ms
+    [stress Tokyo_Small/TamAlwaysAccept/2/3]  thr=0.448276  acc=0.931035  22544ms
+    [stress Tokyo_Small/TamAlwaysAccept/3/3]  thr=0.533333  acc=0.95  13016ms
+    [stress Tokyo_Small/Greedy/1/3]  thr=0.0625  acc=1  919718ms
+    [stress Tokyo_Small/Greedy/2/3]  thr=0.0697674  acc=1  676263ms
+    [stress Tokyo_Small/Greedy/3/3]  thr=0.0689655  acc=1  570298ms
+    [stress Tokyo_Small/Random/1/3]  thr=0.128  acc=0.92  212443ms
+    [stress Tokyo_Small/Random/2/3]  thr=0.13986  acc=0.86014  199582ms
+    [stress Tokyo_Small/Random/3/3]  thr=0.158333  acc=0.925  261556ms
+    [stress Tokyo_Small/InsertionGreedy/1/3]  thr=0.0720721  acc=0.612613  137287ms
+    [stress Tokyo_Small/InsertionGreedy/2/3]  thr=0.20354  acc=0.734513  145432ms
+    [stress Tokyo_Small/InsertionGreedy/3/3]  thr=0.281879  acc=0.718121  151190ms
+    [stress Tokyo_Small/PIBT/1/3]  thr=0.147541  acc=1  120327ms
+    [stress Tokyo_Small/PIBT/2/3]  thr=0.109375  acc=1  164687ms
+    [stress Tokyo_Small/PIBT/3/3]  thr=0.216  acc=1  120244ms
+    [stress Tokyo_Small/CongestionAware/1/3]  thr=0.180124  acc=1  181566ms
+    [stress Tokyo_Small/CongestionAware/2/3]  thr=0.152174  acc=1  133479ms
+    [stress Tokyo_Small/CongestionAware/3/3]  thr=0.216216  acc=1  110219ms
+    [stress Tokyo_Medium/MAPPO/1/3]  thr=0  acc=0.0273973  66142ms
+    [stress Tokyo_Medium/MAPPO/2/3]  thr=0.0125  acc=0.025  60988ms
+    [stress Tokyo_Medium/MAPPO/3/3]  thr=0.0142857  acc=0.0857143  67589ms
+    [stress Tokyo_Medium/IPPO/1/3]  thr=0  acc=0  101157ms
+    [stress Tokyo_Medium/IPPO/2/3]  thr=0.0144928  acc=0.0144928  87038ms
+    [stress Tokyo_Medium/IPPO/3/3]  thr=0  acc=0.0140845  77005ms
+    [stress Tokyo_Medium/MAPPER/1/3]  thr=0.470588  acc=0.897059  27781ms
+    [stress Tokyo_Medium/MAPPER/2/3]  thr=0.47541  acc=0.95082  18548ms
+    [stress Tokyo_Medium/MAPPER/3/3]  thr=0.460526  acc=0.855263  30836ms
+    [stress Tokyo_Medium/TamAlwaysAccept/1/3]  thr=0.569444  acc=0.958333  27471ms
+    [stress Tokyo_Medium/TamAlwaysAccept/2/3]  thr=0.47191  acc=0.94382  32096ms
+    [stress Tokyo_Medium/TamAlwaysAccept/3/3]  thr=0.537313  acc=0.925373  14630ms
+    [stress Tokyo_Medium/Greedy/1/3]  thr=0.0298507  acc=1  775303ms
+    [stress Tokyo_Medium/Greedy/2/3]  thr=0.0285714  acc=1  667398ms
+    [stress Tokyo_Medium/Greedy/3/3]  thr=0.0120482  acc=1  936118ms
+    [stress Tokyo_Medium/Random/1/3]  thr=0.0909091  acc=0.961039  286960ms
+    [stress Tokyo_Medium/Random/2/3]  thr=0.0588235  acc=0.985294  289068ms
+    [stress Tokyo_Medium/Random/3/3]  thr=0.109589  acc=1  299584ms
+    [stress Tokyo_Medium/InsertionGreedy/1/3]  thr=0.148649  acc=0.702703  162878ms
+    [stress Tokyo_Medium/InsertionGreedy/2/3]  thr=0.12987  acc=0.753247  286208ms
+    [stress Tokyo_Medium/InsertionGreedy/3/3]  thr=0.113924  acc=0.746835  313810ms
+    [stress Tokyo_Medium/PIBT/1/3]  thr=0.104478  acc=1  120900ms
+    [stress Tokyo_Medium/PIBT/2/3]  thr=0.104651  acc=1  188173ms
+    [stress Tokyo_Medium/PIBT/3/3]  thr=0.09375  acc=1  106183ms
+    [stress Tokyo_Medium/CongestionAware/1/3]  thr=0.181818  acc=1  127747ms
+    [stress Tokyo_Medium/CongestionAware/2/3]  thr=0.184211  acc=1  129529ms
+    [stress Tokyo_Medium/CongestionAware/3/3]  thr=0.243902  acc=1  116248ms
+    [stress Kyoto_Small/MAPPO/1/3]  thr=0.00840336  acc=0.00840336  21621ms
+    [stress Kyoto_Small/MAPPO/2/3]  thr=0.0222222  acc=0.0444444  23739ms
+    [stress Kyoto_Small/MAPPO/3/3]  thr=0  acc=0  18730ms
+    [stress Kyoto_Small/IPPO/1/3]  thr=0.0367647  acc=0.0955882  29218ms
+    [stress Kyoto_Small/IPPO/2/3]  thr=0.0314961  acc=0.0472441  21105ms
+    [stress Kyoto_Small/IPPO/3/3]  thr=0  acc=0  16868ms
+    [stress Kyoto_Small/MAPPER/1/3]  thr=0.538462  acc=0.938462  14870ms
+    [stress Kyoto_Small/MAPPER/2/3]  thr=0.397059  acc=0.970588  31209ms
+    [stress Kyoto_Small/MAPPER/3/3]  thr=0.384615  acc=0.91453  19315ms
+    [stress Kyoto_Small/TamAlwaysAccept/1/3]  thr=0.503759  acc=0.977444  29278ms
+    [stress Kyoto_Small/TamAlwaysAccept/2/3]  thr=0.538462  acc=0.957265  21019ms
+    [stress Kyoto_Small/TamAlwaysAccept/3/3]  thr=0.436508  acc=0.97619  49197ms
+    [stress Kyoto_Small/Greedy/1/3]  thr=0.0709677  acc=1  641180ms
+    [stress Kyoto_Small/Greedy/2/3]  thr=0.0655738  acc=1  500715ms
+    [stress Kyoto_Small/Greedy/3/3]  thr=0.0869565  acc=1  445490ms
+    [stress Kyoto_Small/Random/1/3]  thr=0.178295  acc=0.922481  222093ms
+    [stress Kyoto_Small/Random/2/3]  thr=0.165289  acc=0.900826  140095ms
+    [stress Kyoto_Small/Random/3/3]  thr=0.164179  acc=0.858209  141257ms
+    [stress Kyoto_Small/InsertionGreedy/1/3]  thr=0.174603  acc=0.738095  116860ms
+    [stress Kyoto_Small/InsertionGreedy/2/3]  thr=0.183486  acc=0.779817  113114ms
+    [stress Kyoto_Small/InsertionGreedy/3/3]  thr=0.131944  acc=0.75  225059ms
+    [stress Kyoto_Small/PIBT/1/3]  thr=0.197183  acc=1  132423ms
+    [stress Kyoto_Small/PIBT/2/3]  thr=0.160584  acc=1  107838ms
+    [stress Kyoto_Small/PIBT/3/3]  thr=0.220183  acc=1  61001ms
+    [stress Kyoto_Small/CongestionAware/1/3]  thr=0.282051  acc=1  70920ms
+    [stress Kyoto_Small/CongestionAware/2/3]  thr=0.213115  acc=1  78467ms
+    [stress Kyoto_Small/CongestionAware/3/3]  thr=0.263158  acc=1  104724ms
+    [stress Kyoto_Medium/MAPPO/1/3]  thr=0.0232558  acc=0.0581395  53403ms
+    [stress Kyoto_Medium/MAPPO/2/3]  thr=0  acc=0  50894ms
+    [stress Kyoto_Medium/MAPPO/3/3]  thr=0  acc=0.0294118  76182ms
+    [stress Kyoto_Medium/IPPO/1/3]  thr=0.0533333  acc=0.0666667  53643ms
+    [stress Kyoto_Medium/IPPO/2/3]  thr=0  acc=0  45893ms
+    [stress Kyoto_Medium/IPPO/3/3]  thr=0.0133333  acc=0.04  46428ms
+    [stress Kyoto_Medium/MAPPER/1/3]  thr=0.423529  acc=0.929412  48892ms
+    [stress Kyoto_Medium/MAPPER/2/3]  thr=0.402597  acc=0.922078  23916ms
+    [stress Kyoto_Medium/MAPPER/3/3]  thr=0.506329  acc=0.924051  26687ms
+    [stress Kyoto_Medium/TamAlwaysAccept/1/3]  thr=0.313433  acc=0.925373  34501ms
+    [stress Kyoto_Medium/TamAlwaysAccept/2/3]  thr=0.484848  acc=0.848485  16927ms
+    [stress Kyoto_Medium/TamAlwaysAccept/3/3]  thr=0.402439  acc=0.865854  22856ms
+    [stress Kyoto_Medium/Greedy/1/3]  thr=0.0571429  acc=1  602934ms
+    [stress Kyoto_Medium/Greedy/2/3]  thr=0.0133333  acc=1  623031ms
+    [stress Kyoto_Medium/Greedy/3/3]  thr=0  acc=1  632084ms
+    [stress Kyoto_Medium/Random/1/3]  thr=0.0779221  acc=0.961039  180613ms
+    [stress Kyoto_Medium/Random/2/3]  thr=0.0779221  acc=0.974026  245609ms
+    [stress Kyoto_Medium/Random/3/3]  thr=0.126582  acc=1  250933ms
+    [stress Kyoto_Medium/InsertionGreedy/1/3]  thr=0.0675676  acc=0.689189  219947ms
+    [stress Kyoto_Medium/InsertionGreedy/2/3]  thr=0.178082  acc=0.794521  158805ms
+    [stress Kyoto_Medium/InsertionGreedy/3/3]  thr=0.189189  acc=0.932432  244613ms
+    [stress Kyoto_Medium/PIBT/1/3]  thr=0.153846  acc=1  95591ms
+    [stress Kyoto_Medium/PIBT/2/3]  thr=0.0952381  acc=1  140767ms
+    [stress Kyoto_Medium/PIBT/3/3]  thr=0.169014  acc=1  92375ms
+    [stress Kyoto_Medium/CongestionAware/1/3]  thr=0.263158  acc=1  109773ms
+    [stress Kyoto_Medium/CongestionAware/2/3]  thr=0.3375  acc=1  93608ms
+    [stress Kyoto_Medium/CongestionAware/3/3]  thr=0.244186  acc=1  128966ms
+    [stress LosAngeles_Small/MAPPO/1/3]  thr=0.025  acc=0.05  33783ms
+    [stress LosAngeles_Small/MAPPO/2/3]  thr=0  acc=0  36120ms
+    [stress LosAngeles_Small/MAPPO/3/3]  thr=0.0165289  acc=0.0661157  30044ms
+    [stress LosAngeles_Small/IPPO/1/3]  thr=0.05  acc=0.0916667  32724ms
+    [stress LosAngeles_Small/IPPO/2/3]  thr=0  acc=0  31446ms
+    [stress LosAngeles_Small/IPPO/3/3]  thr=0.0070922  acc=0.0425532  39973ms
+    [stress LosAngeles_Small/MAPPER/1/3]  thr=0.546875  acc=0.945312  26009ms
+    [stress LosAngeles_Small/MAPPER/2/3]  thr=0.430657  acc=0.956204  98985ms
+    [stress LosAngeles_Small/MAPPER/3/3]  thr=0.408759  acc=0.963504  38639ms
+    [stress LosAngeles_Small/TamAlwaysAccept/1/3]  thr=0.356589  acc=0.96124  76853ms
+    [stress LosAngeles_Small/TamAlwaysAccept/2/3]  thr=0.426357  acc=0.968992  34427ms
+    [stress LosAngeles_Small/TamAlwaysAccept/3/3]  thr=0.315789  acc=0.917293  82570ms
+    [stress LosAngeles_Small/Greedy/1/3]  thr=0.0461538  acc=1  666853ms
+    [stress LosAngeles_Small/Greedy/2/3]  thr=0.0909091  acc=1  394318ms
+    [stress LosAngeles_Small/Greedy/3/3]  thr=0.0862069  acc=1  506053ms
+    [stress LosAngeles_Small/Random/1/3]  thr=0.132353  acc=0.919118  249710ms
+    [stress LosAngeles_Small/Random/2/3]  thr=0.159664  acc=0.87395  146423ms
+    [stress LosAngeles_Small/Random/3/3]  thr=0.138889  acc=0.875  239891ms
+    [stress LosAngeles_Small/InsertionGreedy/1/3]  thr=0.214953  acc=0.859813  150159ms
+    [stress LosAngeles_Small/InsertionGreedy/2/3]  thr=0.175676  acc=0.709459  200753ms
+    [stress LosAngeles_Small/InsertionGreedy/3/3]  thr=0.191176  acc=0.75  233308ms
+    [stress LosAngeles_Small/PIBT/1/3]  thr=0.281553  acc=1  84314ms
+    [stress LosAngeles_Small/PIBT/2/3]  thr=0.179487  acc=1  121393ms
+    [stress LosAngeles_Small/PIBT/3/3]  thr=0.20155  acc=1  142573ms
+    [stress LosAngeles_Small/CongestionAware/1/3]  thr=0.25641  acc=1  115787ms
+    [stress LosAngeles_Small/CongestionAware/2/3]  thr=0.242647  acc=1  84277ms
+    [stress LosAngeles_Small/CongestionAware/3/3]  thr=0.301471  acc=1  131361ms
+    [stress LosAngeles_Medium/MAPPO/1/3]  thr=0  acc=0.0246914  57061ms
+    [stress LosAngeles_Medium/MAPPO/2/3]  thr=0.0298507  acc=0.0447761  49131ms
+    [stress LosAngeles_Medium/MAPPO/3/3]  thr=0.0144928  acc=0.0144928  52131ms
+    [stress LosAngeles_Medium/IPPO/1/3]  thr=0.025641  acc=0.0512821  46675ms
+    [stress LosAngeles_Medium/IPPO/2/3]  thr=0  acc=0  47111ms
+    [stress LosAngeles_Medium/IPPO/3/3]  thr=0.0133333  acc=0.0266667  43397ms
+    [stress LosAngeles_Medium/MAPPER/1/3]  thr=0.407895  acc=0.934211  49596ms
+    [stress LosAngeles_Medium/MAPPER/2/3]  thr=0.54  acc=0.9  30718ms
+    [stress LosAngeles_Medium/MAPPER/3/3]  thr=0.333333  acc=0.906667  31286ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/1/3]  thr=0.40678  acc=0.864407  13751ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/2/3]  thr=0.3875  acc=0.9125  58780ms
+    [stress LosAngeles_Medium/TamAlwaysAccept/3/3]  thr=0.324675  acc=0.909091  50775ms
+    [stress LosAngeles_Medium/Greedy/1/3]  thr=0.0547945  acc=1  657697ms
+    [stress LosAngeles_Medium/Greedy/2/3]  thr=0.057971  acc=1  624483ms
+    [stress LosAngeles_Medium/Greedy/3/3]  thr=0.0533333  acc=1  586276ms
+    [stress LosAngeles_Medium/Random/1/3]  thr=0.0508475  acc=0.983051  174862ms
+    [stress LosAngeles_Medium/Random/2/3]  thr=0.0963855  acc=0.927711  262674ms
+    [stress LosAngeles_Medium/Random/3/3]  thr=0.0769231  acc=0.969231  218743ms
+    [stress LosAngeles_Medium/InsertionGreedy/1/3]  thr=0.163636  acc=0.818182  104958ms
+    [stress LosAngeles_Medium/InsertionGreedy/2/3]  thr=0.0869565  acc=0.782609  174918ms
+    [stress LosAngeles_Medium/InsertionGreedy/3/3]  thr=0.101449  acc=0.695652  146395ms
+    [stress LosAngeles_Medium/PIBT/1/3]  thr=0.125  acc=1  127161ms
+    [stress LosAngeles_Medium/PIBT/2/3]  thr=0.151515  acc=1  82571ms
+    [stress LosAngeles_Medium/PIBT/3/3]  thr=0.0724638  acc=1  99893ms
+    [stress LosAngeles_Medium/CongestionAware/1/3]  thr=0.295082  acc=1  93399ms
+    [stress LosAngeles_Medium/CongestionAware/2/3]  thr=0.240964  acc=1  120754ms
+    [stress LosAngeles_Medium/CongestionAware/3/3]  thr=0.222222  acc=1  92746ms
+  [s0 r40  MAPPO]  thr=0.00763359  acc=0.0534351  aloss=-0.000337006  closs=4.44186  ent=0.00453493  kl=0.000125378  cf=4.77099e-05  ep=10/10  n=4183  24944ms
+  [s0 r40  IPPO]  thr=0.057554  acc=0.0791367  aloss=0.00189096  closs=3.77801  ent=0.000111877  kl=-6.28376e-05  cf=0  ep=10/10  n=8962  35657ms
+  [s0 r40  MAPPER]  thr=0.634146  acc=0.96748  aloss=-0.00880097  closs=9.7845  ent=0.59406  kl=-0.000237401  cf=0  ep=6/10  n=160  36494ms
+  [s0 r40  MAPPO]  thr=0.045977  acc=0.0689655  aloss=-7.29181e-05  closs=5.46507  ent=0.00238483  kl=2.28833e-05  cf=0  ep=10/10  n=3068  72865ms
+  [s0 r40  IPPO]  thr=0.0117647  acc=0.0117647  aloss=0.000204138  closs=10.5102  ent=4.36068e-05  kl=-1.26212e-05  cf=0  ep=10/10  n=2045  107174ms
+  [s0 r40  MAPPER]  thr=0.4  acc=0.893333  aloss=-0.00133747  closs=8.92374  ent=0.611505  kl=0.000248433  cf=0  ep=8/10  n=107  58997ms
+  [s0 r40  MAPPO]  thr=0.0070922  acc=0.035461  aloss=-6.02685e-05  closs=3.11546  ent=0.00416189  kl=2.05847e-05  cf=0  ep=10/10  n=4690  22760ms
+  [s0 r40  IPPO]  thr=0.0495868  acc=0.0413223  aloss=0.000179261  closs=3.98133  ent=0.000152993  kl=5.22846e-05  cf=0  ep=10/10  n=3989  16591ms
+  [s0 r40  MAPPER]  thr=0.354651  acc=0.947674  aloss=-0.0310108  closs=10.9627  ent=0.599647  kl=3.94947e-05  cf=0  ep=5/10  n=261  94449ms
+  [s0 r40  MAPPO]  thr=0.0609756  acc=0.134146  aloss=-0.00155152  closs=6.27348  ent=0.00218656  kl=-1.76467e-05  cf=0  ep=10/10  n=4589  51622ms
+  [s0 r40  IPPO]  thr=0.0350877  acc=0.0526316  aloss=-0.00230413  closs=9.5941  ent=4.11606e-05  kl=-7.37647e-05  cf=0  ep=10/10  n=2824  40451ms
+  [s0 r40  MAPPER]  thr=0.478873  acc=0.859155  aloss=-0.00119429  closs=6.2995  ent=0.608066  kl=0.000136136  cf=0  ep=7/10  n=92  13376ms
+  [s0 r40  MAPPO]  thr=0.0350877  acc=0.0789474  aloss=0.000427071  closs=3.01731  ent=0.00346575  kl=1.52635e-05  cf=0  ep=10/10  n=4791  24429ms
+  [s0 r40  IPPO]  thr=0.0268456  acc=0.0805369  aloss=-0.00199159  closs=3.33463  ent=0.0001555  kl=4.9438e-05  cf=0  ep=10/10  n=8930  30021ms
+  [s0 r40  MAPPER]  thr=0.479675  acc=0.96748  aloss=-0.0102196  closs=10.553  ent=0.58419  kl=-0.000157456  cf=0  ep=5/10  n=154  37874ms
+  [s0 r40  MAPPO]  thr=0.0142857  acc=0.0714286  aloss=0.000898363  closs=8.38898  ent=0.00174602  kl=0.000162561  cf=0  ep=10/10  n=2537  44398ms
+  [s0 r40  IPPO]  thr=0.0147059  acc=0.0441176  aloss=-0.000548394  closs=9.7678  ent=4.72999e-05  kl=-5.66949e-06  cf=0  ep=10/10  n=2200  47039ms
+  [s0 r40  MAPPER]  thr=0.341463  acc=0.926829  aloss=-0.0545675  closs=21.8894  ent=0.642711  kl=-3.88981e-05  cf=0  ep=8/10  n=109  41645ms
+  [s0 r41  MAPPO]  thr=0.00694444  acc=0.0138889  aloss=0.000706282  closs=4.00335  ent=0.0028315  kl=7.16237e-06  cf=0  ep=10/10  n=2516  26220ms
+  [s0 r41  IPPO]  thr=0.0338983  acc=0.0677966  aloss=-0.00217284  closs=5.56677  ent=8.59266e-05  kl=0.00017756  cf=0  ep=10/10  n=4673  26236ms
+  [s0 r41  MAPPER]  thr=0.457746  acc=0.964789  aloss=-0.0166538  closs=7.50346  ent=0.651401  kl=-5.29634e-05  cf=0  ep=6/10  n=203  31176ms
+  [s0 r41  MAPPO]  thr=0.0140845  acc=0.0140845  aloss=-0.000201956  closs=14.2736  ent=0.00137501  kl=-1.90877e-06  cf=0  ep=10/10  n=1151  57063ms
+  [s0 r41  IPPO]  thr=0.0246914  acc=0.0617284  aloss=1.94471e-05  closs=12.6146  ent=2.03761e-05  kl=0.000178176  cf=0  ep=10/10  n=2556  93276ms
+  [s0 r41  MAPPER]  thr=0.264706  acc=0.838235  aloss=-0.0012706  closs=16.6414  ent=0.613846  kl=0.000164704  cf=0  ep=8/10  n=83  58942ms
+  [s0 r41  MAPPO]  thr=0.0487805  acc=0.097561  aloss=-0.00162504  closs=2.91886  ent=0.00353819  kl=-0.000100945  cf=0.000130208  ep=10/10  n=9192  20611ms
+  [s0 r41  IPPO]  thr=0.025  acc=0.0666667  aloss=0.00113171  closs=4.05389  ent=6.85241e-05  kl=8.21012e-05  cf=0  ep=10/10  n=6147  20024ms
+  [s0 r41  MAPPER]  thr=0.352941  acc=0.973856  aloss=0.000795206  closs=15.4866  ent=0.644977  kl=8.96748e-06  cf=0  ep=5/10  n=207  54696ms
+  [s0 r41  MAPPO]  thr=0.0123457  acc=0.0123457  aloss=0.00169022  closs=9.41306  ent=0.00235882  kl=-5.37533e-07  cf=0  ep=10/10  n=2194  45021ms
+  [s0 r41  IPPO]  thr=0.025974  acc=0.0649351  aloss=-0.000454436  closs=7.12673  ent=2.73719e-05  kl=0.000186494  cf=0.000244565  ep=10/10  n=3678  48049ms
+  [s0 r41  MAPPER]  thr=0.387097  acc=0.913979  aloss=-0.00132079  closs=19.61  ent=0.592669  kl=8.08584e-05  cf=0  ep=10/10  n=120  22692ms
+  [s0 r41  MAPPO]  thr=0.0254237  acc=0.0508475  aloss=0.00106979  closs=3.44632  ent=0.0030561  kl=4.27485e-05  cf=0  ep=10/10  n=4685  23865ms
+  [s0 r41  IPPO]  thr=0  acc=0.0153846  aloss=0.00026  closs=3.97638  ent=7.77108e-05  kl=-4.65357e-06  cf=0  ep=10/10  n=2326  21990ms
+  [s0 r41  MAPPER]  thr=0.431655  acc=0.928058  aloss=0.152084  closs=12.56  ent=0.572872  kl=0.000157168  cf=0  ep=5/10  n=176  61115ms
+  [s0 r41  MAPPO]  thr=0.0131579  acc=0.0131579  aloss=-0.00344121  closs=13.3199  ent=0.0017772  kl=-1.26334e-06  cf=0  ep=10/10  n=1424  46390ms
+  [s0 r41  IPPO]  thr=0  acc=0  aloss=0.00220635  closs=10.3274  ent=1.71351e-05  kl=0  cf=0  ep=10/10  n=1540  81417ms
+  [s0 r41  MAPPER]  thr=0.416667  acc=0.85  aloss=-0.00104785  closs=8.14005  ent=0.59245  kl=0.000103076  cf=0  ep=6/10  n=68  33896ms
+  [s0 r42  MAPPO]  thr=0.0148148  acc=0.0148148  aloss=-0.0165707  closs=3.58406  ent=0.0031282  kl=-7.8909e-06  cf=0  ep=10/10  n=2881  26386ms
+  [s0 r42  IPPO]  thr=0.0162602  acc=0.0325203  aloss=-8.76442e-05  closs=4.96039  ent=8.41576e-05  kl=7.44567e-05  cf=0  ep=10/10  n=4091  23337ms
+  [s0 r42  MAPPER]  thr=0.355556  acc=0.97037  aloss=0.0249824  closs=10.0278  ent=0.636746  kl=-3.8171e-05  cf=0  ep=6/10  n=187  61719ms
+  [s0 r42  MAPPO]  thr=0.0133333  acc=0.0266667  aloss=0.0010305  closs=6.02082  ent=0.00193993  kl=1.27613e-05  cf=0  ep=10/10  n=1620  66435ms
+  [s0 r42  IPPO]  thr=0.025641  acc=0.025641  aloss=0.00222502  closs=12.7883  ent=1.4753e-05  kl=8.71617e-05  cf=0  ep=10/10  n=1286  63428ms
+  [s0 r42  MAPPER]  thr=0.349398  acc=0.843373  aloss=-0.00114091  closs=13.554  ent=0.60781  kl=0.000188275  cf=0  ep=8/10  n=98  35398ms
+  [s0 r42  MAPPO]  thr=0  acc=0  aloss=0.000346767  closs=3.07896  ent=0.00268941  kl=-4.49076e-07  cf=0  ep=10/10  n=1436  18565ms
+  [s0 r42  IPPO]  thr=0  acc=0  aloss=0.001693  closs=4.3206  ent=5.50693e-05  kl=-7.86453e-11  cf=0  ep=10/10  n=1412  19525ms
+  [s0 r42  MAPPER]  thr=0.38806  acc=0.962687  aloss=0.00658298  closs=12.365  ent=0.651515  kl=3.75694e-05  cf=0  ep=5/10  n=218  33489ms
+  [s0 r42  MAPPO]  thr=0  acc=0  aloss=-0.000268618  closs=7.77575  ent=0.00218906  kl=-3.71817e-07  cf=0  ep=10/10  n=1468  44899ms
+  [s0 r42  IPPO]  thr=0.021978  acc=0.0769231  aloss=-0.000733635  closs=6.42024  ent=1.24866e-05  kl=0.000140431  cf=0  ep=10/10  n=4943  66433ms
+  [s0 r42  MAPPER]  thr=0.390805  acc=0.931035  aloss=0.0208876  closs=11.031  ent=0.599668  kl=0.000151543  cf=0  ep=8/10  n=128  38571ms
+  [s0 r42  MAPPO]  thr=0.0336134  acc=0.0756303  aloss=-0.000140473  closs=3.36764  ent=0.00313679  kl=5.01658e-05  cf=0  ep=10/10  n=7543  28049ms
+  [s0 r42  IPPO]  thr=0.0296296  acc=0.0444444  aloss=-0.000278647  closs=3.25523  ent=5.14755e-05  kl=-4.1355e-05  cf=0  ep=10/10  n=9560  32594ms
+  [s0 r42  MAPPER]  thr=0.541985  acc=0.984733  aloss=0.00157012  closs=16.8542  ent=0.624496  kl=8.23169e-05  cf=0  ep=5/10  n=199  41990ms
+  [s0 r42  MAPPO]  thr=0.0266667  acc=0.04  aloss=0.00185817  closs=7.93795  ent=0.0013743  kl=1.62093e-05  cf=0  ep=10/10  n=2002  40600ms
+  [s0 r42  IPPO]  thr=0  acc=0  aloss=-0.000287433  closs=9.32686  ent=1.4272e-05  kl=0  cf=0  ep=10/10  n=1492  64562ms
+  [s0 r42  MAPPER]  thr=0.227273  acc=0.875  aloss=0.0277787  closs=47.1389  ent=0.565644  kl=-2.46608e-05  cf=0  ep=7/10  n=102  110564ms
+  [s0 r43  MAPPO]  thr=0.00719424  acc=0.0359712  aloss=-3.17876e-05  closs=4.03023  ent=0.00298123  kl=2.91917e-05  cf=0  ep=10/10  n=4320  27898ms
+  [s0 r43  IPPO]  thr=0.00680272  acc=0.00680272  aloss=0.000757605  closs=4.69349  ent=6.49718e-05  kl=6.01373e-06  cf=0  ep=10/10  n=3430  26725ms
+  [s0 r43  MAPPER]  thr=0.357664  acc=0.956204  aloss=0.00267  closs=14.5789  ent=0.622692  kl=0.000304676  cf=0  ep=6/10  n=180  106383ms
+  [s0 r43  MAPPO]  thr=0.025974  acc=0.0909091  aloss=2.66621e-05  closs=4.69328  ent=0.0015424  kl=4.66859e-05  cf=0  ep=10/10  n=2528  117829ms
+  [s0 r43  IPPO]  thr=0.0117647  acc=0.0235294  aloss=-0.000104674  closs=9.88943  ent=1.03406e-05  kl=3.9618e-05  cf=0  ep=10/10  n=2292  157122ms
+  [s0 r43  MAPPER]  thr=0.432432  acc=0.905405  aloss=-0.0011218  closs=18.32  ent=0.578746  kl=6.66125e-05  cf=0  ep=6/10  n=92  63852ms
+  [s0 r43  MAPPO]  thr=0  acc=0  aloss=-0.000946189  closs=2.6966  ent=0.00201711  kl=-4.77475e-07  cf=0  ep=10/10  n=1796  19341ms
+  [s0 r43  IPPO]  thr=0  acc=0.023622  aloss=0.00335094  closs=4.47997  ent=4.40819e-05  kl=8.3712e-05  cf=0  ep=10/10  n=2438  18300ms
+  [s0 r43  MAPPER]  thr=0.404412  acc=0.970588  aloss=-0.00212671  closs=11.4296  ent=0.653025  kl=0.000109717  cf=0  ep=5/10  n=207  29125ms
+  [s0 r43  MAPPO]  thr=0  acc=0.0240964  aloss=-0.000390239  closs=9.41409  ent=0.00162507  kl=3.33506e-05  cf=0  ep=10/10  n=1816  39267ms
+  [s0 r43  IPPO]  thr=0.0151515  acc=0.0151515  aloss=-0.000815822  closs=10.65  ent=1.24574e-05  kl=1.11353e-06  cf=0  ep=10/10  n=2129  40160ms
+  [s0 r43  MAPPER]  thr=0.474227  acc=0.917526  aloss=-0.0011519  closs=8.43913  ent=0.605251  kl=0.00016621  cf=0  ep=10/10  n=129  24845ms
+  [s0 r43  MAPPO]  thr=0.0238095  acc=0.047619  aloss=0.000736847  closs=3.2123  ent=0.00273113  kl=1.96988e-05  cf=0  ep=10/10  n=5900  29877ms
+  [s0 r43  IPPO]  thr=0.00787402  acc=0.015748  aloss=-0.000163962  closs=3.53075  ent=5.36133e-05  kl=3.11426e-05  cf=0  ep=10/10  n=3132  27947ms
+  [s0 r43  MAPPER]  thr=0.456897  acc=0.956897  aloss=0.00875999  closs=10.2261  ent=0.636311  kl=9.97474e-05  cf=0  ep=5/10  n=173  30787ms
+  [s0 r43  MAPPO]  thr=0  acc=0  aloss=-0.000340566  closs=10.3116  ent=0.00112513  kl=-1.15898e-07  cf=0  ep=10/10  n=1372  54914ms
+  [s0 r43  IPPO]  thr=0  acc=0  aloss=0.00188186  closs=11.9195  ent=8.95272e-06  kl=0  cf=0  ep=10/10  n=1076  45813ms
+  [s0 r43  MAPPER]  thr=0.438356  acc=0.835616  aloss=-0.000978895  closs=9.10678  ent=0.617864  kl=0.000223627  cf=0  ep=7/10  n=96  29602ms
+  [s0 r44  MAPPO]  thr=0.0839161  acc=0.13986  aloss=-6.11086e-05  closs=3.80251  ent=0.00250511  kl=2.01498e-05  cf=0  ep=10/10  n=10255  31879ms
+  [s0 r44  IPPO]  thr=0  acc=0.0075188  aloss=0.00461567  closs=5.20115  ent=3.46646e-05  kl=-1.27411e-05  cf=0  ep=10/10  n=1956  29899ms
+  [s0 r44  MAPPER]  thr=0.440298  acc=0.962687  aloss=0.0223219  closs=12.5041  ent=0.632827  kl=-7.90841e-05  cf=0  ep=6/10  n=197  44130ms
+  [s0 r44  MAPPO]  thr=0.0113636  acc=0.0227273  aloss=0.00587128  closs=4.64261  ent=0.00119035  kl=-2.45303e-07  cf=0  ep=10/10  n=3171  166868ms
+  [s0 r44  IPPO]  thr=0.0138889  acc=0.0138889  aloss=-0.0028315  closs=8.88428  ent=8.80789e-06  kl=1.37265e-05  cf=0  ep=10/10  n=2149  145859ms
+  [s0 r44  MAPPER]  thr=0.452381  acc=0.892857  aloss=-0.00112636  closs=5.63827  ent=0.608412  kl=4.20424e-05  cf=0  ep=8/10  n=119  55614ms
+  [s0 r44  MAPPO]  thr=0.0277778  acc=0.0347222  aloss=-0.000214435  closs=2.90332  ent=0.00221455  kl=-1.96718e-05  cf=0  ep=10/10  n=6706  22703ms
+  [s0 r44  IPPO]  thr=0.00704225  acc=0.00704225  aloss=-0.00341107  closs=3.22876  ent=4.24509e-05  kl=7.80049e-06  cf=0  ep=10/10  n=3531  19083ms
+  [s0 r44  MAPPER]  thr=0.4375  acc=0.958333  aloss=-0.00850345  closs=9.38824  ent=0.629036  kl=-6.78155e-05  cf=0  ep=5/10  n=203  24981ms
+  [s0 r44  MAPPO]  thr=0.0375  acc=0.1125  aloss=0.000265331  closs=3.62159  ent=0.00158543  kl=9.06335e-05  cf=0  ep=10/10  n=6194  63223ms
+  [s0 r44  IPPO]  thr=0  acc=0.0113636  aloss=0.00144735  closs=6.71384  ent=1.28868e-05  kl=1.2439e-05  cf=0  ep=10/10  n=2086  56994ms
+  [s0 r44  MAPPER]  thr=0.346667  acc=0.986667  aloss=0.0100663  closs=29.2567  ent=0.535744  kl=0.0001669  cf=0  ep=8/10  n=98  41479ms
+  [s0 r44  MAPPO]  thr=0.0234375  acc=0.148438  aloss=0.000361097  closs=3.72007  ent=0.00277281  kl=-3.17079e-05  cf=0  ep=10/10  n=8675  32699ms
+  [s0 r44  IPPO]  thr=0.0487805  acc=0.0813008  aloss=-2.38137e-05  closs=2.84408  ent=4.29208e-05  kl=-2.57518e-05  cf=0  ep=10/10  n=13469  37745ms
+  [s0 r44  MAPPER]  thr=0.375  acc=0.944444  aloss=-0.00775494  closs=10.8094  ent=0.620389  kl=3.91465e-05  cf=0  ep=5/10  n=190  59991ms
+  [s0 r44  MAPPO]  thr=0.0138889  acc=0.0972222  aloss=0.00237975  closs=10.4726  ent=0.00110218  kl=0.000153385  cf=0  ep=10/10  n=2342  48979ms
+  [s0 r44  IPPO]  thr=0  acc=0.05  aloss=-0.000520287  closs=8.57523  ent=8.85767e-06  kl=0.000171015  cf=0.000138889  ep=10/10  n=2855  55574ms
+  [s0 r44  MAPPER]  thr=0.236559  acc=0.924731  aloss=-0.00607174  closs=49.4275  ent=0.559805  kl=0.000333547  cf=0  ep=7/10  n=113  86101ms
+  [MAPPER-Ev @ round 45] mutated 4/18 policies
+  [s0 r45  MAPPO]  thr=0.00740741  acc=0.0666667  aloss=-0.000843515  closs=2.72323  ent=0.00220063  kl=0.000122651  cf=0  ep=10/10  n=5776  26591ms
+  [s0 r45  IPPO]  thr=0.0367647  acc=0.0441176  aloss=-2.00084e-05  closs=4.93343  ent=2.96368e-05  kl=-3.65271e-05  cf=0  ep=10/10  n=4060  27554ms
+  [s0 r45  MAPPER]  thr=0.47541  acc=0.967213  aloss=-0.0256362  closs=6.39522  ent=0.615674  kl=0.000131116  cf=0  ep=6/10  n=161  45186ms
+  [s0 r45  MAPPO]  thr=0.0266667  acc=0.0533333  aloss=-0.000477981  closs=7.20597  ent=0.000868732  kl=2.76264e-05  cf=0  ep=10/10  n=2797  133054ms
+  [s0 r45  IPPO]  thr=0.011236  acc=0.0337079  aloss=-0.00119165  closs=9.22376  ent=5.18142e-06  kl=0.000104322  cf=0  ep=10/10  n=2193  185680ms
+  [s0 r45  MAPPER]  thr=0.438202  acc=0.932584  aloss=-0.00059722  closs=24.098  ent=0.575585  kl=0.000336366  cf=0  ep=7/10  n=108  97508ms
+  [s0 r45  MAPPO]  thr=0  acc=0  aloss=4.91017e-07  closs=3.79381  ent=0.00138841  kl=-1.71999e-07  cf=0  ep=10/10  n=1984  22081ms
+  [s0 r45  IPPO]  thr=0.0285714  acc=0.107143  aloss=4.24367e-05  closs=3.50151  ent=2.34818e-05  kl=0.000144854  cf=3.18066e-05  ep=10/10  n=12560  31699ms
+  [s0 r45  MAPPER]  thr=0.422819  acc=0.95302  aloss=-0.0268348  closs=12.6713  ent=0.645744  kl=-8.44641e-05  cf=0  ep=5/10  n=218  64211ms
+  [s0 r45  MAPPO]  thr=0.0136986  acc=0.0136986  aloss=-0.000615525  closs=10.0821  ent=0.00102542  kl=9.90389e-06  cf=0  ep=10/10  n=1649  42340ms
+  [s0 r45  IPPO]  thr=0  acc=0.0454545  aloss=-0.000236052  closs=6.66144  ent=6.69032e-06  kl=0.000102055  cf=0  ep=10/10  n=3836  65375ms
+  [s0 r45  MAPPER]  thr=0.328767  acc=0.917808  aloss=-0.000326181  closs=18.0437  ent=0.59389  kl=9.86052e-05  cf=0  ep=8/10  n=95  59104ms
+  [s0 r45  MAPPO]  thr=0.0166667  acc=0.1  aloss=9.54131e-05  closs=2.565  ent=0.0019315  kl=6.36669e-05  cf=0  ep=10/10  n=8792  35129ms
+  [s0 r45  IPPO]  thr=0.00724638  acc=0.00724638  aloss=0.000653034  closs=4.79697  ent=2.1717e-05  kl=-4.73469e-06  cf=0  ep=10/10  n=2064  32748ms
+  [s0 r45  MAPPER]  thr=0.492308  acc=0.992308  aloss=-0.00444352  closs=12.2063  ent=0.630968  kl=2.03966e-05  cf=0  ep=5/10  n=193  90538ms
+  [s0 r45  MAPPO]  thr=0.0133333  acc=0.04  aloss=-6.86025e-05  closs=9.02018  ent=0.000828642  kl=4.14616e-05  cf=0  ep=10/10  n=2140  54699ms
+  [s0 r45  IPPO]  thr=0.0337079  acc=0.0674157  aloss=0.000115612  closs=8.18352  ent=3.51675e-06  kl=5.73889e-05  cf=0  ep=10/10  n=3734  88315ms
+  [s0 r45  MAPPER]  thr=0.297297  acc=0.878378  aloss=0.00255071  closs=39.6592  ent=0.652325  kl=-5.32722e-05  cf=0  ep=7/10  n=100  110565ms
+  [s0 r46  MAPPO]  thr=0  acc=0  aloss=0.000268552  closs=3.48345  ent=0.00127584  kl=-1.0824e-07  cf=0  ep=10/10  n=2192  33269ms
+  [s0 r46  IPPO]  thr=0.0078125  acc=0.0078125  aloss=1.7438e-06  closs=4.22621  ent=2.25405e-05  kl=8.03606e-06  cf=0  ep=10/10  n=3135  33020ms
+  [s0 r46  MAPPER]  thr=0.398374  acc=0.943089  aloss=0.110756  closs=8.54546  ent=0.622933  kl=4.61915e-05  cf=0  ep=6/10  n=164  32878ms
+  [s0 r46  MAPPO]  thr=0  acc=0  aloss=0.00469156  closs=9.01204  ent=0.000740951  kl=-4.61034e-08  cf=0  ep=10/10  n=1540  138990ms
+  [s0 r46  IPPO]  thr=0  acc=0  aloss=-4.61024e-08  closs=11.3014  ent=3.8676e-06  kl=0  cf=0  ep=10/10  n=1568  181234ms
+  [s0 r46  MAPPER]  thr=0.425  acc=0.9  aloss=-0.000962785  closs=7.67787  ent=0.597433  kl=-1.36136e-05  cf=0  ep=8/10  n=115  86386ms
+  [s0 r46  MAPPO]  thr=0.00813008  acc=0.0243902  aloss=-4.48372e-05  closs=2.80286  ent=0.00179439  kl=1.88573e-05  cf=0  ep=10/10  n=4380  20094ms
+  [s0 r46  IPPO]  thr=0.0152672  acc=0.0152672  aloss=-0.00272676  closs=3.69056  ent=1.67049e-05  kl=-6.11997e-08  cf=0  ep=10/10  n=2757  26440ms
+  [s0 r46  MAPPER]  thr=0.459016  acc=0.967213  aloss=0.00446332  closs=13.3668  ent=0.642622  kl=0.000105006  cf=0  ep=5/10  n=173  47862ms
+  [s0 r46  MAPPO]  thr=0  acc=0  aloss=-0.00133738  closs=11.4375  ent=0.000696098  kl=-3.20579e-08  cf=0  ep=10/10  n=1360  44681ms
+  [s0 r46  IPPO]  thr=0.0238095  acc=0.0357143  aloss=0.000439847  closs=7.49856  ent=5.06396e-06  kl=1.79751e-05  cf=0  ep=10/10  n=4210  64589ms
+  [s0 r46  MAPPER]  thr=0.402597  acc=0.909091  aloss=-0.000802964  closs=15.2387  ent=0.56822  kl=-7.41424e-05  cf=0  ep=9/10  n=94  35712ms
+  [s0 r46  MAPPO]  thr=0.00653595  acc=0.0196078  aloss=-2.72514e-05  closs=3.28282  ent=0.00144796  kl=5.35353e-06  cf=0  ep=10/10  n=4405  37876ms
+  [s0 r46  IPPO]  thr=0  acc=0  aloss=-0.000220427  closs=5.57314  ent=1.58568e-05  kl=0  cf=0  ep=10/10  n=1464  25788ms
+  [s0 r46  MAPPER]  thr=0.324786  acc=0.957265  aloss=-0.020023  closs=10.2818  ent=0.646702  kl=8.12899e-05  cf=0  ep=5/10  n=158  73548ms
+  [s0 r46  MAPPO]  thr=0  acc=0  aloss=-0.000189738  closs=12.987  ent=0.000604651  kl=-2.13079e-08  cf=0  ep=10/10  n=1116  44315ms
+  [s0 r46  IPPO]  thr=0.0113636  acc=0.0454545  aloss=-0.000259657  closs=7.60472  ent=2.69781e-06  kl=0.000108674  cf=0  ep=10/10  n=3578  91766ms
+  [s0 r46  MAPPER]  thr=0.314607  acc=0.94382  aloss=-0.0142054  closs=30.7513  ent=0.621056  kl=-9.04832e-05  cf=0  ep=7/10  n=131  84141ms
+  [s0 r47  MAPPO]  thr=0  acc=0.00869565  aloss=-0.00675036  closs=4.21068  ent=0.00124316  kl=8.17568e-06  cf=0  ep=10/10  n=1637  20445ms
+  [s0 r47  IPPO]  thr=0.033557  acc=0.0469799  aloss=5.30449e-05  closs=3.11451  ent=1.28863e-05  kl=3.65529e-05  cf=0  ep=10/10  n=11753  43724ms
+  [s0 r47  MAPPER]  thr=0.549296  acc=0.915493  aloss=-0.0107668  closs=6.6166  ent=0.599077  kl=1.26687e-05  cf=0  ep=6/10  n=187  33100ms
+  [s0 r47  MAPPO]  thr=0  acc=0  aloss=-0.00517538  closs=5.28709  ent=0.000637076  kl=-4.44394e-08  cf=0  ep=10/10  n=1800  152844ms
+  [s0 r47  IPPO]  thr=0  acc=0.0333333  aloss=0.000769675  closs=22.6451  ent=2.62567e-06  kl=9.75287e-05  cf=0  ep=10/10  n=939  88563ms
+  [s0 r47  MAPPER]  thr=0.381818  acc=0.927273  aloss=-0.00101669  closs=72.9996  ent=0.549266  kl=4.71564e-05  cf=0  ep=8/10  n=64  76882ms
+  [s0 r47  MAPPO]  thr=0.029703  acc=0.0693069  aloss=0.000825247  closs=4.33359  ent=0.00138237  kl=-1.54283e-05  cf=0  ep=10/10  n=4456  22788ms
+  [s0 r47  IPPO]  thr=0.0078125  acc=0.015625  aloss=0.00129727  closs=3.48307  ent=9.59393e-06  kl=-9.17042e-06  cf=0  ep=10/10  n=3044  33024ms
+  [s0 r47  MAPPER]  thr=0.551724  acc=0.948276  aloss=-0.0150065  closs=3.65736  ent=0.631523  kl=0.000223047  cf=0  ep=5/10  n=156  19910ms
+  [s0 r47  MAPPO]  thr=0.0430108  acc=0.139785  aloss=0.00185532  closs=3.63834  ent=0.000709474  kl=5.48466e-06  cf=0  ep=10/10  n=6530  93031ms
+  [s0 r47  IPPO]  thr=0.0117647  acc=0.0352941  aloss=0.00136242  closs=5.91913  ent=2.87217e-06  kl=3.75782e-05  cf=0  ep=10/10  n=3882  96282ms
+  [s0 r47  MAPPER]  thr=0.457447  acc=0.893617  aloss=-0.00119513  closs=11.1965  ent=0.584752  kl=3.85221e-05  cf=0  ep=10/10  n=115  42085ms
+  [s0 r47  MAPPO]  thr=0.015748  acc=0.0629921  aloss=-0.000777349  closs=3.25336  ent=0.00141105  kl=8.85955e-07  cf=0  ep=10/10  n=5991  41311ms
+  [s0 r47  IPPO]  thr=0.00724638  acc=0.00724638  aloss=-0.000478465  closs=3.94784  ent=1.21051e-05  kl=9.95142e-06  cf=0  ep=10/10  n=2456  45319ms
+  [s0 r47  MAPPER]  thr=0.314516  acc=0.959677  aloss=0.00826157  closs=17.6626  ent=0.654499  kl=-6.07674e-05  cf=0  ep=5/10  n=213  69791ms
+  [s0 r47  MAPPO]  thr=0.0120482  acc=0.0361446  aloss=0.00134183  closs=5.92715  ent=0.000635896  kl=5.85422e-05  cf=0  ep=10/10  n=2314  85577ms
+  [s0 r47  IPPO]  thr=0.0128205  acc=0.0512821  aloss=-0.000517754  closs=9.34182  ent=1.55565e-06  kl=4.63071e-05  cf=0  ep=10/10  n=2246  96653ms
+  [s0 r47  MAPPER]  thr=0.414286  acc=0.928571  aloss=-0.000771548  closs=15.7821  ent=0.605706  kl=0.000299022  cf=0  ep=7/10  n=92  76946ms
+  [s0 r48  MAPPO]  thr=0.0514706  acc=0.0882353  aloss=0.000355645  closs=3.84488  ent=0.00136333  kl=-7.85329e-05  cf=0  ep=10/10  n=10605  42615ms
+  [s0 r48  IPPO]  thr=0.00892857  acc=0.0178571  aloss=0.00258866  closs=6.34405  ent=8.4581e-06  kl=2.14387e-05  cf=0  ep=10/10  n=2660  33815ms
+  [s0 r48  MAPPER]  thr=0.46281  acc=0.950413  aloss=0.00247889  closs=6.55885  ent=0.59343  kl=0.000152316  cf=0  ep=6/10  n=172  33332ms
+  [s0 r48  MAPPO]  thr=0.025  acc=0.0375  aloss=-6.67725e-05  closs=7.68589  ent=0.000710513  kl=3.81826e-06  cf=0  ep=10/10  n=2013  149688ms
+  [s0 r48  IPPO]  thr=0.030303  acc=0.0606061  aloss=0.000184583  closs=13.4711  ent=1.63509e-06  kl=0.000165397  cf=0  ep=10/10  n=1974  117392ms
+  [s0 r48  MAPPER]  thr=0.42029  acc=0.913043  aloss=-0.272734  closs=14.3938  ent=0.625857  kl=9.67161e-05  cf=0  ep=8/10  n=89  113897ms
+  [s0 r48  MAPPO]  thr=0.0148148  acc=0.0666667  aloss=-0.000196032  closs=2.75705  ent=0.00128573  kl=0.000157093  cf=0  ep=10/10  n=4895  34185ms
+  [s0 r48  IPPO]  thr=0.0238095  acc=0.0396825  aloss=5.59805e-05  closs=3.02674  ent=8.3063e-06  kl=3.02605e-05  cf=0  ep=10/10  n=7989  33789ms
+  [s0 r48  MAPPER]  thr=0.333333  acc=0.966667  aloss=-0.000723398  closs=21.1188  ent=0.531867  kl=5.81165e-05  cf=0  ep=5/10  n=150  211865ms
+  [s0 r48  MAPPO]  thr=0.0123457  acc=0.0246914  aloss=0.00140222  closs=6.30274  ent=0.000709938  kl=1.92896e-05  cf=0  ep=10/10  n=2309  81554ms
+  [s0 r48  IPPO]  thr=0.0294118  acc=0.0294118  aloss=0.00041709  closs=9.19297  ent=1.81093e-06  kl=2.65436e-05  cf=0  ep=10/10  n=2345  60430ms
+  [s0 r48  MAPPER]  thr=0.514286  acc=0.942857  aloss=-0.00117189  closs=12.272  ent=0.614577  kl=0.000356537  cf=0  ep=8/10  n=102  44522ms
+  [s0 r48  MAPPO]  thr=0.017094  acc=0.017094  aloss=-2.06071e-05  closs=3.75026  ent=0.00117609  kl=-8.18904e-07  cf=0  ep=10/10  n=3862  36674ms
+  [s0 r48  IPPO]  thr=0.04  acc=0.088  aloss=3.47572e-05  closs=2.4841  ent=6.78438e-06  kl=8.22436e-05  cf=0  ep=10/10  n=10264  55570ms
+  [s0 r48  MAPPER]  thr=0.41129  acc=0.967742  aloss=0.0132548  closs=9.72119  ent=0.613202  kl=0.000120852  cf=0  ep=5/10  n=172  77163ms
+  [s0 r48  MAPPO]  thr=0.0120482  acc=0.0120482  aloss=-0.000701559  closs=6.92475  ent=0.000599352  kl=3.93749e-06  cf=0  ep=10/10  n=2295  116296ms
+  [s0 r48  IPPO]  thr=0  acc=0.031746  aloss=-0.000110049  closs=10.3127  ent=1.29269e-06  kl=3.6524e-05  cf=0  ep=10/10  n=2207  86389ms
+  [s0 r48  MAPPER]  thr=0.377358  acc=0.830189  aloss=-0.000639844  closs=15.9223  ent=0.59164  kl=-9.17991e-05  cf=0  ep=7/10  n=62  35025ms
+  [s0 r49  MAPPO]  thr=0.0437956  acc=0.0948905  aloss=-0.00104032  closs=3.91683  ent=0.00127222  kl=-4.46163e-05  cf=0  ep=10/10  n=13219  55987ms
+  [s0 r49  IPPO]  thr=0.0487805  acc=0.121951  aloss=-0.000220208  closs=4.05024  ent=5.58502e-06  kl=0.000199393  cf=2.35849e-05  ep=10/10  n=8472  47226ms
+  [s0 r49  MAPPER]  thr=0.375839  acc=0.90604  aloss=0.00823292  closs=9.24004  ent=0.550639  kl=0.000102179  cf=0  ep=5/10  n=170  51795ms
+  [s0 r49  MAPPO]  thr=0  acc=0  aloss=-0.00160688  closs=8.0437  ent=0.000644671  kl=-2.60076e-08  cf=0  ep=10/10  n=1432  98035ms
+  [s0 r49  IPPO]  thr=0  acc=0.015873  aloss=0.00356753  closs=13.162  ent=8.76918e-07  kl=-2.22678e-06  cf=0  ep=10/10  n=1127  87139ms
+  [s0 r49  MAPPER]  thr=0.333333  acc=0.813333  aloss=-0.00062495  closs=4.52125  ent=0.612594  kl=6.64555e-05  cf=0  ep=8/10  n=87  30908ms
+  [s0 r49  MAPPO]  thr=0.04  acc=0.048  aloss=-0.000404574  closs=2.84851  ent=0.00120245  kl=-5.92914e-05  cf=0  ep=10/10  n=4243  29065ms
+  [s0 r49  IPPO]  thr=0.00769231  acc=0.0307692  aloss=0.00017544  closs=3.13267  ent=4.07285e-06  kl=6.78524e-05  cf=0  ep=10/10  n=4250  38513ms
+  [s0 r49  MAPPER]  thr=0.212598  acc=0.937008  aloss=-0.0119765  closs=23.9931  ent=0.603578  kl=-0.000117715  cf=0  ep=5/10  n=155  261964ms
+  [s0 r49  MAPPO]  thr=0.0125  acc=0.0375  aloss=-0.000150633  closs=6.29645  ent=0.000801044  kl=4.45968e-05  cf=0  ep=10/10  n=2576  76874ms
+  [s0 r49  IPPO]  thr=0  acc=0.0273973  aloss=0.0010112  closs=7.44068  ent=9.28173e-07  kl=3.46218e-05  cf=0  ep=10/10  n=2513  88486ms
+  [s0 r49  MAPPER]  thr=0.448718  acc=0.987179  aloss=-0.000794096  closs=13.8748  ent=0.590417  kl=0.00043303  cf=0  ep=8/10  n=110  53100ms
+  [s0 r49  MAPPO]  thr=0.00806452  acc=0.00806452  aloss=0.00022367  closs=2.50615  ent=0.00112218  kl=-1.14707e-06  cf=0  ep=10/10  n=2678  50156ms
+  [s0 r49  IPPO]  thr=0.0075188  acc=0.037594  aloss=8.6236e-05  closs=4.19051  ent=3.68103e-06  kl=3.19535e-05  cf=0  ep=10/10  n=5021  45051ms
+  [s0 r49  MAPPER]  thr=0.5  acc=0.963768  aloss=0.0173962  closs=6.88341  ent=0.5755  kl=1.51424e-05  cf=0  ep=5/10  n=166  48561ms
+  [s0 r49  MAPPO]  thr=0  acc=0.0144928  aloss=-0.00128564  closs=9.06667  ent=0.000600198  kl=-1.01789e-05  cf=0  ep=10/10  n=1481  75796ms
+  [s0 r49  IPPO]  thr=0.0227273  acc=0.0227273  aloss=-0.000804508  closs=7.24265  ent=6.71863e-07  kl=-2.40113e-05  cf=0  ep=10/10  n=3148  103617ms
+  [s0 r49  MAPPER]  thr=0.36  acc=0.946667  aloss=0.152353  closs=33.9336  ent=0.637041  kl=3.66569e-05  cf=0  ep=7/10  n=107  139669ms
+  [MAPPER-Ev @ round 50] mutated 4/18 policies
+  [s0 r50  MAPPO]  thr=0  acc=0  aloss=-0.0053054  closs=3.11376  ent=0.0011196  kl=-6.25902e-08  cf=0  ep=10/10  n=1348  35148ms
+  [s0 r50  IPPO]  thr=0.00724638  acc=0.0289855  aloss=0.00332157  closs=5.24028  ent=3.67625e-06  kl=1.71463e-05  cf=0  ep=10/10  n=4865  44654ms
+  [s0 r50  MAPPER]  thr=0.448598  acc=0.878505  aloss=-0.0130707  closs=3.61397  ent=0.57562  kl=5.36508e-05  cf=0  ep=5/10  n=125  32917ms
+  [s0 r50  MAPPO]  thr=0  acc=0  aloss=-0.00104749  closs=5.072  ent=0.00063321  kl=-2.02702e-08  cf=0  ep=10/10  n=1540  161999ms
+  [s0 r50  IPPO]  thr=0  acc=0.0131579  aloss=0.00404242  closs=10.086  ent=5.56713e-07  kl=9.47852e-06  cf=0  ep=10/10  n=2059  203976ms
+  [s0 r50  MAPPER]  thr=0.380952  acc=0.880952  aloss=-0.00058899  closs=8.55296  ent=0.589293  kl=-0.000119835  cf=0  ep=8/10  n=104  94960ms
+  [s0 r50  MAPPO]  thr=0.027027  acc=0.0810811  aloss=-0.00095203  closs=2.99886  ent=0.00122079  kl=5.16728e-05  cf=0  ep=10/10  n=10500  38591ms
+  [s0 r50  IPPO]  thr=0.00714286  acc=0.0571429  aloss=0.00163313  closs=3.32048  ent=3.53747e-06  kl=-9.23826e-06  cf=0  ep=10/10  n=4937  32948ms
+  [s0 r50  MAPPER]  thr=0.368794  acc=0.921986  aloss=-0.0113732  closs=18.6291  ent=0.548292  kl=-8.05878e-05  cf=0  ep=5/10  n=187  150801ms
+  [s0 r50  MAPPO]  thr=0.0120482  acc=0.0361446  aloss=0.000102209  closs=5.08599  ent=0.000796362  kl=6.72411e-06  cf=0  ep=10/10  n=3539  72666ms
+  [s0 r50  IPPO]  thr=0.0289855  acc=0.057971  aloss=-0.000293555  closs=8.99259  ent=6.86871e-07  kl=-7.37442e-06  cf=0  ep=10/10  n=2778  64295ms
+  [s0 r50  MAPPER]  thr=0.42623  acc=0.918033  aloss=-0.000531911  closs=20.7167  ent=0.556923  kl=-4.99291e-05  cf=0  ep=8/10  n=78  38381ms
+  [s0 r50  MAPPO]  thr=0.0075188  acc=0.0150376  aloss=1.38613e-05  closs=2.73923  ent=0.00108061  kl=9.25827e-06  cf=0  ep=10/10  n=3178  46326ms
+  [s0 r50  IPPO]  thr=0.0402685  acc=0.0536913  aloss=0.000128461  closs=3.65475  ent=4.31247e-06  kl=3.45271e-05  cf=0  ep=10/10  n=13523  52987ms
+  [s0 r50  MAPPER]  thr=0.413534  acc=0.93985  aloss=0.0153063  closs=7.65725  ent=0.596686  kl=6.05812e-06  cf=0  ep=5/10  n=166  64601ms
+  [s0 r50  MAPPO]  thr=0.0263158  acc=0.0394737  aloss=-0.000200977  closs=8.36957  ent=0.000534718  kl=5.00033e-05  cf=0  ep=10/10  n=1854  69749ms
+  [s0 r50  IPPO]  thr=0.0178571  acc=0.0178571  aloss=-8.42326e-06  closs=20.7534  ent=5.69293e-07  kl=1.03937e-05  cf=0  ep=10/10  n=1184  44141ms
+  [s0 r50  MAPPER]  thr=0.463768  acc=0.884058  aloss=-0.000467233  closs=7.61153  ent=0.566795  kl=0.000119767  cf=0  ep=6/10  n=76  49136ms
+  [s0 r51  MAPPO]  thr=0.0243902  acc=0.0487805  aloss=0.00022809  closs=3.36263  ent=0.00103681  kl=-6.82534e-06  cf=0  ep=10/10  n=5019  38431ms
+  [s0 r51  IPPO]  thr=0.00961538  acc=0.00961538  aloss=-0.00483821  closs=6.76612  ent=3.23328e-06  kl=1.07487e-05  cf=0  ep=10/10  n=1765  30047ms
+  [s0 r51  MAPPER]  thr=0.591667  acc=0.908333  aloss=0.0144377  closs=10.4232  ent=0.577432  kl=0.00015948  cf=0  ep=6/10  n=144  39894ms
+  [s0 r51  MAPPO]  thr=0  acc=0  aloss=-0.000609443  closs=7.61648  ent=0.000523503  kl=-9.40011e-09  cf=0  ep=10/10  n=1304  106726ms
+  [s0 r51  IPPO]  thr=0  acc=0  aloss=0.000613916  closs=15.0387  ent=3.46369e-07  kl=0  cf=0  ep=10/10  n=1208  105006ms
+  [s0 r51  MAPPER]  thr=0.395604  acc=0.934066  aloss=-0.000498287  closs=12.306  ent=0.585222  kl=4.84491e-05  cf=0  ep=8/10  n=111  84223ms
+  [s0 r51  MAPPO]  thr=0  acc=0  aloss=0.0011064  closs=2.44125  ent=0.000827344  kl=-2.89986e-08  cf=0  ep=10/10  n=1416  23100ms
+  [s0 r51  IPPO]  thr=0.0168067  acc=0.0420168  aloss=-0.000180487  closs=3.79144  ent=2.36358e-06  kl=7.64697e-05  cf=0  ep=10/10  n=4766  31243ms
+  [s0 r51  MAPPER]  thr=0.337931  acc=0.972414  aloss=-0.00578115  closs=13.947  ent=0.618091  kl=-2.59696e-05  cf=0  ep=3/10  n=212  168265ms
+  [s0 r51  MAPPO]  thr=0.0144928  acc=0.0289855  aloss=-0.000169283  closs=3.88045  ent=0.000581989  kl=4.00608e-06  cf=0  ep=10/10  n=2423  71607ms
+  [s0 r51  IPPO]  thr=0.0740741  acc=0.148148  aloss=-5.54322e-05  closs=4.58989  ent=4.81541e-07  kl=4.26941e-05  cf=0  ep=10/10  n=9011  95412ms
+  [s0 r51  MAPPER]  thr=0.46875  acc=0.875  aloss=-0.000816543  closs=6.14286  ent=0.570001  kl=7.43986e-05  cf=0  ep=8/10  n=75  21602ms
+  [s0 r51  MAPPO]  thr=0.0202703  acc=0.0337838  aloss=-0.000124007  closs=3.99252  ent=0.00101042  kl=4.54665e-06  cf=0  ep=10/10  n=7599  50601ms
+  [s0 r51  IPPO]  thr=0.0606061  acc=0.0833333  aloss=-6.64e-05  closs=3.03354  ent=3.12361e-06  kl=2.50123e-05  cf=0  ep=10/10  n=10650  43656ms
+  [s0 r51  MAPPER]  thr=0.472441  acc=0.968504  aloss=-0.000548334  closs=2.63411  ent=0.545076  kl=7.73183e-05  cf=0  ep=5/10  n=166  34316ms
+  [s0 r51  MAPPO]  thr=0.0136986  acc=0.0136986  aloss=4.6842e-05  closs=8.29147  ent=0.00059109  kl=-5.31016e-06  cf=0  ep=10/10  n=1439  76867ms
+  [s0 r51  IPPO]  thr=0.0120482  acc=0.0240964  aloss=1.25259e-05  closs=9.4591  ent=3.0181e-07  kl=1.29285e-05  cf=0  ep=10/10  n=2142  83045ms
+  [s0 r51  MAPPER]  thr=0.346667  acc=0.906667  aloss=-0.000467339  closs=7.41928  ent=0.607163  kl=4.8333e-05  cf=0  ep=8/10  n=96  45454ms
+  [s0 r52  MAPPO]  thr=0.0454545  acc=0.128788  aloss=-7.44939e-05  closs=3.96849  ent=0.00108924  kl=3.67054e-05  cf=0  ep=10/10  n=11017  54454ms
+  [s0 r52  IPPO]  thr=0.015625  acc=0.0546875  aloss=-0.000118323  closs=5.27337  ent=2.02635e-06  kl=6.78863e-05  cf=0  ep=10/10  n=4187  45390ms
+  [s0 r52  MAPPER]  thr=0.284672  acc=0.948905  aloss=-0.0121788  closs=15.5721  ent=0.503863  kl=-2.87886e-06  cf=0  ep=5/10  n=170  82938ms
+  [s0 r52  MAPPO]  thr=0  acc=0.0119048  aloss=0.00109247  closs=5.35895  ent=0.00052762  kl=7.49365e-06  cf=0  ep=10/10  n=1714  190369ms
+  [s0 r52  IPPO]  thr=0.0235294  acc=0.0352941  aloss=-3.98713e-05  closs=11.4477  ent=2.51681e-07  kl=2.40098e-05  cf=0  ep=10/10  n=2228  137514ms
+  [s0 r52  MAPPER]  thr=0.342857  acc=0.857143  aloss=0.0914252  closs=19.4278  ent=0.616972  kl=0.000147596  cf=0  ep=7/10  n=96  69775ms
+  [s0 r52  MAPPO]  thr=0.0359712  acc=0.0431655  aloss=-0.000357159  closs=3.99884  ent=0.00126527  kl=-5.01645e-05  cf=0  ep=10/10  n=8077  30437ms
+  [s0 r52  IPPO]  thr=0.00653595  acc=0.0130719  aloss=0.000351083  closs=3.3279  ent=1.95288e-06  kl=-7.72577e-06  cf=0  ep=10/10  n=2869  41413ms
+  [s0 r52  MAPPER]  thr=0.462264  acc=0.962264  aloss=-0.00579459  closs=5.78454  ent=0.565433  kl=8.18518e-05  cf=0  ep=5/10  n=132  87206ms

@@ -145,7 +145,8 @@ ObjectivePath ObjectiveGroupCache::reconstruct_path(
 ObjectiveGroupCache::DiscoveryStep ObjectiveGroupCache::discover_step(
     osmium::object_id_type from,
     const MyData&          data,
-    const std::unordered_set<osmium::object_id_type>& agent_positions
+    const std::unordered_set<osmium::object_id_type>& agent_positions,
+    float                  max_cost
 ) {
     if (is_complete()) return {};  // type == Exhausted
 
@@ -166,6 +167,17 @@ ObjectiveGroupCache::DiscoveryStep ObjectiveGroupCache::discover_step(
         state.open.pop_back();
 
         if (state.closed.count(current)) continue;
+
+        // Spatial pruning: if the cheapest open node exceeds the search budget,
+        // all remaining nodes also exceed it (min-heap). Push current back so a
+        // later call with a larger max_cost can resume past this frontier
+        // (recall mechanism). state.exhausted stays false → transient stop.
+        if (cost > max_cost) {
+            state.open.push_back({cost, current});
+            std::push_heap(state.open.begin(), state.open.end(), cmp);
+            return {};
+        }
+
         state.closed.insert(current);
 
         // Expand neighbors before checking stops (ensures paths through this node are usable later).
@@ -179,6 +191,7 @@ ObjectiveGroupCache::DiscoveryStep ObjectiveGroupCache::discover_step(
                     (way.node1_id == current) ? way.node2_id : way.node1_id;
                 if (state.closed.count(nb)) continue;
                 float nc = cost + way.distance_meters;
+                if (nc > max_cost) continue;            // skip heap push beyond budget
                 auto g_it = state.g_score.find(nb);
                 if (g_it == state.g_score.end() || nc < g_it->second) {
                     state.g_score[nb]   = nc;
@@ -265,11 +278,12 @@ const ObjectivePath* PDPServerMemory::discover_next_path(
 ObjectiveGroupCache::DiscoveryStep PDPServerMemory::discover_step(
     osmium::object_id_type from,
     int group_id,
-    const std::unordered_set<osmium::object_id_type>& agent_positions
+    const std::unordered_set<osmium::object_id_type>& agent_positions,
+    float max_cost
 ) {
     auto it = group_caches_.find(group_id);
     if (it == group_caches_.end()) return {};
-    return it->second.discover_step(from, geo_box.data, agent_positions);
+    return it->second.discover_step(from, geo_box.data, agent_positions, max_cost);
 }
 
 ObjectivePath* PDPServerMemory::refresh_dynamic_cost(
