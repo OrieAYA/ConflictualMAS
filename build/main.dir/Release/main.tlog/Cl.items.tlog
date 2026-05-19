@@ -6,6 +6,8 @@ C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\ComparisonTest.cpp;C:\Conflictual
 C:\ConflictualMAS\src\DMASforPD\Policy\ObjectiveDMPolicy.cpp;C:\ConflictualMAS\build\main.dir\Release\ObjectiveDMPolicy.obj
 C:\ConflictualMAS\src\DMASforPD\Policy\IPPOPolicy.cpp;C:\ConflictualMAS\build\main.dir\Release\IPPOPolicy.obj
 C:\ConflictualMAS\src\DMASforPD\Policy\MapperPolicy.cpp;C:\ConflictualMAS\build\main.dir\Release\MapperPolicy.obj
+C:\ConflictualMAS\src\DMASforPD\Policy\HybridPolicy.cpp;C:\ConflictualMAS\build\main.dir\Release\HybridPolicy.obj
+C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp;C:\ConflictualMAS\build\main.dir\Release\PlanningComparisonTest.obj
 C:\ConflictualMAS\src\Training\CityConfig.cpp;C:\ConflictualMAS\build\main.dir\Release\CityConfig.obj
 C:\ConflictualMAS\src\Training\EpisodeConfig.cpp;C:\ConflictualMAS\build\main.dir\Release\EpisodeConfig.obj
 C:\ConflictualMAS\src\Training\EpisodeGenerator.cpp;C:\ConflictualMAS\build\main.dir\Release\EpisodeGenerator.obj

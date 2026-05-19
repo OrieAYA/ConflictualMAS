@@ -223,6 +223,30 @@ struct ComparisonMetrics {
     float mean_congestion  = 0.f;   // mean edge load (mean_load_now) over all steps
     float mean_trip_steps  = 0.f;   // mean pickup→delivery travel time (steps)
 
+    // Metric 4: SPATIAL complexity over served tasks (pickup ∪ delivery points)
+    //   bbox_area_km2        : bbox of all served task endpoints
+    //   convex_hull_km2      : convex-hull area (finer dispersion measure)
+    //   mean_pd_distance_m   : mean direct P→D distance per served task
+    //   mean_nn_pickup_m     : mean nearest-neighbour pickup distance
+    float bbox_area_km2          = 0.f;
+    float convex_hull_area_km2   = 0.f;
+    float mean_pd_distance_m     = 0.f;
+    float mean_nn_pickup_m       = 0.f;
+
+    // Metric 5: derived TEMPORAL complexity
+    //   compute_time_per_task_ms      = wallclock_ms / tasks_appeared
+    //   compute_time_per_decision_us  = wallclock_ms × 1000 / (tasks × n_agents)
+    float compute_time_per_task_ms     = 0.f;
+    float compute_time_per_decision_us = 0.f;
+
+    // Metric 6: VALIDITY counters (sanity check — should stay at 0)
+    //   pairing_violations  : tasks where picked_step ≥ delivered_step
+    //                          OR delivered without pickup, OR before arrival
+    //                          OR spatio-temporal teleportation suspect
+    //   capacity_violations : agents with peak load > max_tasks_per_agent
+    int   pairing_violations_runtime  = 0;
+    int   capacity_violations_runtime = 0;
+
     // ── RL policy ──────────────────────────────────────────────────────────
     float accept_rate      = 0.f;
     float reward_mean      = 0.f;

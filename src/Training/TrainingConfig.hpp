@@ -68,6 +68,32 @@ struct TrainingConfig {
     // Skip the generalisation eval on held-out cities (saves ~45 min).
     bool        skip_generalize_eval = false;
 
+    // ── Training mode subset ──────────────────────────────────────────────
+    // Which RL policies to actually TRAIN per round. Default = all three.
+    // For a MAPPER-only run, set to { PolicyMode::MAPPER } — IPPO and MAPPO
+    // skip their PPO update phase, no buffer writes, ~3× faster per round.
+    // Independent of eval_modes (which controls what's evaluated, not trained).
+    std::vector<PolicyMode> train_modes;  // empty = train MAPPO+IPPO+MAPPER
+
+    // ── Scenario sampler version ──────────────────────────────────────────
+    // Default (false) uses the 4-regime sampler: 15% slack, 35% normal,
+    // 30% stress_light, 20% stress_heavy.
+    // Set to true to disable the "slack" regime → 3-regime sampler with
+    // ~53% normal / 29% stress_light / 18% stress_heavy distribution.
+    // This 3-regime version REPLICATES THE MAY 17 BASELINE TRAINING exactly
+    // (verified from the 360-episode log: 0 slack samples observed).
+    bool disable_slack_regime = false;
+
+    // ── Eval scenario sweep ───────────────────────────────────────────────
+    // List of EpisodeScenarios to evaluate under in run_eval / run_generalize_eval.
+    // EMPTY (default) → single normal scenario (current T/M/X behaviour preserved).
+    // NON-EMPTY → each scenario is run sequentially for every (mode, city, eps)
+    //             tuple. The scenario.label becomes the suffix on EpisodeRecord.phase
+    //             (e.g. "eval_slack", "generalize_stress_heavy"), letting pandas
+    //             split results by scenario × city × mode for the final SoTA table.
+    // This is what option Y uses to cover the full scenario × mode × map cross.
+    std::vector<EpisodeScenario> eval_scenarios;
+
     // ── Logging ───────────────────────────────────────────────────────────
     bool verbose              = true;
     int  log_every            = 1;         // log every N episodes

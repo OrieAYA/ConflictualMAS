@@ -294,6 +294,147 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     metrics.mean_trip_steps = (trip_count_ > 0)
         ? static_cast<float>(trip_sum_) / trip_count_ : 0.f;
 
+    // ── Spatial complexity over served tasks ──────────────────────────────
+    // Walk all accepted tasks (allocated + finished) and compute spatial spread
+    // metrics: bbox area, convex hull area, mean P→D distance, mean nearest
+    // neighbour pickup distance. Cheap relative to the simulation cost.
+    {
+        struct PtLL { double lat, lon; };
+        std::vector<PtLL> pus, dels;
+        auto add_task_points = [&](const PDPTask* t) {
+            if (!t) return;
+            auto itp = memory_.geo_box.data.nodes.find(t->pickup.id);
+            auto itd = memory_.geo_box.data.nodes.find(t->delivery.id);
+            if (itp == memory_.geo_box.data.nodes.end() ||
+                itd == memory_.geo_box.data.nodes.end()) return;
+            pus .push_back({itp->second.lat, itp->second.lon});
+            dels.push_back({itd->second.lat, itd->second.lon});
+        };
+        for (const PDPTask* t : memory_.finished_tasks)  add_task_points(t);
+        for (const PDPTask* t : memory_.allocated_tasks) add_task_points(t);
+
+        constexpr double kPi = 3.14159265358979323846;
+        auto hav = [&](double la1, double lo1, double la2, double lo2) {
+            constexpr double R = 6371000.0;
+            const double dlat = (la2 - la1) * kPi / 180.0;
+            const double dlon = (lo2 - lo1) * kPi / 180.0;
+            const double a1 = la1 * kPi / 180.0;
+            const double a2 = la2 * kPi / 180.0;
+            const double a = std::sin(dlat/2)*std::sin(dlat/2)
+                           + std::cos(a1)*std::cos(a2)*std::sin(dlon/2)*std::sin(dlon/2);
+            return R * 2.0 * std::atan2(std::sqrt(a), std::sqrt(1-a));
+        };
+
+        if (!pus.empty()) {
+            double mn_lat=+1e9, mx_lat=-1e9, mn_lon=+1e9, mx_lon=-1e9;
+            for (size_t i = 0; i < pus.size(); ++i) {
+                mn_lat = std::min({mn_lat, pus[i].lat, dels[i].lat});
+                mx_lat = std::max({mx_lat, pus[i].lat, dels[i].lat});
+                mn_lon = std::min({mn_lon, pus[i].lon, dels[i].lon});
+                mx_lon = std::max({mx_lon, pus[i].lon, dels[i].lon});
+            }
+            const double w = hav(mn_lat, mn_lon, mn_lat, mx_lon);
+            const double h = hav(mn_lat, mn_lon, mx_lat, mn_lon);
+            metrics.bbox_area_km2 = static_cast<float>((w * h) / 1e6);
+
+            // Convex hull (Andrew's monotone chain) on local-flat projection.
+            const double cos_lat = std::cos((mn_lat + mx_lat) * 0.5 * kPi / 180.0);
+            struct P2 { double x, y; };
+            std::vector<P2> pts;
+            pts.reserve(pus.size() * 2);
+            for (size_t i = 0; i < pus.size(); ++i) {
+                pts.push_back({pus [i].lon * 111320.0 * cos_lat, pus [i].lat * 111320.0});
+                pts.push_back({dels[i].lon * 111320.0 * cos_lat, dels[i].lat * 111320.0});
+            }
+            std::sort(pts.begin(), pts.end(),
+                      [](const P2& a, const P2& b){
+                          return (a.x != b.x) ? a.x < b.x : a.y < b.y;
+                      });
+            auto crossp = [](const P2& O, const P2& A, const P2& B){
+                return (A.x-O.x)*(B.y-O.y) - (A.y-O.y)*(B.x-O.x);
+            };
+            const int nP = static_cast<int>(pts.size());
+            std::vector<P2> hull(2 * nP);
+            int k = 0;
+            for (int i = 0; i < nP; ++i) {
+                while (k >= 2 && crossp(hull[k-2], hull[k-1], pts[i]) <= 0) --k;
+                hull[k++] = pts[i];
+            }
+            for (int i = nP-2, tlim = k+1; i >= 0; --i) {
+                while (k >= tlim && crossp(hull[k-2], hull[k-1], pts[i]) <= 0) --k;
+                hull[k++] = pts[i];
+            }
+            hull.resize(k - 1);
+            double sarea = 0;
+            for (size_t i = 0; i < hull.size(); ++i) {
+                const auto& A = hull[i];
+                const auto& B = hull[(i+1) % hull.size()];
+                sarea += A.x * B.y - B.x * A.y;
+            }
+            metrics.convex_hull_area_km2 =
+                static_cast<float>(std::abs(sarea) * 0.5 / 1e6);
+
+            // Mean P→D direct distance.
+            double sum_pd = 0.0;
+            for (size_t i = 0; i < pus.size(); ++i)
+                sum_pd += hav(pus[i].lat, pus[i].lon, dels[i].lat, dels[i].lon);
+            metrics.mean_pd_distance_m = static_cast<float>(sum_pd / pus.size());
+
+            // Mean nearest-neighbour pickup distance (O(N²), N is small here).
+            double sum_nn = 0.0; int n_nn = 0;
+            for (size_t i = 0; i < pus.size(); ++i) {
+                double best = 1e18;
+                for (size_t j = 0; j < pus.size(); ++j) {
+                    if (i == j) continue;
+                    const double d = hav(pus[i].lat, pus[i].lon,
+                                          pus[j].lat, pus[j].lon);
+                    if (d < best) best = d;
+                }
+                if (best < 1e17) { sum_nn += best; ++n_nn; }
+            }
+            metrics.mean_nn_pickup_m = (n_nn > 0)
+                ? static_cast<float>(sum_nn / n_nn) : 0.f;
+        }
+    }
+
+    // ── Validity sanity check over the served tasks ────────────────────────
+    // These should remain 0 — non-zero indicates a planner bug we must catch.
+    {
+        const int max_carry = std::max(
+            1, memory_.task_agent.params.max_tasks_per_agent);
+        for (const PDPTask* t : memory_.finished_tasks) {
+            if (!t) continue;
+            if (t->timeline.delivered_step >= 0 &&
+                t->timeline.picked_step    >= 0 &&
+                t->timeline.picked_step >= t->timeline.delivered_step)
+                ++metrics.pairing_violations_runtime;
+            if (t->timeline.picked_step    >= 0 &&
+                t->timeline.created_step   >= 0 &&
+                t->timeline.picked_step < t->timeline.created_step)
+                ++metrics.pairing_violations_runtime;
+        }
+        // Capacity: replay per-agent timeline.
+        struct Ev { int step; int delta; };
+        std::unordered_map<int, std::vector<Ev>> by_agent;
+        auto push_task = [&](const PDPTask* t){
+            if (!t || t->agent_id < 0) return;
+            if (t->timeline.picked_step    >= 0)
+                by_agent[t->agent_id].push_back({t->timeline.picked_step,    +1});
+            if (t->timeline.delivered_step >= 0)
+                by_agent[t->agent_id].push_back({t->timeline.delivered_step, -1});
+        };
+        for (const PDPTask* t : memory_.finished_tasks)  push_task(t);
+        for (const PDPTask* t : memory_.allocated_tasks) push_task(t);
+        for (auto& [aid, evs] : by_agent) {
+            std::sort(evs.begin(), evs.end(),
+                      [](const Ev& a, const Ev& b){ return a.step < b.step; });
+            int load = 0, peak = 0;
+            for (const auto& e : evs) { load += e.delta; if (load > peak) peak = load; }
+            if (peak > max_carry)
+                metrics.capacity_violations_runtime += peak - max_carry;
+        }
+    }
+
     RunResult result;
     result.metrics = metrics;
 
@@ -357,6 +498,17 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     auto t1 = std::chrono::steady_clock::now();
     result.wallclock_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+
+    // Derived temporal complexity metrics (in result.metrics for CSV export).
+    const int tasks_total = result.metrics.tasks_appeared;
+    const int n_active_pool = std::max(1, cfg_.max_agents());
+    result.metrics.compute_time_per_task_ms = (tasks_total > 0)
+        ? static_cast<float>(result.wallclock_ms) / tasks_total : 0.f;
+    result.metrics.compute_time_per_decision_us = (tasks_total > 0)
+        ? static_cast<float>(result.wallclock_ms) * 1000.f
+              / (tasks_total * n_active_pool)
+        : 0.f;
+
     return result;
 }
 
@@ -500,6 +652,34 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
                 a.current_node, t->pickup.id, t->pickup.group_id);
             const float h = (to_pu && to_pu->valid()) ? to_pu->cost : kCostScale;
             if (h < best_h) { best_h = h; best_aid = a.agent_id; }
+        }
+        return { best_aid, false };
+    }
+
+    // ── Double-Horizon Insertion [Mitrovic-Minic+2004] ─────────────────────────
+    // Same scan as MCA but uses compute_double_horizon_cost which trades route
+    // length against slack-time preservation for long-term insertions.
+    //
+    // Hyperparameters (paper-recommended):
+    //   - alpha = 0.25
+    //   - short_horizon_pos = max(1, n_active / 2) → first half of agent route
+    //
+    // Adapted to L-GPDP: paper's PDPTW has time windows; we approximate with
+    // sequence-position-based horizon (early positions = short-term).
+    if (policy_mode == PolicyMode::DoubleHorizon) {
+        PDPTask* t = memory_.get_task(task_id);
+        if (!t) return { -1, false };
+        constexpr float kAlpha = 0.25f;   // paper's recommended value
+
+        int   best_aid  = -1;
+        float best_cost = std::numeric_limits<float>::max();
+        for (int i = 0; i < n_active; ++i) {
+            DeliveryAgent& a = *all_agents_[i];
+            if (!has_cap(a)) continue;
+            // Horizon split is now by TIME inside compute_double_horizon_cost
+            // (paper-faithful); the second arg is kept for ABI compatibility.
+            float c = compute_double_horizon_cost(a, *t, /*unused*/0, kAlpha);
+            if (c < best_cost) { best_cost = c; best_aid = a.agent_id; }
         }
         return { best_aid, false };
     }
@@ -978,6 +1158,175 @@ float EpisodeRunner::compute_marginal_cost(const DeliveryAgent& a,
         }
     }
     return best_delta;
+}
+
+// ── Double-horizon insertion cost [Mitrovic-Minic+2004] — faithful adaptation ─
+//
+// Translation of the paper's c3 cost into our capacity-constrained L-GPDP:
+//   c = [(1−α_p)·f_p + α_p·g_p] + [(1−α_d)·f_d + α_d·g_d]
+//
+// where:
+//   f_p, f_d : route-length increase (in metres) from inserting P at pos_P
+//              and D at pos_D — same as MCA's per-position delta.
+//
+//   g_p, g_d : DECREASE in total slack at all subsequent locations due to the
+//              insertion. Inserting at pos_P pushes every later location by
+//              the time-equivalent of f_p (= f_p / speed). The slack at each
+//              of the (n − pos_P) later locations decreases by that amount,
+//              so total slack decrease (kept in metres for unit consistency):
+//                  g_p = (n − pos_P) · f_p
+//                  g_d = (n − pos_D) · f_d
+//
+//   α_p, α_d : 0 if estimated arrival time at the inserted location lies
+//              within the SHORT-TERM horizon (≤ current_step + H_short),
+//              0.25 otherwise. Matches paper's c3.
+//
+// Horizon partition is by ESTIMATED ARRIVAL TIME, not by sequence position,
+// matching the paper. Estimated arrival uses agent.solution.sequence[k].
+// estimated_arrival (filled by commit_plan); if -1 we accumulate travel times
+// from current_node onward.
+
+float EpisodeRunner::compute_double_horizon_cost(const DeliveryAgent& a,
+                                                  const PDPTask& task,
+                                                  int /*unused_legacy*/,
+                                                  float alpha) {
+    const auto& seq = a.solution.sequence;
+    const int   n   = static_cast<int>(seq.size());
+    const int   max_carry = std::max(
+        1, memory_.task_agent.params.max_tasks_per_agent);
+
+    auto seg = [&](osmium::object_id_type from,
+                   osmium::object_id_type to) -> float {
+        if (from == 0 || to == 0 || from == to) return 0.f;
+        const auto* p = memory_.get_or_compute_path(from, to, 1);
+        return (p && p->valid()) ? p->cost : kCostScale;
+    };
+
+    // Recover current simulation step from the time ratio published by run().
+    const int current_step = static_cast<int>(
+        memory_.cur_time_ratio * static_cast<float>(memory_.total_steps));
+    const float speed = std::max(0.1f, cfg_.speed_mps);
+
+    // Short-term horizon length (steps). Paper uses 1h on a 10h service period
+    // = 10% of total. We mirror that ratio: 10% of remaining episode steps,
+    // with a minimum of 200 steps to avoid degenerate splits late in episode.
+    const int remaining = std::max(0, memory_.total_steps - current_step);
+    const int short_horizon_steps = std::max(200, remaining / 10);
+
+    // Idle agent (n=0): trivial direct trip, short-term by construction.
+    if (n == 0)
+        return seg(a.current_node, task.pickup.id)
+             + seg(task.pickup.id, task.delivery.id);
+
+    // Load profile (same as MCA).
+    int initial_load = 0;
+    for (const PDPTask* t : a.local_memory.tasks) {
+        if (t->task_id == task.task_id) continue;
+        if (t->timeline.picked_step >= 0 && t->timeline.delivered_step < 0)
+            ++initial_load;
+    }
+    std::vector<int> load_after(n, 0);
+    {
+        int cur = initial_load;
+        for (int i = 0; i < n; ++i) {
+            const PDPTask* t = memory_.get_task_for_node(seq[i].node.id);
+            if (t) {
+                if      (t->pickup.id   == seq[i].node.id) ++cur;
+                else if (t->delivery.id == seq[i].node.id) --cur;
+            }
+            load_after[i] = cur;
+        }
+    }
+
+    // Estimated arrival time per existing sequence position. Prefer the
+    // commit_plan-published value; fall back to forward simulation from
+    // current_node if not yet committed.
+    std::vector<int> arr(n, 0);
+    {
+        int t_acc = current_step;
+        osmium::object_id_type prev = a.current_node;
+        for (int i = 0; i < n; ++i) {
+            const int committed = seq[i].estimated_arrival;
+            if (committed >= current_step) {
+                arr[i] = committed;
+                t_acc = committed;
+            } else {
+                t_acc += static_cast<int>(std::ceil(seg(prev, seq[i].node.id) / speed));
+                arr[i] = t_acc;
+            }
+            prev = seq[i].node.id;
+        }
+    }
+
+    float best_cost = std::numeric_limits<float>::max();
+    for (int pP = 1; pP <= n; ++pP) {
+        for (int pD = pP; pD <= n; ++pD) {
+            int peak = 0;
+            for (int k = pP - 1; k <= pD - 1; ++k)
+                if (load_after[k] > peak) peak = load_after[k];
+            if (peak + 1 > max_carry) continue;
+
+            // f_p, f_d — route-length increases (same as MCA).
+            float f_p, f_d;
+            if (pP == pD) {
+                osmium::object_id_type before = seq[pP - 1].node.id;
+                osmium::object_id_type after  = (pP == n) ? 0 : seq[pP].node.id;
+                const float c_bp = seg(before, task.pickup.id);
+                const float c_pd = seg(task.pickup.id, task.delivery.id);
+                const float c_da = seg(task.delivery.id, after);
+                const float c_ba = seg(before, after);
+                // Split the joint insertion delta into a "p-side" and a "d-side"
+                // for the g_p / g_d weighting to apply at the right pos.
+                f_p = c_bp + c_pd;          // travelled before reaching D
+                f_d = c_da - c_ba;          // residual delta after D
+                if (f_d < 0.f) f_d = 0.f;   // numeric safety
+            } else {
+                osmium::object_id_type before_P = seq[pP - 1].node.id;
+                osmium::object_id_type after_P  = seq[pP].node.id;
+                f_p = seg(before_P, task.pickup.id)
+                    + seg(task.pickup.id, after_P)
+                    - seg(before_P, after_P);
+                osmium::object_id_type before_D = seq[pD - 1].node.id;
+                osmium::object_id_type after_D  = (pD == n) ? 0 : seq[pD].node.id;
+                f_d = seg(before_D, task.delivery.id)
+                    + seg(task.delivery.id, after_D)
+                    - seg(before_D, after_D);
+            }
+
+            // Estimated arrival time of the NEW pickup / delivery.
+            const int t_before_pP = (pP == 0) ? current_step : arr[pP - 1];
+            const int t_before_pD = (pD == 0) ? current_step : arr[pD - 1];
+            // Time at the freshly inserted P / D themselves:
+            const int t_new_P = t_before_pP
+                + static_cast<int>(std::ceil(seg(
+                    (pP == 0 ? a.current_node : seq[pP - 1].node.id),
+                    task.pickup.id) / speed));
+            const int t_new_D = t_before_pD
+                + static_cast<int>(std::ceil(seg(
+                    (pD == pP ? task.pickup.id
+                              : (pD == 0 ? a.current_node : seq[pD - 1].node.id)),
+                    task.delivery.id) / speed));
+
+            // Horizon membership per location (paper c3 rule).
+            const bool p_short = (t_new_P - current_step) <= short_horizon_steps;
+            const bool d_short = (t_new_D - current_step) <= short_horizon_steps;
+            const float alpha_p = p_short ? 0.f : alpha;
+            const float alpha_d = d_short ? 0.f : alpha;
+
+            // g_p, g_d — slack decrease at subsequent locations (paper definition,
+            // converted to metres via shared speed for unit consistency with f).
+            // g = (n - pos) · f  expresses "the insertion pushes every later
+            // location by f metres of travel distance" in route-length units.
+            const float g_p = static_cast<float>(std::max(0, n - pP)) * f_p;
+            const float g_d = static_cast<float>(std::max(0, n - pD)) * f_d;
+
+            const float cost = (1.f - alpha_p) * f_p + alpha_p * g_p
+                             + (1.f - alpha_d) * f_d + alpha_d * g_d;
+
+            if (cost < best_cost) best_cost = cost;
+        }
+    }
+    return best_cost;
 }
 
 // ── GlobalState assembly ──────────────────────────────────────────────────────

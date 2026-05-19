@@ -8,7 +8,7 @@
 #include <vector>
 
 // ── Normalisation constants ────────────────────────────────────────────────────
-static constexpr int   kPolicySz   = 13;        // feature vector length
+static constexpr int   kPolicySz   = 12;        // feature vector length
 static constexpr int   kHid        = 64;         // hidden layer width (actor & critic)
 static constexpr int   kGlobSz     = 20;         // global state vector (critic input)
 static constexpr float kCostScale  = 10'000.f;   // 10 km reference
@@ -36,14 +36,12 @@ struct PolicyFeatures {
                                    // signals "task is being recalled; refusing
                                    // again risks exhaustion (unfinished penalty)"
     float time_remaining    = 0.f; // 1 − step/total_steps ∈ [0,1]
-                                   // raw fraction of episode left
-    float deliverability    = 0.f; // steps_remaining / (delivery_steps + 1), clamped to [0,1]
-                                   // 1.0 = plenty of time to deliver
-                                   // 0.5 = just enough time (tight)
-                                   // < 0.2 = task likely unfinishable
-                                   // primary feasibility signal: time_remaining
-                                   // alone says "20% of episode left"; this also
-                                   // tells the policy how long the task takes.
+                                   // raw fraction of episode left.
+                                   // The policy infers task feasibility implicitly
+                                   // from this + cost_diff (no explicit deliverability
+                                   // feature — matches the May 17 baseline 12-d setup
+                                   // and keeps the architecture in line with the
+                                   // MAPPER paper's compact local observation).
 
     void to_array(float* dst) const;
 };

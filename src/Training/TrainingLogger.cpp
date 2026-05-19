@@ -28,10 +28,18 @@ TrainingLogger::~TrainingLogger() {
 void TrainingLogger::write_header() {
     file_ << "seed,global_episode,city,phase,policy_mode,"
           << "total_steps,n_agents_max,"
+          // Objective: throughput + agent efficiency
           << "tasks_appeared,tasks_completed,throughput_rate,"
           << "accept_rate,refuse_rate,"
           << "latency_mean,latency_per_agent,agent_utilisation,"
           << "mean_congestion,mean_trip_steps,"
+          // Spatial complexity
+          << "bbox_area_km2,convex_hull_km2,mean_pd_m,mean_nn_pickup_m,"
+          // Temporal complexity (derived from wallclock)
+          << "compute_time_per_task_ms,compute_time_per_decision_us,"
+          // Validity
+          << "pairing_violations,capacity_violations,"
+          // RL stats
           << "actor_loss,critic_loss,entropy,adv_std,n_experiences,"
           << "wallclock_ms\n";
     header_written_ = true;
@@ -58,6 +66,14 @@ void TrainingLogger::write_row(const EpisodeRecord& r) {
           << r.agent_utilisation<< ','
           << r.mean_congestion  << ','
           << r.mean_trip_steps  << ','
+          << r.bbox_area_km2    << ','
+          << r.convex_hull_area_km2 << ','
+          << r.mean_pd_distance_m   << ','
+          << r.mean_nn_pickup_m     << ','
+          << r.compute_time_per_task_ms      << ','
+          << r.compute_time_per_decision_us  << ','
+          << r.pairing_violations_runtime    << ','
+          << r.capacity_violations_runtime   << ','
           << r.actor_loss       << ','
           << r.critic_loss      << ','
           << r.entropy          << ','
@@ -179,6 +195,14 @@ EpisodeRecord make_record(const RunResult& result,
     r.agent_utilisation = m.agent_utilisation;
     r.mean_congestion   = m.mean_congestion;
     r.mean_trip_steps   = m.mean_trip_steps;
+    r.bbox_area_km2          = m.bbox_area_km2;
+    r.convex_hull_area_km2   = m.convex_hull_area_km2;
+    r.mean_pd_distance_m     = m.mean_pd_distance_m;
+    r.mean_nn_pickup_m       = m.mean_nn_pickup_m;
+    r.compute_time_per_task_ms      = m.compute_time_per_task_ms;
+    r.compute_time_per_decision_us  = m.compute_time_per_decision_us;
+    r.pairing_violations_runtime    = m.pairing_violations_runtime;
+    r.capacity_violations_runtime   = m.capacity_violations_runtime;
 
     const auto& ts = result.train_stats;
     r.actor_loss        = ts.actor_loss;

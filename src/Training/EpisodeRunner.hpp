@@ -151,7 +151,27 @@ enum class PolicyMode {
     CongestionAware,
     MCA,              // [Chen+2021] true marginal-cost assignment over all agents
     TrafficFlow,      // [Chen+2024] GP-PIBT spirit: full-trip congestion-aware cost
-    TokenPassing      // [Ma+2017]   decoupled MAPD: min h(current, pickup) selection
+    TokenPassing,     // [Ma+2017]   decoupled MAPD: min h(current, pickup) selection
+
+    // ── Double-Horizon Insertion [Mitrovic-Minic, Krishnamurti, Laporte 2004] ──
+    //
+    // Adapted to our capacity-constrained lifelong context:
+    //   - Short-term horizon: first H steps of the agent's planned route
+    //   - Long-term horizon : remainder of the route
+    //
+    // Cost formula for inserting task at (pos_P, pos_D) in agent's sequence:
+    //   - If both insertion legs fall in short-term horizon:
+    //         cost = route_length_increase   (= MCA's c1)
+    //   - If insertion extends into long-term horizon:
+    //         cost = (1 - α)·route_length_increase − α·local_slack_gain
+    //     where local_slack_gain = slack_time_around(pos_D) (preserves future flex)
+    //
+    // Difference vs MCA (Chen+2021):
+    //   MCA optimises pure marginal route cost (= c1 only).
+    //   DoubleHorizon trades off route cost vs preserved slack for distant insertions
+    //   — better long-term flexibility for accepting future tasks at the cost of
+    //   slightly suboptimal short-term routing.
+    DoubleHorizon
 };
 
 class EpisodeRunner {
@@ -172,6 +192,13 @@ public:
     //   scenario    : optional difficulty multipliers (density × agents). Default = 1.0/1.0.
     RunResult run(int city_index = 0, int num_cities = 1,
                   EpisodeScenario scenario = {});
+
+    // ── Trace accessors (for offline analysis / rendering) ──────────────────
+    // Read-only view of the GlobalMemory after a run() call. Use these to
+    // extract task traces (pickup/delivery node IDs, timeline, agent_id, etc.)
+    // and agent positions for SVG/CSV export from PlanningComparisonTest.
+    const PDPGlobalMemory& memory() const { return memory_; }
+    const std::vector<std::unique_ptr<DeliveryAgent>>& agents() const { return all_agents_; }
 
 private:
     const EpisodeConfig& cfg_;
@@ -269,6 +296,21 @@ private:
     // Mirrors DeliveryAgent::receive_task() capacity-aware (pos_P, pos_D) search.
     // Used by PolicyMode::MCA to pick the globally best agent per arriving task.
     float compute_marginal_cost(const DeliveryAgent& a, const PDPTask& task);
+
+    // Double-horizon insertion cost [Mitrovic-Minic+2004 adapted].
+    // Same (pos_P, pos_D) search as compute_marginal_cost, but the cost is
+    // weighted by slack-time preservation when the insertion falls in the
+    // long-term horizon (= positions beyond `short_horizon_pos` in the sequence).
+    //
+    //   short_horizon_pos: index threshold splitting the agent's sequence into
+    //                       short-term (positions <  threshold) and long-term
+    //                       (positions >= threshold) segments.
+    //   alpha            : convex-combination weight in [0, 1].
+    //                       alpha=0  → pure cheapest insertion (= compute_marginal_cost)
+    //                       alpha=1  → maximise slack only (degenerate)
+    //                       0.25     → paper's recommended value
+    float compute_double_horizon_cost(const DeliveryAgent& a, const PDPTask& task,
+                                       int short_horizon_pos, float alpha);
 
     // Process all due arrivals (arrival_step <= current_step).
     void process_arrivals(int current_step);

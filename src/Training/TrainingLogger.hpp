@@ -34,6 +34,20 @@ struct EpisodeRecord {
     float mean_congestion      = 0.f;    // mean edge load over episode steps
     float mean_trip_steps      = 0.f;    // mean pickup→delivery steps
 
+    // Spatial complexity (over served pickup+delivery points)
+    float bbox_area_km2          = 0.f;
+    float convex_hull_area_km2   = 0.f;
+    float mean_pd_distance_m     = 0.f;
+    float mean_nn_pickup_m       = 0.f;
+
+    // Derived temporal complexity
+    float compute_time_per_task_ms     = 0.f;
+    float compute_time_per_decision_us = 0.f;
+
+    // Validity counters (should stay 0)
+    int   pairing_violations_runtime  = 0;
+    int   capacity_violations_runtime = 0;
+
     // MAPPO training signal (zeroed for non-MAPPO or eval mode)
     float actor_loss           = 0.f;
     float critic_loss          = 0.f;

@@ -6,6 +6,7 @@
 #include "Training/CityConfig.hpp"
 #include "Training/TrainingConfig.hpp"
 #include "Training/TrainingSmokeTest.hpp"
+#include "Tests/PlanningComparisonTest.hpp"
 #include <iostream>
 #include <string>
 
@@ -19,7 +20,7 @@ int main()
     std::cout << "[Legacy]\n";
     std::cout << "  G  Global Solution Constructor\n";
     std::cout << "  V  VNS Orienteering\n";
-    std::cout << "  P  PSO MTTDS\n";
+    std::cout << "  PSO  PSO MTTDS\n";
     std::cout << "  E  Create GeoBox\n";
     std::cout << "  I  Initialize POI (Flickr)\n";
     std::cout << "  R  Render map\n\n";
@@ -32,7 +33,10 @@ int main()
     std::cout << "[MAPPO Training]\n";
     std::cout << "  T  Multi-city MAPPO training (Tokyo/Kyoto/LosAngeles × Small/Medium)\n";
     std::cout << "  S  Training smoke test (uses kanto OSM, no extra files needed)\n";
-    std::cout << "  X  Eval-only (load saved checkpoints, light 4-mode comparison)\n\n";
+    std::cout << "  M  Multi-city MAPPER-only training (faster, no IPPO/MAPPO trained)\n";
+    std::cout << "  X  Eval-only (load saved checkpoints, light 4-mode comparison)\n";
+    std::cout << "  P  Planning comparison test (Tokyo_Small, MCA vs Double-Horizon, SVG)\n";
+    std::cout << "  Y  SoTA architecture comparison (RL + 8 SoTA baselines, full sweep)\n\n";
     std::cout << "Choice: ";
 
     std::string rep;
@@ -40,7 +44,7 @@ int main()
 
     if      (rep == "G" || rep == "g") legacy_run_global(cache_dir);
     else if (rep == "V" || rep == "v") legacy_run_vns(cache_dir);
-    else if (rep == "P" || rep == "p") legacy_run_pso(cache_dir);
+    else if (rep == "PSO" || rep == "pso") legacy_run_pso(cache_dir);
     else if (rep == "E" || rep == "e") legacy_create_geobox(osm_file, cache_dir);
     else if (rep == "I" || rep == "i") legacy_init_poi(cache_dir);
     else if (rep == "R" || rep == "r") legacy_render(cache_dir);
@@ -101,6 +105,177 @@ int main()
         MultiCityTrainer trainer;
         trainer.train(cfg);
     }
+    else if (rep == "M" || rep == "m") {
+        // ── MAPPER-only training, MAY 17 SETUP IDENTICAL except eval modes ──
+        //
+        // SAME as May 17 baseline run:
+        //   - 60 rounds × 1 seed × 6 train cities (Tokyo/Kyoto/LosAngeles × S/M)
+        //   - Scenario sampler active (slack/normal/stress_light/stress_heavy)
+        //   - Reward shaping unchanged
+        //   - 3 eval windows (rounds 20, 40, 60) with stress eval per window
+        //   - Generalize eval on held-out cities at end of seed
+        //
+        // DIFFERENT from May 17:
+        //   - Trains ONLY MAPPER (no IPPO, no MAPPO retrained)
+        //   - 4 eval modes instead of 8 — drops LaCAM, PIBT, CongestionAware,
+        //     Random, InsertionGreedy. Keeps the 4 the user specified:
+        //     MAPPER + MAPPO + TamAlwaysAccept + Greedy.
+        //
+        // For MAPPO comparison during eval, loads the May 17 checkpoint
+        // (policy_seed42_mappo_working_2026-05-17.bin from results/accepted/).
+        // For the 12-feature run, do this on the mapper-12d-train worktree
+        // with the 13→12 patch applied — the May 17 checkpoint is 12-d.
+        //
+        // Estimated wallclock: ~7-9h.
+        // May 17 reference (MAPPO + 8 eval modes) = 14.7h. The 4-mode eval
+        // halves eval time; MAPPER training is faster per episode than MAPPO
+        // (fewer experiences per buffer flush).
+        const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
+        const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
+        const std::string output_dir = "C:\\ConflictualMAS\\results";  // change for 12-d
+        CityRegistry::set_osm_root(osm_root);
+
+        TrainingConfig cfg;
+        cfg.cache_root      = cache_root;
+        cfg.output_dir      = output_dir;
+        cfg.n_rounds        = 60;
+        cfg.n_seeds         = 1;
+        cfg.n_eval_episodes = 3;
+        cfg.eval_every      = 20;        // SAME AS MAY 17: rounds 20, 40, 60
+        cfg.save_policy     = true;
+        cfg.verbose         = true;
+
+        // Train ONLY MAPPER — IPPO/MAPPO skipped (no PPO updates, no buffer writes)
+        cfg.train_modes = { PolicyMode::MAPPER };
+
+        // Match May 17 scenario distribution exactly: 3-regime sampler (no slack)
+        // Verified from log: 0/360 slack samples → slack regime was absent on May 17.
+        cfg.disable_slack_regime = true;
+
+        // 4-mode eval (drops the 4 from May 17's 8-mode sweep)
+        cfg.eval_modes = {
+            PolicyMode::MAPPER,
+            PolicyMode::MAPPO,
+            PolicyMode::TamAlwaysAccept,
+            PolicyMode::Greedy
+        };
+        cfg.skip_stress_eval     = false;  // SAME AS MAY 17
+        cfg.skip_generalize_eval = false;  // SAME AS MAY 17
+
+        // Load May 17 MAPPO checkpoint for the periodic eval comparison.
+        cfg.load_policy = true;
+        cfg.policy_path = "C:\\ConflictualMAS\\results\\accepted\\"
+                          "policy_seed42_mappo_working_2026-05-17.bin";
+        // IPPO and MAPPER paths intentionally left empty: IPPO not in eval_modes,
+        // MAPPER is being trained from scratch in this run.
+
+        MultiCityTrainer trainer;
+        trainer.train(cfg);
+    }
+    else if (rep == "Y" || rep == "y") {
+        // ── SoTA-ONLY benchmark (no training, no RL) ────────────────────────
+        // Companion to option X (which evaluates our RL policies). Together
+        // X + Y produce the complete data table for the thesis:
+        //   X.csv → MAPPO, MAPPER, Hybrid metrics
+        //   Y.csv → 7 SoTA architectures metrics
+        //   merge → "our architecture vs state-of-the-art" comparison.
+        //
+        // SoTA modes (7) — strictly published state-of-the-art baselines:
+        //   - MCA            [Chen+2021 ICRA]            Marginal-cost assignment
+        //   - LaCAM          [Okumura+2022 spirit]       Min full-trip cost
+        //   - PIBT           [Okumura+2022 adapted]      Load-balanced priority
+        //   - CongestionAware [Liu, Saha+]               Pickup-leg dynamic cost
+        //   - TrafficFlow    [Chen+2024 AAAI GP-PIBT]    Full-trip dynamic cost
+        //   - TokenPassing   [Ma+2017 AAMAS]             Decoupled MAPD min h
+        //   - DoubleHorizon  [Mitrovic-Minic+2004]       Horizon-aware insertion
+        //
+        // NO TRAINING — eval_only = true; no checkpoint loading needed because
+        // SoTA baselines are deterministic / heuristic (no weights). The TAM is
+        // still used to route offers (these modes opt out of policy decisions).
+        //
+        // Scenarios (4) — IDENTICAL to option X's planned coverage:
+        //   slack         : density 0.5 × agents 1.2
+        //   normal        : density 1.0 × agents 1.0
+        //   stress_light  : density 1.5 × agents 0.8
+        //   stress_heavy  : density 2.0 × agents 0.6
+        //
+        // Cities: 6 train (Tokyo/Kyoto/LA × Small/Medium) + 5 held-out
+        //         (Tokyo_Large/Fukuoka/NewYork/Paris/London) = 11 cities.
+        //
+        // Coverage: 7 modes × 11 cities × 4 scenarios × 3 eps = 924 episodes.
+        // Estimated wallclock: ~8-10h on a single seed (no RL training).
+        //
+        // Metrics (same set as option X — captured in episodes_seedXX.csv):
+        //   throughput, agent_utilisation, latency, congestion (objective),
+        //   bbox / convex_hull / mean_pd / mean_nn_pickup (spatial),
+        //   wallclock / per_task / per_decision (temporal),
+        //   pairing_violations / capacity_violations (validity).
+        const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
+        const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
+        const std::string output_dir = "C:\\ConflictualMAS\\results";
+        CityRegistry::set_osm_root(osm_root);
+
+        TrainingConfig cfg;
+        cfg.cache_root       = cache_root;
+        cfg.output_dir       = output_dir;
+        cfg.n_seeds          = 1;
+        cfg.n_eval_episodes  = 3;
+        cfg.verbose          = true;
+
+        cfg.eval_only            = true;   // NO training
+        cfg.skip_stress_eval     = true;   // stress is covered via eval_scenarios
+        cfg.skip_generalize_eval = false;  // include held-out cities
+
+        // SoTA-only line-up: NO RL policies (MAPPO/MAPPER/Hybrid/IPPO excluded),
+        // NO trivial ablations (Greedy/Random/InsertionGreedy/TamAlwaysAccept
+        // also excluded — they live in option X). Strictly published SoTA.
+        cfg.eval_modes = {
+            PolicyMode::MCA,             // [Chen+2021]
+            PolicyMode::LaCAM,           // [Okumura+2022]
+            PolicyMode::PIBT,            // [Okumura+2022 adapted]
+            PolicyMode::CongestionAware, // [Liu, Saha+]
+            PolicyMode::TrafficFlow,     // [Chen+2024]
+            PolicyMode::TokenPassing,    // [Ma+2017]
+            PolicyMode::DoubleHorizon,   // [Mitrovic-Minic+2004]
+        };
+
+        // 4-scenario sweep aligned with option X coverage.
+        cfg.eval_scenarios = {
+            EpisodeScenario{0.5f, 1.2f, "slack"},
+            EpisodeScenario{1.0f, 1.0f, "normal"},
+            EpisodeScenario{1.5f, 0.8f, "stress_light"},
+            EpisodeScenario{2.0f, 0.6f, "stress_heavy"},
+        };
+
+        // No checkpoint loading — SoTA baselines carry no learned weights.
+        // (load_policy stays false by default; safety check passes because
+        //  none of the cfg.eval_modes entries are RL policies.)
+
+        MultiCityTrainer trainer;
+        trainer.train(cfg);
+    }
+    else if (rep == "P" || rep == "p") {
+        // ── Planning comparison batch test ──────────────────────────────
+        // 100 seeds × {Tokyo_Small, Kyoto_Small, LosAngeles_Small} (round-robin).
+        // Each seed has its own random scenario (density × agents).
+        // For every seed both MCA and DoubleHorizon are evaluated.
+        // Outputs:
+        //   - planning_summary.csv      (one row per seed × mode)
+        //   - details/seed_NNNN_*.csv   (every 10 seeds: task + agent traces)
+        //   - details/seed_NNNN_*.svg   (every 10 seeds: render)
+        const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
+        const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
+        const std::string output_dir = "C:\\ConflictualMAS\\results\\planning_test";
+        run_planning_comparison_test(
+            /*base_seed*/0,            // 0 → random from std::random_device
+            /*max_tasks*/25,
+            osm_root, cache_root, output_dir,
+            /*n_seeds*/100,
+            /*detail_every*/10,
+            /*cities*/{"Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"},
+            /*density_min*/0.5f,
+            /*density_max*/2.5f);
+    }
     else if (rep == "S" || rep == "s") run_training_smoke_test(osm_file, cache_dir);
     else if (rep == "X" || rep == "x") {
         // ── Eval-only: 5-mode benchmark across all 7 cities ──────────────────
@@ -143,10 +318,15 @@ int main()
             PolicyMode::Greedy
         };
 
-        // Load trained policies from disk. Hybrid auto-derives its base from
-        // the loaded MAPPO actor inside MultiCityTrainer.
+        // Load trained policies from disk. MAPPO uses the May 17 baseline
+        // checkpoint (the proven 12-d working one) to stay consistent with
+        // option M, which loads the same file for its periodic eval. MAPPER
+        // and IPPO are taken from results/ (overwritten by latest training).
+        // Hybrid auto-derives its base from the loaded MAPPO actor inside
+        // MultiCityTrainer.
         cfg.load_policy        = true;
-        cfg.policy_path        = output_dir + "/policy_seed42.bin";
+        cfg.policy_path        = "C:\\ConflictualMAS\\results\\accepted\\"
+                                 "policy_seed42_mappo_working_2026-05-17.bin";
         cfg.ippo_policy_path   = output_dir + "/ippo_seed42.bin";
         cfg.mapper_policy_path = output_dir + "/mapper_seed42.bin";
 

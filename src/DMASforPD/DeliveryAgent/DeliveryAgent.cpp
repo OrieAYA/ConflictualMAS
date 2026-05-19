@@ -282,27 +282,11 @@ float DeliveryAgent::try_accept_task(const TaskOffer& offer, PDPGlobalMemory& me
         ? static_cast<float>(memory.count_available()) / total : 0.f;
     f.time_remaining = std::clamp(1.f - memory.cur_time_ratio, 0.f, 1.f);
 
-    // Deliverability: physical feasibility of completing this task before the
-    // episode ends. Computes how many simulation steps are left vs. how many
-    // steps the agent needs to traverse insertion_cost meters at speed_mps.
-    //   delivery_steps  ≈ insertion_cost / speed_mps
-    //   steps_remaining ≈ time_remaining * total_steps
-    //   deliverability  = steps_remaining / (delivery_steps + 1)  ∈ [0, 1]
-    // Interpretation:
-    //   1.0  → at least as much time as needed (safe)
-    //   0.5  → roughly 50% margin — half the time is consumed by travel
-    //   <0.2 → task very likely cannot be completed in time
-    // This is the policy's primary signal for accept/refuse decisions near
-    // episode end, complementing time_remaining (which only says "how much of
-    // the episode is left" without referencing task length).
-    {
-        const float delivery_steps = insertion_cost
-            / std::max(memory.speed_mps, 0.1f);
-        const float steps_remaining = std::max(0.f, 1.f - memory.cur_time_ratio)
-            * static_cast<float>(memory.total_steps);
-        f.deliverability = std::clamp(
-            steps_remaining / (delivery_steps + 1.f), 0.f, 1.f);
-    }
+    // (12-d feature vector — `deliverability` removed. Episode-end feasibility
+    //  is implicit via `time_remaining` and `cost_diff`. This matches the
+    //  May 17 baseline setup and keeps the local observation compact, in line
+    //  with MAPPER's design philosophy where the per-agent critic sees only
+    //  local features.)
 
     // ── Stochastic action sampling ─────────────────────────────────────────────
     // PPO requires the recorded action to be sampled from π(a|s). Bernoulli(μ)

@@ -53,7 +53,6 @@ void PolicyFeatures::to_array(float* dst) const {
     dst[ 9] = n_avail_ratio;
     dst[10] = recall_round_norm;
     dst[11] = time_remaining;
-    dst[12] = deliverability;
 }
 
 // ── ActorMLP ──────────────────────────────────────────────────────────────────
