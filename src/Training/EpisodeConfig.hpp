@@ -99,14 +99,20 @@ struct EpisodeConfig {
     float pickup_reward_frac = 0.3f;  // fraction of total reward given at pickup
 
     // ── Planning strategy (insertion algorithm) ─────────────────────────────
-    // false (default) → Solomon cheapest insertion: best (pos_P, pos_D) by
-    //                    pure route-length delta. Backward-compatible with all
-    //                    existing training/eval runs.
-    // true  → Mitrovic-Minic et al. 2004 Double-Horizon adapted:
-    //          slack-preserving cost for long-term insertions.
-    // EpisodeRunner mirrors this to PDPGlobalMemory::planning_use_double_horizon
-    // at the start of each run(). receive_task() dispatches on the flag.
+    // Mutually exclusive (EpisodeRunner enforces: dbvns wins if both set).
+    //
+    //   default       → Solomon cheapest insertion (pure route-length delta).
+    //   use_dh        → Mitrovic-Minic 2004 Double-Horizon, slack-preserving.
+    //   use_dbvns     → forward DbVNS-PDP: global replan of the full remaining
+    //                    sequence on every task acceptance. Architecturally
+    //                    clean: TAM → policy decides accept/refuse →
+    //                    DbVNS does the routing.
+    //
+    // EpisodeRunner mirrors these to PDPGlobalMemory::planning_use_* flags at
+    // the start of each run(). DeliveryAgent::receive_task() dispatches on
+    // them (DbVNS branch first, then DH, otherwise cheapest insertion).
     bool use_double_horizon_planning = false;
+    bool use_dbvns_planning          = false;
 
     // ── InsertionGreedy threshold ──────────────────────────────────────────
     // Accept task if (reward * importance) / max(insertion_cost_m, ε) > threshold.
@@ -230,8 +236,12 @@ struct ComparisonMetrics {
     float refuse_rate      = 0.f;   // tasks_refused / tasks_appeared
 
     // Metric 3: network congestion & travel efficiency
-    float mean_congestion  = 0.f;   // mean edge load (mean_load_now) over all steps
-    float mean_trip_steps  = 0.f;   // mean pickup→delivery travel time (steps)
+    float mean_congestion          = 0.f;  // mean edge load (mean_load_now) over all steps
+    float mean_trip_steps          = 0.f;  // mean pickup→delivery travel time (steps)
+    float mean_wait_steps          = 0.f;  // mean steps appearance → pickup arrival (response delay)
+    float mean_road_pd_m           = 0.f;  // mean A* road distance pickup→delivery (metres)
+    float delivery_route_efficiency= 0.f;  // mean_road_pd_m / (mean_trip_steps × speed_mps)
+                                           // ∈ (0,1]: 1=shortest path at full speed, <1=detours
 
     // Metric 4: SPATIAL complexity over served tasks (pickup ∪ delivery points)
     //   bbox_area_km2        : bbox of all served task endpoints

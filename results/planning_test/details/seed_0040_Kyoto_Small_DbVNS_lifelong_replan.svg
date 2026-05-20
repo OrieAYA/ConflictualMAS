@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1240">
+<rect width="1100" height="1100" fill="#fafbfc"/>
+<line x1="770.995" y1="330.926" x2="169.787" y2="340.573" stroke="rgb(80,110,170)" stroke-width="1.4" opacity="0.85"/>
+<line x1="169.787" y1="340.573" x2="58.9286" y2="967.713" stroke="rgb(102,105,153)" stroke-width="1.4" opacity="0.85"/>
+<line x1="58.9286" y1="967.713" x2="573.293" y2="543.827" stroke="rgb(138,97,126)" stroke-width="1.4" opacity="0.85"/>
+<line x1="573.293" y1="543.827" x2="682.718" y2="498.831" stroke="rgb(145,95,121)" stroke-width="1.4" opacity="0.85"/>
+<line x1="682.718" y1="498.831" x2="1041.07" y2="543.943" stroke="rgb(163,91,108)" stroke-width="1.4" opacity="0.85"/>
+<line x1="1041.07" y1="543.943" x2="984.544" y2="556.845" stroke="rgb(181,87,94)" stroke-width="1.4" opacity="0.85"/>
+<line x1="984.544" y1="556.845" x2="903.636" y2="1041.07" stroke="rgb(210,80,72)" stroke-width="1.4" opacity="0.85"/>
+<line x1="903.636" y1="1041.07" x2="577.306" y2="769.47" stroke="rgb(234,74,55)" stroke-width="1.4" opacity="0.85"/>
+<line x1="577.306" y1="769.47" x2="927.538" y2="58.9286" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
+<line x1="927.538" y1="58.9286" x2="955.92" y2="530.63" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
+<circle cx="169.787" cy="340.573" r="5" fill="rgb(40,119,199)" stroke="white" stroke-width="1.2"/>
+<rect x="53.9286" y="962.713" width="10" height="10" fill="white" stroke="rgb(40,119,199)" stroke-width="2.2"/>
+<line x1="169.787" y1="340.573" x2="58.9286" y2="967.713" stroke="rgb(40,119,199)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="573.293" cy="543.827" r="5" fill="rgb(75,111,173)" stroke="white" stroke-width="1.2"/>
+<rect x="677.718" y="493.831" width="10" height="10" fill="white" stroke="rgb(75,111,173)" stroke-width="2.2"/>
+<line x1="573.293" y1="543.827" x2="682.718" y2="498.831" stroke="rgb(75,111,173)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="1041.07" cy="543.943" r="5" fill="rgb(99,106,155)" stroke="white" stroke-width="1.2"/>
+<rect x="979.544" y="551.845" width="10" height="10" fill="white" stroke="rgb(99,106,155)" stroke-width="2.2"/>
+<line x1="1041.07" y1="543.943" x2="984.544" y2="556.845" stroke="rgb(99,106,155)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="903.636" cy="1041.07" r="5" fill="rgb(184,86,92)" stroke="white" stroke-width="1.2"/>
+<rect x="572.306" y="764.47" width="10" height="10" fill="white" stroke="rgb(184,86,92)" stroke-width="2.2"/>
+<line x1="903.636" y1="1041.07" x2="577.306" y2="769.47" stroke="rgb(184,86,92)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="927.538" cy="58.9286" r="5" fill="rgb(215,79,69)" stroke="white" stroke-width="1.2"/>
+<rect x="950.92" y="525.63" width="10" height="10" fill="white" stroke="rgb(215,79,69)" stroke-width="2.2"/>
+<line x1="927.538" y1="58.9286" x2="955.92" y2="530.63" stroke="rgb(215,79,69)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<rect y="1100" width="1100" height="140" fill="#edf0f3"/>
+<text x="12" y="1120" font-family="monospace" font-size="13" fill="#222">seed=-1631389986  city=Kyoto_Small  mode=DbVNS_lifelong_replan  density=1.10  agents=1.00  (medium_saturation)</text>
+<text x="12" y="1140" font-family="monospace" font-size="12" fill="#222">arrived=5 accepted=5 delivered=4 unfinished=1 dist=13244m agents=1</text>
+<text x="12" y="1158" font-family="monospace" font-size="12" fill="#444">spatial: bbox=7.85km² hull=5.70km² meanPD=893m meanNN=1323m</text>
+<text x="12" y="1176" font-family="monospace" font-size="12" fill="#555">validity: pairing_viol=0 capacity_viol=0 wallclock=47ms</text>
+<rect x="12" y="1195" width="28" height="12" fill="rgb(40,120,200)"/>
+<rect x="39" y="1195" width="28" height="12" fill="rgb(70,112,177)"/>
+<rect x="67" y="1195" width="28" height="12" fill="rgb(101,105,154)"/>
+<rect x="94" y="1195" width="28" height="12" fill="rgb(132,98,131)"/>
+<rect x="122" y="1195" width="28" height="12" fill="rgb(162,91,108)"/>
+<rect x="149" y="1195" width="28" height="12" fill="rgb(193,84,85)"/>
+<rect x="177" y="1195" width="28" height="12" fill="rgb(224,77,62)"/>
+<rect x="204" y="1195" width="28" height="12" fill="rgb(255,70,40)"/>
+<text x="238" y="1205" font-family="monospace" font-size="11" fill="#444">time gradient: blue=t=0  red=t=3600</text>
+</svg>

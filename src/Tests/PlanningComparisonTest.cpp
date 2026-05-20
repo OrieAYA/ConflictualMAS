@@ -81,6 +81,15 @@ struct ComparisonResult {
     double convex_hull_area_km2   = 0.0;  // convex hull of all served pickup+delivery
     double agent_route_overlap    = 0.0;  // sum of pairwise route overlap area proxy
 
+    // ── Task-completion quality (lifted directly from EpisodeRunner metrics) ──
+    float throughput_rate             = 0.f;  // delivered / arrived
+    float accept_rate                 = 0.f;  // accepted / offered
+    float latency_mean                = 0.f;  // mean steps appearance → completion
+    float mean_wait_steps             = 0.f;  // mean steps appearance → pickup arrival
+    float mean_trip_steps             = 0.f;  // mean steps pickup → delivery
+    float mean_road_pd_m              = 0.f;  // mean A* road distance P→D
+    float delivery_route_efficiency   = 0.f;  // ideal / actual ∈ (0,1]; 1=no detour
+
     // Traces (only populated when needed)
     std::vector<TaskTrace>  tasks;
     std::vector<AgentTrace> agents;
@@ -117,26 +126,48 @@ static EpisodeConfig make_test_episode_config(const CityConfig& cc, int max_task
     ep.max_task_dist_m = 1500.f;
     ep.hot_zone_radius = 300.f;
     ep.max_tasks_per_agent = 3;
+    // Mono-agent comparison: a single agent absorbs all tasks across phases,
+    // so the planning algorithm is the only variable between modes.
     const float per_phase = static_cast<float>(max_tasks) / 3.f;
     ep.phases = {
-        { 1200, per_phase, 2, 3, 0.0f, 2 },
-        { 1200, per_phase, 3, 4, 0.5f, 3 },
-        { 1200, per_phase, 4, 5, 1.0f, 3 },
+        { 1200, per_phase, 1, 1, 0.0f, 2 },
+        { 1200, per_phase, 1, 1, 0.5f, 3 },
+        { 1200, per_phase, 1, 1, 1.0f, 3 },
     };
     return ep;
 }
 
+// Per-seed saturation regime for mono-agent planning comparison.
+//   low    : few tasks, slow arrival rate → agent should deliver all
+//   medium : enough tasks to keep the agent busy → some unfinished expected
+//   high   : oversaturated → many unfinished, planner quality decisive
+struct RegimeConfig {
+    std::string label;
+    int   max_tasks;       // total tasks generated across the episode
+    float density_min;
+    float density_max;
+};
+
+static const RegimeConfig kRegimes[3] = {
+    { "low_saturation",    4,  0.4f, 0.7f },   // ~2–3 tasks total
+    { "medium_saturation", 12, 0.8f, 1.2f },   // ~10–14 tasks
+    { "high_saturation",   30, 1.5f, 2.5f },   // ~45–75 tasks — overload
+};
+
+// Decorrelate regime from city: rotating regime every `n_cities` seeds so each
+// (city × regime) combination is exercised across the seed batch.
+static const RegimeConfig& regime_for(int seed_idx, int n_cities) {
+    int r = (seed_idx / std::max(1, n_cities)) % 3;
+    return kRegimes[r];
+}
+
 static EpisodeScenario sample_scenario(std::mt19937& rng,
-                                        float dmin, float dmax) {
-    std::uniform_real_distribution<float> ud(dmin, dmax);
-    std::uniform_real_distribution<float> ua(0.5f, 1.2f);
+                                        const RegimeConfig& reg) {
+    std::uniform_real_distribution<float> ud(reg.density_min, reg.density_max);
     EpisodeScenario s;
     s.density_mult = ud(rng);
-    s.agents_mult  = ua(rng);
-    if      (s.density_mult <  0.7f) s.label = "slack";
-    else if (s.density_mult <  1.3f) s.label = "normal";
-    else if (s.density_mult <  1.8f) s.label = "stress_light";
-    else                              s.label = "stress_heavy";
+    s.agents_mult  = 1.0f;   // mono-agent: never scale fleet size
+    s.label        = reg.label.c_str();
     return s;
 }
 
@@ -558,6 +589,15 @@ static ComparisonResult run_one(EpisodeRunner& runner,
                             res.metrics.accept_rate * res.metrics.tasks_appeared));
     cr.n_unfinished    = cr.n_accepted - cr.n_delivered;
 
+    // Task-completion quality (already finalised by EpisodeRunner).
+    cr.throughput_rate           = res.metrics.throughput_rate;
+    cr.accept_rate               = res.metrics.accept_rate;
+    cr.latency_mean              = res.metrics.latency_mean;
+    cr.mean_wait_steps           = res.metrics.mean_wait_steps;
+    cr.mean_trip_steps           = res.metrics.mean_trip_steps;
+    cr.mean_road_pd_m            = res.metrics.mean_road_pd_m;
+    cr.delivery_route_efficiency = res.metrics.delivery_route_efficiency;
+
     auto node_coords = [&](osmium::object_id_type nid,
                            double& lat, double& lon) {
         auto it = gb.data.nodes.find(nid);
@@ -704,9 +744,12 @@ static void write_agents_csv(const ComparisonResult& cr, const std::string& path
 
 static void write_summary_header(std::ofstream& f) {
     f << "seed,city,density_mult,agents_mult,scenario,mode,"
-      // Performance
+      // Performance counters
       << "arrived,accepted,delivered,unfinished,total_dist_m,"
       << "pairing_viol,capacity_viol,n_agents_used,"
+      // Task-completion quality
+      << "throughput_rate,accept_rate,latency_mean,mean_wait_steps,"
+      << "mean_trip_steps,mean_road_pd_m,delivery_route_efficiency,"
       // Time complexity
       << "wallclock_ms,compute_time_per_task_ms,compute_time_per_decision_us,"
       // Spatial complexity
@@ -733,9 +776,23 @@ static void append_summary_row(std::ofstream& f, const ComparisonResult& cr) {
       << std::setprecision(1) << cr.total_distance_m << ","
       << cr.pairing_violations << "," << cr.capacity_violations << ","
       << cr.n_agents_used << ","
+      // Task-completion quality
+      << std::setprecision(4)
+      << cr.throughput_rate           << ","
+      << cr.accept_rate               << ","
+      << std::setprecision(2)
+      << cr.latency_mean              << ","
+      << cr.mean_wait_steps           << ","
+      << cr.mean_trip_steps           << ","
+      << std::setprecision(1)
+      << cr.mean_road_pd_m            << ","
+      << std::setprecision(4)
+      << cr.delivery_route_efficiency << ","
+      // Time complexity
       << cr.wallclock_ms << ","
       << std::setprecision(2) << per_task << ","
       << per_decision_us << ","
+      // Spatial complexity
       << std::setprecision(3) << cr.bbox_area_km2 << ","
       << cr.convex_hull_area_km2 << ","
       << std::setprecision(1) << cr.mean_pd_distance_m << ","
@@ -818,28 +875,33 @@ int run_planning_comparison_test(uint32_t base_seed,
     const std::vector<std::pair<PolicyMode, std::string>> modes = {
         { PolicyMode::MCA,           "MCA_cheapest_insertion" },
         { PolicyMode::DoubleHorizon, "DoubleHorizon_MitrovicMinic" },
+        { PolicyMode::DbVNS,         "DbVNS_lifelong_replan" },
+        { PolicyMode::ALNS,          "ALNS_RopkePisinger" },
     };
 
     auto t_global0 = std::chrono::steady_clock::now();
 
     for (int s = 0; s < n_seeds; ++s) {
         const uint32_t seed = base_seed + static_cast<uint32_t>(s);
-        const int      city_idx = s % static_cast<int>(handles.size());
+        const int      n_cities = static_cast<int>(handles.size());
+        const int      city_idx = s % n_cities;
         CityHandle&    H = *handles[city_idx];
 
+        const RegimeConfig& reg = regime_for(s, n_cities);
         std::mt19937 sc_rng(seed ^ 0x9e3779b9u);
-        const EpisodeScenario sc = sample_scenario(sc_rng, density_min, density_max);
+        const EpisodeScenario sc = sample_scenario(sc_rng, reg);
 
-        EpisodeConfig ep = make_test_episode_config(*H.config, max_tasks);
+        EpisodeConfig ep = make_test_episode_config(*H.config, reg.max_tasks);
 
         const bool save_details = (s % detail_every) == 0;
 
         std::cout << "\n[" << (s + 1) << "/" << n_seeds
                   << "] seed=" << seed
                   << "  city=" << H.config->name
+                  << "  regime=" << reg.label
+                  << "  max_tasks=" << reg.max_tasks
                   << "  density=" << std::fixed << std::setprecision(2) << sc.density_mult
-                  << "  agents="   << sc.agents_mult
-                  << "  (" << sc.label << ")\n";
+                  << "\n";
 
         for (const auto& [mode, name] : modes) {
             EpisodeRunner runner(ep, H.geobox, *H.pathfinder, seed);

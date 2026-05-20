@@ -19,6 +19,20 @@ void OperableEnvironment::add_task(const PDPTask& task) {
     costs_ = std::move(new_costs);
 }
 
+void OperableEnvironment::add_single_node(const ObjectiveNode& node) {
+    if (index_map_.count(node.id)) return;  // already present
+    int old_n = static_cast<int>(nodes.size());
+    nodes.push_back(node);
+    int new_n = old_n + 1;
+    index_map_[node.id] = old_n;
+
+    std::vector<float> new_costs(new_n * new_n, -1.0f);
+    for (int i = 0; i < old_n; ++i)
+        for (int j = 0; j < old_n; ++j)
+            new_costs[i * new_n + j] = costs_[i * old_n + j];
+    costs_ = std::move(new_costs);
+}
+
 void OperableEnvironment::remove_task(osmium::object_id_type pickup_id,
                                        osmium::object_id_type delivery_id) {
     int old_n = static_cast<int>(nodes.size());

@@ -22,7 +22,8 @@ struct OperableEnvironment {
 
     // ---- Task management ------------------------------------------------
 
-    void add_task   (const PDPTask& task);
+    void add_task       (const PDPTask& task);
+    void add_single_node(const ObjectiveNode& node);  // add one node (no pairing)
     void remove_task(osmium::object_id_type pickup_id,
                      osmium::object_id_type delivery_id);
 

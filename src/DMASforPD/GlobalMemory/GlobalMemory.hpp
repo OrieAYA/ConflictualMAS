@@ -63,6 +63,18 @@ public:
     // preserved by construction in both branches.
     bool  planning_use_double_horizon = false;
 
+    // When true → DbVNS replanning: on every task acceptance the agent discards
+    // its current insertion order (except the in-flight head) and reoptimises
+    // the full remaining sequence via forward DbVNS-PDP.
+    // Mutually exclusive with planning_use_double_horizon; EpisodeRunner sets at
+    // most one of the two flags per run.
+    bool  planning_use_dbvns = false;
+
+    // ── ALNS-PDP lifelong replanning (Ropke & Pisinger 2006 adapted) ─────────
+    // Set ONLY by the planning-comparison test (PolicyMode::ALNS). Never
+    // activated by training or global eval paths — those keep MCA/DH/DbVNS.
+    bool  planning_use_alns  = false;
+
     // Active learning-policy dispatcher used by DeliveryAgent::try_accept_task.
     // Set by EpisodeRunner at the start of each run() based on policy_mode:
     //   - PolicyMode::MAPPO          → kMAPPO   (shared actor + centralised critic)

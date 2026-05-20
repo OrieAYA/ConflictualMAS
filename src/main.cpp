@@ -34,7 +34,8 @@ int main()
     std::cout << "  T  Multi-city MAPPO training (Tokyo/Kyoto/LosAngeles × Small/Medium)\n";
     std::cout << "  S  Training smoke test (uses kanto OSM, no extra files needed)\n";
     std::cout << "  M  Multi-city MAPPER-only training (faster, no IPPO/MAPPO trained)\n";
-    std::cout << "  X  Eval-only (load saved checkpoints, light 4-mode comparison)\n";
+    std::cout << "  N  MAPPO DH training (re-train MAPPO under Double-Horizon planning)\n";
+    std::cout << "  X  Eval-only (load saved checkpoints, 5-mode: MAPPO+MAPPER+FM+Hybrid+TAM-AA)\n";
     std::cout << "  P  Planning comparison test (Tokyo_Small, MCA vs Double-Horizon, SVG)\n";
     std::cout << "  Y  SoTA architecture comparison (RL + 8 SoTA baselines, full sweep)\n\n";
     std::cout << "Choice: ";
@@ -150,12 +151,14 @@ int main()
         // Skips periodic, final, stress, and generalize evals.
         cfg.train_only = true;
 
-        // ── Planning method = Double-Horizon (Mitrovic-Minic+2004 adapted) ──
-        // All three RL policies train under DH planning at the insertion level:
-        // every accept triggers slack-preserving (pos_P, pos_D) selection instead
-        // of pure cheapest insertion. Picked because option P showed DH > MCA
-        // on throughput (+17% relative) across all scenarios.
-        cfg.episode_cfg.use_double_horizon_planning = true;
+        // ── Planning method = forward DbVNS-PDP (lifelong global replan) ────
+        // All RL policies train under DbVNS planning at the routing level:
+        // every accept triggers a global forward DbVNS-PDP replan of the
+        // remaining sequence. This matches the architectural separation
+        //   TAM → policy (MAPPO/MAPPER/Hybrid) decides accept/refuse
+        //   DbVNS handles routing exclusively
+        // and gives the policy a higher-quality route than DH insertion.
+        cfg.episode_cfg.use_dbvns_planning = true;
 
         // ── Two MAPPER variants trained simultaneously, head-to-head ───────
         //   MAPPER         — enhanced variant (elite + Gaussian mutation N(0, 0.02²))
@@ -185,6 +188,56 @@ int main()
         //   results/mapper_faithful/mapper_seed42.bin
         // MAPPO May 17 checkpoint at results/accepted/ remains untouched.
         // IPPO is not in train_modes → no checkpoint produced this run.
+
+        MultiCityTrainer trainer;
+        trainer.train(cfg);
+    }
+    else if (rep == "N" || rep == "n") {
+        // ── MAPPO re-training under DbVNS planning ───────────────────────────
+        //
+        // WHY: The May 17 MAPPO was trained under MCA planning (cheapest
+        // insertion). Option X now evaluates everything under DbVNS — re-
+        // training MAPPO directly under DbVNS eliminates the distribution
+        // shift and gives a fair MAPPO baseline that matches the
+        // architectural separation: TAM → policy → DbVNS planner.
+        //
+        // WHAT CHANGES vs May 17:
+        //   - use_dbvns_planning = true            (was MCA)
+        //   - train_modes = {MAPPO}                (MAPPER/IPPO/FaithfulMAPPER skipped)
+        //   - save dir: results/mappo_dh/mappo/policy_seed42.bin
+        //
+        // SAME AS MAY 17:
+        //   - 60 rounds × 1 seed × 6 train cities
+        //   - 3-regime scenario sampler (no slack, matches May 17 distribution)
+        //   - train_only = true (eval via Option X after)
+        //
+        // AFTER THIS RUN:
+        //   Update Option X: cfg.policy_path = ".../mappo_dh/mappo/policy_seed42.bin"
+        //   to compare MAPPO-DH instead of MAPPO-May17 against MAPPER + Hybrid.
+        //
+        // Estimated wallclock: ~5-7h (MAPPO only, 60 rounds, 6 cities).
+        const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
+        const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
+        const std::string output_dir = "C:\\ConflictualMAS\\results\\mappo_dh";
+        CityRegistry::set_osm_root(osm_root);
+
+        TrainingConfig cfg;
+        cfg.cache_root      = cache_root;
+        cfg.output_dir      = output_dir;
+        cfg.n_rounds        = 60;
+        cfg.n_seeds         = 1;
+        cfg.save_policy     = true;
+        cfg.verbose         = true;
+
+        cfg.train_only   = true;   // eval via Option X after, not during
+        cfg.load_policy  = false;  // fresh Xavier init
+
+        cfg.episode_cfg.use_dbvns_planning = true;
+
+        cfg.train_modes = { PolicyMode::MAPPO };
+
+        // Match May 17 scenario distribution: 3-regime, no slack.
+        cfg.disable_slack_regime = true;
 
         MultiCityTrainer trainer;
         trainer.train(cfg);
@@ -247,13 +300,9 @@ int main()
         // NO trivial ablations (Greedy/Random/InsertionGreedy/TamAlwaysAccept
         // also excluded — they live in option X). Strictly published SoTA.
         cfg.eval_modes = {
-            PolicyMode::MCA,             // [Chen+2021]
-            PolicyMode::LaCAM,           // [Okumura+2022]
-            PolicyMode::PIBT,            // [Okumura+2022 adapted]
             PolicyMode::CongestionAware, // [Liu, Saha+]
             PolicyMode::TrafficFlow,     // [Chen+2024]
             PolicyMode::TokenPassing,    // [Ma+2017]
-            PolicyMode::DoubleHorizon,   // [Mitrovic-Minic+2004]
         };
 
         // 4-scenario sweep aligned with option X coverage.
@@ -272,10 +321,15 @@ int main()
         trainer.train(cfg);
     }
     else if (rep == "P" || rep == "p") {
-        // ── Planning comparison batch test ──────────────────────────────
-        // 100 seeds × {Tokyo_Small, Kyoto_Small, LosAngeles_Small} (round-robin).
-        // Each seed has its own random scenario (density × agents).
-        // For every seed both MCA and DoubleHorizon are evaluated.
+        // ── Planning comparison batch test (mono-agent, lifelong GPDP) ──
+        // 100 seeds × {Tokyo_Small, Kyoto_Small, LosAngeles_Small}.
+        // Each seed is stratified into one of three saturation regimes
+        // (low / medium / high) so we observe the planning algorithms
+        // both when all tasks are completable and when the agent is
+        // oversaturated. max_tasks and density_mult are determined per-seed
+        // from the regime — the explicit args below are kept as fallback.
+        // For every seed all three modes (MCA / DoubleHorizon / DbVNS)
+        // are evaluated.
         // Outputs:
         //   - planning_summary.csv      (one row per seed × mode)
         //   - details/seed_NNNN_*.csv   (every 10 seeds: task + agent traces)
@@ -285,12 +339,12 @@ int main()
         const std::string output_dir = "C:\\ConflictualMAS\\results\\planning_test";
         run_planning_comparison_test(
             /*base_seed*/0,            // 0 → random from std::random_device
-            /*max_tasks*/25,
+            /*max_tasks*/25,           // ignored — regime overrides per seed
             osm_root, cache_root, output_dir,
             /*n_seeds*/100,
             /*detail_every*/10,
             /*cities*/{"Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"},
-            /*density_min*/0.5f,
+            /*density_min*/0.5f,       // ignored — regime overrides per seed
             /*density_max*/2.5f);
     }
     else if (rep == "S" || rep == "s") run_training_smoke_test(osm_file, cache_dir);
@@ -301,11 +355,18 @@ int main()
         // scenarios. Uses saved checkpoints, no training.
         //
         // Modes:
-        //   - MAPPO           (shared actor, centralised critic)
-        //   - MAPPER          (per-agent actor + evolutionary RL)
-        //   - Hybrid          (MAPPO base + per-agent online residual)
-        //   - TamAlwaysAccept (TAM-only ablation)
-        //   - Greedy          (sanity baseline)
+        //   - MAPPO           (May17 baseline, MCA-trained, evaluated under DH)
+        //   - MAPPER          (enhanced variant: elite + Gaussian mutation, DH)
+        //   - FaithfulMAPPER  (paper-faithful Liu+2020: copy-no-mutation, DH)
+        //   - Hybrid          (frozen MAPPO May17 base + per-agent REINFORCE residual)
+        //                     No training needed: base set from MAPPO checkpoint,
+        //                     residuals start at zero (= pure MAPPO hot-start)
+        //                     and online-adapt during each eval episode.
+        //   - TamAlwaysAccept (TAM routing only, always-accept ablation)
+        //
+        // NOTE: After Option N completes, update cfg.policy_path below to
+        //   ".../mappo_dh/mappo/policy_seed42.bin" for a MAPPO-DH vs Hybrid-DH
+        //   comparison where the distribution shift is eliminated.
         //
         // Coverage: 5 modes × 7 cities × 2 phases (normal + stress) × 5 eps
         //         = 350 eval episodes per seed.
@@ -326,26 +387,46 @@ int main()
         cfg.skip_stress_eval     = false;  // include over-saturated scenarios
         cfg.skip_generalize_eval = false;  // include held-out cities
 
-        // Final 5-mode comparison (publication target)
+        // 5-mode comparison.
+        //
+        //   MAPPO              — May 17 baseline, 12-d, MCA planning at train time
+        //   MAPPER             — enhanced variant (elite + Gaussian mutation), DH
+        //   FaithfulMAPPER     — paper-faithful (copy-no-mutation, Liu+2020), DH
+        //   Hybrid             — frozen MAPPO base + per-agent online REINFORCE residual
+        //                        (14 params/agent, rollback safety, hot-starts as MAPPO)
+        //   TamAlwaysAccept    — TAM routing only (always-accept ablation)
+        //
+        // Greedy dropped: 100-700s per episode on Medium cities, dominates wallclock.
+        // Hybrid added: Hybrid base is auto-wired from MAPPO checkpoint below.
         cfg.eval_modes = {
             PolicyMode::MAPPO,
             PolicyMode::MAPPER,
+            PolicyMode::FaithfulMAPPER,
             PolicyMode::Hybrid,
-            PolicyMode::TamAlwaysAccept,
-            PolicyMode::Greedy
+            PolicyMode::TamAlwaysAccept
         };
 
-        // Load trained policies from disk. MAPPO uses the May 17 baseline
-        // checkpoint (the proven 12-d working one) to stay consistent with
-        // option M, which loads the same file for its periodic eval. MAPPER
-        // and IPPO are taken from results/ (overwritten by latest training).
-        // Hybrid auto-derives its base from the loaded MAPPO actor inside
-        // MultiCityTrainer.
-        cfg.load_policy        = true;
-        cfg.policy_path        = "C:\\ConflictualMAS\\results\\accepted\\"
-                                 "policy_seed42_mappo_working_2026-05-17.bin";
-        cfg.ippo_policy_path   = output_dir + "/ippo_seed42.bin";
-        cfg.mapper_policy_path = output_dir + "/mapper_seed42.bin";
+        // ── Planning: forward DbVNS-PDP at eval (architectural separation).
+        // TAM → policy (MAPPO/MAPPER/Hybrid) decides accept/refuse, then
+        // DbVNS replans the full remaining sequence on every acceptance.
+        // The MAPPO checkpoint trained under MCA suffers a distribution shift
+        // (planner is stronger than at train time); MAPPER/Hybrid baselines
+        // were retrained under the same DbVNS planner so the comparison
+        // ("policy ↔ planner pair held fixed") is fair for them.
+        cfg.episode_cfg.use_dbvns_planning = true;
+
+        // Load trained policies from disk.
+        //   policy_path                  → MAPPO May 17 baseline (accepted dir)
+        //   mapper_policy_path           → MAPPER enhanced (mapper_enhanced/)
+        //   faithful_mapper_policy_path  → MAPPER paper-faithful (mapper_faithful/)
+        //   ippo_policy_path             → empty (IPPO not in eval_modes)
+        cfg.load_policy                 = true;
+        cfg.policy_path                 = "C:\\ConflictualMAS\\results\\acceptedMAPPPO\\"
+                                          "policy_seed42_mappo_working_2026-05-17.bin";
+        cfg.mapper_policy_path          = "C:\\ConflictualMAS\\results\\mapper_enhanced\\"
+                                          "mapper_seed42.bin";
+        cfg.faithful_mapper_policy_path = "C:\\ConflictualMAS\\results\\mapper_faithful\\"
+                                          "mapper_seed42.bin";
 
         MultiCityTrainer trainer;
         trainer.train(cfg);

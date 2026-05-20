@@ -10,6 +10,7 @@
 #include <cmath>
 #include <limits>
 #include <random>
+#include <unordered_set>
 
 // ---- Construction -------------------------------------------------------
 
@@ -75,11 +76,181 @@ void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
     // this, an agent mid-task could be told to accept another package while
     // already at capacity.
 
-    const int max_carry = std::max(
-        1, memory.task_agent.params.max_tasks_per_agent);
-
     auto& seq = solution.sequence;
     const int n = static_cast<int>(seq.size());
+
+    // ── ALNS global replanning branch (Ropke-Pisinger 2006 adapted) ─────────
+    // Used ONLY by the planning-comparison test (PolicyMode::ALNS). Same
+    // contract as DbVNS branch: preserve in-flight head, rebuild the remainder
+    // via destroy-repair ALNS on the full set of remaining tasks.
+    if (memory.planning_use_alns) {
+        if (seq.empty()) {
+            solution.push_back(task.pickup);
+            solution.push_back(task.delivery);
+            status = AgentStatus::Active;
+            prefetch_next_path(memory);
+            return;
+        }
+        const ObjectiveNode inflight = seq[0].node;
+        const osmium::object_id_type plan_start = inflight.id;
+
+        std::unordered_set<osmium::object_id_type> remaining_ids;
+        for (int i = 1; i < n; ++i) remaining_ids.insert(seq[i].node.id);
+        remaining_ids.insert(task.pickup.id);
+        remaining_ids.insert(task.delivery.id);
+
+        OperableEnvironment tmp_env;
+        PairingMap           pickup_of_replan;
+        for (int i = 1; i < n; ++i) tmp_env.add_single_node(seq[i].node);
+        tmp_env.add_single_node(task.pickup);
+        tmp_env.add_single_node(task.delivery);
+
+        for (const PDPTask* t : local_memory.tasks) {
+            if (t->timeline.picked_step >= 0) continue;
+            const bool p_in = remaining_ids.count(t->pickup.id)   > 0;
+            const bool d_in = remaining_ids.count(t->delivery.id) > 0;
+            if (p_in && d_in && t->pickup.id != plan_start)
+                pickup_of_replan[t->delivery.id] = t->pickup.id;
+        }
+
+        int tmp_n = tmp_env.size();
+        std::vector<float> sc(tmp_n, kCostScale);
+        for (int i = 0; i < tmp_n; ++i) {
+            const auto* p = memory.get_or_compute_path(
+                plan_start, tmp_env.nodes[i].id, 1);
+            if (p && p->valid()) sc[i] = p->cost;
+        }
+        tmp_env.refresh_costs(memory);
+
+        const int max_cap = std::max(
+            1, memory.task_agent.params.max_tasks_per_agent);
+        int load_at_start = 0;
+        for (const PDPTask* t : local_memory.tasks) {
+            if (t == &task) continue;
+            const bool picked    = t->timeline.picked_step    >= 0;
+            const bool delivered = t->timeline.delivered_step >= 0;
+            if (picked && !delivered) ++load_at_start;
+        }
+        if (const PDPTask* t0 = memory.get_task_for_node(plan_start)) {
+            if (t0->pickup.id   == plan_start && t0->timeline.picked_step    < 0)
+                ++load_at_start;
+            else if (t0->delivery.id == plan_start && t0->timeline.delivered_step < 0)
+                --load_at_start;
+        }
+        load_at_start = std::max(0, std::min(max_cap, load_at_start));
+
+        auto planned = LocalSolutionAgent::plan_sequence_alns(
+            tmp_env, pickup_of_replan, sc, max_cap, load_at_start);
+
+        seq.clear();
+        solution.push_back(inflight);
+        for (const auto& node : planned) solution.push_back(node);
+
+        status = AgentStatus::Active;
+        prefetch_next_path(memory);
+        return;
+    }
+
+    // ── DbVNS global replanning branch ──────────────────────────────────────
+    // Discards the existing insertion order (except the in-flight head seq[0])
+    // and reoptimises the full remaining sequence via forward DbVNS-PDP.
+    if (memory.planning_use_dbvns) {
+        if (seq.empty()) {
+            // Idle agent: trivial first task.
+            solution.push_back(task.pickup);
+            solution.push_back(task.delivery);
+            status = AgentStatus::Active;
+            prefetch_next_path(memory);
+            return;
+        }
+
+        // Save the in-flight destination (seq[0]) — it is fixed.
+        const ObjectiveNode inflight = seq[0].node;
+        const osmium::object_id_type plan_start = inflight.id;
+
+        // Determine if inflight is a pickup (its delivery becomes immediately
+        // available once the agent arrives at plan_start).
+        osmium::object_id_type inflight_delivery_id = 0;
+        {
+            const PDPTask* t0 = memory.get_task_for_node(plan_start);
+            if (t0 && t0->pickup.id == plan_start)
+                inflight_delivery_id = t0->delivery.id;
+        }
+
+        // Build the set of remaining nodes (seq[1..n-1] + new pickup + new delivery).
+        std::unordered_set<osmium::object_id_type> remaining_ids;
+        for (int i = 1; i < n; ++i) remaining_ids.insert(seq[i].node.id);
+        remaining_ids.insert(task.pickup.id);
+        remaining_ids.insert(task.delivery.id);
+
+        // Build temporary env and pickup_of for replanning.
+        // pickup_of[delivery_id] = pickup_id  →  delivery is locked until pickup visited.
+        OperableEnvironment tmp_env;
+        PairingMap           pickup_of_replan;
+
+        for (int i = 1; i < n; ++i) tmp_env.add_single_node(seq[i].node);
+        tmp_env.add_single_node(task.pickup);
+        tmp_env.add_single_node(task.delivery);
+
+        // Lock deliveries of tasks not yet picked up, except when the pickup IS
+        // the inflight head (pickup guaranteed on arrival → delivery is free).
+        for (const PDPTask* t : local_memory.tasks) {
+            const bool already_picked = (t->timeline.picked_step >= 0);
+            if (already_picked) continue;  // carrying: delivery is free
+            const bool p_in_remaining = remaining_ids.count(t->pickup.id) > 0;
+            const bool d_in_remaining = remaining_ids.count(t->delivery.id) > 0;
+            if (p_in_remaining && d_in_remaining
+                && t->pickup.id != plan_start) {
+                pickup_of_replan[t->delivery.id] = t->pickup.id;
+            }
+            // If pickup IS plan_start, delivery is immediately available.
+        }
+
+        // Compute costs from plan_start to every node in tmp_env.
+        int tmp_n = tmp_env.size();
+        std::vector<float> sc(tmp_n, kCostScale);
+        for (int i = 0; i < tmp_n; ++i) {
+            const auto* p = memory.get_or_compute_path(
+                plan_start, tmp_env.nodes[i].id, 1);
+            if (p && p->valid()) sc[i] = p->cost;
+        }
+        tmp_env.refresh_costs(memory);
+
+        // Capacity & load at plan_start (i.e. AFTER arriving at the inflight head).
+        const int max_cap = std::max(
+            1, memory.task_agent.params.max_tasks_per_agent);
+        int load_at_start = 0;
+        for (const PDPTask* t : local_memory.tasks) {
+            if (t == &task) continue;                  // new task not picked yet
+            const bool picked    = t->timeline.picked_step    >= 0;
+            const bool delivered = t->timeline.delivered_step >= 0;
+            if (picked && !delivered) ++load_at_start;
+        }
+        // Adjust for the inflight head once the agent reaches it.
+        if (const PDPTask* t0 = memory.get_task_for_node(plan_start)) {
+            if (t0->pickup.id   == plan_start && t0->timeline.picked_step    < 0)
+                ++load_at_start;
+            else if (t0->delivery.id == plan_start && t0->timeline.delivered_step < 0)
+                --load_at_start;
+        }
+        load_at_start = std::max(0, std::min(max_cap, load_at_start));
+
+        auto planned = LocalSolutionAgent::plan_sequence(
+            tmp_env, pickup_of_replan, sc, max_cap, load_at_start);
+
+        // Rebuild sequence: inflight head + DbVNS result.
+        seq.clear();
+        solution.push_back(inflight);
+        for (const auto& node : planned)
+            solution.push_back(node);
+
+        status = AgentStatus::Active;
+        prefetch_next_path(memory);
+        return;
+    }
+
+    const int max_carry = std::max(
+        1, memory.task_agent.params.max_tasks_per_agent);
 
     // Idle agent ⇒ trivial: queue just becomes [P, D].
     if (n == 0) {
@@ -129,29 +300,45 @@ void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
     //
     //   Capacity test: max(load_after[pos_P-1 .. pos_D-1]) + 1 <= max_carry.
     //   If pos_P == pos_D, range is the single index pos_P-1.
-    // ── Planning strategy setup (cheapest vs Double-Horizon) ────────────────
+    // ── Planning strategy setup (cheapest vs Double-Horizon, fixed) ─────────
+    //
     // memory.planning_use_double_horizon is set by EpisodeRunner from cfg.
     // When false → classical Solomon cheapest insertion (score = f_p + f_d).
-    // When true  → Mitrovic-Minic 2004 Double-Horizon, adapted:
+    // When true  → Mitrovic-Minic 2004 Double-Horizon, faithful adaptation:
+    //
     //   cost = (1-α_p)·f_p + α_p·g_p + (1-α_d)·f_d + α_d·g_d
-    //   g_p = (n−pos_P) · f_p   (slack-decrease proxy at subsequent locations)
-    //   g_d = (n−pos_D) · f_d
-    //   α_p, α_d ∈ {0 short-term, 0.25 long-term} based on the estimated arrival
-    //   time of the new pickup / delivery vs the current simulation step.
+    //
+    // where g_p (g_d) is the PROPER slack-time decrease over downstream nodes:
+    //
+    //   g_p = Σ_{k=pP..n-1} [ slack_before(k) − slack_after_pP(k) ]
+    //
+    // and slack(k) = max(0, deadline(task(k)) − estimated_arrival(k)).
+    //
+    // The deadline is synthetic — there are no real time windows in lifelong
+    // GPDP — taken as `task.created_step + kDHTaskMaxAge`. This re-introduces
+    // the slack semantics the paper relies on: distant insertions that push
+    // downstream nodes near their SLA boundary become expensive in g_p, which
+    // is exactly the long-term flexibility argument Mitrovic-Minic makes.
+    //
+    // α_p, α_d ∈ {0 short-term, 0.25 long-term}: short-term insertions ignore
+    // slack and just minimise route extension (paper c3).
     const bool  use_dh        = memory.planning_use_double_horizon;
     const float speed         = std::max(memory.speed_mps, 0.1f);
     const int   current_step  = use_dh
         ? static_cast<int>(memory.cur_time_ratio * memory.total_steps) : 0;
     const int   short_horizon = use_dh
         ? std::max(60, memory.total_steps / 10) : 0;
-    constexpr float kDHAlpha  = 0.25f;
+    constexpr float kDHAlpha       = 0.25f;
+    constexpr int   kDHTaskMaxAge  = 1500;  // synthetic SLA: steps after task arrival
 
-    // Precompute estimated arrival time for each existing sequence position.
-    // Uses the commit_plan-published estimated_arrival when available, otherwise
-    // forward-simulates from current_node at constant speed.
+    // Precompute estimated arrival time and slack-budget for each downstream
+    // sequence position. Slack = max(0, deadline − arrival) when the node maps
+    // to a known task; otherwise treated as infinite (no SLA pressure).
     std::vector<int> arr;
+    std::vector<int> slack_budget;   // ≥ 0; 0 = no slack left, INT_MAX = no SLA
     if (use_dh) {
         arr.resize(n);
+        slack_budget.resize(n);
         int t_acc = current_step;
         osmium::object_id_type prev = current_node;
         for (int i = 0; i < n; ++i) {
@@ -163,9 +350,30 @@ void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
                 t_acc += static_cast<int>(std::ceil(seg(prev, seq[i].node.id) / speed));
                 arr[i] = t_acc;
             }
+            const PDPTask* tk = memory.get_task_for_node(seq[i].node.id);
+            if (tk) {
+                const int deadline = tk->timeline.created_step + kDHTaskMaxAge;
+                slack_budget[i] = std::max(0, deadline - arr[i]);
+            } else {
+                slack_budget[i] = std::numeric_limits<int>::max();
+            }
             prev = seq[i].node.id;
         }
     }
+
+    // Helper: total slack-decrease over downstream nodes when their arrival
+    // is pushed by `extra_steps`. Capped per-node by their current slack
+    // budget (you cannot lose more slack than you have).
+    auto slack_loss = [&](int from_pos, int extra_steps) -> float {
+        if (extra_steps <= 0) return 0.f;
+        long long acc = 0;
+        for (int k = from_pos; k < n; ++k) {
+            const int sb = slack_budget[k];
+            const int loss = (sb >= extra_steps) ? extra_steps : sb;
+            acc += loss;
+        }
+        return static_cast<float>(acc) * speed;  // convert steps → metres (same unit as f_p)
+    };
 
     float best_score = std::numeric_limits<float>::max();
     int   best_pP = -1, best_pD = -1;
@@ -238,8 +446,12 @@ void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
                 const float alpha_p = p_short ? 0.f : kDHAlpha;
                 const float alpha_d = d_short ? 0.f : kDHAlpha;
 
-                const float g_p = static_cast<float>(std::max(0, n - pP)) * f_p;
-                const float g_d = static_cast<float>(std::max(0, n - pD)) * f_d;
+                // Proper slack-decrease: downstream nodes lose extra_steps of
+                // slack, capped per-node by their remaining SLA budget.
+                const int extra_p = static_cast<int>(std::ceil(f_p / speed));
+                const int extra_d = static_cast<int>(std::ceil(f_d / speed));
+                const float g_p = slack_loss(pP, extra_p);
+                const float g_d = slack_loss(pD, extra_d);
 
                 score = (1.f - alpha_p) * f_p + alpha_p * g_p
                       + (1.f - alpha_d) * f_d + alpha_d * g_d;

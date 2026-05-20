@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1240">
+<rect width="1100" height="1100" fill="#fafbfc"/>
+<line x1="1015.62" y1="558.611" x2="562.376" y2="103.385" stroke="rgb(66,113,180)" stroke-width="1.4" opacity="0.85"/>
+<line x1="562.376" y1="103.385" x2="589.28" y2="58.9286" stroke="rgb(72,112,175)" stroke-width="1.4" opacity="0.85"/>
+<line x1="589.28" y1="58.9286" x2="745.792" y2="997.244" stroke="rgb(132,98,131)" stroke-width="1.4" opacity="0.85"/>
+<line x1="745.792" y1="997.244" x2="483.231" y2="799.386" stroke="rgb(182,86,94)" stroke-width="1.4" opacity="0.85"/>
+<line x1="483.231" y1="799.386" x2="131.004" y2="586.479" stroke="rgb(199,82,81)" stroke-width="1.4" opacity="0.85"/>
+<line x1="131.004" y1="586.479" x2="58.9286" y2="637.992" stroke="rgb(203,81,78)" stroke-width="1.4" opacity="0.85"/>
+<line x1="58.9286" y1="637.992" x2="1018.01" y2="531.855" stroke="rgb(251,70,42)" stroke-width="1.4" opacity="0.85"/>
+<line x1="1018.01" y1="531.855" x2="1041.07" y2="567.985" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
+<line x1="1041.07" y1="567.985" x2="955.131" y2="107.955" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
+<line x1="955.131" y1="107.955" x2="855.594" y2="147.506" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
+<line x1="855.594" y1="147.506" x2="554.507" y2="930.285" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
+<line x1="554.507" y1="930.285" x2="217.67" y2="1041.07" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
+<circle cx="562.376" cy="103.385" r="5" fill="rgb(45,118,195)" stroke="white" stroke-width="1.2"/>
+<rect x="584.28" y="53.9286" width="10" height="10" fill="white" stroke="rgb(45,118,195)" stroke-width="2.2"/>
+<line x1="562.376" y1="103.385" x2="589.28" y2="58.9286" stroke="rgb(45,118,195)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="745.792" cy="997.244" r="5" fill="rgb(48,118,193)" stroke="white" stroke-width="1.2"/>
+<rect x="478.231" y="794.386" width="10" height="10" fill="white" stroke="rgb(48,118,193)" stroke-width="2.2"/>
+<line x1="745.792" y1="997.244" x2="483.231" y2="799.386" stroke="rgb(48,118,193)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="131.004" cy="586.479" r="5" fill="rgb(180,87,95)" stroke="white" stroke-width="1.2"/>
+<rect x="53.9286" y="632.992" width="10" height="10" fill="white" stroke="rgb(180,87,95)" stroke-width="2.2"/>
+<line x1="131.004" y1="586.479" x2="58.9286" y2="637.992" stroke="rgb(180,87,95)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="1018.01" cy="531.855" r="5" fill="rgb(97,106,157)" stroke="white" stroke-width="1.2"/>
+<rect x="1036.07" y="562.985" width="10" height="10" fill="white" stroke="rgb(97,106,157)" stroke-width="2.2"/>
+<line x1="1018.01" y1="531.855" x2="1041.07" y2="567.985" stroke="rgb(97,106,157)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="554.507" cy="930.285" r="5" fill="rgb(206,81,76)" stroke="white" stroke-width="1.2"/>
+<rect x="212.67" y="1036.07" width="10" height="10" fill="white" stroke="rgb(206,81,76)" stroke-width="2.2"/>
+<line x1="554.507" y1="930.285" x2="217.67" y2="1041.07" stroke="rgb(206,81,76)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="955.131" cy="107.955" r="5" fill="rgb(233,74,55)" stroke="white" stroke-width="1.2"/>
+<rect x="850.594" y="142.506" width="10" height="10" fill="white" stroke="rgb(233,74,55)" stroke-width="2.2"/>
+<line x1="955.131" y1="107.955" x2="855.594" y2="147.506" stroke="rgb(233,74,55)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<rect y="1100" width="1100" height="140" fill="#edf0f3"/>
+<text x="12" y="1120" font-family="monospace" font-size="13" fill="#222">seed=-1631390006  city=LosAngeles_Small  mode=DbVNS_lifelong_replan  density=0.42  agents=1.00  (low_saturation)</text>
+<text x="12" y="1140" font-family="monospace" font-size="12" fill="#222">arrived=6 accepted=6 delivered=3 unfinished=3 dist=17281m agents=1</text>
+<text x="12" y="1158" font-family="monospace" font-size="12" fill="#444">spatial: bbox=9.69km² hull=6.62km² meanPD=486m meanNN=1090m</text>
+<text x="12" y="1176" font-family="monospace" font-size="12" fill="#555">validity: pairing_viol=0 capacity_viol=0 wallclock=358ms</text>
+<rect x="12" y="1195" width="28" height="12" fill="rgb(40,120,200)"/>
+<rect x="39" y="1195" width="28" height="12" fill="rgb(70,112,177)"/>
+<rect x="67" y="1195" width="28" height="12" fill="rgb(101,105,154)"/>
+<rect x="94" y="1195" width="28" height="12" fill="rgb(132,98,131)"/>
+<rect x="122" y="1195" width="28" height="12" fill="rgb(162,91,108)"/>
+<rect x="149" y="1195" width="28" height="12" fill="rgb(193,84,85)"/>
+<rect x="177" y="1195" width="28" height="12" fill="rgb(224,77,62)"/>
+<rect x="204" y="1195" width="28" height="12" fill="rgb(255,70,40)"/>
+<text x="238" y="1205" font-family="monospace" font-size="11" fill="#444">time gradient: blue=t=0  red=t=3600</text>
+</svg>

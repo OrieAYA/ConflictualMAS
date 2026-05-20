@@ -4,6 +4,11 @@ C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\LKHSolver.cpp;C:\ConflictualMAS\b
 C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\IVNSSolver.cpp;C:\ConflictualMAS\build\main.dir\Debug\IVNSSolver.obj
 C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\ComparisonTest.cpp;C:\ConflictualMAS\build\main.dir\Debug\ComparisonTest.obj
 C:\ConflictualMAS\src\DMASforPD\Policy\ObjectiveDMPolicy.cpp;C:\ConflictualMAS\build\main.dir\Debug\ObjectiveDMPolicy.obj
+C:\ConflictualMAS\src\DMASforPD\Policy\IPPOPolicy.cpp;C:\ConflictualMAS\build\main.dir\Debug\IPPOPolicy.obj
+C:\ConflictualMAS\src\DMASforPD\Policy\MapperPolicy.cpp;C:\ConflictualMAS\build\main.dir\Debug\MapperPolicy.obj
+C:\ConflictualMAS\src\DMASforPD\Policy\FaithfulMapperPolicy.cpp;C:\ConflictualMAS\build\main.dir\Debug\FaithfulMapperPolicy.obj
+C:\ConflictualMAS\src\DMASforPD\Policy\HybridPolicy.cpp;C:\ConflictualMAS\build\main.dir\Debug\HybridPolicy.obj
+C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp;C:\ConflictualMAS\build\main.dir\Debug\PlanningComparisonTest.obj
 C:\ConflictualMAS\src\Training\CityConfig.cpp;C:\ConflictualMAS\build\main.dir\Debug\CityConfig.obj
 C:\ConflictualMAS\src\Training\EpisodeConfig.cpp;C:\ConflictualMAS\build\main.dir\Debug\EpisodeConfig.obj
 C:\ConflictualMAS\src\Training\EpisodeGenerator.cpp;C:\ConflictualMAS\build\main.dir\Debug\EpisodeGenerator.obj

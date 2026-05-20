@@ -31,8 +31,11 @@ struct EpisodeRecord {
     float latency_mean         = 0.f;    // steps appearance → completion
     float latency_per_agent    = 0.f;
     float agent_utilisation    = 0.f;
-    float mean_congestion      = 0.f;    // mean edge load over episode steps
-    float mean_trip_steps      = 0.f;    // mean pickup→delivery steps
+    float mean_congestion           = 0.f;  // mean edge load over episode steps
+    float mean_trip_steps           = 0.f;  // mean pickup→delivery steps
+    float mean_wait_steps           = 0.f;  // mean appearance → pickup arrival (response delay)
+    float mean_road_pd_m            = 0.f;  // mean A* road distance pickup→delivery (metres)
+    float delivery_route_efficiency = 0.f;  // road_pd_m / (trip_steps × speed): ∈(0,1]
 
     // Spatial complexity (over served pickup+delivery points)
     float bbox_area_km2          = 0.f;

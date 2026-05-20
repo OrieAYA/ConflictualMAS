@@ -32,9 +32,10 @@ void TrainingLogger::write_header() {
           << "tasks_appeared,tasks_completed,throughput_rate,"
           << "accept_rate,refuse_rate,"
           << "latency_mean,latency_per_agent,agent_utilisation,"
-          << "mean_congestion,mean_trip_steps,"
-          // Spatial complexity
-          << "bbox_area_km2,convex_hull_km2,mean_pd_m,mean_nn_pickup_m,"
+          << "mean_congestion,mean_trip_steps,mean_wait_steps,"
+          << "mean_road_pd_m,delivery_route_efficiency,"
+          // Spatial complexity (haversine-based geometry of served task locations)
+          << "bbox_area_km2,convex_hull_km2,mean_pd_hav_m,mean_nn_pickup_m,"
           // Temporal complexity (derived from wallclock)
           << "compute_time_per_task_ms,compute_time_per_decision_us,"
           // Validity
@@ -64,8 +65,11 @@ void TrainingLogger::write_row(const EpisodeRecord& r) {
           << r.latency_mean     << ','
           << r.latency_per_agent<< ','
           << r.agent_utilisation<< ','
-          << r.mean_congestion  << ','
-          << r.mean_trip_steps  << ','
+          << r.mean_congestion             << ','
+          << r.mean_trip_steps             << ','
+          << r.mean_wait_steps             << ','
+          << r.mean_road_pd_m              << ','
+          << r.delivery_route_efficiency   << ','
           << r.bbox_area_km2    << ','
           << r.convex_hull_area_km2 << ','
           << r.mean_pd_distance_m   << ','
@@ -111,6 +115,9 @@ void TrainingLogger::write_summary(const std::string& path,
           << "utilisation_mean,utilisation_std,"
           << "mean_congestion_mean,mean_congestion_std,"
           << "mean_trip_steps_mean,mean_trip_steps_std,"
+          << "mean_wait_steps_mean,mean_wait_steps_std,"
+          << "mean_road_pd_m_mean,mean_road_pd_m_std,"
+          << "delivery_route_efficiency_mean,delivery_route_efficiency_std,"
           << "actor_loss_mean,critic_loss_mean,entropy_mean\n";
     }
 
@@ -150,6 +157,9 @@ void TrainingLogger::write_summary(const std::string& path,
         float uti_m  = mean_of([](const EpisodeRecord& r){ return r.agent_utilisation; });
         float cng_m  = mean_of([](const EpisodeRecord& r){ return r.mean_congestion; });
         float trp_m  = mean_of([](const EpisodeRecord& r){ return r.mean_trip_steps; });
+        float wt_m   = mean_of([](const EpisodeRecord& r){ return r.mean_wait_steps; });
+        float rpd_m  = mean_of([](const EpisodeRecord& r){ return r.mean_road_pd_m; });
+        float eff_m  = mean_of([](const EpisodeRecord& r){ return r.delivery_route_efficiency; });
 
         f << seed << ','
           << group[0]->city << ',' << group[0]->phase << ',' << group[0]->policy_mode << ','
@@ -161,6 +171,9 @@ void TrainingLogger::write_summary(const std::string& path,
           << uti_m  << ',' << std_of([](const EpisodeRecord& r){ return r.agent_utilisation; },uti_m) << ','
           << cng_m  << ',' << std_of([](const EpisodeRecord& r){ return r.mean_congestion; }, cng_m) << ','
           << trp_m  << ',' << std_of([](const EpisodeRecord& r){ return r.mean_trip_steps; }, trp_m) << ','
+          << wt_m   << ',' << std_of([](const EpisodeRecord& r){ return r.mean_wait_steps; },  wt_m)  << ','
+          << rpd_m  << ',' << std_of([](const EpisodeRecord& r){ return r.mean_road_pd_m; },   rpd_m) << ','
+          << eff_m  << ',' << std_of([](const EpisodeRecord& r){ return r.delivery_route_efficiency; }, eff_m) << ','
           << mean_of([](const EpisodeRecord& r){ return r.actor_loss; })  << ','
           << mean_of([](const EpisodeRecord& r){ return r.critic_loss; }) << ','
           << mean_of([](const EpisodeRecord& r){ return r.entropy; })     << '\n';
@@ -193,8 +206,11 @@ EpisodeRecord make_record(const RunResult& result,
     r.latency_mean      = m.latency_mean;
     r.latency_per_agent = m.latency_per_agent;
     r.agent_utilisation = m.agent_utilisation;
-    r.mean_congestion   = m.mean_congestion;
-    r.mean_trip_steps   = m.mean_trip_steps;
+    r.mean_congestion            = m.mean_congestion;
+    r.mean_trip_steps            = m.mean_trip_steps;
+    r.mean_wait_steps            = m.mean_wait_steps;
+    r.mean_road_pd_m             = m.mean_road_pd_m;
+    r.delivery_route_efficiency  = m.delivery_route_efficiency;
     r.bbox_area_km2          = m.bbox_area_km2;
     r.convex_hull_area_km2   = m.convex_hull_area_km2;
     r.mean_pd_distance_m     = m.mean_pd_distance_m;

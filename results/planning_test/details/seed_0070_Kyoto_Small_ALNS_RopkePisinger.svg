@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1240">
+<rect width="1100" height="1100" fill="#fafbfc"/>
+<line x1="254.089" y1="316.964" x2="341.988" y2="347.589" stroke="rgb(82,110,168)" stroke-width="1.4" opacity="0.85"/>
+<line x1="341.988" y1="347.589" x2="297.025" y2="406.485" stroke="rgb(95,107,158)" stroke-width="1.4" opacity="0.85"/>
+<line x1="297.025" y1="406.485" x2="281.71" y2="369.028" stroke="rgb(112,103,145)" stroke-width="1.4" opacity="0.85"/>
+<line x1="281.71" y1="369.028" x2="365.764" y2="380.855" stroke="rgb(232,75,56)" stroke-width="1.4" opacity="0.85"/>
+<line x1="365.764" y1="380.855" x2="254.089" y2="316.964" stroke="rgb(236,74,53)" stroke-width="1.4" opacity="0.85"/>
+<line x1="254.089" y1="316.964" x2="791.789" y2="363.449" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
+<line x1="791.789" y1="363.449" x2="855.065" y2="398.048" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
+<circle cx="341.988" cy="347.589" r="5" fill="rgb(41,119,198)" stroke="white" stroke-width="1.2"/>
+<rect x="292.025" y="401.485" width="10" height="10" fill="white" stroke="rgb(41,119,198)" stroke-width="2.2"/>
+<line x1="341.988" y1="347.589" x2="297.025" y2="406.485" stroke="rgb(41,119,198)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="281.71" cy="369.028" r="5" fill="rgb(76,111,172)" stroke="white" stroke-width="1.2"/>
+<rect x="360.764" y="375.855" width="10" height="10" fill="white" stroke="rgb(76,111,172)" stroke-width="2.2"/>
+<line x1="281.71" y1="369.028" x2="365.764" y2="380.855" stroke="rgb(76,111,172)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="960.379" cy="688.446" r="5" fill="rgb(43,119,197)" stroke="white" stroke-width="1.2"/>
+<rect x="978.809" y="637.815" width="10" height="10" fill="white" stroke="rgb(43,119,197)" stroke-width="2.2"/>
+<line x1="960.379" y1="688.446" x2="983.809" y2="642.815" stroke="rgb(43,119,197)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="897.592" cy="988.275" r="5" fill="rgb(65,113,180)" stroke="white" stroke-width="1.2"/>
+<rect x="691.019" y="732.211" width="10" height="10" fill="white" stroke="rgb(65,113,180)" stroke-width="2.2"/>
+<line x1="897.592" y1="988.275" x2="696.019" y2="737.211" stroke="rgb(65,113,180)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="112.334" cy="863.446" r="5" fill="rgb(67,113,179)" stroke="white" stroke-width="1.2"/>
+<rect x="171.146" y="917.36" width="10" height="10" fill="white" stroke="rgb(67,113,179)" stroke-width="2.2"/>
+<line x1="112.334" y1="863.446" x2="176.146" y2="922.36" stroke="rgb(67,113,179)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="846.304" cy="632.47" r="5" fill="rgb(68,113,178)" stroke="white" stroke-width="1.2"/>
+<rect x="1036.07" y="437.785" width="10" height="10" fill="white" stroke="rgb(68,113,178)" stroke-width="2.2"/>
+<line x1="846.304" y1="632.47" x2="1041.07" y2="442.785" stroke="rgb(68,113,178)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="402.856" cy="205.45" r="5" fill="rgb(76,111,172)" stroke="white" stroke-width="1.2"/>
+<rect x="109.881" y="353.893" width="10" height="10" fill="white" stroke="rgb(76,111,172)" stroke-width="2.2"/>
+<line x1="402.856" y1="205.45" x2="114.881" y2="358.893" stroke="rgb(76,111,172)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="928.512" cy="650.259" r="5" fill="rgb(103,105,152)" stroke="white" stroke-width="1.2"/>
+<rect x="971.229" y="646.095" width="10" height="10" fill="white" stroke="rgb(103,105,152)" stroke-width="2.2"/>
+<line x1="928.512" y1="650.259" x2="976.229" y2="651.095" stroke="rgb(103,105,152)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="197.276" cy="323.825" r="5" fill="rgb(113,102,145)" stroke="white" stroke-width="1.2"/>
+<rect x="365.027" y="375.795" width="10" height="10" fill="white" stroke="rgb(113,102,145)" stroke-width="2.2"/>
+<line x1="197.276" y1="323.825" x2="370.027" y2="380.795" stroke="rgb(113,102,145)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="254.089" cy="316.964" r="5" fill="rgb(130,99,133)" stroke="white" stroke-width="1.2"/>
+<rect x="211.68" y="232.507" width="10" height="10" fill="white" stroke="rgb(130,99,133)" stroke-width="2.2"/>
+<line x1="254.089" y1="316.964" x2="216.68" y2="237.507" stroke="rgb(130,99,133)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="769.993" cy="241.486" r="5" fill="rgb(139,96,126)" stroke="white" stroke-width="1.2"/>
+<rect x="956.532" y="331.563" width="10" height="10" fill="white" stroke="rgb(139,96,126)" stroke-width="2.2"/>
+<line x1="769.993" y1="241.486" x2="961.532" y2="336.563" stroke="rgb(139,96,126)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="857.307" cy="506.429" r="5" fill="rgb(140,96,124)" stroke="white" stroke-width="1.2"/>
+<rect x="1000.46" y="308.278" width="10" height="10" fill="white" stroke="rgb(140,96,124)" stroke-width="2.2"/>
+<line x1="857.307" y1="506.429" x2="1005.46" y2="313.278" stroke="rgb(140,96,124)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="776.828" cy="343.071" r="5" fill="rgb(147,94,119)" stroke="white" stroke-width="1.2"/>
+<rect x="906.666" y="520.468" width="10" height="10" fill="white" stroke="rgb(147,94,119)" stroke-width="2.2"/>
+<line x1="776.828" y1="343.071" x2="911.666" y2="525.468" stroke="rgb(147,94,119)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="728.212" cy="242.61" r="5" fill="rgb(151,94,116)" stroke="white" stroke-width="1.2"/>
+<rect x="786.869" y="427.142" width="10" height="10" fill="white" stroke="rgb(151,94,116)" stroke-width="2.2"/>
+<line x1="728.212" y1="242.61" x2="791.869" y2="432.142" stroke="rgb(151,94,116)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="990.15" cy="781.785" r="5" fill="rgb(171,89,101)" stroke="white" stroke-width="1.2"/>
+<rect x="727.101" y="885.842" width="10" height="10" fill="white" stroke="rgb(171,89,101)" stroke-width="2.2"/>
+<line x1="990.15" y1="781.785" x2="732.101" y2="890.842" stroke="rgb(171,89,101)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="443.125" cy="58.9286" r="5" fill="rgb(174,88,100)" stroke="white" stroke-width="1.2"/>
+<rect x="361.658" y="292.881" width="10" height="10" fill="white" stroke="rgb(174,88,100)" stroke-width="2.2"/>
+<line x1="443.125" y1="58.9286" x2="366.658" y2="297.881" stroke="rgb(174,88,100)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="827.498" cy="950.166" r="5" fill="rgb(186,85,90)" stroke="white" stroke-width="1.2"/>
+<rect x="677.91" y="900.019" width="10" height="10" fill="white" stroke="rgb(186,85,90)" stroke-width="2.2"/>
+<line x1="827.498" y1="950.166" x2="682.91" y2="905.019" stroke="rgb(186,85,90)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="372.702" cy="368.536" r="5" fill="rgb(205,81,76)" stroke="white" stroke-width="1.2"/>
+<rect x="298.578" y="307.172" width="10" height="10" fill="white" stroke="rgb(205,81,76)" stroke-width="2.2"/>
+<line x1="372.702" y1="368.536" x2="303.578" y2="312.172" stroke="rgb(205,81,76)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="179.645" cy="954.155" r="5" fill="rgb(211,80,72)" stroke="white" stroke-width="1.2"/>
+<rect x="53.9286" y="1036.07" width="10" height="10" fill="white" stroke="rgb(211,80,72)" stroke-width="2.2"/>
+<line x1="179.645" y1="954.155" x2="58.9286" y2="1041.07" stroke="rgb(211,80,72)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="239.474" cy="500.148" r="5" fill="rgb(217,78,68)" stroke="white" stroke-width="1.2"/>
+<rect x="69.9511" y="603.214" width="10" height="10" fill="white" stroke="rgb(217,78,68)" stroke-width="2.2"/>
+<line x1="239.474" y1="500.148" x2="74.9511" y2="608.214" stroke="rgb(217,78,68)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="401.801" cy="315.574" r="5" fill="rgb(217,78,67)" stroke="white" stroke-width="1.2"/>
+<rect x="381.258" y="243.295" width="10" height="10" fill="white" stroke="rgb(217,78,67)" stroke-width="2.2"/>
+<line x1="401.801" y1="315.574" x2="386.258" y2="248.295" stroke="rgb(217,78,67)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="844.094" cy="337.997" r="5" fill="rgb(234,74,55)" stroke="white" stroke-width="1.2"/>
+<rect x="780.312" y="358.41" width="10" height="10" fill="white" stroke="rgb(234,74,55)" stroke-width="2.2"/>
+<line x1="844.094" y1="337.997" x2="785.312" y2="363.41" stroke="rgb(234,74,55)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="791.789" cy="363.449" r="5" fill="rgb(240,73,50)" stroke="white" stroke-width="1.2"/>
+<rect x="850.065" y="393.048" width="10" height="10" fill="white" stroke="rgb(240,73,50)" stroke-width="2.2"/>
+<line x1="791.789" y1="363.449" x2="855.065" y2="398.048" stroke="rgb(240,73,50)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<rect y="1100" width="1100" height="140" fill="#edf0f3"/>
+<text x="12" y="1120" font-family="monospace" font-size="13" fill="#222">seed=-1631389956  city=Kyoto_Small  mode=ALNS_RopkePisinger  density=1.60  agents=1.00  (high_saturation)</text>
+<text x="12" y="1140" font-family="monospace" font-size="12" fill="#222">arrived=23 accepted=23 delivered=2 unfinished=21 dist=4656m agents=1</text>
+<text x="12" y="1158" font-family="monospace" font-size="12" fill="#444">spatial: bbox=18.82km² hull=14.65km² meanPD=721m meanNN=324m</text>
+<text x="12" y="1176" font-family="monospace" font-size="12" fill="#555">validity: pairing_viol=1 capacity_viol=0 wallclock=2064ms</text>
+<rect x="12" y="1195" width="28" height="12" fill="rgb(40,120,200)"/>
+<rect x="39" y="1195" width="28" height="12" fill="rgb(70,112,177)"/>
+<rect x="67" y="1195" width="28" height="12" fill="rgb(101,105,154)"/>
+<rect x="94" y="1195" width="28" height="12" fill="rgb(132,98,131)"/>
+<rect x="122" y="1195" width="28" height="12" fill="rgb(162,91,108)"/>
+<rect x="149" y="1195" width="28" height="12" fill="rgb(193,84,85)"/>
+<rect x="177" y="1195" width="28" height="12" fill="rgb(224,77,62)"/>
+<rect x="204" y="1195" width="28" height="12" fill="rgb(255,70,40)"/>
+<text x="238" y="1205" font-family="monospace" font-size="11" fill="#444">time gradient: blue=t=0  red=t=3600</text>
+</svg>

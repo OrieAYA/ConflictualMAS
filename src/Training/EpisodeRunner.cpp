@@ -125,6 +125,10 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     congestion_steps_ = 0;
     trip_sum_         = 0;
     trip_count_       = 0;
+    wait_sum_         = 0;
+    wait_count_       = 0;
+    road_pd_sum_      = 0.0;
+    road_pd_count_    = 0;
 
     // Propagate the always_accept flag to the TAM for TamAlwaysAccept ablation.
     // Must be set before the episode loop so all TAMs created during the episode
@@ -141,10 +145,21 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     memory_.speed_mps   = cfg_.speed_mps;
     memory_.total_steps = cfg_.total_steps();
 
-    // Planning strategy: cheapest insertion vs Double-Horizon insertion.
-    // Mirrored from cfg to memory so DeliveryAgent::receive_task() can dispatch
-    // without needing a pointer back to EpisodeConfig.
-    memory_.planning_use_double_horizon = cfg_.use_double_horizon_planning;
+    // Planning strategy flags.  At most one of the three modes is active.
+    // DoubleHorizon and DbVNS override cfg_ so PlanningComparisonTest can
+    // switch modes without touching EpisodeConfig.
+    // Planning dispatcher — DbVNS takes precedence over DH if both are set
+    // in cfg (defensive against accidental double-enable). The PlanningMode
+    // entries (DoubleHorizon / DbVNS / ALNS) always force their respective
+    // flag regardless of cfg.
+    const bool cfg_dbvns = cfg_.use_dbvns_planning;
+    const bool cfg_dh    = cfg_.use_double_horizon_planning && !cfg_dbvns;
+    memory_.planning_use_dbvns =
+        cfg_dbvns || (policy_mode == PolicyMode::DbVNS);
+    memory_.planning_use_double_horizon =
+        (cfg_dh || policy_mode == PolicyMode::DoubleHorizon)
+        && !memory_.planning_use_dbvns;
+    memory_.planning_use_alns  = (policy_mode == PolicyMode::ALNS);
 
     for (auto& a : all_agents_) {
         a->status = AgentStatus::Idle;
@@ -307,6 +322,19 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         ? static_cast<float>(congestion_sum_ / congestion_steps_) : 0.f;
     metrics.mean_trip_steps = (trip_count_ > 0)
         ? static_cast<float>(trip_sum_) / trip_count_ : 0.f;
+    metrics.mean_wait_steps = (wait_count_ > 0)
+        ? static_cast<float>(wait_sum_) / wait_count_ : 0.f;
+    metrics.mean_road_pd_m  = (road_pd_count_ > 0)
+        ? static_cast<float>(road_pd_sum_ / road_pd_count_) : 0.f;
+    // Delivery route efficiency: ideal travel distance / actual travel distance.
+    // Ideal = A* shortest path at full speed (road_pd_m / speed_mps steps).
+    // Actual = mean_trip_steps. Ratio ∈ (0,1]: 1=optimal, <1=detour overhead.
+    {
+        const float ideal_steps = (cfg_.speed_mps > 0.f && metrics.mean_road_pd_m > 0.f)
+            ? metrics.mean_road_pd_m / cfg_.speed_mps : 0.f;
+        metrics.delivery_route_efficiency = (metrics.mean_trip_steps > 0.f && ideal_steps > 0.f)
+            ? std::min(1.f, ideal_steps / metrics.mean_trip_steps) : 0.f;
+    }
 
     // ── Spatial complexity over served tasks ──────────────────────────────
     // Walk all accepted tasks (allocated + finished) and compute spatial spread
@@ -676,6 +704,42 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         return { best_aid, false };
     }
 
+    // ── DbVNS-PDP Lifelong Replanning ─────────────────────────────────────────
+    // Allocation: same as MCA (min marginal insertion cost across all agents).
+    // Planning: handled by DeliveryAgent::receive_task() when planning_use_dbvns.
+    if (policy_mode == PolicyMode::DbVNS) {
+        PDPTask* t = memory_.get_task(task_id);
+        if (!t) return { -1, false };
+
+        int   best_aid  = -1;
+        float best_cost = std::numeric_limits<float>::max();
+        for (int i = 0; i < n_active; ++i) {
+            DeliveryAgent& a = *all_agents_[i];
+            if (!has_cap(a)) continue;
+            float mc = compute_marginal_cost(a, *t);
+            if (mc < best_cost) { best_cost = mc; best_aid = a.agent_id; }
+        }
+        return { best_aid, false };
+    }
+
+    // ── ALNS Lifelong Replanning ─────────────────────────────────────────────
+    // Allocation: identical to MCA / DbVNS (min marginal insertion cost). The
+    // planning side switches to ALNS via the planning_use_alns flag set in run().
+    if (policy_mode == PolicyMode::ALNS) {
+        PDPTask* t = memory_.get_task(task_id);
+        if (!t) return { -1, false };
+
+        int   best_aid  = -1;
+        float best_cost = std::numeric_limits<float>::max();
+        for (int i = 0; i < n_active; ++i) {
+            DeliveryAgent& a = *all_agents_[i];
+            if (!has_cap(a)) continue;
+            float mc = compute_marginal_cost(a, *t);
+            if (mc < best_cost) { best_cost = mc; best_aid = a.agent_id; }
+        }
+        return { best_aid, false };
+    }
+
     // ── Double-Horizon Insertion [Mitrovic-Minic+2004] ─────────────────────────
     // Same scan as MCA but uses compute_double_horizon_cost which trades route
     // length against slack-time preservation for long-term insertions.
@@ -922,6 +986,11 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
     if (is_pickup) {
         task->mark_picked(current_step);
 
+        // Response delay: steps from task appearance to agent arriving at pickup.
+        if (task->timeline.created_step >= 0)
+            wait_sum_   += current_step - task->timeline.created_step,
+            wait_count_ += 1;
+
         // Reward shaping: deliver partial credit at pickup so the decision-time
         // experience gets a signal long before the actual delivery (which can be
         // 500-1500 steps later). Reduces credit-assignment delay drastically.
@@ -993,6 +1062,8 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
             const float eff = task->reward_original * 1000.f / dist_m;
             efficiency_sum_   += static_cast<double>(eff);
             efficiency_count_ += 1;
+            road_pd_sum_      += static_cast<double>(dist_m);
+            road_pd_count_    += 1;
         }
 
         // Reward shaping: add the remaining delivery credit on top of the

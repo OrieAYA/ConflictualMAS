@@ -178,7 +178,41 @@ enum class PolicyMode {
     //   DoubleHorizon trades off route cost vs preserved slack for distant insertions
     //   — better long-term flexibility for accepting future tasks at the cost of
     //   slightly suboptimal short-term routing.
-    DoubleHorizon
+    DoubleHorizon,
+
+    // ── DbVNS-PDP Lifelong Replanning ──────────────────────────────────────────
+    //
+    // Allocation : same as MCA — agent with minimum marginal insertion cost wins.
+    // Planning   : full global reoptimisation via forward DbVNS-PDP (Variable
+    //              Neighbourhood Search with pairing constraints for Pickup and
+    //              Delivery). On each task acceptance the agent replans its entire
+    //              remaining sequence (except the in-flight head which is fixed).
+    //
+    //   Constraint: pickup P_i must be visited before delivery D_i. Deliveries of
+    //   tasks already being carried (picked but not yet delivered) are immediately
+    //   available — no pickup constraint. Delivery of the in-flight pickup is also
+    //   immediately available (pickup guaranteed on arrival).
+    //
+    //   VNS neighbourhood: peel k×N/k_max tail nodes, try up to max_decomps
+    //   alternative greedy completions, accept the first improvement (best-first).
+    //   k resets to 1 on improvement; increments on plateau until k_max.
+    //
+    // This is the lifelong adaptation of the DbVNS-PDP described in our
+    // conversation: "at each task insertion, relaunch the algorithm."
+    DbVNS,
+
+    // ── ALNS-PDP Lifelong Replanning ───────────────────────────────────────────
+    //
+    // Allocation : same as MCA — minimum marginal insertion cost wins.
+    // Planning   : Adaptive Large Neighborhood Search (Ropke & Pisinger 2006)
+    //              adapted to mono-agent GPDP without time windows. Destroy-
+    //              repair iterations with SA acceptance and adaptive roulette
+    //              over 3 destroy operators (random / worst / Shaw) and 2
+    //              repair operators (cheapest / regret-2 positional).
+    //
+    // Used ONLY by the planning-comparison test. Training and global eval keep
+    // their default planning path (MCA / DH / DbVNS).
+    ALNS
 };
 
 class EpisodeRunner {
@@ -259,6 +293,16 @@ private:
     // mean_trip_steps = trip_sum_ / trip_count_ at episode end.
     long   trip_sum_         = 0;
     int    trip_count_       = 0;
+
+    // Appearance→pickup arrival (steps) — response/wait time before first move.
+    // mean_wait_steps = wait_sum_ / wait_count_ at episode end.
+    long   wait_sum_         = 0;
+    int    wait_count_       = 0;
+
+    // A* road distance pickup→delivery for completed tasks (metres).
+    // mean_road_pd_m = road_pd_sum_ / road_pd_count_ at episode end.
+    double road_pd_sum_      = 0.0;
+    int    road_pd_count_    = 0;
 
     // Result of offering a task.
     //   agent_id  : winning agent (>= 0) or -1 if refused
