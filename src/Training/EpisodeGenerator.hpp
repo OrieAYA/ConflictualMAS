@@ -79,6 +79,12 @@ public:
     // Number of valid road nodes available.
     int node_count() const { return static_cast<int>(valid_nodes_.size()); }
 
+    // Reset the internal RNG to a known state. Used by EpisodeRunner when
+    // the caller requests a deterministic episode seed so that all policies
+    // evaluated on the same (city, episode_index) see the SAME task stream
+    // — making policy-vs-policy comparison fair.
+    void reset_seed(uint32_t seed) { rng_.seed(seed); }
+
 private:
     const EpisodeConfig& cfg_;
     const GeoBox&        geo_box_;

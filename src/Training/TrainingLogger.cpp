@@ -42,6 +42,19 @@ void TrainingLogger::write_header() {
           << "pairing_violations,capacity_violations,"
           // RL stats
           << "actor_loss,critic_loss,entropy,adv_std,n_experiences,"
+          // Selectivity diagnostics + scenario context (Option M)
+          << "completion_per_accepted,unfinished_accept_rate,"
+          << "mean_congestion_at_decision,n_ghost_active_mean,"
+          << "congestion_profile,"
+          // Multi-axis performance diagnostics (Option X)
+          << "agent_completed_gini,agent_completed_std,"
+          << "mean_imp_accepted,mean_imp_refused,"
+          << "accept_rate_high_cong,accept_rate_low_cong,"
+          << "mean_extra_steps_per_task,"
+          // Network-level congestion impact
+          << "peak_congestion,mean_overlap_edges,congestion_variance,"
+          << "route_congestion_exposure,"
+          << "max_agent_completed,min_agent_completed,total_fleet_distance_m,"
           << "wallclock_ms\n";
     header_written_ = true;
 }
@@ -83,6 +96,25 @@ void TrainingLogger::write_row(const EpisodeRecord& r) {
           << r.entropy          << ','
           << r.adv_std          << ','
           << r.n_experiences    << ','
+          << r.completion_per_accepted     << ','
+          << r.unfinished_accept_rate      << ','
+          << r.mean_congestion_at_decision << ','
+          << r.n_ghost_active_mean         << ','
+          << r.congestion_profile_label    << ','
+          << r.agent_completed_gini        << ','
+          << r.agent_completed_std         << ','
+          << r.mean_imp_accepted           << ','
+          << r.mean_imp_refused            << ','
+          << r.accept_rate_high_cong       << ','
+          << r.accept_rate_low_cong        << ','
+          << r.mean_extra_steps_per_task   << ','
+          << r.peak_congestion             << ','
+          << r.mean_overlap_edges          << ','
+          << r.congestion_variance         << ','
+          << r.route_congestion_exposure   << ','
+          << r.max_agent_completed         << ','
+          << r.min_agent_completed         << ','
+          << r.total_fleet_distance_m      << ','
           << r.wallclock_ms     << '\n';
 }
 
@@ -219,6 +251,25 @@ EpisodeRecord make_record(const RunResult& result,
     r.compute_time_per_decision_us  = m.compute_time_per_decision_us;
     r.pairing_violations_runtime    = m.pairing_violations_runtime;
     r.capacity_violations_runtime   = m.capacity_violations_runtime;
+    r.completion_per_accepted       = m.completion_per_accepted;
+    r.unfinished_accept_rate        = m.unfinished_accept_rate;
+    r.mean_congestion_at_decision   = m.mean_congestion_at_decision;
+    r.n_ghost_active_mean           = m.n_ghost_active_mean;
+    r.congestion_profile_label      = m.congestion_profile_label;
+    r.agent_completed_gini          = m.agent_completed_gini;
+    r.agent_completed_std           = m.agent_completed_std;
+    r.mean_imp_accepted             = m.mean_imp_accepted;
+    r.mean_imp_refused              = m.mean_imp_refused;
+    r.accept_rate_high_cong         = m.accept_rate_high_cong;
+    r.accept_rate_low_cong          = m.accept_rate_low_cong;
+    r.mean_extra_steps_per_task     = m.mean_extra_steps_per_task;
+    r.peak_congestion               = m.peak_congestion;
+    r.mean_overlap_edges            = m.mean_overlap_edges;
+    r.congestion_variance           = m.congestion_variance;
+    r.route_congestion_exposure     = m.route_congestion_exposure;
+    r.max_agent_completed           = m.max_agent_completed;
+    r.min_agent_completed           = m.min_agent_completed;
+    r.total_fleet_distance_m        = m.total_fleet_distance_m;
 
     const auto& ts = result.train_stats;
     r.actor_loss        = ts.actor_loss;

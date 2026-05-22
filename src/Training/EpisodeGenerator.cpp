@@ -95,7 +95,23 @@ std::vector<ScheduledTask> EpisodeGenerator::generate() {
     std::vector<ScheduledTask> stream;
 
     std::uniform_real_distribution<float> unit(0.f, 1.f);
-    std::uniform_real_distribution<float> imp_dist(0.5f, 2.0f);
+    // Importance distribution: widened range when task-value heterogeneity is on
+    // (Phase 3). Default [0.5, 2.0] keeps the existing behaviour for all other
+    // options.
+    const float imp_lo = cfg_.enable_task_value_heterogeneity
+        ? std::max(0.05f, cfg_.task_imp_min) : 0.5f;
+    const float imp_hi = cfg_.enable_task_value_heterogeneity
+        ? std::max(imp_lo + 0.01f, cfg_.task_imp_max) : 2.0f;
+    std::uniform_real_distribution<float> imp_dist(imp_lo, imp_hi);
+
+    // Per-task reward multiplier — independent of distance — gated by the
+    // task-value-heterogeneity flag. Decouples task VALUE from task EFFORT,
+    // so two same-distance tasks can have very different rewards.
+    const float val_lo = cfg_.enable_task_value_heterogeneity
+        ? std::max(0.1f, cfg_.task_value_mul_min) : 1.0f;
+    const float val_hi = cfg_.enable_task_value_heterogeneity
+        ? std::max(val_lo + 0.01f, cfg_.task_value_mul_max) : 1.0f;
+    std::uniform_real_distribution<float> val_mul_dist(val_lo, val_hi);
 
     // Episode horizon — used for the feasibility filter below.
     const int total_episode_steps = cfg_.total_steps();
@@ -153,7 +169,11 @@ std::vector<ScheduledTask> EpisodeGenerator::generate() {
                 t.arrival_step     = step;
                 t.pickup_node_id   = pu;
                 t.delivery_node_id = del;
-                t.reward           = estimate_reward(pu, del);
+                // When task-value heterogeneity is enabled, multiply the
+                // distance-based reward by a per-task random factor so the
+                // policy faces a real "value vs effort" tradeoff. Otherwise
+                // val_mul_dist is identity (1.0 always) — legacy behaviour.
+                t.reward           = estimate_reward(pu, del) * val_mul_dist(rng_);
                 t.importance       = imp_dist(rng_);
                 t.is_clustered     = clustered;
                 stream.push_back(t);

@@ -51,6 +51,13 @@ struct TrainingConfig {
     // Save a checkpoint after each seed's training.
     bool        save_policy   = true;
 
+    // Save an intermediate checkpoint every N training rounds (insurance against
+    // crashes / interrupts). 0 = no intermediate checkpoints (default behaviour).
+    // Final end-of-seed checkpoint is always saved when save_policy=true.
+    // Intermediate checkpoints go to the same subdirs as final ones, overwriting
+    // previous intermediates — only the latest snapshot is kept on disk.
+    int         checkpoint_every_rounds = 0;
+
     // Eval-only mode: if true, skip training rounds entirely (n_rounds is ignored)
     // and run run_eval + run_stress_eval + run_generalize_eval directly with the
     // loaded weights. Requires load_policy=true with valid paths for the three
@@ -81,6 +88,24 @@ struct TrainingConfig {
     // skip their PPO update phase, no buffer writes, ~3× faster per round.
     // Independent of eval_modes (which controls what's evaluated, not trained).
     std::vector<PolicyMode> train_modes;  // empty = train MAPPO+IPPO+MAPPER
+
+    // ── Train city subset (optional filter) ───────────────────────────────
+    // If non-empty, only train cities whose name appears in this list are
+    // loaded and used for training. Empty (default) = train on all cities
+    // returned by CityRegistry::train_cities() (current behaviour).
+    //
+    // Used by Option M to skip Medium cities (Tokyo_Medium / Kyoto_Medium)
+    // because the DbVNS+TD-A* perf on those graphs is pathological (~3-5
+    // min/episode for <10% throughput) — the cost dominates training
+    // wallclock and provides little extra learning signal compared to the
+    // Small variants.
+    std::vector<std::string> train_city_filter;
+
+    // Same idea but for the held-out generalisation cities (Tokyo_Large,
+    // Fukuoka, NewYork, Paris, London). Empty = load all of them. Set to a
+    // subset to skip the largest / slowest cities while keeping a meaningful
+    // generalisation evaluation.
+    std::vector<std::string> gen_city_filter;
 
     // ── Scenario sampler version ──────────────────────────────────────────
     // Default (false) uses the 4-regime sampler: 15% slack, 35% normal,

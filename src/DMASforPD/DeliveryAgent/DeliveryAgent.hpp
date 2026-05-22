@@ -92,6 +92,13 @@ public:
     AgentSolution              solution;
     DeliveryLocalMemory        local_memory;
 
+    // Per-agent carrying capacity. 0 = inherit TAM-global value
+    // (task_agent.params.max_tasks_per_agent). >0 = override, used by Option M
+    // to inject fleet heterogeneity (each agent gets a capacity drawn in
+    // [min, max] at episode start). receive_task() respects this when
+    // computing capacity-aware insertion positions.
+    int                        max_capacity = 0;
+
     DeliveryAgent() = delete;
     DeliveryAgent(int id, osmium::object_id_type start_node);
 

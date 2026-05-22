@@ -62,6 +62,7 @@ set(SOURCES
     src/Legacy/MHProcs/PSO.cpp
     src/Environment/OverpassAPI/OverpassAPI.cpp
     src/Environment/Congestion/CongestionMap.cpp
+    src/Environment/Congestion/GhostTrafficController.cpp
     src/DMASforPD/GlobalMemory/ObjectiveCache.cpp
     src/DMASforPD/GlobalMemory/GlobalMemory.cpp
     src/DMASforPD/Utility/AgentSolution.cpp

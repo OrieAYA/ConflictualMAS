@@ -6,6 +6,7 @@
 #include "DMASforPD/GlobalMemory/GlobalMemory.hpp"
 #include "DMASforPD/DeliveryAgent/DeliveryAgent.hpp"
 #include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
+#include "Environment/Congestion/GhostTrafficController.hpp"
 #include "Legacy/Common/Pathfinding.hpp"
 #include <array>
 #include <chrono>
@@ -40,6 +41,14 @@ struct EpisodeScenario {
     float       density_mult = 1.0f;  // multiplies phase lambdas
     float       agents_mult  = 1.0f;  // multiplies phase n_agents
     const char* label        = "normal";
+
+    // ── Background traffic profile (Option M scenario diversification) ──────
+    // When EpisodeConfig::enable_ghost_traffic is true, EpisodeRunner spins
+    // up a GhostTrafficController seeded with this profile and the per-city
+    // ghost_n_max budget. Default Flat = neutral / off-policy regimes that
+    // do not want background congestion. Sampler in MultiCityTrainer picks
+    // among the 5 profiles for diversified training.
+    CongestionProfile congestion_profile = CongestionProfile::Flat;
 };
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -228,11 +237,19 @@ public:
     ~EpisodeRunner();
 
     // Run one complete episode.
-    //   city_index  : index of this city in the full registry (for city_id_norm feature).
-    //   num_cities  : total number of cities (for normalisation).
-    //   scenario    : optional difficulty multipliers (density × agents). Default = 1.0/1.0.
+    //   city_index   : index of this city in the full registry (for city_id_norm feature).
+    //   num_cities   : total number of cities (for normalisation).
+    //   scenario     : optional difficulty multipliers (density × agents). Default = 1.0/1.0.
+    //   episode_seed : optional seed for deterministic episode replay. When > 0,
+    //                  resets the internal RNGs (gen_, rng_, ghost controller seed)
+    //                  so that two policies evaluated on the same (city,
+    //                  episode_index, scenario) face identical task streams,
+    //                  ghost traffic, and hetero-capacity draws — making the
+    //                  policy-vs-policy comparison fair. When 0 (default),
+    //                  RNG state advances normally (legacy behaviour).
     RunResult run(int city_index = 0, int num_cities = 1,
-                  EpisodeScenario scenario = {});
+                  EpisodeScenario scenario = {},
+                  uint32_t episode_seed = 0);
 
     // ── Trace accessors (for offline analysis / rendering) ──────────────────
     // Read-only view of the GlobalMemory after a run() call. Use these to
@@ -250,6 +267,11 @@ private:
 
     std::vector<std::array<float, kGlobSz>> global_states_;
     std::mt19937                            rng_; // for Random policy mode
+
+    // Optional synthetic background traffic. Constructed once, reset per
+    // episode if cfg_.enable_ghost_traffic. No-op when the flag is off so
+    // existing options (T, N, X, Y) keep their pre-change behaviour exactly.
+    GhostTrafficController ghost_traffic_;
 
     // task_id → index in ObjectiveDMPolicy buffer for the accept decision.
     // Populated when a task is accepted under MAPPO; used at delivery to call
@@ -303,6 +325,39 @@ private:
     // mean_road_pd_m = road_pd_sum_ / road_pd_count_ at episode end.
     double road_pd_sum_      = 0.0;
     int    road_pd_count_    = 0;
+
+    // Congestion sampled ONLY at accept/refuse decision steps (one sample
+    // per offered task). Lets us report what the policy actually "saw" at
+    // decision time, distinct from mean_congestion (averaged across all
+    // simulation steps).
+    double congestion_at_decision_sum_   = 0.0;
+    int    congestion_at_decision_count_ = 0;
+
+    // Selectivity discrimination — track the importance distribution that
+    // the policy chose to ACCEPT vs REFUSE. A real selective policy should
+    // show mean_imp_accepted > mean_imp_refused.
+    double imp_accepted_sum_ = 0.0;
+    int    imp_accepted_n_   = 0;
+    double imp_refused_sum_  = 0.0;
+    int    imp_refused_n_    = 0;
+
+    // Context-bucketed acceptance: split decisions on whether the network
+    // was congested (mean_load_now >= 1.0) at decision time. accept_rate
+    // delta across buckets quantifies congestion sensitivity.
+    int    accepts_high_cong_ = 0;
+    int    refuses_high_cong_ = 0;
+    int    accepts_low_cong_  = 0;
+    int    refuses_low_cong_  = 0;
+
+    // Network-level congestion impact accumulators (per-step sampling).
+    int     peak_load_episode_   = 0;          // max load_now seen this episode
+    long    overlap_edges_sum_   = 0;          // sum of n_edges_load_ge(2) per step
+    int     overlap_steps_       = 0;          // sample count for above
+    double  load_now_sum_sq_     = 0.0;        // for variance: Σ load²
+    double  load_now_sum_lin_    = 0.0;        //                  Σ load
+    int     load_now_n_          = 0;          //                  N
+    double  route_exposure_sum_  = 0.0;        // Σ load_now on in-transit agents' edges
+    int     route_exposure_n_    = 0;          //   sample count
 
     // Result of offering a task.
     //   agent_id  : winning agent (>= 0) or -1 if refused

@@ -39,6 +39,13 @@ public:
     void add_agent   (osmium::object_id_type way_id, int t_enter, int t_exit);
     void remove_agent(osmium::object_id_type way_id, int t_enter, int t_exit);
 
+    // Ghost-load API — for synthetic background traffic injected by
+    // GhostTrafficController (Option M). Conceptually identical to add_agent /
+    // remove_agent, but kept under a separate name so future code can audit
+    // real-agent vs ghost-agent contributions if needed.
+    void add_ghost_load   (osmium::object_id_type way_id, int t_enter, int t_exit);
+    void remove_ghost_load(osmium::object_id_type way_id, int t_enter, int t_exit);
+
     int get_load(osmium::object_id_type way_id, int t) const;
 
     // BPR-adjusted cost: base_cost * (1 + α * (load/capacity)^β).
@@ -59,6 +66,15 @@ public:
     // populate GlobalState::congestion so the centralised critic sees a real
     // congestion signal (was a 0-padding placeholder before).
     float mean_load_now() const;
+
+    // Maximum load on any single edge at the current step.
+    // Useful to detect peak congestion (vs the mean).
+    int peak_load_now() const;
+
+    // Number of edges with load >= threshold at the current step.
+    // n_edges_load_ge(2) counts overlap incidents (≥2 entities sharing an
+    // edge in the same step). Used to quantify network conflict density.
+    int n_edges_load_ge(int threshold) const;
 
 private:
     std::unordered_map<osmium::object_id_type,

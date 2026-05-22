@@ -67,6 +67,19 @@ struct EpisodeConfig {
     // safe; >1 enables queueing for higher throughput on long-distance graphs).
     int max_tasks_per_agent = 3;
 
+    // ── Heterogeneous per-agent capacity (Option M diversification) ────────
+    // When enable_heterogeneous_capacity is true, each agent receives a
+    // capacity uniformly drawn in [hetero_capacity_min, hetero_capacity_max]
+    // (inclusive) at the start of each episode. The per-agent value lives in
+    // DeliveryAgent::max_capacity and overrides max_tasks_per_agent for that
+    // agent only. The TAM-global max_tasks_per_agent is set to hetero_capacity_max
+    // so dimensioning (path-cache, container sizes) stays valid for all draws.
+    //
+    // OFF by default → existing behaviour (uniform capacity = max_tasks_per_agent).
+    bool enable_heterogeneous_capacity = false;
+    int  hetero_capacity_min           = 3;
+    int  hetero_capacity_max           = 7;
+
     // ── Reward shaping (MAPPO training only) ───────────────────────────────
     //
     // - delivered  : +task.reward_original * task.importance_original
@@ -98,6 +111,73 @@ struct EpisodeConfig {
     // refusal threshold becomes more informative for capacity-constrained cases.
     float pickup_reward_frac = 0.3f;  // fraction of total reward given at pickup
 
+    // ── Latency-aware delivery shaping (Phase 2, opt-in) ───────────────────
+    //
+    // When enable_latency_shaping is true, the delivery credit (the (1−pickup_reward_frac)
+    // share paid out at delivery) is scaled by a latency factor:
+    //
+    //   factor    = 1 − lambda × min(1, trip_steps / max_steps)
+    //   delivery  = base_delivery × factor
+    //
+    // where trip_steps = current_step − task.timeline.picked_step (the time
+    // the agent actually spent moving from pickup to delivery). Pickup credit
+    // and refuse / unfinished penalties are NOT touched.
+    //
+    // Goal: make selectivity profitable. A task that ends up taking forever
+    // pays less reward, so the policy is rewarded for choosing "fast" tasks
+    // and refusing "slow" ones. lambda controls how aggressive the down-weight
+    // is; max_steps anchors the normalisation.
+    //
+    // Defaults (lambda=0.4, max_steps=1500):
+    //   trip_steps =    0 → factor = 1.00 (full credit)
+    //   trip_steps =  750 → factor = 0.80
+    //   trip_steps = 1500 → factor = 0.60
+    //   trip_steps > 1500 → factor = 0.60 (clamped)
+    //
+    // Total accumulated reward on a completed task:
+    //   pickup_credit + delivery_credit_scaled
+    //   = (pickup_reward_frac + (1 − pickup_reward_frac) × factor) × imp × reward
+    // Worst case (factor=0.6) = 0.72 × imp × reward — still positive and well
+    // above the refuse penalty (-0.15 × imp), preserving the existing
+    // indifference structure.
+    //
+    // OFF by default — existing options (T, N, X, Y, S, P) keep their reward
+    // shape exactly. Option M opts in.
+    bool  enable_latency_shaping  = false;
+    float latency_shaping_lambda  = 0.4f;
+    int   latency_shaping_max_steps = 1500;
+
+    // ── Task-value heterogeneity (Phase 3, opt-in) ─────────────────────────
+    //
+    // Without this flag, reward is purely proportional to P→D distance and
+    // importance is sampled in [0.5, 2.0] — so reward × importance lives in
+    // a relatively narrow range, and the policy has no strong "task quality"
+    // axis to discriminate on. Phase 2 reward shaping only penalises slow
+    // tasks; it does NOT distinguish "valuable short task" from "cheap short
+    // task".
+    //
+    // With the flag ON:
+    //   - reward gets multiplied by a per-task random factor in
+    //     [value_mul_min, value_mul_max] so two tasks with identical P→D
+    //     can have very different rewards (decoupled from effort).
+    //   - importance is sampled in [imp_min, imp_max] (wider than the
+    //     default).
+    //
+    // Effective reward × imp range with defaults (mul ∈ [0.5, 2.0],
+    // imp ∈ [0.3, 3.0]): a ratio of ~40× between the worst and best task.
+    // The selectivity story becomes: refuse low-imp × low-mul (cheap and
+    // unrewarding), accept high-imp × high-mul (valuable and unrewarding to
+    // miss). Combined with Phase 2 latency shaping, the policy has TWO axes
+    // of discrimination (value, effort) — what we want.
+    //
+    // OFF by default — existing options (T, N, X, Y, S, P) keep their reward
+    // shape exactly. Option M opts in.
+    bool  enable_task_value_heterogeneity = false;
+    float task_value_mul_min = 0.5f;
+    float task_value_mul_max = 2.0f;
+    float task_imp_min       = 0.3f;
+    float task_imp_max       = 3.0f;
+
     // ── Planning strategy (insertion algorithm) ─────────────────────────────
     // Mutually exclusive (EpisodeRunner enforces: dbvns wins if both set).
     //
@@ -124,6 +204,24 @@ struct EpisodeConfig {
     // ── Optional depot (warehouse mode) ───────────────────────────────────
     bool                   use_depot   = false;
     osmium::object_id_type depot_node  = 0;
+
+    // ── Dynamic background congestion (Option M training diversification) ──
+    // When true, EpisodeRunner spins up a GhostTrafficController that injects
+    // synthetic ghost loads into PDPGlobalMemory::congestion_map following the
+    // scenario's congestion_profile. Hot ways are sampled at episode start so
+    // congestion is spatially heterogeneous (low-cost routes always exist).
+    //
+    // OFF by default → all pre-existing options (T, N, X, Y) keep their
+    // original behaviour unchanged. Only Option M (and any future explicit
+    // opt-in) enables it.
+    //
+    // ghost_n_max_*: per-city-size peak ghost count (adaptive — see
+    // MultiCityTrainer::customize_episode_for_city). Tokyo_Small≈20,
+    // Medium≈40, Large≈80 by default.
+    bool  enable_ghost_traffic = false;
+    int   ghost_n_max          = 40;       // peak simultaneous ghost loads
+    int   ghost_window_steps   = 5;        // duration each ghost occupies a way
+    float ghost_hot_way_frac   = 0.30f;    // fraction of ways used as "hot" pool
 
     // ── Metrics ────────────────────────────────────────────────────────────
     bool collect_metrics    = true;
@@ -273,6 +371,122 @@ struct ComparisonMetrics {
     float actor_loss       = 0.f;
     float critic_loss      = 0.f;
     int   buffer_size      = 0;
+
+    // ── Selectivity quality (Option M diagnostic columns) ──────────────────
+    //
+    // Designed to surface whether a policy's accept/refuse choices are
+    // actually high-quality, independently of throughput. Two policies can
+    // share a throughput but differ markedly here.
+    //
+    //   completion_per_accepted    = tasks_completed / tasks_accepted
+    //                                 1.0 = every accepted task delivered;
+    //                                 <1.0 = the policy committed to tasks it
+    //                                 could not finish (poor selection).
+    //   unfinished_accept_rate     = (accepted - completed) / accepted
+    //                                 The complement above. Useful as a
+    //                                 standalone "waste" indicator.
+    //   mean_congestion_at_decision = mean of CongestionMap::mean_load_now()
+    //                                 sampled only at accept/refuse decision
+    //                                 steps (not at every step). Tells us how
+    //                                 congested the network was when the
+    //                                 policy made each call.
+    //   n_ghost_active_mean        = mean active ghost loads across the
+    //                                 episode (0 when ghost traffic disabled).
+    //   congestion_profile_label   = profile name from the scenario sampler
+    //                                 ("flat", "ramp_up_down", ...). Empty
+    //                                 string when no ghost controller was
+    //                                 active for this episode.
+    float       completion_per_accepted     = 0.f;
+    float       unfinished_accept_rate      = 0.f;
+    float       mean_congestion_at_decision = 0.f;
+    float       n_ghost_active_mean         = 0.f;
+    std::string congestion_profile_label;
+
+    // ── Performance diagnostics — multi-axis evaluation (Option X) ─────────
+    //
+    // Pure throughput hides most of what makes a policy good or bad. These
+    // columns expose the dimensions that distinguish a policy that simply
+    // accepts a lot from one that accepts selectively, balances load across
+    // agents, and produces clean routes.
+    //
+    //   Load balance:
+    //     agent_completed_gini   ∈ [0,1] Gini coefficient on per-agent
+    //                            delivered-task counts. 0 = perfectly even,
+    //                            1 = one agent does everything. Reported
+    //                            over the active fleet (n_active inferred
+    //                            from agents that received at least one
+    //                            allocation).
+    //     agent_completed_std    Standard deviation of per-agent deliveries,
+    //                            divided by the mean (= coeff of variation,
+    //                            unitless). Complements Gini for skewed
+    //                            distributions.
+    //
+    //   Selectivity discrimination (does the policy refuse low-value tasks?):
+    //     mean_imp_accepted      Mean task.importance_original on ACCEPTED
+    //                            offers.
+    //     mean_imp_refused       Mean task.importance_original on REFUSED
+    //                            offers. A policy with real selectivity has
+    //                            mean_imp_accepted > mean_imp_refused.
+    //
+    //   Context-aware acceptance (does the policy adapt to network state?):
+    //     accept_rate_high_cong  Accept rate when decision-time congestion
+    //                            (mean_load_now) ≥ 1.0 (≥ 1 unit of load
+    //                            per loaded way on average). Should drop
+    //                            under heavy traffic if the policy senses
+    //                            saturation.
+    //     accept_rate_low_cong   Same when < 1.0. The gap accept_low - accept_high
+    //                            quantifies congestion sensitivity.
+    //
+    //   Route effort per delivery:
+    //     mean_extra_steps_per_task  (mean_trip_steps − ideal_steps_per_task)
+    //                            in steps. Quantifies detour overhead beyond
+    //                            the straight A* path (delivery_route_efficiency
+    //                            is its ratio counterpart, this is the magnitude).
+    float agent_completed_gini    = 0.f;
+    float agent_completed_std     = 0.f;
+    float mean_imp_accepted       = 0.f;
+    float mean_imp_refused        = 0.f;
+    float accept_rate_high_cong   = 0.f;
+    float accept_rate_low_cong    = 0.f;
+    float mean_extra_steps_per_task = 0.f;
+
+    // ── Network-level congestion impact (policy-attributable analysis) ─────
+    //
+    // These metrics measure HOW the policy's decisions affect the network
+    // state, not just aggregate throughput. Designed for the comparison
+    // "which policy generates the lowest congestion footprint at equal
+    // throughput?" — i.e. for the Pareto-style analysis MAPPO vs MAPPER
+    // vs Hybrid (without re-anchoring on TAA).
+    //
+    //   peak_congestion          Max load_now on any single edge observed
+    //                            over the episode. A high peak indicates
+    //                            policy decisions caused bursty pileups.
+    //   mean_overlap_edges       Mean count of edges with load >= 2 per
+    //                            step (= conflict density). Captures
+    //                            "how often agents shared edges".
+    //   congestion_variance      Std of mean_load_now() across episode
+    //                            steps. High variance = volatile policy
+    //                            choices, low = stable network usage.
+    //   route_congestion_exposure  Mean load_now observed on edges that
+    //                            real agents are actively traversing
+    //                            (in_transit). Distinct from network-wide
+    //                            mean: only counts what the agents
+    //                            actually experience. The most directly
+    //                            policy-attributable congestion metric.
+    //   max_agent_completed      Max tasks delivered by any single agent
+    //                            (raw, not normalised) — complements Gini.
+    //   min_agent_completed      Min tasks delivered (over agents that
+    //                            received at least one allocation).
+    //   total_fleet_distance_m   Sum of pickup→delivery road distance over
+    //                            all completed tasks (proxy for real
+    //                            distance traveled by the fleet).
+    int   peak_congestion         = 0;
+    float mean_overlap_edges      = 0.f;
+    float congestion_variance     = 0.f;
+    float route_congestion_exposure = 0.f;
+    int   max_agent_completed     = 0;
+    int   min_agent_completed     = 0;
+    float total_fleet_distance_m  = 0.f;
 
     // ── Accumulation helpers (called by episode runner) ────────────────────
     void on_task_completed(int latency_steps, float t_ratio);

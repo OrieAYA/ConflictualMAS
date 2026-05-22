@@ -107,87 +107,146 @@ int main()
         trainer.train(cfg);
     }
     else if (rep == "M" || rep == "m") {
-        // ── MAPPER-only training, MAY 17 SETUP IDENTICAL except eval modes ──
+        // ── Option M — Diversified-scenario training (MAPPO + FaithfulMAPPER)
         //
-        // SAME as May 17 baseline run:
+        // PURPOSE
+        //   Train MAPPO and FaithfulMAPPER from scratch under DbVNS planning
+        //   with a richer scenario distribution than the May 17 baseline:
+        //   the same 4-regime density/agents sampler, NOW PAIRED with a
+        //   per-episode CongestionProfile that injects spatially heterogeneous
+        //   "ghost" background traffic (CongestionMap::add_ghost_load).
+        //
+        //   Goal: create the conditions where selective accept/refuse choices
+        //   start mattering — without temporally varying network conditions,
+        //   throughput is largely planner-dominated and the RL signal is
+        //   washed out.
+        //
+        // WHAT'S NEW vs Option T / Option N
+        //   - cfg.episode_cfg.enable_ghost_traffic = true
+        //       → GhostTrafficController active; n_max scaled per city size
+        //         (Tokyo_Small≈20, Medium≈40, Large≈80) via
+        //         customize_episode_for_city.
+        //   - Each scenario draw is paired with a CongestionProfile from
+        //     {Flat, Wave, RampUpDown, ShockBurst, BuildingUp} via the
+        //     regime-aware sampler in MultiCityTrainer.
+        //   - Trains MAPPO + FaithfulMAPPER (MAPPER-enhanced is skipped; the
+        //     paper-faithful Liu+2020 variant is the comparison axis).
+        //
+        // WHAT STAYS THE SAME
         //   - 60 rounds × 1 seed × 6 train cities (Tokyo/Kyoto/LosAngeles × S/M)
-        //   - Scenario sampler active (slack/normal/stress_light/stress_heavy)
-        //   - Reward shaping unchanged
-        //   - 3 eval windows (rounds 20, 40, 60) with stress eval per window
-        //   - Generalize eval on held-out cities at end of seed
+        //   - DbVNS planning at the routing level (priority 1 — eliminates
+        //     the train/test mismatch we identified).
+        //   - REWARD SHAPING UNCHANGED — Phase 2 only if Phase 1 needs it.
+        //   - train_only (no in-loop eval); Option X handles eval afterward.
         //
-        // DIFFERENT from May 17:
-        //   - Trains ONLY MAPPER (no IPPO, no MAPPO retrained)
-        //   - 4 eval modes instead of 8 — drops LaCAM, PIBT, CongestionAware,
-        //     Random, InsertionGreedy. Keeps the 4 the user specified:
-        //     MAPPER + MAPPO + TamAlwaysAccept + Greedy.
+        // OUTPUTS
+        //   results/policy_seedXX.bin          (MAPPO)
+        //   results/mapper_faithful/...bin     (FaithfulMAPPER)
+        //   results/episodes_seedXX.csv         — new columns:
+        //     completion_per_accepted, unfinished_accept_rate,
+        //     mean_congestion_at_decision, n_ghost_active_mean,
+        //     congestion_profile.
         //
-        // For MAPPO comparison during eval, loads the May 17 checkpoint
-        // (policy_seed42_mappo_working_2026-05-17.bin from results/accepted/).
-        // For the 12-feature run, do this on the mapper-12d-train worktree
-        // with the 13→12 patch applied — the May 17 checkpoint is 12-d.
-        //
-        // Estimated wallclock: ~7-9h.
-        // May 17 reference (MAPPO + 8 eval modes) = 14.7h. The 4-mode eval
-        // halves eval time; MAPPER training is faster per episode than MAPPO
-        // (fewer experiences per buffer flush).
+        // ESTIMATED WALLCLOCK
+        //   ~6-8 h (MAPPO + FaithfulMAPPER × 60 rounds × 6 cities). Ghost
+        //   controller is O(n_max) per step → negligible overhead vs the
+        //   per-step A* and policy work.
         const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
         const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
-        const std::string output_dir = "C:\\ConflictualMAS\\results";  // change for 12-d
+        const std::string output_dir = "C:\\ConflictualMAS\\results";
         CityRegistry::set_osm_root(osm_root);
 
         TrainingConfig cfg;
         cfg.cache_root      = cache_root;
         cfg.output_dir      = output_dir;
-        cfg.n_rounds        = 60;
-        cfg.n_seeds         = 1;
+        cfg.n_rounds        = 80;   // bumped from 60 — extra rounds for convergence
+        cfg.n_seeds         = 2;    // 2 seeds (rng=42, 43) → mean ± std for analysis
         cfg.save_policy     = true;
         cfg.verbose         = true;
 
-        // ── Pure training run — all eval phases disabled ───────────────────
-        // train/eval are fully decoupled: Option M produces three RL
-        // checkpoints (MAPPER-enhanced, MAPPER-faithful, IPPO-faithful),
-        // Option X/Y do the full comparison eval afterwards on saved weights.
-        // Skips periodic, final, stress, and generalize evals.
+        // Pure training run — all eval phases disabled.
         cfg.train_only = true;
+        // Skip loading held-out cities (Tokyo_Large/Fukuoka/NewYork/Paris/London).
+        // train_only already skips the eval phases, but the trainer still LOADS
+        // these multi-GB OSM graphs by default — wasteful when no eval runs
+        // against them. Saves ~5-10 min of startup + several GB of RAM.
+        cfg.enable_generalization = false;
 
-        // ── Planning method = forward DbVNS-PDP (lifelong global replan) ────
-        // All RL policies train under DbVNS planning at the routing level:
-        // every accept triggers a global forward DbVNS-PDP replan of the
-        // remaining sequence. This matches the architectural separation
-        //   TAM → policy (MAPPO/MAPPER/Hybrid) decides accept/refuse
-        //   DbVNS handles routing exclusively
-        // and gives the policy a higher-quality route than DH insertion.
+        // Drop Medium-sized training cities (Tokyo_Medium, Kyoto_Medium,
+        // LosAngeles_Medium). The diagnostic K run showed DbVNS+TD-A* is
+        // pathological on these graphs (~3-5 min/episode for <10% throughput),
+        // which would push Option M wallclock to 24-30h. Small cities give
+        // the same architectural signal in ~6-8h.
+        cfg.train_city_filter = {
+            "Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"
+        };
+
+        // Planning = forward DbVNS-PDP (priority 1 from the analysis).
         cfg.episode_cfg.use_dbvns_planning = true;
 
-        // ── Two MAPPER variants trained simultaneously, head-to-head ───────
-        //   MAPPER         — enhanced variant (elite + Gaussian mutation N(0, 0.02²))
-        //   FaithfulMAPPER — paper-faithful (probabilistic copy of best, no mutation)
-        // MAPPO is intentionally NOT retrained — we compare against the May 17
-        // MAPPO checkpoint (results/accepted/policy_seed42_mappo_working_2026-05-17.bin)
-        // during Option X eval. IPPO was dropped from this run (too slow); its
-        // paper-faithful refactor remains in the codebase for later use.
-        // All three share kPolicySz = 12 features.
-        // Each round runs one episode PER training mode PER train city: 2 modes
-        // × 6 cities = 12 episodes per round.
+        // ── Diversified scenarios ──────────────────────────────────────────
+        // 4-regime density/agents sampler PLUS ghost-traffic congestion mix.
+        // disable_slack_regime stays false so we get the full 5-profile
+        // distribution including slack/wave (where the policy learns to be
+        // picky about task quality, not just to refuse under saturation).
+        cfg.disable_slack_regime = false;
+        cfg.episode_cfg.enable_ghost_traffic = true;
+        // Per-city ghost_n_max is set inside customize_episode_for_city; the
+        // value below is the default for any unknown-sized graph and is
+        // overwritten before the episode runs.
+        cfg.episode_cfg.ghost_n_max          = 40;
+        cfg.episode_cfg.ghost_window_steps   = 5;
+        cfg.episode_cfg.ghost_hot_way_frac   = 0.30f;
+
+        // ── Phase 2: latency-aware delivery shaping ────────────────────────
+        // Makes selectivity profitable: a task that ends up taking forever
+        // pays less reward. Pickup credit (0.3 × imp × reward) and penalties
+        // (refuse, unfinished) are NOT touched, so the indifference structure
+        // is preserved. Conservative defaults: lambda=0.4, max=1500 steps.
+        cfg.episode_cfg.enable_latency_shaping  = true;
+        cfg.episode_cfg.latency_shaping_lambda  = 0.4f;
+        cfg.episode_cfg.latency_shaping_max_steps = 1500;
+
+        // ── Heterogeneous per-agent capacity (Option M diversification) ────
+        // Each agent gets a uniform draw in [3, 7] at the start of each
+        // episode. Fleet mixes light couriers (capa 3) with heavy carriers
+        // (capa 7) — the policy must learn to discriminate based on the
+        // winning agent's free slots, not just its idle/active status.
+        cfg.episode_cfg.enable_heterogeneous_capacity = true;
+        cfg.episode_cfg.hetero_capacity_min = 3;
+        cfg.episode_cfg.hetero_capacity_max = 7;
+
+        // ── Phase 3: task-value heterogeneity ──────────────────────────────
+        // Decouple task VALUE from task EFFORT so the policy faces a real
+        // "good task vs bad task" tradeoff (in addition to "fast vs slow"
+        // already injected by Phase 2 latency shaping). Per-task reward
+        // multiplier ∈ [0.5, 2.0] independent of distance, importance ∈
+        // [0.3, 3.0]. Effective reward × imp range ≈ 40× between worst and
+        // best task → strong discrimination signal.
+        cfg.episode_cfg.enable_task_value_heterogeneity = true;
+        cfg.episode_cfg.task_value_mul_min = 0.5f;
+        cfg.episode_cfg.task_value_mul_max = 2.0f;
+        cfg.episode_cfg.task_imp_min = 0.3f;
+        cfg.episode_cfg.task_imp_max = 3.0f;
+
+        // ── Intermediate checkpoint every 20 rounds ────────────────────────
+        // Insurance against crash / interrupt during the ~2h training run.
+        // Each snapshot overwrites the same MAPPO + FaithfulMAPPER subdirs,
+        // so disk usage stays flat (only latest is kept).
+        cfg.checkpoint_every_rounds = 20;
+
+        // ── Train modes: MAPPO + FaithfulMAPPER ────────────────────────────
+        //   MAPPO          — centralised critic, shared actor (CTDE).
+        //   FaithfulMAPPER — paper-faithful Liu+2020 (probabilistic copy of
+        //                    best, no mutation). Article-aligned baseline.
+        // MAPPER-enhanced and IPPO are intentionally excluded.
         cfg.train_modes = {
-            PolicyMode::MAPPER,
+            PolicyMode::MAPPO,
             PolicyMode::FaithfulMAPPER
         };
 
-        // Match May 17 scenario distribution exactly: 3-regime sampler (no slack)
-        // Verified from log: 0/360 slack samples → slack regime was absent on May 17.
-        cfg.disable_slack_regime = true;
-
-        // No checkpoint loading needed: all three RL policies start from Xavier
-        // init, and no eval phase compares against MAPPO during training.
+        // Fresh Xavier init; Option X picks up the resulting checkpoints.
         cfg.load_policy = false;
-
-        // Output subdirectories (created automatically at save time):
-        //   results/mapper_enhanced/mapper_seed42.bin
-        //   results/mapper_faithful/mapper_seed42.bin
-        // MAPPO May 17 checkpoint at results/accepted/ remains untouched.
-        // IPPO is not in train_modes → no checkpoint produced this run.
 
         MultiCityTrainer trainer;
         trainer.train(cfg);
@@ -243,43 +302,47 @@ int main()
         trainer.train(cfg);
     }
     else if (rep == "Y" || rep == "y") {
-        // ── SoTA-ONLY benchmark (no training, no RL) ────────────────────────
-        // Companion to option X (which evaluates our RL policies). Together
-        // X + Y produce the complete data table for the thesis:
-        //   X.csv → MAPPO, MAPPER, Hybrid metrics
-        //   Y.csv → 7 SoTA architectures metrics
-        //   merge → "our architecture vs state-of-the-art" comparison.
+        // ── Full comparative benchmark — RL policies vs SoTA baselines ────────
+        // Reformulated from the legacy "SoTA-only" Y to a comprehensive eval
+        // including the trained RL policies side-by-side with published
+        // baselines. Single CSV, single seed sequence, deterministic
+        // per-(city, scenario, ep) seeding → every mode plays exactly the
+        // same task streams + ghost traffic + hetero capacity for fair
+        // policy-vs-policy comparison.
         //
-        // SoTA modes (7) — strictly published state-of-the-art baselines:
-        //   - MCA            [Chen+2021 ICRA]            Marginal-cost assignment
-        //   - LaCAM          [Okumura+2022 spirit]       Min full-trip cost
-        //   - PIBT           [Okumura+2022 adapted]      Load-balanced priority
-        //   - CongestionAware [Liu, Saha+]               Pickup-leg dynamic cost
-        //   - TrafficFlow    [Chen+2024 AAAI GP-PIBT]    Full-trip dynamic cost
-        //   - TokenPassing   [Ma+2017 AAMAS]             Decoupled MAPD min h
-        //   - DoubleHorizon  [Mitrovic-Minic+2004]       Horizon-aware insertion
+        // MODES (10) :
+        //   ── Our RL policies (with checkpoints from Option M Phase 2+3) ──
+        //   - MAPPO            [our work]   centralised critic + shared actor
+        //   - FaithfulMAPPER   [our work]   per-agent evolutionary, paper-faithful
+        //   - Hybrid           [our work]   frozen MAPPO + online REINFORCE residual
+        //   - TamAlwaysAccept  [ablation]   TAM routing only, no policy
         //
-        // NO TRAINING — eval_only = true; no checkpoint loading needed because
-        // SoTA baselines are deterministic / heuristic (no weights). The TAM is
-        // still used to route offers (these modes opt out of policy decisions).
+        //   ── Published SoTA baselines (heuristic / hand-crafted) ─────────
+        //   - MCA              [Chen+2021 ICRA]      Marginal-cost assignment
+        //   - CongestionAware  [Liu, Saha+]          Pickup-leg dynamic cost
+        //   - TrafficFlow      [Chen+2024 AAAI]      Full-trip dynamic cost
+        //   - TokenPassing     [Ma+2017 AAMAS]       Decoupled MAPD min h
+        //   - PIBT             [Okumura+2022]        Load-balanced priority
+        //   - DoubleHorizon    [Mitrovic-Minic+2004] Horizon-aware insertion
         //
-        // Scenarios (4) — IDENTICAL to option X's planned coverage:
+        // ENVIRONMENT (matched to Option M training) :
+        //   - DbVNS planning
+        //   - Ghost traffic ON (5 profiles, regime-aware sampling)
+        //   - Heterogeneous per-agent capacity [3, 7]
+        //
+        // SCENARIOS (4) :
         //   slack         : density 0.5 × agents 1.2
         //   normal        : density 1.0 × agents 1.0
         //   stress_light  : density 1.5 × agents 0.8
         //   stress_heavy  : density 2.0 × agents 0.6
         //
-        // Cities: 6 train (Tokyo/Kyoto/LA × Small/Medium) + 5 held-out
-        //         (Tokyo_Large/Fukuoka/NewYork/Paris/London) = 11 cities.
+        // CITIES (7) — same as Option X for direct comparability :
+        //   Train scope  : Tokyo_Small, Kyoto_Small, LosAngeles_Small
+        //   Held-out     : Tokyo_Large, Paris, NewYork, London
         //
-        // Coverage: 7 modes × 11 cities × 4 scenarios × 3 eps = 924 episodes.
-        // Estimated wallclock: ~8-10h on a single seed (no RL training).
-        //
-        // Metrics (same set as option X — captured in episodes_seedXX.csv):
-        //   throughput, agent_utilisation, latency, congestion (objective),
-        //   bbox / convex_hull / mean_pd / mean_nn_pickup (spatial),
-        //   wallclock / per_task / per_decision (temporal),
-        //   pairing_violations / capacity_violations (validity).
+        // Coverage: 10 modes × 7 cities × 4 scenarios × 3 eps = 840 episodes.
+        // Estimated wallclock: ~12-20h on a single seed (MAPPO pathology
+        // on large held-out cities is the dominant cost).
         const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
         const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
         const std::string output_dir = "C:\\ConflictualMAS\\results";
@@ -292,20 +355,25 @@ int main()
         cfg.n_eval_episodes  = 3;
         cfg.verbose          = true;
 
-        cfg.eval_only            = true;   // NO training
-        cfg.skip_stress_eval     = true;   // stress is covered via eval_scenarios
-        cfg.skip_generalize_eval = false;  // include held-out cities
+        cfg.eval_only            = true;
+        cfg.skip_stress_eval     = true;   // the 4-scenario sweep already covers stress
+        cfg.skip_generalize_eval = false;
 
-        // SoTA-only line-up: NO RL policies (MAPPO/MAPPER/Hybrid/IPPO excluded),
-        // NO trivial ablations (Greedy/Random/InsertionGreedy/TamAlwaysAccept
-        // also excluded — they live in option X). Strictly published SoTA.
+        // Our RL policies + ablation + 6 published SoTA baselines.
         cfg.eval_modes = {
-            PolicyMode::CongestionAware, // [Liu, Saha+]
-            PolicyMode::TrafficFlow,     // [Chen+2024]
-            PolicyMode::TokenPassing,    // [Ma+2017]
+            // Our RL policies (with checkpoints — see paths below)
+            PolicyMode::MAPPO,
+            PolicyMode::FaithfulMAPPER,
+            PolicyMode::Hybrid,
+            PolicyMode::TamAlwaysAccept,
+            // Published SoTA heuristics
+            PolicyMode::CongestionAware,
+            PolicyMode::TrafficFlow,
+            PolicyMode::TokenPassing,
+            PolicyMode::PIBT
         };
 
-        // 4-scenario sweep aligned with option X coverage.
+        // 4-scenario sweep — same as legacy Option Y.
         cfg.eval_scenarios = {
             EpisodeScenario{0.5f, 1.2f, "slack"},
             EpisodeScenario{1.0f, 1.0f, "normal"},
@@ -313,9 +381,35 @@ int main()
             EpisodeScenario{2.0f, 0.6f, "stress_heavy"},
         };
 
-        // No checkpoint loading — SoTA baselines carry no learned weights.
-        // (load_policy stays false by default; safety check passes because
-        //  none of the cfg.eval_modes entries are RL policies.)
+        // Match Option X environment exactly so RL policies are evaluated
+        // under the same conditions they saw during training, and SoTA
+        // baselines face the same congestion challenges.
+        cfg.episode_cfg.use_dbvns_planning            = true;
+        cfg.episode_cfg.enable_ghost_traffic          = true;
+        cfg.episode_cfg.ghost_n_max                   = 40;
+        cfg.episode_cfg.ghost_window_steps            = 5;
+        cfg.episode_cfg.ghost_hot_way_frac            = 0.30f;
+        cfg.episode_cfg.enable_heterogeneous_capacity = true;
+        cfg.episode_cfg.hetero_capacity_min           = 3;
+        cfg.episode_cfg.hetero_capacity_max           = 7;
+
+        // Load RL checkpoints from Option M Phase 2+3 training.
+        cfg.load_policy                 = true;
+        cfg.policy_path                 = "C:\\ConflictualMAS\\results\\mappo\\"
+                                          "policy_seed42.bin";
+        cfg.mapper_policy_path          = "C:\\ConflictualMAS\\results\\mapper_enhanced\\"
+                                          "mapper_seed42.bin";
+        cfg.faithful_mapper_policy_path = "C:\\ConflictualMAS\\results\\mapper_faithful\\"
+                                          "mapper_seed42.bin";
+
+        // Same city scope as Option X for direct comparability.
+        cfg.train_city_filter     = {
+            "Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"
+        };
+        cfg.enable_generalization = true;
+        cfg.gen_city_filter       = {
+            "Tokyo_Large", "Paris", "NewYork", "London"
+        };
 
         MultiCityTrainer trainer;
         trainer.train(cfg);
@@ -398,35 +492,69 @@ int main()
         //
         // Greedy dropped: 100-700s per episode on Medium cities, dominates wallclock.
         // Hybrid added: Hybrid base is auto-wired from MAPPO checkpoint below.
+        // MAPPER dropped: its checkpoint comes from a legacy training run with
+        // different conditions (no Phase 2, no hetero capa) — mixing it in
+        // would muddy the comparison. The 4-way scope is the focused user ask
+        // (MAPPO vs FaithfulMAPPER vs TAA) plus Hybrid as a MAPPO + online
+        // adaptation control.
         cfg.eval_modes = {
             PolicyMode::MAPPO,
-            PolicyMode::MAPPER,
             PolicyMode::FaithfulMAPPER,
             PolicyMode::Hybrid,
             PolicyMode::TamAlwaysAccept
         };
 
-        // ── Planning: forward DbVNS-PDP at eval (architectural separation).
-        // TAM → policy (MAPPO/MAPPER/Hybrid) decides accept/refuse, then
-        // DbVNS replans the full remaining sequence on every acceptance.
-        // The MAPPO checkpoint trained under MCA suffers a distribution shift
-        // (planner is stronger than at train time); MAPPER/Hybrid baselines
-        // were retrained under the same DbVNS planner so the comparison
-        // ("policy ↔ planner pair held fixed") is fair for them.
-        cfg.episode_cfg.use_dbvns_planning = true;
+        // ── Eval conditions matched to Option M training ──────────────────────
+        // DbVNS planning, ghost traffic, heterogeneous capacity — all ON so
+        // the policies are evaluated under the same environment they saw
+        // during training. Latency reward shaping has NO effect at eval time
+        // (train_mode=false → no buffer writes), so we leave it off.
+        cfg.episode_cfg.use_dbvns_planning            = true;
+        cfg.episode_cfg.enable_ghost_traffic          = true;
+        cfg.episode_cfg.ghost_n_max                   = 40;
+        cfg.episode_cfg.ghost_window_steps            = 5;
+        cfg.episode_cfg.ghost_hot_way_frac            = 0.30f;
+        cfg.episode_cfg.enable_heterogeneous_capacity = true;
+        cfg.episode_cfg.hetero_capacity_min           = 3;
+        cfg.episode_cfg.hetero_capacity_max           = 7;
 
-        // Load trained policies from disk.
-        //   policy_path                  → MAPPO May 17 baseline (accepted dir)
-        //   mapper_policy_path           → MAPPER enhanced (mapper_enhanced/)
-        //   faithful_mapper_policy_path  → MAPPER paper-faithful (mapper_faithful/)
-        //   ippo_policy_path             → empty (IPPO not in eval_modes)
+        // Load checkpoints from the latest Option M training (Phase 2 +
+        // hetero capa, 2 seeds, 80 rounds). MAPPER-enhanced is loaded from
+        // a legacy run for reference but is excluded from eval_modes below.
+        //   policy_path                  → MAPPO (Option M Phase 2)
+        //   mapper_policy_path           → legacy (not in eval_modes)
+        //   faithful_mapper_policy_path  → FaithfulMAPPER (Option M Phase 2)
         cfg.load_policy                 = true;
-        cfg.policy_path                 = "C:\\ConflictualMAS\\results\\acceptedMAPPPO\\"
-                                          "policy_seed42_mappo_working_2026-05-17.bin";
+        cfg.policy_path                 = "C:\\ConflictualMAS\\results\\mappo\\"
+                                          "policy_seed42.bin";
         cfg.mapper_policy_path          = "C:\\ConflictualMAS\\results\\mapper_enhanced\\"
                                           "mapper_seed42.bin";
         cfg.faithful_mapper_policy_path = "C:\\ConflictualMAS\\results\\mapper_faithful\\"
                                           "mapper_seed42.bin";
+
+        // Eval scope: 3 train cities (all Small) + 4 held-out cities.
+        // Excluded: the Medium training cities (Tokyo/Kyoto/LA Medium) — never
+        // loaded due to DbVNS pathology (~3-5 min/episode for <10% throughput).
+        // Held-out includes Tokyo_Large to test generalisation to a larger
+        // scale of the same city family.
+        //
+        // Expected wallclock (4 modes × 5 eps × 2 scenarios per city for train,
+        // 4 modes × 5 eps × 1 scenario per city for held-out):
+        //   Tokyo_Small       ~10 min
+        //   Kyoto_Small       ~50 min
+        //   LosAngeles_Small  ~35 min
+        //   Tokyo_Large       ~1-3 h  (large graph, DbVNS slowness risk)
+        //   Paris             ~20 min
+        //   NewYork           ~1-3 h
+        //   London            ~3-5 h (largest graph)
+        // Total: ~7-13 h. Run overnight.
+        cfg.train_city_filter     = {
+            "Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"
+        };
+        cfg.enable_generalization = true;
+        cfg.gen_city_filter       = {
+            "Tokyo_Large", "Paris", "NewYork", "London"
+        };
 
         MultiCityTrainer trainer;
         trainer.train(cfg);

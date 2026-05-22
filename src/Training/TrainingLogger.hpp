@@ -51,6 +51,32 @@ struct EpisodeRecord {
     int   pairing_violations_runtime  = 0;
     int   capacity_violations_runtime = 0;
 
+    // ── Selectivity diagnostics (Option M / RL utility analysis) ───────────
+    // Surfaces the *quality* of accept/refuse choices instead of just volume.
+    float       completion_per_accepted     = 0.f;
+    float       unfinished_accept_rate      = 0.f;
+    float       mean_congestion_at_decision = 0.f;
+    float       n_ghost_active_mean         = 0.f;
+    std::string congestion_profile_label;
+
+    // Multi-axis performance diagnostics (Option X)
+    float agent_completed_gini      = 0.f;
+    float agent_completed_std       = 0.f;
+    float mean_imp_accepted         = 0.f;
+    float mean_imp_refused          = 0.f;
+    float accept_rate_high_cong     = 0.f;
+    float accept_rate_low_cong      = 0.f;
+    float mean_extra_steps_per_task = 0.f;
+
+    // Network-level congestion impact (policy-attributable analysis)
+    int   peak_congestion          = 0;
+    float mean_overlap_edges       = 0.f;
+    float congestion_variance      = 0.f;
+    float route_congestion_exposure = 0.f;
+    int   max_agent_completed      = 0;
+    int   min_agent_completed      = 0;
+    float total_fleet_distance_m   = 0.f;
+
     // MAPPO training signal (zeroed for non-MAPPO or eval mode)
     float actor_loss           = 0.f;
     float critic_loss          = 0.f;

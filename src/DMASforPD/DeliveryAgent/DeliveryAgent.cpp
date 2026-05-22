@@ -122,8 +122,9 @@ void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
         }
         tmp_env.refresh_costs(memory);
 
+        const int tam_cap = memory.task_agent.params.max_tasks_per_agent;
         const int max_cap = std::max(
-            1, memory.task_agent.params.max_tasks_per_agent);
+            1, this->max_capacity > 0 ? this->max_capacity : tam_cap);
         int load_at_start = 0;
         for (const PDPTask* t : local_memory.tasks) {
             if (t == &task) continue;
@@ -217,8 +218,9 @@ void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
         tmp_env.refresh_costs(memory);
 
         // Capacity & load at plan_start (i.e. AFTER arriving at the inflight head).
+        const int tam_cap = memory.task_agent.params.max_tasks_per_agent;
         const int max_cap = std::max(
-            1, memory.task_agent.params.max_tasks_per_agent);
+            1, this->max_capacity > 0 ? this->max_capacity : tam_cap);
         int load_at_start = 0;
         for (const PDPTask* t : local_memory.tasks) {
             if (t == &task) continue;                  // new task not picked yet
@@ -249,8 +251,9 @@ void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
         return;
     }
 
+    const int tam_carry_cap = memory.task_agent.params.max_tasks_per_agent;
     const int max_carry = std::max(
-        1, memory.task_agent.params.max_tasks_per_agent);
+        1, this->max_capacity > 0 ? this->max_capacity : tam_carry_cap);
 
     // Idle agent ⇒ trivial: queue just becomes [P, D].
     if (n == 0) {

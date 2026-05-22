@@ -456,6 +456,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\OverpassAPI\OverpassAPI.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Congestion\CongestionMap.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Congestion\GhostTrafficController.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\GlobalMemory\ObjectiveCache.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\GlobalMemory\GlobalMemory.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Utility\AgentSolution.cpp" />

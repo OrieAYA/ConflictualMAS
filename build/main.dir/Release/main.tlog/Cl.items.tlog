@@ -33,6 +33,7 @@ C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp;C:\ConflictualMAS\build\main.dir\Re
 C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp;C:\ConflictualMAS\build\main.dir\Release\PSO.obj
 C:\ConflictualMAS\src\Environment\OverpassAPI\OverpassAPI.cpp;C:\ConflictualMAS\build\main.dir\Release\OverpassAPI.obj
 C:\ConflictualMAS\src\Environment\Congestion\CongestionMap.cpp;C:\ConflictualMAS\build\main.dir\Release\CongestionMap.obj
+C:\ConflictualMAS\src\Environment\Congestion\GhostTrafficController.cpp;C:\ConflictualMAS\build\main.dir\Release\GhostTrafficController.obj
 C:\ConflictualMAS\src\DMASforPD\GlobalMemory\ObjectiveCache.cpp;C:\ConflictualMAS\build\main.dir\Release\ObjectiveCache.obj
 C:\ConflictualMAS\src\DMASforPD\GlobalMemory\GlobalMemory.cpp;C:\ConflictualMAS\build\main.dir\Release\GlobalMemory.obj
 C:\ConflictualMAS\src\DMASforPD\Utility\AgentSolution.cpp;C:\ConflictualMAS\build\main.dir\Release\AgentSolution.obj

@@ -65,11 +65,23 @@ EpisodeRunner::~EpisodeRunner() {
 // ── Main episode loop ─────────────────────────────────────────────────────────
 
 RunResult EpisodeRunner::run(int city_index, int num_cities,
-                             EpisodeScenario scenario) {
+                             EpisodeScenario scenario,
+                             uint32_t episode_seed) {
     auto t0 = std::chrono::steady_clock::now();
     arrivals_.clear();
     global_states_.clear();
     task_accept_buf_idx_.clear();
+
+    // Deterministic episode replay: when the caller passes a non-zero seed,
+    // re-anchor all RNGs so that this (city, scenario, episode) combination
+    // produces the same task stream / ghost traffic / hetero capacity draw
+    // regardless of which policy is being evaluated. The ghost controller is
+    // reset later in the function with a derived seed that incorporates the
+    // scenario label, so we only need to reset gen_ and rng_ here.
+    if (episode_seed != 0) {
+        gen_.reset_seed(episode_seed);
+        rng_.seed(episode_seed);
+    }
     // Discard any eval experiences that accumulated since the last train_epoch.
     // (Eval runs with train_mode=false skip train_epoch, so the shared buffer
     //  accumulates stale data that must not contaminate the next training update.)
@@ -129,6 +141,24 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     wait_count_       = 0;
     road_pd_sum_      = 0.0;
     road_pd_count_    = 0;
+    congestion_at_decision_sum_   = 0.0;
+    congestion_at_decision_count_ = 0;
+    imp_accepted_sum_  = 0.0;
+    imp_accepted_n_    = 0;
+    imp_refused_sum_   = 0.0;
+    imp_refused_n_     = 0;
+    accepts_high_cong_ = 0;
+    refuses_high_cong_ = 0;
+    accepts_low_cong_  = 0;
+    refuses_low_cong_  = 0;
+    peak_load_episode_   = 0;
+    overlap_edges_sum_   = 0;
+    overlap_steps_       = 0;
+    load_now_sum_sq_     = 0.0;
+    load_now_sum_lin_    = 0.0;
+    load_now_n_          = 0;
+    route_exposure_sum_  = 0.0;
+    route_exposure_n_    = 0;
 
     // Propagate the always_accept flag to the TAM for TamAlwaysAccept ablation.
     // Must be set before the episode loop so all TAMs created during the episode
@@ -161,6 +191,23 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         && !memory_.planning_use_dbvns;
     memory_.planning_use_alns  = (policy_mode == PolicyMode::ALNS);
 
+    // Per-agent capacity sampling (heterogeneous fleet, Option M).
+    // When disabled, max_capacity stays 0 → DeliveryAgent falls back to
+    // task_agent.params.max_tasks_per_agent (= cfg_.max_tasks_per_agent).
+    // When enabled, each agent gets a uniform draw in [min, max]. TAM global
+    // is bumped to hetero_capacity_max so container sizing stays valid.
+    if (cfg_.enable_heterogeneous_capacity) {
+        const int cmin = std::max(1, cfg_.hetero_capacity_min);
+        const int cmax = std::max(cmin, cfg_.hetero_capacity_max);
+        memory_.task_agent.params.max_tasks_per_agent = cmax;
+        std::uniform_int_distribution<int> cap_dist(cmin, cmax);
+        for (auto& a : all_agents_)
+            a->max_capacity = cap_dist(rng_);
+    } else {
+        for (auto& a : all_agents_)
+            a->max_capacity = 0;  // inherit TAM global
+    }
+
     for (auto& a : all_agents_) {
         a->status = AgentStatus::Idle;
         a->in_transit.reset();
@@ -178,6 +225,33 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     int  total_steps = cfg_.total_steps();
     int  stream_idx  = 0;
 
+    // ── Optional background traffic controller (Option M diversification) ──
+    // Built on top of CongestionMap::add_ghost_load; only spins up when the
+    // EpisodeConfig flag is set. Hot ways are resampled per episode so the
+    // congested zones rotate across the training distribution. RNG seed
+    // composed from the runner's master seed + city + scenario label so
+    // identical (seed, city, scenario) replay yields identical traffic.
+    const bool ghost_on = cfg_.enable_ghost_traffic && scenario.density_mult >= 0.f;
+    if (ghost_on) {
+        GhostTrafficController::Config gcfg;
+        gcfg.n_max            = cfg_.ghost_n_max;
+        gcfg.total_steps      = total_steps;
+        gcfg.window_steps     = cfg_.ghost_window_steps;
+        gcfg.hot_way_fraction = cfg_.ghost_hot_way_frac;
+        gcfg.profile          = scenario.congestion_profile;
+
+        std::hash<std::string> shash;
+        const uint32_t episode_seed = static_cast<uint32_t>(rng_()
+            ^ shash(scenario.label ? scenario.label : "")
+            ^ (static_cast<uint32_t>(city_index) << 16));
+        ghost_traffic_.reset(memory_.geo_box,
+                             memory_.congestion_map,
+                             gcfg,
+                             episode_seed);
+    } else {
+        ghost_traffic_.purge();
+    }
+
     float city_norm = (num_cities > 1)
         ? static_cast<float>(city_index) / (num_cities - 1) : 0.f;
 
@@ -186,6 +260,10 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
 
     for (int step = 0; step < total_steps; ++step) {
         memory_.advance_time(step);
+
+        // Inject background traffic for this step before any agent decision
+        // so policy features and TAM cost queries see the up-to-date load.
+        if (ghost_on) ghost_traffic_.step(step);
 
         // Determine current phase parameters.
         float phase_label = cfg_.phases.empty() ? 0.f : cfg_.phases.front().label;
@@ -232,10 +310,24 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
             task->reward_original     = st.reward;
             task->importance_original = st.importance;
 
+            // Snapshot congestion at the exact step the policy is consulted.
+            // Distinct from per-step mean_congestion: this only counts the
+            // network load when an accept/refuse call actually happens, which
+            // is what the policy effectively conditioned on.
+            const float cong_at_decision = memory_.congestion_map.mean_load_now();
+            const bool  high_cong_now    = (cong_at_decision >= 1.0f);
+            congestion_at_decision_sum_   += cong_at_decision;
+            congestion_at_decision_count_ += 1;
+
             OfferResult res = offer_task(task_id, st.reward, st.importance,
                                          n_active, cur_gs);
             const int winner = res.agent_id;
             if (winner >= 0) {
+                // Selectivity + context diagnostics (Option X analysis).
+                imp_accepted_sum_ += st.importance;
+                imp_accepted_n_   += 1;
+                if (high_cong_now) ++accepts_high_cong_;
+                else               ++accepts_low_cong_;
                 ++n_accepted_;
                 DeliveryAgent* agent = memory_.get_delivery_agent(winner);
 
@@ -283,6 +375,10 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
                               agent->current_node, st.pickup_node_id, step);
             } else {
                 ++n_refused_;
+                imp_refused_sum_ += st.importance;
+                imp_refused_n_   += 1;
+                if (high_cong_now) ++refuses_high_cong_;
+                else               ++refuses_low_cong_;
                 // Task stays in available_tasks but won't be re-offered.
             }
         }
@@ -290,8 +386,30 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         // Sample network congestion once per step (mean edge load over all edges
         // with at least one planned agent passage). Averaged at episode end to
         // produce ComparisonMetrics::mean_congestion.
-        congestion_sum_   += memory_.congestion_map.mean_load_now();
+        const float load_now_step = memory_.congestion_map.mean_load_now();
+        congestion_sum_   += load_now_step;
         congestion_steps_ += 1;
+
+        // Network impact metrics (per-step samples).
+        const int peak_step = memory_.congestion_map.peak_load_now();
+        if (peak_step > peak_load_episode_) peak_load_episode_ = peak_step;
+        overlap_edges_sum_ += memory_.congestion_map.n_edges_load_ge(2);
+        overlap_steps_     += 1;
+        load_now_sum_lin_  += static_cast<double>(load_now_step);
+        load_now_sum_sq_   += static_cast<double>(load_now_step) * load_now_step;
+        load_now_n_        += 1;
+
+        // Route exposure: load_now on edges currently traversed by real agents.
+        // Captures the congestion that the policy's chosen routes are actually
+        // exposed to (distinct from network-wide average).
+        for (const auto& a : all_agents_) {
+            if (a->in_transit.has_value()) {
+                const int load_here = memory_.congestion_map.get_load(
+                    a->in_transit->edge_id, step);
+                route_exposure_sum_ += static_cast<double>(load_here);
+                route_exposure_n_   += 1;
+            }
+        }
 
         // Count active agents for utilisation metric.
         int n_now = 0;
@@ -326,6 +444,137 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         ? static_cast<float>(wait_sum_) / wait_count_ : 0.f;
     metrics.mean_road_pd_m  = (road_pd_count_ > 0)
         ? static_cast<float>(road_pd_sum_ / road_pd_count_) : 0.f;
+
+    // ── Selectivity diagnostics (new metrics for Option M analysis) ────────
+    metrics.completion_per_accepted = (n_accepted_ > 0)
+        ? static_cast<float>(latency_count_) / static_cast<float>(n_accepted_) : 0.f;
+    metrics.unfinished_accept_rate  = (n_accepted_ > 0)
+        ? 1.f - metrics.completion_per_accepted : 0.f;
+    metrics.mean_congestion_at_decision = (congestion_at_decision_count_ > 0)
+        ? static_cast<float>(congestion_at_decision_sum_ / congestion_at_decision_count_) : 0.f;
+    metrics.n_ghost_active_mean         = ghost_on ? ghost_traffic_.mean_active() : 0.f;
+    metrics.congestion_profile_label    = ghost_on
+        ? std::string(congestion_profile_label(scenario.congestion_profile))
+        : std::string();
+
+    // ── Multi-axis performance diagnostics (Option X) ──────────────────────
+    metrics.mean_imp_accepted = (imp_accepted_n_ > 0)
+        ? static_cast<float>(imp_accepted_sum_ / imp_accepted_n_) : 0.f;
+    metrics.mean_imp_refused  = (imp_refused_n_ > 0)
+        ? static_cast<float>(imp_refused_sum_  / imp_refused_n_)  : 0.f;
+    {
+        const int hi = accepts_high_cong_ + refuses_high_cong_;
+        const int lo = accepts_low_cong_  + refuses_low_cong_;
+        metrics.accept_rate_high_cong = (hi > 0)
+            ? static_cast<float>(accepts_high_cong_) / hi : 0.f;
+        metrics.accept_rate_low_cong  = (lo > 0)
+            ? static_cast<float>(accepts_low_cong_)  / lo : 0.f;
+    }
+
+    // Per-agent load balance over delivered tasks. Counts include only
+    // agents that received at least one allocation during the episode
+    // (Gini / CV over the active fleet, not the full agent pool — the
+    // pool oversizes by 1.5× for scenario.agents_mult > 1 head-room,
+    // which would otherwise bias toward "very unequal").
+    {
+        std::vector<int> per_agent_completed(all_agents_.size(), 0);
+        std::vector<int> per_agent_allocated(all_agents_.size(), 0);
+        for (const PDPTask* t : memory_.finished_tasks)
+            if (t && t->agent_id >= 0 && t->agent_id < (int)all_agents_.size())
+                ++per_agent_completed[t->agent_id];
+        for (const PDPTask* t : memory_.allocated_tasks)
+            if (t && t->agent_id >= 0 && t->agent_id < (int)all_agents_.size())
+                ++per_agent_allocated[t->agent_id];
+
+        std::vector<int> active_completed;
+        active_completed.reserve(per_agent_completed.size());
+        for (size_t i = 0; i < per_agent_completed.size(); ++i)
+            if (per_agent_completed[i] > 0 || per_agent_allocated[i] > 0)
+                active_completed.push_back(per_agent_completed[i]);
+
+        if (!active_completed.empty()) {
+            std::sort(active_completed.begin(), active_completed.end());
+            const size_t n = active_completed.size();
+            double sum = 0.0;
+            for (int v : active_completed) sum += v;
+            const double mean = sum / static_cast<double>(n);
+
+            // Gini (sorted ascending: sum_i (2*i - n + 1) * x_i) / (n * sum)
+            double gnum = 0.0;
+            for (size_t i = 0; i < n; ++i)
+                gnum += (2.0 * static_cast<double>(i + 1) - static_cast<double>(n) - 1.0)
+                        * static_cast<double>(active_completed[i]);
+            metrics.agent_completed_gini = (sum > 0.0)
+                ? static_cast<float>(gnum / (static_cast<double>(n) * sum))
+                : 0.f;
+
+            // Coefficient of variation (std / mean), normalised so cities
+            // of different fleet sizes are comparable.
+            double var = 0.0;
+            for (int v : active_completed) {
+                const double d = static_cast<double>(v) - mean;
+                var += d * d;
+            }
+            var /= static_cast<double>(n);
+            metrics.agent_completed_std = (mean > 0.0)
+                ? static_cast<float>(std::sqrt(var) / mean) : 0.f;
+        }
+    }
+
+    // Extra steps per delivered task = actual trip - ideal trip (in steps).
+    // Magnitude version of delivery_route_efficiency (which is a ratio).
+    {
+        const float ideal_steps = (cfg_.speed_mps > 0.f && metrics.mean_road_pd_m > 0.f)
+            ? metrics.mean_road_pd_m / cfg_.speed_mps : 0.f;
+        metrics.mean_extra_steps_per_task = (metrics.mean_trip_steps > 0.f && ideal_steps > 0.f)
+            ? std::max(0.f, metrics.mean_trip_steps - ideal_steps) : 0.f;
+    }
+
+    // ── Network-level congestion impact ─────────────────────────────────
+    metrics.peak_congestion = peak_load_episode_;
+    metrics.mean_overlap_edges = (overlap_steps_ > 0)
+        ? static_cast<float>(overlap_edges_sum_) / overlap_steps_ : 0.f;
+    if (load_now_n_ > 1) {
+        const double m = load_now_sum_lin_ / load_now_n_;
+        const double var = std::max(0.0, load_now_sum_sq_ / load_now_n_ - m * m);
+        metrics.congestion_variance = static_cast<float>(std::sqrt(var));
+    } else {
+        metrics.congestion_variance = 0.f;
+    }
+    metrics.route_congestion_exposure = (route_exposure_n_ > 0)
+        ? static_cast<float>(route_exposure_sum_ / route_exposure_n_) : 0.f;
+
+    // ── Per-agent task distribution (raw min/max + total fleet distance) ──
+    {
+        int mx = 0, mn = std::numeric_limits<int>::max();
+        bool any = false;
+        std::vector<int> per_agent_completed_for_extrema(all_agents_.size(), 0);
+        std::vector<int> per_agent_allocated_for_extrema(all_agents_.size(), 0);
+        for (const PDPTask* t : memory_.finished_tasks)
+            if (t && t->agent_id >= 0 && t->agent_id < (int)all_agents_.size())
+                ++per_agent_completed_for_extrema[t->agent_id];
+        for (const PDPTask* t : memory_.allocated_tasks)
+            if (t && t->agent_id >= 0 && t->agent_id < (int)all_agents_.size())
+                ++per_agent_allocated_for_extrema[t->agent_id];
+        for (size_t i = 0; i < per_agent_completed_for_extrema.size(); ++i) {
+            // Only count agents that participated (received at least one allocation).
+            if (per_agent_completed_for_extrema[i] > 0 || per_agent_allocated_for_extrema[i] > 0) {
+                if (per_agent_completed_for_extrema[i] > mx) mx = per_agent_completed_for_extrema[i];
+                if (per_agent_completed_for_extrema[i] < mn) mn = per_agent_completed_for_extrema[i];
+                any = true;
+            }
+        }
+        metrics.max_agent_completed = any ? mx : 0;
+        metrics.min_agent_completed = any ? mn : 0;
+    }
+    // Total fleet distance = sum of P→D road distances over completed tasks.
+    // road_pd_sum_ is in metres (accumulated above for completed tasks).
+    metrics.total_fleet_distance_m = static_cast<float>(road_pd_sum_);
+
+    // Clean up ghost loads now that the episode is done so the next run()
+    // starts from a clean CongestionMap (memory_.reset_episode() also clears
+    // it, but purging here keeps ghost_traffic_ internal state consistent).
+    ghost_traffic_.purge();
     // Delivery route efficiency: ideal travel distance / actual travel distance.
     // Ideal = A* shortest path at full speed (road_pd_m / speed_mps steps).
     // Actual = mean_trip_steps. Ratio ∈ (0,1]: 1=optimal, <1=detour overhead.
@@ -1081,8 +1330,27 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
             policy_mode == PolicyMode::Hybrid) {
             auto it = task_accept_buf_idx_.find(task_id);
             if (it != task_accept_buf_idx_.end()) {
+                // Latency-aware delivery shaping (Phase 2).
+                // factor = 1 − λ × min(1, trip_steps / max_steps).
+                // Only applied when the flag is on AND the task was actually
+                // picked up (timeline.picked_step >= 0). Pickup credit and
+                // penalties stay untouched.
+                float shape_factor = 1.f;
+                if (cfg_.enable_latency_shaping
+                    && task->timeline.picked_step >= 0
+                    && cfg_.latency_shaping_max_steps > 0)
+                {
+                    const float trip = static_cast<float>(
+                        current_step - task->timeline.picked_step);
+                    const float trip_norm = std::min(1.f,
+                        trip / static_cast<float>(cfg_.latency_shaping_max_steps));
+                    shape_factor = 1.f - cfg_.latency_shaping_lambda * trip_norm;
+                    // Defensive clamp — never negative even with bad config.
+                    if (shape_factor < 0.f) shape_factor = 0.f;
+                }
                 const float delivery_credit = (1.f - cfg_.pickup_reward_frac)
-                    * task->reward_original * task->importance_original;
+                    * task->reward_original * task->importance_original
+                    * shape_factor;
                 if (policy_mode == PolicyMode::MAPPO) {
                     ObjectiveDMPolicy::shared().add_to_reward(
                         it->second, delivery_credit);

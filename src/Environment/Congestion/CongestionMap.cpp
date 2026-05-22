@@ -34,6 +34,18 @@ void CongestionMap::remove_agent(
     update_load(way_id, t_enter, t_exit, -1);
 }
 
+void CongestionMap::add_ghost_load(
+    osmium::object_id_type way_id, int t_enter, int t_exit
+) {
+    update_load(way_id, t_enter, t_exit, +1);
+}
+
+void CongestionMap::remove_ghost_load(
+    osmium::object_id_type way_id, int t_enter, int t_exit
+) {
+    update_load(way_id, t_enter, t_exit, -1);
+}
+
 int CongestionMap::get_load(osmium::object_id_type way_id, int t) const {
     auto it = load_.find(way_id);
     if (it == load_.end()) return 0;
@@ -83,4 +95,22 @@ float CongestionMap::mean_load_now() const {
     return (n_edges > 0)
         ? static_cast<float>(sum_load) / static_cast<float>(n_edges)
         : 0.f;
+}
+
+int CongestionMap::peak_load_now() const {
+    int peak = 0;
+    for (const auto& [way_id, steps] : load_) {
+        auto jt = steps.find(t_now_);
+        if (jt != steps.end() && jt->second > peak) peak = jt->second;
+    }
+    return peak;
+}
+
+int CongestionMap::n_edges_load_ge(int threshold) const {
+    int n = 0;
+    for (const auto& [way_id, steps] : load_) {
+        auto jt = steps.find(t_now_);
+        if (jt != steps.end() && jt->second >= threshold) ++n;
+    }
+    return n;
 }

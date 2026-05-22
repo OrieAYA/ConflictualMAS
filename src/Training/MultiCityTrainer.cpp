@@ -35,6 +35,9 @@ static void customize_episode_for_city(EpisodeConfig& ep, const CityConfig& cc) 
         ep.max_task_dist_m = 1500.f;
         ep.hot_zone_radius = 300.f;
         ep.max_tasks_per_agent = 3;
+        // Background-traffic budget scaled to fleet size (~4× real fleet
+        // peak). Only used when ep.enable_ghost_traffic is true (Option M).
+        ep.ghost_n_max = 20;
     } else if (a < 300.0) {
         // Medium (~144 km²): ~250m–3500m trips, ~90 tasks/episode.
         ep.phases = {
@@ -46,6 +49,7 @@ static void customize_episode_for_city(EpisodeConfig& ep, const CityConfig& cc) 
         ep.max_task_dist_m = 3500.f;
         ep.hot_zone_radius = 500.f;
         ep.max_tasks_per_agent = 3;
+        ep.ghost_n_max = 40;
     } else {
         // Large (>=300 km²): ~400m–5000m trips, ~80 tasks/episode.
         ep.phases = {
@@ -57,6 +61,7 @@ static void customize_episode_for_city(EpisodeConfig& ep, const CityConfig& cc) 
         ep.max_task_dist_m = 5000.f;
         ep.hot_zone_radius = 800.f;
         ep.max_tasks_per_agent = 4;
+        ep.ghost_n_max = 80;
     }
 }
 
@@ -161,6 +166,48 @@ static EpisodeScenario sample_scenario(std::mt19937& rng, bool disable_slack = f
     return s;
 }
 
+// ── Congestion-profile sampler ────────────────────────────────────────────────
+//
+// Picks one of the five CongestionProfile shapes per episode following a regime-
+// aware mix. Used by Option M (and any caller that enables ghost traffic) to
+// rotate the temporal congestion pattern across training episodes so the policy
+// sees a wide range of "when does congestion strike" patterns.
+//
+//   Slack/Normal regimes lean toward Flat / Wave (gentle traffic).
+//   Stress regimes lean toward RampUpDown / ShockBurst / BuildingUp (real
+//   stress conditions where the policy must learn to anticipate).
+//
+// Distribution per regime (weights ∝ probabilities):
+//   slack         : 60% Flat, 25% Wave,       10% RampUpDown,  5% BuildingUp
+//   normal        : 35% Flat, 25% Wave,       20% RampUpDown, 10% ShockBurst, 10% BuildingUp
+//   stress_light  : 15% Flat, 15% Wave,       30% RampUpDown, 20% ShockBurst, 20% BuildingUp
+//   stress_heavy  :  5% Flat, 10% Wave,       30% RampUpDown, 30% ShockBurst, 25% BuildingUp
+static CongestionProfile sample_congestion_profile(
+    std::mt19937& rng, const char* regime_label)
+{
+    std::uniform_real_distribution<float> u01(0.f, 1.f);
+    const float p = u01(rng);
+    const std::string regime = regime_label ? regime_label : "normal";
+
+    auto pick = [&](float w_flat, float w_wave, float w_ramp,
+                    float w_shock, float w_build)
+    {
+        const float total = w_flat + w_wave + w_ramp + w_shock + w_build;
+        const float t     = p * total;
+        float acc = w_flat;       if (t < acc) return CongestionProfile::Flat;
+        acc += w_wave;            if (t < acc) return CongestionProfile::Wave;
+        acc += w_ramp;            if (t < acc) return CongestionProfile::RampUpDown;
+        acc += w_shock;           if (t < acc) return CongestionProfile::ShockBurst;
+        return CongestionProfile::BuildingUp;
+    };
+
+    if (regime == "slack")        return pick(0.60f, 0.25f, 0.10f, 0.00f, 0.05f);
+    if (regime == "normal")       return pick(0.35f, 0.25f, 0.20f, 0.10f, 0.10f);
+    if (regime == "stress_light") return pick(0.15f, 0.15f, 0.30f, 0.20f, 0.20f);
+    if (regime == "stress_heavy") return pick(0.05f, 0.10f, 0.30f, 0.30f, 0.25f);
+    return CongestionProfile::Flat;
+}
+
 // Fixed stress scenario for stress evaluation: ~4× over-saturation.
 static const EpisodeScenario kStressScenario{ 2.0f, 0.6f, "stress" };
 
@@ -243,11 +290,21 @@ int MultiCityTrainer::run_eval(
         for (PolicyMode m : modes) {
             const char* name = policy_mode_label(m);
             runner.policy_mode = m;
+            int sc_idx = 0;
             for (const EpisodeScenario& sc : scenarios) {
                 const std::string phase = single_scenario
                     ? "eval" : std::string("eval_") + sc.label;
                 for (int e = 0; e < cfg.n_eval_episodes; ++e) {
-                    RunResult res = runner.run(ca.index, num_cities, sc);
+                    // Deterministic per-(city, scenario, episode) seed so that
+                    // every policy mode sees the SAME task stream, ghost
+                    // profile, and hetero-capacity draws for the same eval
+                    // slot — the only difference across modes is the policy.
+                    const uint32_t ep_seed = static_cast<uint32_t>(
+                        1u + e
+                        + 101u * (sc_idx + 1)
+                        + 10007u * (ca.index + 1)
+                        + 1000003u * static_cast<uint32_t>(seed));
+                    RunResult res = runner.run(ca.index, num_cities, sc, ep_seed);
                     EpisodeRecord rec = make_record(
                         res, seed, global_ep++,
                         ca.config->name, phase, name,
@@ -260,6 +317,7 @@ int MultiCityTrainer::run_eval(
                               << "  acc=" << res.metrics.accept_rate
                               << "  " << res.wallclock_ms << "ms\n";
                 }
+                ++sc_idx;
             }
         }
     }
@@ -307,11 +365,19 @@ int MultiCityTrainer::run_generalize_eval(
         for (PolicyMode m : modes) {
             const char* name = policy_mode_label(m);
             runner.policy_mode = m;
+            int sc_idx = 0;
             for (const EpisodeScenario& sc : scenarios) {
                 const std::string phase = single_scenario
                     ? "generalize" : std::string("generalize_") + sc.label;
                 for (int e = 0; e < cfg.n_eval_episodes; ++e) {
-                    RunResult res = runner.run(ca.index, num_gen, sc);
+                    // Deterministic seed: identical task stream per
+                    // (gen_city, scenario, ep) across all modes — see run_eval.
+                    const uint32_t ep_seed = static_cast<uint32_t>(
+                        1u + e
+                        + 101u * (sc_idx + 1)
+                        + 10007u * (ca.index + 1)
+                        + 1000003u * static_cast<uint32_t>(seed));
+                    RunResult res = runner.run(ca.index, num_gen, sc, ep_seed);
                     EpisodeRecord rec = make_record(
                         res, seed, global_ep++,
                         ca.config->name, phase, name,
@@ -324,6 +390,7 @@ int MultiCityTrainer::run_generalize_eval(
                               << "  acc=" << res.metrics.accept_rate
                               << "  " << res.wallclock_ms << "ms\n";
                 }
+                ++sc_idx;
             }
         }
     }
@@ -369,7 +436,13 @@ int MultiCityTrainer::run_stress_eval(
             const char* name = policy_mode_label(m);
             runner.policy_mode = m;
             for (int e = 0; e < cfg.n_eval_episodes; ++e) {
-                RunResult res = runner.run(ca.index, num_cities, kStressScenario);
+                // Deterministic stress seed (single scenario = sc_idx 0).
+                const uint32_t ep_seed = static_cast<uint32_t>(
+                    1u + e
+                    + 101u
+                    + 10007u * (ca.index + 1)
+                    + 1000003u * static_cast<uint32_t>(seed));
+                RunResult res = runner.run(ca.index, num_cities, kStressScenario, ep_seed);
                 EpisodeRecord rec = make_record(
                     res, seed, global_ep++,
                     ca.config->name, "stress", name,
@@ -393,7 +466,17 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
     fs::create_directories(cfg.output_dir);
 
     // ── 1. Load train cities ──────────────────────────────────────────────
-    const auto train_ptrs = CityRegistry::train_cities();
+    auto train_ptrs_all = CityRegistry::train_cities();
+    std::vector<const CityConfig*> train_ptrs;
+    if (cfg.train_city_filter.empty()) {
+        train_ptrs = train_ptrs_all;
+    } else {
+        for (const auto* cc : train_ptrs_all) {
+            for (const auto& want : cfg.train_city_filter) {
+                if (cc->name == want) { train_ptrs.push_back(cc); break; }
+            }
+        }
+    }
     const int num_cities  = static_cast<int>(train_ptrs.size());
 
     std::cout << "Loading " << num_cities << " train cities from " << cfg.cache_root << "\n";
@@ -406,7 +489,17 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
     // ── 2. Load generalisation cities (skip gracefully if OSM missing) ────
     std::vector<std::unique_ptr<CityAssets>> gen_assets;
     if (cfg.enable_generalization) {
-        const auto gen_ptrs = CityRegistry::comparison_cities();
+        auto gen_ptrs_all = CityRegistry::comparison_cities();
+        std::vector<const CityConfig*> gen_ptrs;
+        if (cfg.gen_city_filter.empty()) {
+            gen_ptrs = gen_ptrs_all;
+        } else {
+            for (const auto* cc : gen_ptrs_all) {
+                for (const auto& want : cfg.gen_city_filter) {
+                    if (cc->name == want) { gen_ptrs.push_back(cc); break; }
+                }
+            }
+        }
         if (!gen_ptrs.empty()) {
             std::cout << "Loading generalisation cities (skip if missing)...\n";
             for (int i = 0; i < (int)gen_ptrs.size(); ++i) {
@@ -627,8 +720,16 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                 // MAPPO's centralised critic is the most expensive to train;
                 // running it last lets it benefit from a fully warmed cache,
                 // balancing wall-clock time across the three policies.
-                const EpisodeScenario sc = sample_scenario(
+                EpisodeScenario sc = sample_scenario(
                     scenario_rng, cfg.disable_slack_regime);
+                // Pair every scenario with a congestion profile drawn from the
+                // regime-aware distribution. Inert if the EpisodeConfig flag
+                // `enable_ghost_traffic` is false — EpisodeRunner only spins up
+                // its GhostTrafficController when the flag is set. Stored on
+                // the scenario itself so the same draw is reused across the
+                // 4 policy episodes that share `sc` below.
+                sc.congestion_profile = sample_congestion_profile(
+                    scenario_rng, sc.label);
 
                 // ── IPPO training episode (skipped if not in train_modes) ───
                 if (train_ippo) {
@@ -728,6 +829,56 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                 if (!cfg.skip_stress_eval)
                     global_ep = run_stress_eval(cfg, assets, runners, global_ep, seed, logger);
                 logger.flush();
+            }
+
+            // ── Per-round CSV flush ───────────────────────────────────────────
+            // Force the OS buffer to disk so the user can monitor progress live
+            // (default ofstream buffering is ~4 KB → ~10+ rows held internally
+            // until full). This is cheap (single fsync per round) and gives
+            // immediate feedback in long training runs.
+            logger.flush();
+
+            // ── Optional periodic checkpoint ──────────────────────────────────
+            // Insurance against crash / interrupt. Overwrites the same paths as
+            // the final end-of-seed checkpoint, so only the latest snapshot is
+            // kept on disk. Off by default (checkpoint_every_rounds = 0).
+            if (cfg.save_policy && !cfg.eval_only
+                && cfg.checkpoint_every_rounds > 0
+                && (round + 1) % cfg.checkpoint_every_rounds == 0
+                && (round + 1) < n_train_rounds)
+            {
+                auto should_save = [&](PolicyMode m){
+                    if (cfg.train_modes.empty()) return true;
+                    return std::find(cfg.train_modes.begin(),
+                                      cfg.train_modes.end(), m)
+                           != cfg.train_modes.end();
+                };
+                auto ensure_dir = [](const std::string& p) {
+                    std::error_code ec; fs::create_directories(p, ec);
+                };
+                if (should_save(PolicyMode::MAPPO)) {
+                    const std::string subdir = cfg.output_dir + "/mappo";
+                    ensure_dir(subdir);
+                    policy.save(subdir + "/policy_seed" + std::to_string(seed) + ".bin");
+                }
+                if (should_save(PolicyMode::IPPO)) {
+                    const std::string subdir = cfg.output_dir + "/ippo_faithful";
+                    ensure_dir(subdir);
+                    ippo.save(subdir + "/ippo_seed" + std::to_string(seed) + ".bin");
+                }
+                if (should_save(PolicyMode::MAPPER)) {
+                    const std::string subdir = cfg.output_dir + "/mapper_enhanced";
+                    ensure_dir(subdir);
+                    mapper.save(subdir + "/mapper_seed" + std::to_string(seed) + ".bin");
+                }
+                if (should_save(PolicyMode::FaithfulMAPPER)) {
+                    const std::string subdir = cfg.output_dir + "/mapper_faithful";
+                    ensure_dir(subdir);
+                    faithful.save(subdir + "/mapper_seed" + std::to_string(seed) + ".bin");
+                }
+                if (cfg.verbose)
+                    std::cout << "  [Checkpoint @ round " << (round + 1)
+                              << "] intermediate snapshot written\n";
             }
         }
 
