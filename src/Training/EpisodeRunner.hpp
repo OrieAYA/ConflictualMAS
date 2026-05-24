@@ -360,11 +360,26 @@ private:
     int     route_exposure_n_    = 0;          //   sample count
 
     // Result of offering a task.
-    //   agent_id  : winning agent (>= 0) or -1 if refused
+    //   agent_id  : winning agent (>= 0) or -1 if refused / deferred
     //   tam_owned : true if the TAM already performed assign_task + receive_task
     //               + commit_plan inside offer_to_agent (MAPPO/TamAlwaysAccept path).
     //               The caller must skip those operations to avoid double-bookkeeping.
-    struct OfferResult { int agent_id; bool tam_owned; };
+    //   deferred  : true only in TAM multi-candidate Format B when every
+    //               candidate scored < 0.5. The task is neither accepted nor
+    //               genuinely refused — the caller must re-offer it later
+    //               instead of counting it. Always false otherwise.
+    struct OfferResult { int agent_id; bool tam_owned; bool deferred = false; };
+
+    // Deferred-task retry queue (TAM multi-candidate Format B only). Empty in
+    // every other mode, so the retry loop is a no-op there.
+    struct RetryEntry { int task_id; int retry_step; };
+    std::vector<RetryEntry> retry_queue_;
+
+    // Post-allocation bookkeeping shared by the new-task-arrival loop and the
+    // retry loop: resolves was_idle, records the policy buffer index, and
+    // starts the pickup leg if the agent was idle.
+    void commit_accepted_task(int task_id, int winner, bool tam_owned,
+                              osmium::object_id_type pickup_node, int step);
 
     // Offer task following the policy_mode protocol:
     //   MAPPO/TamAlwaysAccept → drive the TAM (incremental Dijkstra from pickup

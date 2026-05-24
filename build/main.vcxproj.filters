@@ -34,6 +34,15 @@
     <ClCompile Include="C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\TamMcTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\GeoBoxConnectivityTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\BaselinesMultiAgentTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Training\CityConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

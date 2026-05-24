@@ -30,6 +30,12 @@ TaskAllocationModule::TaskAllocationModule(PDPTask& task, Params p)
 bool TaskAllocationModule::step(PDPGlobalMemory& memory, float speed_mps) {
     if (allocated_ || exhausted_) return allocated_;
 
+    // Multi-candidate mode branches off entirely — the legacy first-fit path
+    // below is left byte-for-byte unchanged so that multi_candidate=false
+    // restores the exact previous behaviour.
+    if (params_.multi_candidate)
+        return step_multi_candidate(memory, speed_mps);
+
     // Lazy init of the spatial search budget on the first step.
     // task_dist = haversine(pickup, delivery); budget = task_dist * mult.
     if (max_search_cost_ < 0.0f) {
@@ -246,4 +252,212 @@ bool TaskAllocationModule::do_recall(PDPGlobalMemory& memory, float speed_mps) {
         if (offer_to_agent(aid, memory, speed_mps)) return true;
     }
     return false;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Multi-candidate mode (params_.multi_candidate == true)
+// ════════════════════════════════════════════════════════════════════════════
+
+float TaskAllocationModule::mc_ratio(float x) const {
+    const float scale = std::max(1.0f, params_.mc_ratio_scale);
+    const float span  = params_.mc_ratio_max - params_.mc_ratio_min;
+    // x = 0 → mc_ratio_max ; x → ∞ → mc_ratio_min (monotone decreasing).
+    return params_.mc_ratio_min + span / (1.0f + x / scale);
+}
+
+void TaskAllocationModule::mc_collect_candidates(PDPGlobalMemory& memory) {
+    mc_candidates_.clear();
+
+    // (combined_cost, agent_id) pairs, sorted ascending so the closest
+    // candidates are kept when capping at mc_max_candidates.
+    std::vector<std::pair<float, int>> scored;
+    scored.reserve(matrix_.size());
+
+    for (const auto& [aid, entry] : matrix_) {
+        const bool has_p = entry.pickup_cost   >= 0.0f;
+        const bool has_d = entry.delivery_cost >= 0.0f;
+
+        // Include any agent reachable from at least one Dijkstra side.
+        // Agents in transit after pickup (delivery node still in objectives,
+        // pickup node removed) only have delivery_cost set — excluding them
+        // caused ~24 % allocation failures even on a fully connected graph.
+        if (!has_p && !has_d) continue;
+
+        // Direction constraint: pickup before delivery in the agent's plan
+        // (plan_order_valid already returns true for an empty plan).
+        if (!plan_order_valid(aid, memory)) continue;
+
+        const float pc = has_p ? entry.pickup_cost   : 0.0f;
+        const float dc = has_d ? entry.delivery_cost : 0.0f;
+        scored.push_back({ pc + dc, aid });
+    }
+
+    std::sort(scored.begin(), scored.end());
+    for (const auto& [cost, aid] : scored) {
+        (void)cost;
+        if (static_cast<int>(mc_candidates_.size()) >= params_.mc_max_candidates)
+            break;
+        mc_candidates_.push_back(aid);
+    }
+}
+
+float TaskAllocationModule::mc_score_agent(int agent_id, PDPGlobalMemory& memory) {
+    DeliveryAgent* agent = memory.get_delivery_agent(agent_id);
+    if (!agent) return 0.0f;
+
+    auto& entry = matrix_[agent_id];
+    entry.call_count++;
+
+    float score;
+    if (params_.always_accept) {
+        // TamAlwaysAccept under multi-candidate: every candidate scores 1.0,
+        // so the argmax degenerates to "nearest candidate" — a proper
+        // always-accept + nearest-assignment baseline.
+        score = 1.0f;
+    } else {
+        std::vector<int> prev;
+        prev.reserve(matrix_.size());
+        for (const auto& [aid, _] : matrix_)
+            if (aid != agent_id) prev.push_back(aid);
+
+        TaskOffer offer{task_.task_id, task_.reward, task_.importance,
+                        std::move(prev), recall_count_, params_.max_recalls};
+        // Same policy call path as the legacy offer_to_agent — no change to
+        // how policies are invoked.
+        score = agent->try_accept_task(offer, memory);
+    }
+    entry.score = score;
+    return score;
+}
+
+void TaskAllocationModule::mc_allocate(
+    int agent_id, PDPGlobalMemory& memory, float speed_mps
+) {
+    memory.assign_task(task_.task_id, agent_id);
+    if (DeliveryAgent* agent = memory.get_delivery_agent(agent_id))
+        agent->receive_task(task_, memory);
+    memory.commit_plan(agent_id, speed_mps);
+    allocated_ = true;
+}
+
+bool TaskAllocationModule::mc_finalise(PDPGlobalMemory& memory, float speed_mps) {
+    if (mc_candidates_.empty()) {
+        // No agent reachable at all — a genuine (capacity / topology) failure,
+        // distinct from a policy refusal. Not deferred.
+        exhausted_ = true;
+        return true;
+    }
+
+    int   best_aid   = -1;
+    float best_score = -1.0f;
+    for (int aid : mc_candidates_) {
+        const float s = mc_score_agent(aid, memory);
+        if (s > best_score) { best_score = s; best_aid = aid; }
+    }
+
+    if (best_aid < 0) {           // defensive — should not happen
+        exhausted_ = true;
+        return true;
+    }
+
+    if (params_.mc_force_assign || best_score >= 0.5f) {
+        // Format A (always) or Format B with an acceptable best score.
+        mc_allocate(best_aid, memory, speed_mps);
+        return true;
+    }
+
+    // Format B: every candidate scored below 0.5 → defer for a later retry.
+    mc_deferred_ = true;
+    exhausted_   = true;          // ends this TAM session; runner re-offers later
+    return true;
+}
+
+bool TaskAllocationModule::step_multi_candidate(
+    PDPGlobalMemory& memory, float speed_mps
+) {
+    // Phase-1: no budget — search expands freely until the first candidate is
+    // found. The adaptive budget x*ratio(x) is applied below via mc_first_found_.
+    // This guarantees at least one agent is always found (on a connected graph).
+    // params_.search_radius_mult is only used by the legacy step() path.
+    if (max_search_cost_ < 0.0f)
+        max_search_cost_ = std::numeric_limits<float>::max();
+
+    if (idle_positions_dirty_) {
+        idle_positions_cache_ = idle_agent_positions(memory);
+        idle_positions_dirty_ = false;
+    }
+
+    // Reset incremental Dijkstra states once per allocation so stale closed-sets
+    // from prior tasks don't hide agents that have since moved to those nodes.
+    // Memoised paths_ (A* results) are not affected — only the expansion frontier.
+    if (!mc_search_reset_done_) {
+        memory.server_memory.reset_agent_search(task_.pickup.id,   pickup_group_id_);
+        memory.server_memory.reset_agent_search(task_.delivery.id, delivery_group_id_);
+        mc_search_reset_done_ = true;
+    }
+
+    // Record-only side handler: writes pickup/delivery costs into matrix_
+    // WITHOUT offering or allocating (offering happens later in mc_finalise).
+    auto record_side = [&](const DiscoveryStep& d, bool is_pickup) {
+        auto set_cost = [&](int aid, float cost) {
+            if (is_pickup) matrix_[aid].pickup_cost   = cost;
+            else           matrix_[aid].delivery_cost = cost;
+        };
+        if (d.type == DiscoveryStep::Type::Path && d.path) {
+            const osmium::object_id_type tgt =
+                is_pickup ? task_.pickup.id : task_.delivery.id;
+            const osmium::object_id_type node =
+                (d.path->node_b == tgt) ? d.path->node_a : d.path->node_b;
+            // Objective node owned by an already-assigned task.
+            PDPTask* related = memory.get_task_for_node(node);
+            if (related && related->agent_id >= 0)
+                set_cost(related->agent_id, d.path->cost);
+            // Idle agents physically standing at this node.
+            for (auto& [aid, agent] : memory.all_delivery_agents())
+                if (agent->current_node == node && agent->is_at_node())
+                    set_cost(aid, d.path->cost);
+        } else if (d.type == DiscoveryStep::Type::AgentPosition) {
+            for (auto& [aid, agent] : memory.all_delivery_agents())
+                if (agent->current_node == d.agent_node && agent->is_at_node())
+                    set_cost(aid, d.cost);
+        }
+    };
+
+    // Expand both sides. Idle positions are passed to BOTH searches so idle
+    // agents are discovered on either side (legacy only checked delivery).
+    DiscoveryStep ps = memory.server_memory.discover_step(
+        task_.pickup.id, pickup_group_id_, idle_positions_cache_, max_search_cost_);
+    record_side(ps, /*is_pickup=*/true);
+
+    DiscoveryStep ds = memory.server_memory.discover_step(
+        task_.delivery.id, delivery_group_id_, idle_positions_cache_, max_search_cost_);
+    record_side(ds, /*is_pickup=*/false);
+
+    // Rebuild the candidate set from the current matrix_.
+    mc_collect_candidates(memory);
+
+    // First valid candidate → fix the adaptive expansion budget.
+    //   x = max(pickup_cost, delivery_cost) of that candidate.
+    if (!mc_first_found_ && !mc_candidates_.empty()) {
+        mc_first_found_ = true;
+        const AgentEntry& e = matrix_[mc_candidates_.front()];
+        const float pc = (e.pickup_cost   >= 0.0f) ? e.pickup_cost   : 0.0f;
+        const float dc = (e.delivery_cost >= 0.0f) ? e.delivery_cost : 0.0f;
+        const float x  = std::max(pc, dc);
+        // budget = x * ratio(x) — guaranteed > x since ratio >= mc_ratio_min
+        // (>1), so both searches still have room to find more candidates.
+        max_search_cost_ = x * mc_ratio(x);
+    }
+
+    // Termination: enough candidates collected, or both searches exhausted.
+    const bool enough =
+        static_cast<int>(mc_candidates_.size()) >= params_.mc_max_candidates;
+    const bool both_exhausted =
+        (ps.type == DiscoveryStep::Type::Exhausted) &&
+        (ds.type == DiscoveryStep::Type::Exhausted);
+
+    if (enough || both_exhausted)
+        return mc_finalise(memory, speed_mps);
+
+    return false;   // keep expanding on the next step()
 }

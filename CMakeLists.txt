@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+﻿cmake_minimum_required(VERSION 3.10)
 project(ConflictualMAS LANGUAGES CXX)
 
 add_compile_definitions(NOMINMAX)
@@ -11,7 +11,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_PATH}ConflictualMAS/cmake")
 
 #set(LIBOSMIUM_DIR "C:/libs/libosmium")
 #if(NOT EXISTS "${LIBOSMIUM_DIR}/include/osmium")
-#    message(FATAL_ERROR "Libosmium non trouvée à ${LIBOSMIUM_DIR}. Veuillez ajuster LIBOSMIUM_DIR ou la cloner.")
+#    message(FATAL_ERROR "Libosmium non trouvﾃｩe ﾃ ${LIBOSMIUM_DIR}. Veuillez ajuster LIBOSMIUM_DIR ou la cloner.")
 #endif()
 #include_directories("${LIBOSMIUM_DIR}/include")
 
@@ -38,6 +38,9 @@ set(SOURCES
     src/DMASforPD/Policy/FaithfulMapperPolicy.cpp
     src/DMASforPD/Policy/HybridPolicy.cpp
     src/Tests/PlanningComparisonTest.cpp
+    src/Tests/TamMcTest.cpp
+    src/Tests/GeoBoxConnectivityTest.cpp
+    src/Tests/BaselinesMultiAgentTest.cpp
     src/Training/CityConfig.cpp
     src/Training/EpisodeConfig.cpp
     src/Training/EpisodeGenerator.cpp

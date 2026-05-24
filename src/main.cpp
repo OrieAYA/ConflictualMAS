@@ -7,6 +7,9 @@
 #include "Training/TrainingConfig.hpp"
 #include "Training/TrainingSmokeTest.hpp"
 #include "Tests/PlanningComparisonTest.hpp"
+#include "Tests/TamMcTest.hpp"
+#include "Tests/GeoBoxConnectivityTest.hpp"
+#include "Tests/BaselinesMultiAgentTest.hpp"
 #include <iostream>
 #include <string>
 
@@ -35,9 +38,14 @@ int main()
     std::cout << "  S  Training smoke test (uses kanto OSM, no extra files needed)\n";
     std::cout << "  M  Multi-city MAPPER-only training (faster, no IPPO/MAPPO trained)\n";
     std::cout << "  N  MAPPO DH training (re-train MAPPO under Double-Horizon planning)\n";
-    std::cout << "  X  Eval-only (load saved checkpoints, 5-mode: MAPPO+MAPPER+FM+Hybrid+TAM-AA)\n";
+    std::cout << "  X  Eval-only (load saved checkpoints, 4-mode: MAPPO+FM+Hybrid+TAM-AA)\n";
     std::cout << "  P  Planning comparison test (Tokyo_Small, MCA vs Double-Horizon, SVG)\n";
-    std::cout << "  Y  SoTA architecture comparison (RL + 8 SoTA baselines, full sweep)\n\n";
+    std::cout << "  Y  SoTA architecture comparison (RL + 6 SoTA baselines, full sweep)\n";
+    std::cout << "  F  Eval — TAM multi-candidate Format A (force-assign argmax)\n";
+    std::cout << "  H  Eval — TAM multi-candidate Format B (threshold 0.5 + retry)\n";
+    std::cout << "  J  TAM multi-candidate correctness test (Format A/B, small bbox)\n";
+    std::cout << "  K  GeoBox connectivity check (smoke_test + tous les caches)\n";
+    std::cout << "  L  Baselines multi-agent LGPDP test (MCA/TP/TF/CA/PIBT/...)\n\n";
     std::cout << "Choice: ";
 
     std::string rep;
@@ -84,7 +92,6 @@ int main()
         // The FINAL exhaustive comparison should be done via option X.
         cfg.eval_modes = {
             PolicyMode::MAPPO,
-            PolicyMode::IPPO,
             PolicyMode::MAPPER,
             PolicyMode::TamAlwaysAccept,
             PolicyMode::Greedy
@@ -361,16 +368,12 @@ int main()
 
         // Our RL policies + ablation + 6 published SoTA baselines.
         cfg.eval_modes = {
-            // Our RL policies (with checkpoints — see paths below)
             PolicyMode::MAPPO,
             PolicyMode::FaithfulMAPPER,
-            PolicyMode::Hybrid,
             PolicyMode::TamAlwaysAccept,
-            // Published SoTA heuristics
             PolicyMode::CongestionAware,
             PolicyMode::TrafficFlow,
-            PolicyMode::TokenPassing,
-            PolicyMode::PIBT
+            PolicyMode::TokenPassing
         };
 
         // 4-scenario sweep — same as legacy Option Y.
@@ -500,8 +503,10 @@ int main()
         cfg.eval_modes = {
             PolicyMode::MAPPO,
             PolicyMode::FaithfulMAPPER,
-            PolicyMode::Hybrid,
-            PolicyMode::TamAlwaysAccept
+            PolicyMode::TamAlwaysAccept,
+            PolicyMode::CongestionAware,
+            PolicyMode::TrafficFlow,
+            PolicyMode::TokenPassing
         };
 
         // ── Eval conditions matched to Option M training ──────────────────────
@@ -558,6 +563,144 @@ int main()
 
         MultiCityTrainer trainer;
         trainer.train(cfg);
+    }
+    else if (rep == "F" || rep == "f" || rep == "H" || rep == "h") {
+        // ── Eval — TAM multi-candidate mode (Format A or Format B) ───────────
+        //
+        // Identical to Option X (same 4 modes, 7 cities, environment, scope,
+        // checkpoints, deterministic per-(city,scenario,ep) seeding) EXCEPT
+        // the TAM runs in multi-candidate mode instead of legacy first-fit:
+        //
+        //   1. Dijkstra expands until the first valid candidate at
+        //      x = max(pickup_cost, delivery_cost).
+        //   2. Expansion continues to budget = x * ratio(x) (ratio decreasing
+        //      3.0 → 1.4 with x), or until 5 candidates, or both exhaust.
+        //   3. All candidates scored by the policy (same try_accept_task call
+        //      path as legacy); the argmax wins.
+        //
+        //   Option F — Format A: always allocate to the argmax.
+        //   Option H — Format B: if every score < 0.5, the task is DEFERRED
+        //              and re-offered after 20% of the episode; past 70% of
+        //              the episode it is rejected outright.
+        //
+        // Outputs go to a dedicated subdir so Option X / Y CSVs are untouched:
+        //   Option F → results/mc_format_A/episodes_seed42.csv
+        //   Option H → results/mc_format_B/episodes_seed42.csv
+        //
+        // Recovery: the legacy TAM is restored by simply not running F/H
+        // (tam_multi_candidate defaults to false for every other option).
+        const bool format_a = (rep == "F" || rep == "f");
+
+        const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
+        const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
+        const std::string output_dir = format_a
+            ? "C:\\ConflictualMAS\\results\\mc_format_A"
+            : "C:\\ConflictualMAS\\results\\mc_format_B";
+        CityRegistry::set_osm_root(osm_root);
+
+        TrainingConfig cfg;
+        cfg.cache_root       = cache_root;
+        cfg.output_dir       = output_dir;
+        cfg.n_seeds          = 1;
+        cfg.n_eval_episodes  = 5;
+        cfg.verbose          = true;
+
+        cfg.eval_only            = true;
+        cfg.skip_stress_eval     = false;
+        cfg.skip_generalize_eval = false;
+
+        // Same 4-mode line-up as Option X — all TAM-driven, so all are
+        // affected by the multi-candidate switch. (SoTA baselines bypass the
+        // TAM entirely; compare against Option Y for those.)
+        cfg.eval_modes = {
+            PolicyMode::MAPPO,
+            PolicyMode::FaithfulMAPPER,
+            PolicyMode::TamAlwaysAccept,
+            PolicyMode::CongestionAware,
+            PolicyMode::TrafficFlow,
+            PolicyMode::TokenPassing
+        };
+
+        // Environment matched to Option M training / Option X eval.
+        cfg.episode_cfg.use_dbvns_planning            = true;
+        cfg.episode_cfg.enable_ghost_traffic          = true;
+        cfg.episode_cfg.ghost_n_max                   = 40;
+        cfg.episode_cfg.ghost_window_steps            = 5;
+        cfg.episode_cfg.ghost_hot_way_frac            = 0.30f;
+        cfg.episode_cfg.enable_heterogeneous_capacity = true;
+        cfg.episode_cfg.hetero_capacity_min           = 3;
+        cfg.episode_cfg.hetero_capacity_max           = 7;
+
+        // ── TAM multi-candidate switch ──────────────────────────────────────
+        cfg.episode_cfg.tam_multi_candidate     = true;
+        cfg.episode_cfg.tam_mc_force_assign     = format_a;  // F = true, H = false
+        cfg.episode_cfg.tam_mc_max_candidates   = 5;
+        cfg.episode_cfg.tam_mc_ratio_min        = 1.4f;
+        cfg.episode_cfg.tam_mc_ratio_max        = 3.0f;
+        cfg.episode_cfg.tam_mc_ratio_scale      = 2000.0f;
+        cfg.episode_cfg.tam_mc_recall_time_frac = 0.20f;     // Format B retry delay
+        cfg.episode_cfg.tam_mc_reject_time_frac = 0.70f;     // Format B reject cutoff
+
+        // Checkpoints — same as Option X (Option M Phase 2+3).
+        cfg.load_policy                 = true;
+        cfg.policy_path                 = "C:\\ConflictualMAS\\results\\mappo\\"
+                                          "policy_seed42.bin";
+        cfg.mapper_policy_path          = "C:\\ConflictualMAS\\results\\mapper_enhanced\\"
+                                          "mapper_seed42.bin";
+        cfg.faithful_mapper_policy_path = "C:\\ConflictualMAS\\results\\mapper_faithful\\"
+                                          "mapper_seed42.bin";
+
+        // Same city scope as Option X for direct comparability.
+        cfg.train_city_filter     = {
+            "Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"
+        };
+        cfg.enable_generalization = true;
+        cfg.gen_city_filter       = {
+            "Tokyo_Large", "Paris", "NewYork", "London"
+        };
+
+        std::cout << "[Option " << (format_a ? "F" : "H")
+                  << "] TAM multi-candidate, Format " << (format_a ? "A" : "B")
+                  << "\n";
+
+        MultiCityTrainer trainer;
+        trainer.train(cfg);
+    }
+    else if (rep == "J" || rep == "j") {
+        // ── TAM multi-candidate correctness test ──────────────────────────────
+        // Small central Tokyo bbox (same GeoBox as training smoke test S).
+        // Reuses cache_dir so smoke_test.json is shared between S and J.
+        run_tam_mc_test(osm_file, cache_dir);
+    }
+    else if (rep == "K" || rep == "k") {
+        // GeoBox connectivity check
+        const std::string smoke   = cache_dir + "/smoke_test.json";
+        const std::string data_dir = "C:\\ConflictualMAS\\data\\cache";
+        run_geobox_connectivity_test({ smoke }, "smoke_test");
+        run_geobox_connectivity_test({
+            data_dir + "/Tokyo_Small.json",
+            data_dir + "/Tokyo_Medium.json",
+            data_dir + "/Tokyo_Large.json",
+            data_dir + "/Kyoto_Small.json",
+            data_dir + "/Kyoto_Medium.json",
+            data_dir + "/Kyoto.json",
+            data_dir + "/LosAngeles_Small.json",
+            data_dir + "/LosAngeles_Medium.json",
+            data_dir + "/LosAngeles.json",
+            data_dir + "/NewYork.json",
+            data_dir + "/Paris.json",
+            data_dir + "/London.json",
+            data_dir + "/Fukuoka.json"
+        }, "production caches");
+    }
+    else if (rep == "L" || rep == "l") {
+        // Baselines multi-agent LGPDP test — exercises every published baseline
+        // (MCA, TokenPassing, TrafficFlow, CongestionAware, PIBT, LaCAM,
+        // DoubleHorizon, InsertionGreedy, Greedy) in our actual evaluation
+        // context: multi-agent, capacitated (homogeneous + heterogeneous),
+        // ghost-traffic congestion, no predefined depot. Uses the smoke_test
+        // cache so first run reuses the option-S OSM parse.
+        run_baselines_multi_agent_test(osm_file, cache_dir);
     }
     else std::cout << "Unknown option.\n";
 

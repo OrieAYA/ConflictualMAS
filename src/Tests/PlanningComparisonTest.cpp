@@ -125,9 +125,14 @@ static EpisodeConfig make_test_episode_config(const CityConfig& cc, int max_task
     ep.min_task_dist_m = 150.f;
     ep.max_task_dist_m = 1500.f;
     ep.hot_zone_radius = 300.f;
-    ep.max_tasks_per_agent = 3;
-    // Mono-agent comparison: a single agent absorbs all tasks across phases,
+    // Mono-agent comparison: a single agent absorbs ALL tasks across phases,
     // so the planning algorithm is the only variable between modes.
+    // Capacity is set far above any regime's max_tasks (high=30, peak ≈75 with
+    // density_mult up to 2.5) so capacity-aware insertion in receive_task() can
+    // never refuse a task — every offered task IS assigned to the lone agent.
+    // This isolates the planner: MCA/DH/DbVNS/ALNS each plan over the SAME set
+    // of accepted tasks, with no allocation skew from capacity overflow.
+    ep.max_tasks_per_agent = 200;
     const float per_phase = static_cast<float>(max_tasks) / 3.f;
     ep.phases = {
         { 1200, per_phase, 1, 1, 0.0f, 2 },

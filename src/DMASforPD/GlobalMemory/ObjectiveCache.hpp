@@ -96,6 +96,14 @@ public:
     // Convenience wrapper (no agent detection, returns path or nullptr).
     const ObjectivePath* discover_next_path(osmium::object_id_type from, const MyData& data);
 
+    // Reset the incremental Dijkstra state for a given starting node.
+    // Called before each new TAM agent search so stale closed-sets and
+    // exhausted flags from prior tasks don't block re-discovery of agents
+    // that have since moved. Memoised paths_ are NOT affected.
+    void reset_search_state(osmium::object_id_type from) {
+        search_states_.erase(from);
+    }
+
 private:
     std::unordered_map<PathKey, ObjectivePath, ObjPairHash> paths_;
     std::unordered_set<osmium::object_id_type>              objective_ids_;
@@ -180,6 +188,11 @@ public:
     // Clear all objective registrations for a group (between episodes).
     // Preserves paths_ so A* results computed in prior episodes are reused.
     void reset_objectives(int group_id);
+
+    // Reset the Dijkstra search state for one starting node (TAM agent search).
+    // Ensures each new task allocation starts from a clean state so agents that
+    // moved since the previous search are not missed. Memoised paths_ are kept.
+    void reset_agent_search(osmium::object_id_type from, int group_id);
 
     // Remove an objective node from its group cache (post pickup/delivery).
     void remove_objective_node(osmium::object_id_type node_id, int group_id);

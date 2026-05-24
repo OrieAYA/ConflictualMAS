@@ -148,7 +148,11 @@ ObjectiveGroupCache::DiscoveryStep ObjectiveGroupCache::discover_step(
     const std::unordered_set<osmium::object_id_type>& agent_positions,
     float                  max_cost
 ) {
-    if (is_complete()) return {};  // type == Exhausted
+    // When searching for agents (agent_positions non-empty), skip the
+    // is_complete() gate: all pairwise objective paths may be cached, but
+    // agents are not objectives — the Dijkstra must continue to find them.
+    // is_complete() still applies for pure path-discovery calls (agent_positions empty).
+    if (agent_positions.empty() && is_complete()) return {};
 
     auto& state = search_states_[from];
     if (state.exhausted) return {};
@@ -309,6 +313,12 @@ void PDPServerMemory::store_path_in_group(int group_id, const ObjectivePath& pat
     auto it = group_caches_.find(group_id);
     if (it != group_caches_.end())
         it->second.store_path(path);
+}
+
+void PDPServerMemory::reset_agent_search(osmium::object_id_type from, int group_id) {
+    auto it = group_caches_.find(group_id);
+    if (it != group_caches_.end())
+        it->second.reset_search_state(from);
 }
 
 void PDPServerMemory::reset_objectives(int group_id) {

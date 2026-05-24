@@ -166,6 +166,19 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     memory_.task_agent.params.tam_params.always_accept =
         (policy_mode == PolicyMode::TamAlwaysAccept);
 
+    // Propagate the TAM multi-candidate parameters. When tam_multi_candidate
+    // is false (default) the TAM runs its legacy first-fit path unchanged.
+    {
+        auto& tp = memory_.task_agent.params.tam_params;
+        tp.multi_candidate   = cfg_.tam_multi_candidate;
+        tp.mc_force_assign   = cfg_.tam_mc_force_assign;
+        tp.mc_max_candidates = cfg_.tam_mc_max_candidates;
+        tp.mc_ratio_min      = cfg_.tam_mc_ratio_min;
+        tp.mc_ratio_max      = cfg_.tam_mc_ratio_max;
+        tp.mc_ratio_scale    = cfg_.tam_mc_ratio_scale;
+    }
+    retry_queue_.clear();
+
     // Reset per-episode GlobalMemory state (tasks, plans, congestion, clock).
     // Preserves the A* path cache so costs computed in prior episodes reuse.
     memory_.reset_episode();
@@ -294,6 +307,64 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         auto cur_gs = build_global_state(step, total_steps, phase_label, lambda,
                                          city_norm, n_active).to_array();
 
+        // ── Retry deferred tasks (TAM multi-candidate Format B only) ─────────
+        // retry_queue_ is empty in legacy mode and in Format A, so this loop
+        // is a strict no-op there. A task is deferred when every candidate
+        // scored < 0.5; it is re-offered after tam_mc_recall_time_frac of the
+        // episode, or dropped as a genuine refusal past tam_mc_reject_time_frac.
+        {
+            const int retry_interval = std::max(1, static_cast<int>(
+                cfg_.tam_mc_recall_time_frac * static_cast<float>(total_steps)));
+            const int reject_cutoff  = static_cast<int>(
+                cfg_.tam_mc_reject_time_frac * static_cast<float>(total_steps));
+            for (size_t qi = 0; qi < retry_queue_.size(); ) {
+                if (retry_queue_[qi].retry_step > step) { ++qi; continue; }
+                const int rtask = retry_queue_[qi].task_id;
+                PDPTask*  rt    = memory_.get_task(rtask);
+                auto drop = [&]{
+                    retry_queue_[qi] = retry_queue_.back();
+                    retry_queue_.pop_back();
+                };
+                if (!rt) { drop(); continue; }
+
+                if (step > reject_cutoff) {
+                    // Past the cutoff — give up; counts as a genuine refusal.
+                    ++n_refused_;
+                    imp_refused_sum_ += rt->importance_original;
+                    imp_refused_n_   += 1;
+                    drop();
+                    continue;
+                }
+
+                const float r_cong = memory_.congestion_map.mean_load_now();
+                const bool  r_high = (r_cong >= 1.0f);
+                congestion_at_decision_sum_   += r_cong;
+                congestion_at_decision_count_ += 1;
+
+                OfferResult rres = offer_task(rtask, rt->reward_original,
+                                              rt->importance_original,
+                                              n_active, cur_gs);
+                if (rres.deferred) {
+                    retry_queue_[qi].retry_step = step + retry_interval;
+                    ++qi;
+                } else if (rres.agent_id >= 0) {
+                    imp_accepted_sum_ += rt->importance_original;
+                    imp_accepted_n_   += 1;
+                    if (r_high) ++accepts_high_cong_; else ++accepts_low_cong_;
+                    ++n_accepted_;
+                    commit_accepted_task(rtask, rres.agent_id, rres.tam_owned,
+                                         rt->pickup.id, step);
+                    drop();
+                } else {
+                    ++n_refused_;
+                    imp_refused_sum_ += rt->importance_original;
+                    imp_refused_n_   += 1;
+                    if (r_high) ++refuses_high_cong_; else ++refuses_low_cong_;
+                    drop();
+                }
+            }
+        }
+
         // Inject tasks arriving at this step.
         while (stream_idx < (int)stream.size() &&
                stream[stream_idx].arrival_step == step) {
@@ -321,58 +392,21 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
 
             OfferResult res = offer_task(task_id, st.reward, st.importance,
                                          n_active, cur_gs);
-            const int winner = res.agent_id;
-            if (winner >= 0) {
+            if (res.deferred) {
+                // TAM multi-candidate Format B — neither accepted nor refused
+                // yet. Queue for a later retry; not counted in any metric now.
+                const int retry_interval = std::max(1, static_cast<int>(
+                    cfg_.tam_mc_recall_time_frac * static_cast<float>(total_steps)));
+                retry_queue_.push_back({ task_id, step + retry_interval });
+            } else if (res.agent_id >= 0) {
                 // Selectivity + context diagnostics (Option X analysis).
                 imp_accepted_sum_ += st.importance;
                 imp_accepted_n_   += 1;
                 if (high_cong_now) ++accepts_high_cong_;
                 else               ++accepts_low_cong_;
                 ++n_accepted_;
-                DeliveryAgent* agent = memory_.get_delivery_agent(winner);
-
-                bool was_idle;
-                if (res.tam_owned) {
-                    // TAM already did assign + receive + commit. After receive_task
-                    // the agent's task list contains this task plus whatever it had
-                    // before. Sole task ⇒ was Idle.
-                    was_idle = agent->local_memory.tasks.size() == 1;
-                } else {
-                    was_idle = (agent->status == AgentStatus::Idle);
-                    memory_.assign_task(task_id, winner);
-                    agent->receive_task(*task, memory_);
-                    memory_.commit_plan(winner, cfg_.speed_mps);
-                }
-
-                // Record buffer index of the accept decision so the completion
-                // reward can be set at delivery. In the TAM path the accept
-                // entry is the LAST record produced by offer_to_agent — in the
-                // shared buffer for MAPPO, or in the winning agent's own buffer
-                // for IPPO/MAPPER.
-                if (policy_mode == PolicyMode::MAPPO) {
-                    task_accept_buf_idx_[task_id] =
-                        ObjectiveDMPolicy::shared().buffer_size() - 1;
-                } else if (policy_mode == PolicyMode::IPPO) {
-                    task_accept_buf_idx_[task_id] =
-                        IPPOPolicy::shared().buffer_size(winner) - 1;
-                } else if (policy_mode == PolicyMode::MAPPER) {
-                    task_accept_buf_idx_[task_id] =
-                        MapperPolicy::shared().buffer_size(winner) - 1;
-                } else if (policy_mode == PolicyMode::FaithfulMAPPER) {
-                    task_accept_buf_idx_[task_id] =
-                        FaithfulMapperPolicy::shared().buffer_size(winner) - 1;
-                } else if (policy_mode == PolicyMode::Hybrid) {
-                    task_accept_buf_idx_[task_id] =
-                        HybridPolicy::shared().buffer_size(winner) - 1;
-                }
-
-                // Only start the edge-by-edge leg if the agent was Idle. If
-                // already Active (multi-task queue), the current cursor is
-                // still valid; the new objectives are picked up after the
-                // current delivery completes.
-                if (was_idle)
-                    start_leg(winner, task_id, true,
-                              agent->current_node, st.pickup_node_id, step);
+                commit_accepted_task(task_id, res.agent_id, res.tam_owned,
+                                     st.pickup_node_id, step);
             } else {
                 ++n_refused_;
                 imp_refused_sum_ += st.importance;
@@ -418,6 +452,19 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         active_sum_   += n_now;
         active_steps_ += 1;
     }
+
+    // Flush any tasks still deferred at episode end (TAM multi-candidate
+    // Format B). They were never resolved → count as refusals so that
+    // tasks_appeared stays consistent (accepted + refused = appeared).
+    for (const auto& re : retry_queue_) {
+        PDPTask* rt = memory_.get_task(re.task_id);
+        ++n_refused_;
+        if (rt) {
+            imp_refused_sum_ += rt->importance_original;
+            imp_refused_n_   += 1;
+        }
+    }
+    retry_queue_.clear();
 
     // Populate metrics.
     int tasks_appeared    = n_accepted_ + n_refused_;
@@ -923,28 +970,62 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     }
 
     // ── Token Passing (TP) [Ma+2017, AAMAS] ───────────────────────────────────
-    // Original TP: agent ai with the token picks the task τ from the available
-    // set T' such that h(loc(ai), pickup(τ)) is minimal, where T' filters out
-    // tasks whose pickup/delivery is occupied by another agent's path-end.
+    // Paper TP (Algorithm 1, lines 7-12): a FREE agent (a_i with no current
+    // task) holding the token picks τ* ∈ T' = { τ | no other path in token ends
+    // in s_τ or g_τ } that minimises h(loc(a_i), s_τ). Token then passes to
+    // next free agent. The "free agent" precondition is fundamental — paper TP
+    // only lets agents that are NOT currently executing any task self-assign.
     //
-    // Online L-GPDP adaptation: tasks arrive one at a time. For each arriving
-    // task, we pick the agent with the minimum static A* distance from its
-    // current_node to the pickup. The collision filter is trivial here (no
-    // physical collisions). Capacity is enforced downstream by receive_task().
+    // Adaptation to capacitated lifelong GPDP (multi-task per agent, no depot):
+    //   ✓ Per-task selection rule = argmin h(loc(a_i), s_τ) — paper Line 9.
+    //   ✓ "Free-agent-first" semantic preserved via a TWO-STAGE PREFERENCE:
+    //       (a) If at least one agent has load=0 (no in-flight task, the
+    //           lifelong analogue of "free"), restrict the argmin to those
+    //           agents. This matches paper TP exactly when free agents exist.
+    //       (b) Otherwise (no free agent), allow ALL eligible agents to be
+    //           considered and pick the one minimising h. This is the
+    //           lifelong-multi-task extension — paper TP would have the task
+    //           wait, but in our online stream-of-tasks setting deferring all
+    //           offers when the fleet is busy collapses throughput to ~0 and
+    //           defeats the comparison. The fallback keeps TP comparable while
+    //           preserving its "closest agent picks first" intuition.
+    //   ✗ Endpoint filter T': vacuous — each task has UNIQUE pickup/delivery
+    //     nodes by construction in EpisodeGenerator (no two tasks share s_τ
+    //     or g_τ), so the filter never excludes anything.
+    //   ✗ TPTS task swap (Ma+2017 Algorithm 2): not implemented. Once a task
+    //     is allocated it is not reassigned. Documented simplification.
+    //   ✗ Path1/Path2 collision avoidance (Algorithm 1 lines 13-21): NOT
+    //     APPLICABLE — OSM road network has no vertex-blocking semantics
+    //     (multiple agents can occupy the same node/edge; congestion is
+    //     accounted via the cost, not via hard blocking).
     //
-    // Difference from LaCAM: TP uses only the pickup-leg cost (matching the
-    // paper's h-value criterion), while LaCAM minimises c_pu + c_del. Both
-    // scan all eligible agents, but TP captures the "closest agent picks
-    // the task" decentralised-token spirit, not the global-best assignment.
+    // h is the static A* cost (paper uses graph-distance heuristic) — explicitly
+    // NOT congestion-adjusted, faithful to the paper's deterministic-cost model.
+    //
+    // Distinguishing TP from MCA / CongestionAware / TrafficFlow:
+    //   TP              — argmin h(loc, pickup) on free agents (static cost).
+    //   MCA             — argmin Δroute_length over admissible (q1,q2) insertions.
+    //   CongestionAware — argmin dynamic c_pu (pickup leg only, time-dependent).
+    //   TrafficFlow     — argmin dynamic (c_pu + c_del) (full trip, time-dep.).
     if (policy_mode == PolicyMode::TokenPassing) {
         PDPTask* t = memory_.get_task(task_id);
         if (!t) return { -1, false };
 
+        // Pass 1: discover whether any free agent (load==0) is eligible.
+        bool any_free = false;
+        for (int i = 0; i < n_active; ++i) {
+            const DeliveryAgent& a = *all_agents_[i];
+            if (!has_cap(a)) continue;
+            if (a.local_memory.tasks.empty()) { any_free = true; break; }
+        }
+
+        // Pass 2: argmin h(loc, pickup) restricted to free agents (if any).
         int   best_aid = -1;
         float best_h   = std::numeric_limits<float>::max();
         for (int i = 0; i < n_active; ++i) {
             DeliveryAgent& a = *all_agents_[i];
             if (!has_cap(a)) continue;
+            if (any_free && !a.local_memory.tasks.empty()) continue;
             const auto* to_pu = memory_.get_or_compute_path(
                 a.current_node, t->pickup.id, t->pickup.group_id);
             const float h = (to_pu && to_pu->valid()) ? to_pu->cost : kCostScale;
@@ -1017,12 +1098,33 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         return { best_aid, false };
     }
 
-    // ── MCA: true marginal-cost assignment [Chen+2021] ────────────────────────
-    // Scans ALL eligible agents. For each, computes the true cheapest-insertion
-    // delta over all admissible (pos_P, pos_D) positions in the agent's route
-    // (capacity-constrained, preserving the in-flight head). Assigns to the
-    // agent with the globally minimum marginal cost. Unlike LaCAM, which ignores
-    // existing routes, this correctly accounts for route detour cost.
+    // ── MCA: true marginal-cost assignment [Chen+2021, ICRA] ──────────────────
+    // Paper MCA: eq. (12) — for each unassigned task i and each robot k, find
+    // (q1*, q2*) that minimise the route-cost delta of inserting (s_i at q1,
+    // g_i at q2) into k's current sequence o_k while respecting capacity. Pick
+    // the (k*, i*, q1*, q2*) that globally minimises this delta.
+    //
+    // Faithfulness in our lifelong GPDP context:
+    //   ✓ Per-(agent, task) marginal cost = compute_marginal_cost() (see
+    //     definition ~line 1572): exact (pP, pD) admissible search with
+    //     capacity profile (peak ≤ max_carry), preserving the in-flight head
+    //     seq[0]. Matches the paper's insert() routine (Section IV-B).
+    //   ✓ Global argmin across agents: this branch's outer loop.
+    //   ✓ Capacitated multi-task agents: handled by load_after[] profile.
+    //   = MCA == RMCA(r) for the SELECTION rule in our setting: tasks arrive
+    //     one-at-a-time (online lifelong), so there is no batch ordering for
+    //     the regret-based variant (paper eq. 16) to exploit. Per-task winner
+    //     is the same agent under MCA and RMCA(r) in the |P^u| = 1 regime.
+    //   ✗ Anytime LNS improvement (Algorithm 3, paper Section IV-D): not
+    //     implemented. The paper shows this is what unlocks RMCA's edge over
+    //     MCA for batch instances. In lifelong with a continuous stream, the
+    //     online window is small and re-assigning is risky (already-picked
+    //     tasks cannot be moved). Documented limitation — could be added as
+    //     a periodic destroy-and-reassign pass on unpicked tasks (future work).
+    //   ✗ Prioritised path planning (Section IV-A): we substitute DbVNS-PDP
+    //     replan inside DeliveryAgent::receive_task. This means we measure
+    //     route-distance delta, not collision-free TTD — but in OSM continuous
+    //     routing there are no grid-MAPF style vertex collisions to resolve.
     if (policy_mode == PolicyMode::MCA) {
         PDPTask* t = memory_.get_task(task_id);
         if (!t) return { -1, false };
@@ -1038,11 +1140,47 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         return { best_aid, false };
     }
 
-    // ── TrafficFlow: GP-PIBT spirit full-trip congestion-aware [Chen+2024] ───
-    // Extends CongestionAware by using the congestion-adjusted (dynamic) cost
-    // for BOTH the current→pickup leg AND the pickup→delivery leg, capturing
-    // the full planned trip cost under current traffic conditions.
-    // CongestionAware weights only the first leg; TrafficFlow weights both.
+    // ── TrafficFlow: congestion-aware allocation [Chen+2024, AAAI] ────────────
+    // Paper "Traffic Flow Optimisation for Lifelong MAPF" (Chen+2024, AAAI)
+    // targets MAPF *path-finding* by computing user-equilibrium guide paths
+    // with a two-part edge weight (c_e, 1 + p_{v2}) where c_e captures
+    // contraflow and p_v converging-vertex pressure. Guide paths then act as
+    // heuristics inside PIBT for movement.
+    //
+    // The paper's algorithm is a ROUTING rule, not an allocation rule (it
+    // assumes tasks are already assigned). For our allocation-only baseline
+    // we keep the *spirit* of the paper — "pick the assignment whose planned
+    // trip is the cheapest under current traffic conditions" — and drop the
+    // load tie-break that previously sat on top. That tie-break was a PIBT-
+    // style priority signal, not a TrafficFlow signal, and it duplicated the
+    // role of the dedicated PIBT baseline. Removing it gives:
+    //
+    //   CongestionAware — argmin dynamic c_pu                (pickup leg only).
+    //   TrafficFlow     — argmin dynamic (c_pu + c_del)      (FULL trip).
+    //   MCA             — argmin Δroute_length under capacity (no congestion).
+    //   PIBT            — argmin current load                (no cost).
+    //
+    // That clean separation matches the related-works axes (congestion-aware
+    // vs combinatorial vs load-balancing).
+    //
+    // Capacity (LGPDP adaptation, not in the paper):
+    //   has_cap() already filters agents whose receive_task() insertion would
+    //   exceed their effective max_capacity, so the argmin only ranges over
+    //   feasible assignments. The dynamic cost itself does not depend on
+    //   capacity — that is handled at insertion time inside receive_task.
+    //
+    // What we deliberately do NOT do vs the paper:
+    //   ✗ Frank-Wolfe / FOCAL user-equilibrium guide-path computation: tasks
+    //     arrive online in LGPDP; capacity-aware insertion in DbVNS already
+    //     produces a per-agent route, so re-solving a global UE per arrival
+    //     would be both expensive and architecturally orthogonal.
+    //   ✗ LNS-style guide-path refinement (paper Alg. 2): would require
+    //     cross-agent re-routing, conflicting with DbVNS-per-agent replan.
+    //   ✗ Exact (f_{v1,v2} × f_{v2,v1}) contraflow on directed edges: we
+    //     instead rely on CongestionMap's BPR-style edge load, which captures
+    //     "more agents on this edge ⇒ slower" in a way that is faithful in
+    //     spirit and consistent with how the rest of the system meters
+    //     congestion (CongestionAware, MAPPO features, ghost traffic).
     if (policy_mode == PolicyMode::TrafficFlow) {
         PDPTask* t = memory_.get_task(task_id);
         if (!t) return { -1, false };
@@ -1098,16 +1236,11 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     auto* tam = memory_.task_agent.get_tam(task_id);
     if (!tam) return {-1, true};
 
-    // Safety budget on Dijkstra expansion per task. Each TAM step expands one
-    // node on the pickup side and one on the delivery side. With tasks_per_agent
-    // tuned for ~150 tasks/episode this budget is rarely consumed in practice.
-    constexpr int kMaxTamSteps = 300;
-    int steps_used = 0;
-    while (steps_used < kMaxTamSteps
-           && !tam->is_allocated() && !tam->is_exhausted()) {
+    // The TAM terminates via its own conditions (allocated / exhausted / deferred).
+    // No external step cap — the adaptive budget x*ratio(x) and the natural
+    // Dijkstra exhaustion are the sole termination guarantees.
+    while (!tam->is_allocated() && !tam->is_exhausted())
         tam->step(memory_, cfg_.speed_mps);
-        ++steps_used;
-    }
 
     const int buf_after        = ObjectiveDMPolicy::shared().buffer_size();
     const int ippo_after       = IPPOPolicy::shared().n_recent_records();
@@ -1130,8 +1263,14 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     //   MAPPER → same as IPPO but on its own recent-records log.
     //   Hybrid → same recent-records pattern; applied regardless of train_mode
     //            because online adaptation runs every episode.
+    //
+    // SKIPPED entirely in TAM multi-candidate mode: there the policy scores
+    // K candidates and the argmax wins — the K-1 "losers" are NOT refused
+    // tasks, so the legacy [buf_before, last_excl) bracketing would mislabel
+    // them. (MC mode is eval-only with pre-trained policies anyway.)
     const bool apply_refuse_penalty =
-        train_mode || (policy_mode == PolicyMode::Hybrid);
+        (train_mode || (policy_mode == PolicyMode::Hybrid))
+        && !cfg_.tam_multi_candidate;
     if (apply_refuse_penalty && cfg_.refuse_penalty_w > 0.f && t) {
         const float pen = -cfg_.refuse_penalty_w * t->importance_original;
         if (policy_mode == PolicyMode::MAPPO) {
@@ -1165,9 +1304,70 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         }
     }
 
+    const bool deferred = tam->is_deferred();
     memory_.task_agent.erase_tam(task_id);
 
-    return {allocated ? t->agent_id : -1, true};
+    return { allocated ? t->agent_id : -1, true, deferred };
+}
+
+// ── Post-allocation bookkeeping (shared by arrival loop + retry loop) ─────────
+void EpisodeRunner::commit_accepted_task(
+    int task_id, int winner, bool tam_owned,
+    osmium::object_id_type pickup_node, int step)
+{
+    DeliveryAgent* agent = memory_.get_delivery_agent(winner);
+    if (!agent) return;
+    PDPTask* task = memory_.get_task(task_id);
+
+    bool was_idle;
+    if (tam_owned) {
+        // TAM already did assign + receive + commit. After receive_task the
+        // agent's task list contains this task plus whatever it had before.
+        // Sole task ⇒ was Idle.
+        was_idle = agent->local_memory.tasks.size() == 1;
+    } else {
+        was_idle = (agent->status == AgentStatus::Idle);
+        if (task) {
+            memory_.assign_task(task_id, winner);
+            agent->receive_task(*task, memory_);
+            memory_.commit_plan(winner, cfg_.speed_mps);
+        }
+    }
+
+    // Record the buffer index of the accept decision so the completion reward
+    // can be set at delivery. In the legacy TAM path the accept entry is the
+    // LAST record produced — shared buffer for MAPPO, per-agent otherwise.
+    //
+    // SKIPPED in TAM multi-candidate mode: there mc_finalise scores ALL K
+    // candidates and only then allocates the argmax, so buffer_size()-1 points
+    // to the last-scored candidate, NOT the winner. Recording it would
+    // misattribute the delivery reward. MC mode is eval-only (buffer discarded
+    // at episode end), so simply not recording is both correct and safe —
+    // process_arrivals just skips the credit when the index is absent.
+    if (!cfg_.tam_multi_candidate) {
+        if (policy_mode == PolicyMode::MAPPO) {
+            task_accept_buf_idx_[task_id] =
+                ObjectiveDMPolicy::shared().buffer_size() - 1;
+        } else if (policy_mode == PolicyMode::IPPO) {
+            task_accept_buf_idx_[task_id] =
+                IPPOPolicy::shared().buffer_size(winner) - 1;
+        } else if (policy_mode == PolicyMode::MAPPER) {
+            task_accept_buf_idx_[task_id] =
+                MapperPolicy::shared().buffer_size(winner) - 1;
+        } else if (policy_mode == PolicyMode::FaithfulMAPPER) {
+            task_accept_buf_idx_[task_id] =
+                FaithfulMapperPolicy::shared().buffer_size(winner) - 1;
+        } else if (policy_mode == PolicyMode::Hybrid) {
+            task_accept_buf_idx_[task_id] =
+                HybridPolicy::shared().buffer_size(winner) - 1;
+        }
+    }
+
+    // Start the edge-by-edge leg only if the agent was Idle. If already Active
+    // (multi-task queue) the current cursor is still valid; the new objectives
+    // are picked up after the current delivery completes.
+    if (was_idle)
+        start_leg(winner, task_id, true, agent->current_node, pickup_node, step);
 }
 
 // ── Edge-by-edge movement ─────────────────────────────────────────────────────
@@ -1464,8 +1664,14 @@ float EpisodeRunner::compute_marginal_cost(const DeliveryAgent& a,
                                            const PDPTask&       task) {
     const auto& seq = a.solution.sequence;
     const int   n   = static_cast<int>(seq.size());
+    // Use the AGENT-effective carrying capacity, not the TAM-global ceiling.
+    // With heterogeneous fleets (enable_heterogeneous_capacity) the TAM ceiling
+    // is hetero_capacity_max — using it here would let MCA pick an insertion
+    // the agent cannot honour at receive_task() time, causing capacity
+    // overshoot via the fallback (append P, append D) branch.
+    const int   tam_cap = memory_.task_agent.params.max_tasks_per_agent;
     const int   max_carry = std::max(
-        1, memory_.task_agent.params.max_tasks_per_agent);
+        1, a.max_capacity > 0 ? a.max_capacity : tam_cap);
 
     auto seg = [&](osmium::object_id_type from,
                    osmium::object_id_type to) -> float {
@@ -1567,8 +1773,10 @@ float EpisodeRunner::compute_double_horizon_cost(const DeliveryAgent& a,
                                                   float alpha) {
     const auto& seq = a.solution.sequence;
     const int   n   = static_cast<int>(seq.size());
+    // Agent-effective capacity (see compute_marginal_cost for rationale).
+    const int   tam_cap = memory_.task_agent.params.max_tasks_per_agent;
     const int   max_carry = std::max(
-        1, memory_.task_agent.params.max_tasks_per_agent);
+        1, a.max_capacity > 0 ? a.max_capacity : tam_cap);
 
     auto seg = [&](osmium::object_id_type from,
                    osmium::object_id_type to) -> float {

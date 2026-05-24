@@ -55,6 +55,18 @@ public:
         // resumes past the previous frontier when more agents are needed.
         float search_radius_mult   = 3.0f;
         float recall_radius_grow   = 2.0f;
+
+        // ── Multi-candidate mode (opt-in, see EpisodeConfig::tam_multi_candidate)
+        // When multi_candidate=false (default) step() runs the legacy first-fit
+        // path unchanged. When true, step() collects up to mc_max_candidates
+        // agents via adaptive Dijkstra expansion, scores them all, and assigns
+        // the argmax (force_assign) or defers if every score < 0.5.
+        bool  multi_candidate  = false;
+        bool  mc_force_assign  = true;     // Format A (true) vs Format B (false)
+        int   mc_max_candidates= 5;
+        float mc_ratio_min     = 1.4f;
+        float mc_ratio_max     = 3.0f;
+        float mc_ratio_scale   = 2000.0f;  // metres — ratio(x) decay length
     };
 
     explicit TaskAllocationModule(PDPTask& task, Params p = {});
@@ -64,6 +76,12 @@ public:
 
     bool is_allocated()  const { return allocated_; }
     bool is_exhausted()  const { return exhausted_;  }
+
+    // Multi-candidate Format B: true when the TAM finished a session with
+    // every candidate scoring below 0.5 and force_assign disabled. The task
+    // was neither allocated nor genuinely unreachable — the caller (EpisodeRunner)
+    // should re-offer it later. Always false in legacy mode and in Format A.
+    bool is_deferred()   const { return mc_deferred_; }
 
 private:
     // ---- Per-agent entry in the TAM matrix --------------------------------
@@ -95,9 +113,17 @@ private:
     bool allocated_ = false;
     bool exhausted_ = false;
 
+    // ── Multi-candidate state (only used when params_.multi_candidate) ──────
+    bool  mc_deferred_          = false;  // Format B: all candidates scored < 0.5
+    bool  mc_first_found_       = false;  // first valid candidate seen → budget set
+    bool  mc_search_reset_done_ = false;  // search states reset once per allocation
+    std::vector<int> mc_candidates_;      // collected candidate agent ids
+
     // Spatial pruning budget for both Dijkstra searches (meters).
-    // Initialised lazily on first step() using haversine(pickup, delivery)
-    // * params_.search_radius_mult. Each recall multiplies it by recall_radius_grow.
+    // Legacy mode : initialised on first step() as haversine(pickup,delivery)
+    //   * search_radius_mult; each recall multiplies by recall_radius_grow.
+    // MC mode     : starts at +inf (no budget) until the first candidate is
+    //   found, then set to x*ratio(x) where x=max(pickup_cost,delivery_cost).
     // Negative sentinel means "not yet initialised".
     float max_search_cost_ = -1.0f;
 
@@ -136,6 +162,38 @@ private:
 
     // Rebuild recall_queue_ sorted by descending score.
     void build_recall_queue();
+
+    // ── Multi-candidate mode helpers ───────────────────────────────────────
+
+    // Entry point for params_.multi_candidate. Called by step() instead of the
+    // legacy path. Expands the dual Dijkstra, collects candidates, and once the
+    // collection criterion is met scores them and allocates the argmax (or
+    // defers). Returns true once the session is finished (allocated/deferred/
+    // exhausted), matching step()'s contract.
+    bool step_multi_candidate(PDPGlobalMemory& memory, float speed_mps);
+
+    // ratio(x) for the adaptive expansion budget, decreasing in x:
+    //   ratio(x) = mc_ratio_min + (mc_ratio_max - mc_ratio_min) / (1 + x/scale)
+    // x=0 → mc_ratio_max ; x→∞ → mc_ratio_min.
+    float mc_ratio(float x) const;
+
+    // Rebuild mc_candidates_ from the current matrix_: any agent reachable
+    // from at least one Dijkstra side with a valid plan order.
+    // Sorted ascending by combined cost, capped at mc_max_candidates.
+    void mc_collect_candidates(PDPGlobalMemory& memory);
+
+    // Score every collected candidate via try_accept_task, pick the argmax,
+    // and either allocate (force_assign or best >= 0.5) or set mc_deferred_.
+    // Returns true (the session always ends here).
+    bool mc_finalise(PDPGlobalMemory& memory, float speed_mps);
+
+    // Score one agent without allocating (used by mc_finalise). Mirrors the
+    // policy call in offer_to_agent but never assigns the task.
+    float mc_score_agent(int agent_id, PDPGlobalMemory& memory);
+
+    // Allocate the task to agent_id (assign + receive_task + commit). Shared
+    // by the legacy offer_to_agent and mc_finalise.
+    void mc_allocate(int agent_id, PDPGlobalMemory& memory, float speed_mps);
 };
 
 #endif // TASK_ALLOCATION_MODULE_HPP
