@@ -20,6 +20,12 @@ EpisodeRunner::EpisodeRunner(const EpisodeConfig& cfg,
                              uint32_t             seed)
     : cfg_(cfg), memory_(geo_box, pathfinder), gen_(cfg, geo_box, seed), rng_(seed)
 {
+    // Propagate the fleet load amplifier into the CongestionMap. Each real
+    // agent's commit_plan registers load_per_agent units per edge, letting
+    // the user shrink the fleet while keeping the same congestion footprint.
+    memory_.congestion_map.params.load_per_agent =
+        std::max(1, cfg_.fleet_load_per_agent);
+
     // Synchronise TaskAgent speed with episode speed so plan() and commit_plan()
     // use the same value when computing estimated arrivals and congestion entries.
     memory_.task_agent.params.default_speed_mps = cfg_.speed_mps;
@@ -42,12 +48,15 @@ EpisodeRunner::EpisodeRunner(const EpisodeConfig& cfg,
     if (start == 0)
         throw std::runtime_error("EpisodeRunner: no valid road node for agent start");
 
-    // Allocate the agent pool with a 1.5× overhead so the per-episode
-    // EpisodeScenario.agents_mult can sample values above 1.0 (slack regime)
+    // Allocate the agent pool with cfg_.agent_pool_multiplier × overhead so
+    // the per-episode EpisodeScenario.agents_mult can sample values above 1.0
+    // (slack regime, or "over-provisioned fleet" stress scenarios at up to 10×)
     // without being clamped down to the nominal max_agents() at run-time.
     // Idle surplus agents are inert (never offered tasks when n_active < pool)
-    // and cost only a small per-instance memory footprint.
-    int n = std::max(1, static_cast<int>(std::ceil(cfg_.max_agents() * 1.5)));
+    // and cost only a small per-instance memory footprint. Default 1.5 (Option
+    // T/M/X). Option Y bumps to 10 for the high-fleet sweep scenarios.
+    const float pool_mult = std::max(1.0f, cfg_.agent_pool_multiplier);
+    int n = std::max(1, static_cast<int>(std::ceil(cfg_.max_agents() * pool_mult)));
     all_agents_.reserve(n);
     for (int i = 0; i < n; ++i) {
         auto a = std::make_unique<DeliveryAgent>(i, start);
@@ -151,6 +160,23 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     refuses_high_cong_ = 0;
     accepts_low_cong_  = 0;
     refuses_low_cong_  = 0;
+    tam_agents_offered_sum_    = 0;
+    tam_recall_rounds_sum_     = 0;
+    tam_candidates_scored_sum_ = 0;
+    tam_offer_samples_         = 0;
+    value_appeared_sum_  = 0.0;
+    value_delivered_sum_ = 0.0;
+    value_refused_sum_   = 0.0;
+    bpr_along_route_sum_         = 0.0;
+    bpr_along_route_count_       = 0;
+    time_lost_to_congestion_sum_ = 0.0;
+    n_traversals_in_jam_         = 0;
+    marginal_ratio_sum_     = 0.0;
+    marginal_ratio_count_   = 0;
+    allocation_time_us_sum_ = 0;
+    allocation_time_count_  = 0;
+    tam_dijkstra_steps_sum_ = 0;
+    tam_dijkstra_count_     = 0;
     peak_load_episode_   = 0;
     overlap_edges_sum_   = 0;
     overlap_steps_       = 0;
@@ -247,11 +273,14 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     const bool ghost_on = cfg_.enable_ghost_traffic && scenario.density_mult >= 0.f;
     if (ghost_on) {
         GhostTrafficController::Config gcfg;
-        gcfg.n_max            = cfg_.ghost_n_max;
-        gcfg.total_steps      = total_steps;
-        gcfg.window_steps     = cfg_.ghost_window_steps;
-        gcfg.hot_way_fraction = cfg_.ghost_hot_way_frac;
-        gcfg.profile          = scenario.congestion_profile;
+        gcfg.n_max              = cfg_.ghost_n_max;
+        gcfg.total_steps        = total_steps;
+        gcfg.window_steps       = cfg_.ghost_window_steps;
+        gcfg.hot_way_fraction   = cfg_.ghost_hot_way_frac;
+        gcfg.hot_way_count      = cfg_.ghost_hot_way_count;
+        gcfg.density_per_hot_way = cfg_.ghost_density_per_hot_way;
+        gcfg.load_per_ghost      = std::max(1, cfg_.ghost_load_per_unit);
+        gcfg.profile            = scenario.congestion_profile;
 
         std::hash<std::string> shash;
         const uint32_t episode_seed = static_cast<uint32_t>(rng_()
@@ -344,6 +373,30 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
                 OfferResult rres = offer_task(rtask, rt->reward_original,
                                               rt->importance_original,
                                               n_active, cur_gs);
+                tam_agents_offered_sum_    += last_offer_stats_.agents_offered;
+                tam_recall_rounds_sum_     += last_offer_stats_.recall_rounds;
+                tam_candidates_scored_sum_ += last_offer_stats_.candidates_scored;
+                tam_offer_samples_         += 1;
+                allocation_time_us_sum_    += last_offer_stats_.allocation_time_us;
+                allocation_time_count_     += 1;
+                if (last_offer_stats_.tam_dijkstra_steps > 0) {
+                    tam_dijkstra_steps_sum_ += last_offer_stats_.tam_dijkstra_steps;
+                    tam_dijkstra_count_     += 1;
+                }
+                // Oracle ratio: only meaningful if we actually allocated AND we
+                // have pre-marginal costs for every agent at decision time.
+                if (rres.agent_id >= 0
+                    && static_cast<size_t>(rres.agent_id) < last_offer_stats_.pre_marginal_costs.size())
+                {
+                    const auto& pmc = last_offer_stats_.pre_marginal_costs;
+                    const float chosen = pmc[rres.agent_id];
+                    float oracle = std::numeric_limits<float>::max();
+                    for (float c : pmc) if (c < oracle) oracle = c;
+                    if (oracle > 0.f && std::isfinite(oracle) && std::isfinite(chosen)) {
+                        marginal_ratio_sum_   += static_cast<double>(chosen) / oracle;
+                        marginal_ratio_count_ += 1;
+                    }
+                }
                 if (rres.deferred) {
                     retry_queue_[qi].retry_step = step + retry_interval;
                     ++qi;
@@ -359,6 +412,8 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
                     ++n_refused_;
                     imp_refused_sum_ += rt->importance_original;
                     imp_refused_n_   += 1;
+                    value_refused_sum_ += static_cast<double>(rt->reward_original)
+                                        * rt->importance_original;
                     if (r_high) ++refuses_high_cong_; else ++refuses_low_cong_;
                     drop();
                 }
@@ -381,6 +436,21 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
             task->reward_original     = st.reward;
             task->importance_original = st.importance;
 
+            // Track pickup arrival in the spatial heatmap (RegionStatsGrid).
+            // The grid powers PolicyFeatures::area_heat_pickup at scoring time.
+            {
+                auto it = memory_.geo_box.data.nodes.find(pickup.id);
+                if (it != memory_.geo_box.data.nodes.end()) {
+                    memory_.region_grid.register_task(
+                        it->second.lat, it->second.lon, step);
+                }
+            }
+
+            // Value tracking: this task contributes reward × importance to the
+            // appeared-value pool. value_throughput_rate divides delivered by
+            // appeared at episode end.
+            value_appeared_sum_ += static_cast<double>(st.reward) * st.importance;
+
             // Snapshot congestion at the exact step the policy is consulted.
             // Distinct from per-step mean_congestion: this only counts the
             // network load when an accept/refuse call actually happens, which
@@ -392,6 +462,28 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
 
             OfferResult res = offer_task(task_id, st.reward, st.importance,
                                          n_active, cur_gs);
+            tam_agents_offered_sum_    += last_offer_stats_.agents_offered;
+            tam_recall_rounds_sum_     += last_offer_stats_.recall_rounds;
+            tam_candidates_scored_sum_ += last_offer_stats_.candidates_scored;
+            tam_offer_samples_         += 1;
+            allocation_time_us_sum_    += last_offer_stats_.allocation_time_us;
+            allocation_time_count_     += 1;
+            if (last_offer_stats_.tam_dijkstra_steps > 0) {
+                tam_dijkstra_steps_sum_ += last_offer_stats_.tam_dijkstra_steps;
+                tam_dijkstra_count_     += 1;
+            }
+            if (res.agent_id >= 0
+                && static_cast<size_t>(res.agent_id) < last_offer_stats_.pre_marginal_costs.size())
+            {
+                const auto& pmc = last_offer_stats_.pre_marginal_costs;
+                const float chosen = pmc[res.agent_id];
+                float oracle = std::numeric_limits<float>::max();
+                for (float c : pmc) if (c < oracle) oracle = c;
+                if (oracle > 0.f && std::isfinite(oracle) && std::isfinite(chosen)) {
+                    marginal_ratio_sum_   += static_cast<double>(chosen) / oracle;
+                    marginal_ratio_count_ += 1;
+                }
+            }
             if (res.deferred) {
                 // TAM multi-candidate Format B — neither accepted nor refused
                 // yet. Queue for a later retry; not counted in any metric now.
@@ -411,6 +503,7 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
                 ++n_refused_;
                 imp_refused_sum_ += st.importance;
                 imp_refused_n_   += 1;
+                value_refused_sum_ += static_cast<double>(st.reward) * st.importance;
                 if (high_cong_now) ++refuses_high_cong_;
                 else               ++refuses_low_cong_;
                 // Task stays in available_tasks but won't be re-offered.
@@ -462,6 +555,8 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         if (rt) {
             imp_refused_sum_ += rt->importance_original;
             imp_refused_n_   += 1;
+            value_refused_sum_ += static_cast<double>(rt->reward_original)
+                                * rt->importance_original;
         }
     }
     retry_queue_.clear();
@@ -503,6 +598,47 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     metrics.congestion_profile_label    = ghost_on
         ? std::string(congestion_profile_label(scenario.congestion_profile))
         : std::string();
+
+    // TAM efficiency means (one sample per offer call). For TAM-driven modes
+    // the agents_offered tells how many distinct deliveries the TAM contacted
+    // — the smaller, the lower the communication overhead vs SoTA full-scan
+    // baselines (which report n_active by construction).
+    if (tam_offer_samples_ > 0) {
+        metrics.mean_agents_offered_per_task = static_cast<float>(
+            tam_agents_offered_sum_) / tam_offer_samples_;
+        metrics.mean_recall_rounds_per_task = static_cast<float>(
+            tam_recall_rounds_sum_)  / tam_offer_samples_;
+        metrics.mean_candidates_scored_per_task = static_cast<float>(
+            tam_candidates_scored_sum_) / tam_offer_samples_;
+    }
+
+    // ── Selection intelligence (delivery quality, not just count) ──────────
+    metrics.value_throughput_rate = (value_appeared_sum_ > 0.0)
+        ? static_cast<float>(value_delivered_sum_ / value_appeared_sum_) : 0.f;
+    metrics.mean_completion_value = (latency_count_ > 0)
+        ? static_cast<float>(value_delivered_sum_ / latency_count_) : 0.f;
+    metrics.value_loss_to_refusal = static_cast<float>(value_refused_sum_);
+
+    // ── Real impact on edge traversal (BPR factors actually paid) ─────────
+    metrics.mean_bpr_along_route = (bpr_along_route_count_ > 0)
+        ? static_cast<float>(bpr_along_route_sum_ / bpr_along_route_count_)
+        : 1.f;
+    metrics.time_lost_to_congestion_steps = static_cast<float>(
+        time_lost_to_congestion_sum_);
+    metrics.n_traversals_in_jam = n_traversals_in_jam_;
+
+    // ── Allocation optimality vs MCA full-scan oracle ─────────────────────
+    metrics.marginal_cost_ratio_vs_oracle = (marginal_ratio_count_ > 0)
+        ? static_cast<float>(marginal_ratio_sum_ / marginal_ratio_count_)
+        : 1.f;
+
+    // ── Temporal complexity (allocation-only wallclock + TAM Dijkstra) ────
+    metrics.mean_allocation_time_us = (allocation_time_count_ > 0)
+        ? static_cast<float>(allocation_time_us_sum_) / allocation_time_count_
+        : 0.f;
+    metrics.mean_tam_dijkstra_steps = (tam_dijkstra_count_ > 0)
+        ? static_cast<float>(tam_dijkstra_steps_sum_) / tam_dijkstra_count_
+        : 0.f;
 
     // ── Multi-axis performance diagnostics (Option X) ──────────────────────
     metrics.mean_imp_accepted = (imp_accepted_n_ > 0)
@@ -813,6 +949,55 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         }
     }
 
+    // ── Idle-agent penalty (encourages active bidding) ────────────────────
+    //
+    // Sweep every delivery agent: if the agent finished the episode IDLE
+    // (status==Idle AND no task ever assigned), every buffer entry they
+    // produced this episode (offers they lost) is debited by idle_penalty_w
+    // × importance. The signal trains the policy to bid HIGHER when its
+    // alternative is sitting idle. Only fires for IPPO/MAPPER/FaithfulMAPPER
+    // (per-agent buffers carry agent_id, so we know which entries belong to
+    // whom). MAPPO's shared buffer is not partitioned per agent → would
+    // require an extra tracker; skipped for now (the shared critic still
+    // learns global idle-rate signals via the global state).
+    const bool apply_idle_penalty =
+        (train_mode || (policy_mode == PolicyMode::Hybrid))
+        && cfg_.idle_penalty_w > 0.f;
+    if (apply_idle_penalty
+        && (policy_mode == PolicyMode::IPPO
+            || policy_mode == PolicyMode::MAPPER
+            || policy_mode == PolicyMode::FaithfulMAPPER
+            || policy_mode == PolicyMode::Hybrid)) {
+        // Build the set of agent ids that ended idle (no committed plan, no
+        // delivered task this episode).
+        std::vector<int> idle_aids;
+        for (const auto& a : all_agents_) {
+            if (!a) continue;
+            if (a->status == AgentStatus::Idle
+                && a->local_memory.tasks.empty()) {
+                idle_aids.push_back(a->agent_id);
+            }
+        }
+        if (!idle_aids.empty()) {
+            const float pen = -cfg_.idle_penalty_w;  // flat per-offer hit
+            auto apply_to_buffer_entries = [&](int aid, auto& policy) {
+                const int sz = policy.buffer_size(aid);
+                for (int i = 0; i < sz; ++i)
+                    policy.add_to_reward(aid, i, pen);
+            };
+            for (int aid : idle_aids) {
+                if (policy_mode == PolicyMode::IPPO)
+                    apply_to_buffer_entries(aid, IPPOPolicy::shared());
+                else if (policy_mode == PolicyMode::MAPPER)
+                    apply_to_buffer_entries(aid, MapperPolicy::shared());
+                else if (policy_mode == PolicyMode::FaithfulMAPPER)
+                    apply_to_buffer_entries(aid, FaithfulMapperPolicy::shared());
+                else if (policy_mode == PolicyMode::Hybrid)
+                    apply_to_buffer_entries(aid, HybridPolicy::shared());
+            }
+        }
+    }
+
     // Per-episode learning update.
     //
     // MAPPO/IPPO/MAPPER/FaithfulMAPPER: PPO updates only when train_mode=true.
@@ -865,6 +1050,49 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     // Make the current time ratio visible to try_accept_task via GlobalMemory.
     // gs[0] = GlobalState::time_ratio = step / total_steps.
     memory_.cur_time_ratio = gs[0];
+
+    // Default per-offer stats — assume a "full-scan" baseline (n_active agents
+    // consulted, no recalls, no MC). The TAM branch overrides these from the
+    // TAM getters before returning, so the values seen at the call site
+    // correctly reflect either branch's actual behaviour.
+    last_offer_stats_ = LastOfferStats{};
+    last_offer_stats_.agents_offered = n_active;
+    last_offer_stats_.pre_marginal_costs.clear();
+
+    // Wallclock timing for the entire offer_task call (TAM Dijkstra + every
+    // policy score). Read at function exit by recording the value via a small
+    // RAII guard that updates last_offer_stats_.allocation_time_us regardless
+    // of which return path is taken.
+    const auto offer_t0 = std::chrono::steady_clock::now();
+    struct TimerGuard {
+        std::chrono::steady_clock::time_point t0;
+        LastOfferStats& stats;
+        ~TimerGuard() {
+            const auto t1 = std::chrono::steady_clock::now();
+            stats.allocation_time_us = std::chrono::duration_cast<
+                std::chrono::microseconds>(t1 - t0).count();
+        }
+    } _timer_guard{ offer_t0, last_offer_stats_ };
+
+    // Pre-compute marginal cost of inserting THIS task into every eligible
+    // agent's current sequence — BEFORE any allocation mutates state. Used
+    // at the end of the TAM branch to compute marginal_cost_ratio_vs_oracle:
+    //   chosen_agent_cost / min_over_all_agents_cost.
+    // This is the "oracle" comparison: would MCA full-scan have picked a
+    // strictly better agent than the TAM's localised search? 1.0 = TAM
+    // matched MCA's choice; > 1.0 = TAM is suboptimal by that ratio.
+    // We do this for ALL modes (baselines also report it — they minimise
+    // a different criterion, so their ratio vs route-length oracle is
+    // typically > 1.0 too, which is itself publishable: it shows how each
+    // baseline trades off route-length for its own objective).
+    PDPTask* task_for_oracle = memory_.get_task(task_id);
+    if (task_for_oracle) {
+        last_offer_stats_.pre_marginal_costs.reserve(n_active);
+        for (int i = 0; i < n_active; ++i) {
+            last_offer_stats_.pre_marginal_costs.push_back(
+                compute_marginal_cost(*all_agents_[i], *task_for_oracle));
+        }
+    }
 
     // Queue length is no longer a filter — physical carrying capacity is
     // enforced at planning time inside receive_task (capacity-aware insertion
@@ -1239,8 +1467,12 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     // The TAM terminates via its own conditions (allocated / exhausted / deferred).
     // No external step cap — the adaptive budget x*ratio(x) and the natural
     // Dijkstra exhaustion are the sole termination guarantees.
-    while (!tam->is_allocated() && !tam->is_exhausted())
+    int tam_iter_count = 0;
+    while (!tam->is_allocated() && !tam->is_exhausted()) {
         tam->step(memory_, cfg_.speed_mps);
+        ++tam_iter_count;
+    }
+    last_offer_stats_.tam_dijkstra_steps = tam_iter_count;
 
     const int buf_after        = ObjectiveDMPolicy::shared().buffer_size();
     const int ippo_after       = IPPOPolicy::shared().n_recent_records();
@@ -1257,21 +1489,131 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     PDPTask* t = memory_.get_task(task_id);
     const bool allocated = tam->is_allocated() && t && t->agent_id >= 0;
 
-    // Refusal penalty.
-    //   MAPPO  → walk the shared-buffer range [buf_before, last_excl).
-    //   IPPO   → walk the recent-records (agent_id, buf_idx) range.
-    //   MAPPER → same as IPPO but on its own recent-records log.
-    //   Hybrid → same recent-records pattern; applied regardless of train_mode
-    //            because online adaptation runs every episode.
-    //
-    // SKIPPED entirely in TAM multi-candidate mode: there the policy scores
-    // K candidates and the argmax wins — the K-1 "losers" are NOT refused
-    // tasks, so the legacy [buf_before, last_excl) bracketing would mislabel
-    // them. (MC mode is eval-only with pre-trained policies anyway.)
-    const bool apply_refuse_penalty =
-        (train_mode || (policy_mode == PolicyMode::Hybrid))
-        && !cfg_.tam_multi_candidate;
-    if (apply_refuse_penalty && cfg_.refuse_penalty_w > 0.f && t) {
+    const bool shaping_active =
+        (train_mode || (policy_mode == PolicyMode::Hybrid));
+
+    // ── Per-candidate buffer-index resolver ─────────────────────────────────
+    // Returns the buffer index of the i-th scored candidate (in the order the
+    // TAM scored them). Works for both legacy first-fit and MC TAM, both for
+    // the shared-buffer MAPPO path and the recent-records (agent_id, idx)
+    // path used by IPPO/MAPPER/Hybrid.
+    auto resolve_buf_idx = [&](int i_scored) -> int {
+        switch (policy_mode) {
+            case PolicyMode::MAPPO:
+                return buf_before + i_scored;
+            case PolicyMode::IPPO:
+                return IPPOPolicy::shared().recent_record(ippo_before + i_scored).second;
+            case PolicyMode::MAPPER:
+                return MapperPolicy::shared().recent_record(mapper_before + i_scored).second;
+            case PolicyMode::FaithfulMAPPER:
+                return FaithfulMapperPolicy::shared().recent_record(faithful_before + i_scored).second;
+            case PolicyMode::Hybrid:
+                return HybridPolicy::shared().recent_record(hybrid_before + i_scored).second;
+            default:
+                return -1;
+        }
+    };
+
+    // ── Apply reward to (agent_id, buf_idx) on the active policy ────────────
+    auto add_reward_to = [&](int aid, int buf_idx, float delta) {
+        switch (policy_mode) {
+            case PolicyMode::MAPPO:
+                ObjectiveDMPolicy::shared().add_to_reward(buf_idx, delta);
+                break;
+            case PolicyMode::IPPO:
+                IPPOPolicy::shared().add_to_reward(aid, buf_idx, delta);
+                break;
+            case PolicyMode::MAPPER:
+                MapperPolicy::shared().add_to_reward(aid, buf_idx, delta);
+                break;
+            case PolicyMode::FaithfulMAPPER:
+                FaithfulMapperPolicy::shared().add_to_reward(aid, buf_idx, delta);
+                break;
+            case PolicyMode::Hybrid:
+                HybridPolicy::shared().add_to_reward(aid, buf_idx, delta);
+                break;
+            default:
+                break;
+        }
+    };
+
+    if (cfg_.tam_multi_candidate) {
+        // ── MC TAM (Format A / B) ────────────────────────────────────────────
+        // The TAM scores K candidates in the order of mc_candidates_in_order().
+        // The winner is t->agent_id (when allocated). Apply:
+        //   - non_affected_penalty to losers (signals "your bid lost")
+        //   - record the winner's buf_idx so pickup/delivery credit fires later
+        const auto& cands = tam->mc_candidates_in_order();
+        if (!cands.empty() && t) {
+            // Locate winner position in scoring order.
+            int win_pos = -1;
+            if (allocated) {
+                for (int i = 0; i < static_cast<int>(cands.size()); ++i) {
+                    if (cands[i] == t->agent_id) { win_pos = i; break; }
+                }
+            }
+
+            // Capture winner's buf_idx for downstream pickup/delivery credit.
+            // Also apply the congestion-creation penalty here: the winner's
+            // congestion_delta_contribution feature is already encoded in their
+            // buffered observation, so this closes the loop between input
+            // vector and reward (Axis B). Negative reward scales with how
+            // much congestion the agent's plan will add to the network — uses
+            // the same proxy the feature uses (network mean BPR × insertion
+            // distance). Ghost-only jams contribute too, which biases the
+            // agent to avoid jammed areas regardless of cause; this is the
+            // simplest sane "system-aware" signal.
+            if (win_pos >= 0) {
+                const int win_buf_idx = resolve_buf_idx(win_pos);
+                if (win_buf_idx >= 0) {
+                    task_accept_buf_idx_[task_id] = win_buf_idx;
+
+                    if (shaping_active && cfg_.congestion_creation_w > 0.f) {
+                        // Recompute the proxy here so the reward matches what
+                        // the policy saw in its feature vector.
+                        DeliveryAgent* wa = memory_.get_delivery_agent(t->agent_id);
+                        if (wa) {
+                            const float to_pu_cost = [&]{
+                                const auto* p = memory_.get_or_compute_path(
+                                    wa->current_node, t->pickup.id, t->pickup.group_id);
+                                return (p && p->valid()) ? p->cost : kCostScale;
+                            }();
+                            const float pu_del_cost = [&]{
+                                const auto* p = memory_.get_or_compute_path(
+                                    t->pickup.id, t->delivery.id, t->delivery.group_id);
+                                return (p && p->valid()) ? p->cost : kCostScale;
+                            }();
+                            const float insertion_cost = to_pu_cost + pu_del_cost;
+                            const float mean_load = memory_.congestion_map.mean_load_now();
+                            const float ratio     = mean_load / 5.f;
+                            const float r2        = ratio * ratio;
+                            const float bpr_proxy = 1.f + 0.15f * r2 * r2;
+                            const float norm_ins  = std::clamp(
+                                insertion_cost / kCostScale, 0.f, 1.f);
+                            const float delta     = std::clamp(
+                                (bpr_proxy - 1.f) * norm_ins, 0.f, 1.f);
+                            const float cong_pen  =
+                                -cfg_.congestion_creation_w * delta
+                                * t->importance_original;
+                            add_reward_to(t->agent_id, win_buf_idx, cong_pen);
+                        }
+                    }
+                }
+            }
+
+            // Non-affected penalty on every non-winner (losing candidate).
+            if (shaping_active && cfg_.non_affected_penalty_w > 0.f) {
+                const float pen = -cfg_.non_affected_penalty_w * t->importance_original;
+                for (int i = 0; i < static_cast<int>(cands.size()); ++i) {
+                    if (i == win_pos) continue;
+                    const int aid = cands[i];
+                    const int idx = resolve_buf_idx(i);
+                    if (idx >= 0) add_reward_to(aid, idx, pen);
+                }
+            }
+        }
+    } else if (shaping_active && cfg_.refuse_penalty_w > 0.f && t) {
+        // ── Legacy TAM (first-fit) — original refusal penalty path ──────────
         const float pen = -cfg_.refuse_penalty_w * t->importance_original;
         if (policy_mode == PolicyMode::MAPPO) {
             const int last_excl = allocated ? buf_after - 1 : buf_after;
@@ -1305,6 +1647,15 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     }
 
     const bool deferred = tam->is_deferred();
+
+    // Capture TAM efficiency stats BEFORE erase_tam destroys the TAM state.
+    // For the "paper minimise comm" claim: n_agents_offered is the count of
+    // distinct agents the TAM actually contacted (offer_to_agent), which
+    // is typically much smaller than n_active for the SoTA full-scan path.
+    last_offer_stats_.agents_offered    = tam->n_agents_offered();
+    last_offer_stats_.recall_rounds     = tam->n_recall_rounds();
+    last_offer_stats_.candidates_scored = tam->n_candidates_scored();
+
     memory_.task_agent.erase_tam(task_id);
 
     return { allocated ? t->agent_id : -1, true, deferred };
@@ -1417,6 +1768,25 @@ int EpisodeRunner::schedule_next_edge(int agent_id, int current_step) {
 
     bool is_last = cur.is_last_edge();
 
+    // ── Real-impact accumulators: BPR along route + time lost + jam hits ──
+    // Sample the dynamic load + BPR-adjusted cost at the moment this agent
+    // ENTERS the edge. This captures the slowdown each agent actually pays
+    // due to ghost traffic + concurrent fleet — what we'd want to show the
+    // policy reduces vs the SoTA baselines that ignore traversal congestion.
+    if (edge_id != 0 && dist > 0.f) {
+        const float adjusted = memory_.congestion_map.adjusted_cost(
+            edge_id, dist, dist, current_step);
+        const float bpr_factor = adjusted / dist;   // 1.0 = no slowdown
+        bpr_along_route_sum_         += bpr_factor;
+        bpr_along_route_count_       += 1;
+        // Extra distance in metres -> divide by speed for extra steps.
+        const float extra_dist = std::max(0.f, adjusted - dist);
+        time_lost_to_congestion_sum_ += extra_dist / std::max(0.1f, cfg_.speed_mps);
+        // Edge with load >= 5 at the moment of entry = real chokepoint.
+        const int load_now = memory_.congestion_map.get_load(edge_id, current_step);
+        if (load_now >= 5) ++n_traversals_in_jam_;
+    }
+
     agent->start_edge(edge_id, dest_node, arrival);
     arrivals_.push_back({ agent_id, cur.task_id, cur.is_pickup, is_last, arrival });
     return arrival;
@@ -1492,6 +1862,12 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
         int latency = current_step - task->timeline.created_step;
         latency_sum_   += latency;
         latency_count_ += 1;
+
+        // Value tracking: this delivered task contributes its value to the
+        // delivered-value pool. value_throughput_rate and mean_completion_value
+        // are computed from this sum at episode end.
+        value_delivered_sum_ += static_cast<double>(task->reward_original)
+                              * task->importance_original;
 
         // Pickup→delivery traversal time (excludes wait time before allocation).
         if (task->timeline.picked_step >= 0) {

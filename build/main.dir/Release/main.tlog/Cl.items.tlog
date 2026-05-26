@@ -12,6 +12,7 @@ C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp;C:\ConflictualMAS\build\m
 C:\ConflictualMAS\src\Tests\TamMcTest.cpp;C:\ConflictualMAS\build\main.dir\Release\TamMcTest.obj
 C:\ConflictualMAS\src\Tests\GeoBoxConnectivityTest.cpp;C:\ConflictualMAS\build\main.dir\Release\GeoBoxConnectivityTest.obj
 C:\ConflictualMAS\src\Tests\BaselinesMultiAgentTest.cpp;C:\ConflictualMAS\build\main.dir\Release\BaselinesMultiAgentTest.obj
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp;C:\ConflictualMAS\build\main.dir\Release\CongestionOnlyTest.obj
 C:\ConflictualMAS\src\Training\CityConfig.cpp;C:\ConflictualMAS\build\main.dir\Release\CityConfig.obj
 C:\ConflictualMAS\src\Training\EpisodeConfig.cpp;C:\ConflictualMAS\build\main.dir\Release\EpisodeConfig.obj
 C:\ConflictualMAS\src\Training\EpisodeGenerator.cpp;C:\ConflictualMAS\build\main.dir\Release\EpisodeGenerator.obj

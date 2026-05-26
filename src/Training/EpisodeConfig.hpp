@@ -67,6 +67,19 @@ struct EpisodeConfig {
     // safe; >1 enables queueing for higher throughput on long-distance graphs).
     int max_tasks_per_agent = 3;
 
+    // ── Agent pool sizing ─────────────────────────────────────────────────
+    // The EpisodeRunner pre-allocates a fleet of size
+    //   pool = ceil(max_agents() × agent_pool_multiplier)
+    // so that EpisodeScenario::agents_mult > 1 (over-provisioned fleet
+    // scenarios like Y's "many idle agents, few tasks") can actually be
+    // honoured without being clamped down to the nominal phase max. The
+    // default 1.5 covers the slack regime (agents_mult ≤ ~1.4); set to 10
+    // (or higher) for stress tests like "10× more agents than nominal" used
+    // in the full SoTA comparison sweep. Idle surplus agents are inert
+    // (never offered tasks when n_active < pool) and cost only a small
+    // per-instance memory footprint.
+    float agent_pool_multiplier = 1.5f;
+
     // ── Heterogeneous per-agent capacity (Option M diversification) ────────
     // When enable_heterogeneous_capacity is true, each agent receives a
     // capacity uniformly drawn in [hetero_capacity_min, hetero_capacity_max]
@@ -93,8 +106,35 @@ struct EpisodeConfig {
     // estimates < 23% probability of delivering it. A flat unfinished penalty
     // (e.g. -0.10) makes "accept-and-fail" dominant over "refuse" regardless of
     // p, so the policy collapses to acc ≈ 100%.
-    float refuse_penalty_w   = 0.15f;
-    float unfinished_factor  = 1.0f;  // full value loss → indifference at p* ≈ 0.42
+    float refuse_penalty_w   = 0.15f;  // legacy TAM only (Format B / first-fit)
+    float unfinished_factor  = 0.7f;   // affected-but-not-delivered penalty (reduced
+                                       //   from 1.0 — under strong congestion many
+                                       //   undeliveries are structural, not policy fault)
+
+    // ── MC TAM reward shaping (V2) ─────────────────────────────────────────
+    //
+    // With Format A force_assign, an agent does not "refuse" a task — the
+    // argmax wins and the K-1 losers are simply NON-AFFECTED. This is a much
+    // weaker signal than a real refusal, hence a lower default magnitude.
+    //
+    // non_affected_penalty_w : applied to each non-winning candidate at the
+    //   moment the TAM finalises. Tells the policy "your score lost the
+    //   argmax — slightly lower would have been more honest". Keep small to
+    //   avoid pushing every loser toward 0 (would collapse the argmax range).
+    float non_affected_penalty_w = 0.03f;
+
+    // congestion_creation_w : negative reward applied to the WINNER at accept
+    //   time, proportional to the congestion their plan will add to the
+    //   network. Uses PolicyFeatures::congestion_delta_contribution as the
+    //   signal — closes the loop between the input vector and the reward.
+    //   0.0 = off. 0.1-0.3 = mild to firm "be system-aware".
+    float congestion_creation_w  = 0.15f;
+
+    // idle_penalty_w : per-offer penalty applied at episode end to every
+    //   buffer entry of an agent that finished the episode IDLE (never
+    //   received a task). Encodes "an idle agent is wasted capacity". Only
+    //   takes effect when train_mode (or Hybrid online updates) is on.
+    float idle_penalty_w         = 0.05f;
 
     // Reward shaping: split task reward between pickup and delivery events.
     // Shortens credit-assignment delay (decisions get partial signal already
@@ -109,7 +149,10 @@ struct EpisodeConfig {
     //
     // Picking up therefore protects the agent from the worst penalty and the
     // refusal threshold becomes more informative for capacity-constrained cases.
-    float pickup_reward_frac = 0.3f;  // fraction of total reward given at pickup
+    float pickup_reward_frac = 0.25f;  // fraction of total reward given at pickup
+                                       //   (was 0.3 — slightly lowered so the
+                                       //   policy stays motivated to follow
+                                       //   through to delivery, not just grab pickup)
 
     // ── Latency-aware delivery shaping (Phase 2, opt-in) ───────────────────
     //
@@ -256,6 +299,67 @@ struct EpisodeConfig {
     int   ghost_n_max          = 40;       // peak simultaneous ghost loads
     int   ghost_window_steps   = 5;        // duration each ghost occupies a way
     float ghost_hot_way_frac   = 0.30f;    // fraction of ways used as "hot" pool
+
+    // ── Strong-congestion controls (Option Y high-impact eval) ─────────────
+    //
+    // When the diagnostic test (Option Z) reports BPR ×1.000-×1.010, the
+    // ghost setup is too DIFFUSE to create meaningful edge cost adjustments:
+    // 20-80 ghosts dispersed over 10000+ "hot ways" almost never collide,
+    // so peak load stays at 1-2 and the BPR factor stays near 1.0. The two
+    // knobs below close this gap.
+    //
+    // ghost_hot_way_count : when > 0, sets the ABSOLUTE number of hot ways
+    //   sampled at episode start (overrides ghost_hot_way_frac). Use this to
+    //   concentrate ghost traffic onto a small set of "arteries" so multiple
+    //   ghosts pile up on the same edge and create real BPR cost increases.
+    //   0 = use ghost_hot_way_frac (legacy behaviour).
+    //
+    // ghost_n_max_user_set : when true, MultiCityTrainer::customize_episode_for_city
+    //   does NOT override ghost_n_max with the per-city tier (20/40/80). The
+    //   user-supplied value is used as-is across every city. This is required
+    //   when you want a SAME-density ghost regime across the eval cities.
+    int  ghost_hot_way_count    = 0;
+    bool ghost_n_max_user_set   = false;
+
+    // When > 0, the GhostTrafficController derives ghost_n_max at episode
+    // start as ceil(density × hot_way_count). This makes the per-edge BPR
+    // PROFILE identical across all cities (same average ghost density on
+    // each hot way) while letting the absolute ghost count scale with the
+    // hot pool size automatically.
+    //
+    // The user-set values of ghost_n_max and ghost_n_max_user_set are then
+    // ignored — they are superseded by the density-derived count. Set to 0
+    // to keep the legacy "absolute n_max" behaviour.
+    //
+    // Default 0.0 preserves backwards-compat for every option except Y/Q
+    // which now opt in to this scaling.
+    float ghost_density_per_hot_way = 0.0f;
+
+    // ── Compute-amortisation knobs ─────────────────────────────────────────
+    //
+    // Both knobs reduce simulation wallclock by amplifying the per-entry load
+    // contribution, so the same congestion intensity is reached with fewer
+    // CongestionMap hash operations (ghosts) and/or fewer real agents.
+    //
+    // ghost_load_per_unit : each ghost entry counts for K load units. Spawning
+    //   target_load=N at K=4 means 250 hash ops per spawn cycle instead of
+    //   1000. BPR is polynomial degree β so quantisation impact stays <1% for
+    //   K ≤ 5 on the configured β=4 default. Default 4 = ×4 speedup on the
+    //   dominant ghost spawn/expire path with negligible numerical change.
+    //
+    // fleet_load_per_agent : each real agent counts for K load units when its
+    //   plan is registered in the CongestionMap. This lets the user shrink the
+    //   actual fleet by K while preserving the congestion footprint of a K×
+    //   larger fleet. Default 1 = no behavioural change; set to 2-3 in
+    //   conjunction with reduced phase.n_agents_start/end for fast iteration.
+    int  ghost_load_per_unit       = 4;
+    int  fleet_load_per_agent      = 1;
+    // When > 0, customize_episode_for_city divides the per-tier
+    // n_agents_start / n_agents_end values by this factor at the start of an
+    // episode. Combined with fleet_load_per_agent > 1 this reduces the active
+    // fleet (less A*, less policy forward) while preserving the congestion
+    // intensity of the larger fleet. Default 1 = no change.
+    int  fleet_size_divisor        = 1;
 
     // ── Metrics ────────────────────────────────────────────────────────────
     bool collect_metrics    = true;
@@ -521,6 +625,109 @@ struct ComparisonMetrics {
     int   max_agent_completed     = 0;
     int   min_agent_completed     = 0;
     float total_fleet_distance_m  = 0.f;
+
+    // ── Selection intelligence (delivery quality, not just count) ──────────
+    //
+    // The throughput_rate column measures "how many tasks were delivered" —
+    // it does NOT measure whether the delivered tasks were the VALUABLE ones.
+    // A policy that refuses low-value tasks to capacity-protect high-value
+    // ones can win on these columns at equal or lower throughput.
+    //
+    //   value_throughput_rate : Σ value(delivered) / Σ value(appeared)
+    //                            where value = reward_original × importance_original.
+    //                            1.0 = every value unit offered was eventually
+    //                            captured; < 1.0 = value loss.
+    //   mean_completion_value : Σ value(delivered) / N_delivered. Average
+    //                            "size" of a delivered task. High = the
+    //                            policy selects valuable tasks.
+    //   value_loss_to_refusal : Σ value(refused). Absolute value the policy
+    //                            DECIDED not to pursue. Low = no waste.
+    float value_throughput_rate = 0.f;
+    float mean_completion_value = 0.f;
+    float value_loss_to_refusal = 0.f;
+
+    // ── Real impact on edge traversal times ────────────────────────────────
+    //
+    // route_congestion_exposure (existing) reports load on edges traversed —
+    // but load alone does not tell the agent how SLOW it actually was. The
+    // BPR factor (dynamic_cost / static_cost) does. These columns close the
+    // chain "ghost load → BPR factor → agent slowdown" so we can argue the
+    // policy reduces real travel time, not just observed load.
+    //
+    //   mean_bpr_along_route          : mean (dynamic_cost / static_cost)
+    //                                    over every edge any agent traversed.
+    //                                    1.0 = no slowdown; > 1.0 = effective
+    //                                    slowdown due to congestion encountered.
+    //   time_lost_to_congestion_steps : Σ ((dynamic_cost - static_cost) / speed)
+    //                                    over every traversal. The actual
+    //                                    fleet-wide step budget lost to jams.
+    //   n_traversals_in_jam           : count of (edge, traversal) where the
+    //                                    edge had load ≥ 5 at the moment the
+    //                                    agent entered it. Measures how often
+    //                                    the policy's routes hit chokepoints.
+    float mean_bpr_along_route          = 1.f;
+    float time_lost_to_congestion_steps = 0.f;
+    int   n_traversals_in_jam           = 0;
+
+    // ── Allocation optimality vs oracle (MCA full-scan) ────────────────────
+    //
+    // The TAM contacts ~2-5 agents (mean_agents_offered_per_task). MCA scans
+    // all n_active. Question: does the TAM converge on the SAME winner MCA
+    // would have picked? marginal_cost_ratio_vs_oracle answers this directly.
+    //
+    //   marginal_cost_ratio_vs_oracle : mean over all allocations of
+    //                                    (chosen_agent_insertion_cost /
+    //                                     min_over_all_eligible_agents_insertion_cost).
+    //                                    1.0 = MCA-optimal selection;
+    //                                    > 1.0 = the TAM "missed" a better
+    //                                    agent due to local search bound.
+    //                                    Together with mean_agents_offered_per_task,
+    //                                    this is THE Pareto plot for the
+    //                                    paper's "minimize communication
+    //                                    overhead WITHOUT losing allocation
+    //                                    quality" claim.
+    float marginal_cost_ratio_vs_oracle = 1.f;
+
+    // ── Temporal complexity (per-allocation cost) ──────────────────────────
+    //
+    // compute_time_per_task_ms / compute_time_per_decision_us (existing) are
+    // wallclock-divided-by-task averages over the WHOLE episode. They mix
+    // movement, A*, plan() and offer cost. To isolate the ALLOCATION cost
+    // specifically (the part the TAM + policy own), we add:
+    //
+    //   mean_allocation_time_us : wallclock per offer_task() call. Captures
+    //                              the TAM Dijkstra + every policy score call
+    //                              for that task, but not the subsequent
+    //                              insertion / movement. Comparable across
+    //                              modes because every mode goes through
+    //                              offer_task on the same offers.
+    //   mean_tam_dijkstra_steps : mean number of TAM step() iterations per
+    //                              task. Proxy for incremental Dijkstra work
+    //                              the TAM did. 0 for non-TAM baselines.
+    float mean_allocation_time_us = 0.f;
+    float mean_tam_dijkstra_steps = 0.f;
+
+    // ── TAM efficiency metrics (paper's "minimize comm overhead" claim) ────
+    //
+    // Only meaningful for TAM-driven modes (MAPPO, FaithfulMAPPER, IPPO,
+    // MAPPER, Hybrid, TamAlwaysAccept). For SoTA baselines that scan the
+    // full active fleet (MCA, CongestionAware, TrafficFlow, TokenPassing,
+    // PIBT, LaCAM, DoubleHorizon, MCA, InsertionGreedy, Greedy, Random),
+    // EpisodeRunner reports n_active as a uniform sentinel so the column
+    // stays comparable across modes.
+    //
+    //   mean_agents_offered_per_task    : distinct delivery agents the TAM
+    //                                     actually asked (offer_to_agent called
+    //                                     at least once). The CORE metric for
+    //                                     the "minimize communication" claim.
+    //   mean_recall_rounds_per_task     : recall rounds before allocation/
+    //                                     exhaustion. 0 = first-pass success.
+    //   mean_candidates_scored_per_task : multi-candidate mode only; size of
+    //                                     the candidate set scored at finalise.
+    //                                     0 in legacy mode.
+    float mean_agents_offered_per_task    = 0.f;
+    float mean_recall_rounds_per_task     = 0.f;
+    float mean_candidates_scored_per_task = 0.f;
 
     // ── Accumulation helpers (called by episode runner) ────────────────────
     void on_task_completed(int latency_steps, float t_ratio);

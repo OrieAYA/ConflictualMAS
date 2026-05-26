@@ -2,9 +2,28 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdint>
+#include <cmath>
 #include <numeric>
 #include <unordered_map>
 #include <vector>
+
+// ── RunningMeanStd persistence ──────────────────────────────────────────────
+void RunningMeanStd::save_to(void* file_v) const {
+    FILE* f = static_cast<FILE*>(file_v);
+    if (!f) return;
+    std::fwrite(&mean,  sizeof(mean),  1, f);
+    std::fwrite(&var,   sizeof(var),   1, f);
+    std::fwrite(&count, sizeof(count), 1, f);
+}
+bool RunningMeanStd::load_from(void* file_v) {
+    FILE* f = static_cast<FILE*>(file_v);
+    if (!f) return false;
+    bool ok = true;
+    ok = ok && std::fread(&mean,  sizeof(mean),  1, f) == 1;
+    ok = ok && std::fread(&var,   sizeof(var),   1, f) == 1;
+    ok = ok && std::fread(&count, sizeof(count), 1, f) == 1;
+    return ok;
+}
 
 namespace {
 
@@ -39,20 +58,21 @@ float linout(const float* W, float b, const float* x, int in_n) {
 
 } // namespace
 
-// ── PolicyFeatures ────────────────────────────────────────────────────────────
+// ── PolicyFeatures (V2 — 12-d redesigned vector) ──────────────────────────────
 void PolicyFeatures::to_array(float* dst) const {
-    dst[ 0] = cost_diff;
-    dst[ 1] = profit_rate;
-    dst[ 2] = current_load;
-    dst[ 3] = queue_duration;
-    dst[ 4] = efficiency_loss;
-    dst[ 5] = rank_in_call;
-    dst[ 6] = task_importance;
-    dst[ 7] = n_agents_ratio;
-    dst[ 8] = n_alloc_ratio;
-    dst[ 9] = n_avail_ratio;
-    dst[10] = recall_round_norm;
-    dst[11] = time_remaining;
+    // Group order (semantic, not alphabetical): global → agent → competition → spatio.
+    dst[ 0] = profit_rate;
+    dst[ 1] = n_agents_ratio;
+    dst[ 2] = n_alloc_ratio;
+    dst[ 3] = time_remaining;
+    dst[ 4] = queue_duration;
+    dst[ 5] = load_at_insertion;
+    dst[ 6] = efficiency_loss;
+    dst[ 7] = marginal_cost_relative;
+    dst[ 8] = fleet_pressure;
+    dst[ 9] = divergence_ratio;
+    dst[10] = congestion_delta_contribution;
+    dst[11] = area_heat_pickup;
 }
 
 // ── ActorMLP ──────────────────────────────────────────────────────────────────
@@ -90,7 +110,7 @@ float ActorMLP::forward(const float* x,
 
 // ── CriticMLP ─────────────────────────────────────────────────────────────────
 void CriticMLP::init_xavier(std::mt19937& rng) {
-    xavier(W1, kGlobSz, kHid, rng);
+    xavier(W1, kCriticIn, kHid, rng);
     xavier(W2, kHid, kHid, rng);
     xavier(W3, kHid, 1, rng);
     std::fill(b1, b1 + kHid, 0.f);
@@ -108,8 +128,8 @@ float CriticMLP::forward(const float* x,
     if (!pa1) pa1 = _pa1;
     if (!pa2) pa2 = _pa2;
 
-    linrelu(W1, b1, x,  kHid, kGlobSz, h1, pa1);
-    linrelu(W2, b2, h1, kHid, kHid,    h2, pa2);
+    linrelu(W1, b1, x,  kHid, kCriticIn, h1, pa1);
+    linrelu(W2, b2, h1, kHid, kHid,      h2, pa2);
     return linout(W3, b3, h2, kHid); // raw value, no sigmoid
 }
 
@@ -322,7 +342,7 @@ float ObjectiveDMPolicy::update_critic_mb(
     const int ng  = static_cast<int>(gs.size());
     if (bsz <= 0 || ng == 0) return 0.f;
 
-    float dW1[kHid * kGlobSz]{};
+    float dW1[kHid * kCriticIn]{};
     float db1[kHid]{};
     float dW2[kHid * kHid]{};
     float db2[kHid]{};
@@ -332,20 +352,34 @@ float ObjectiveDMPolicy::update_critic_mb(
     const float inv_n = 1.f / bsz;
     float mse_acc = 0.f;
 
+    // Value normalisation snapshot — critic is trained in normalised space.
+    const float v_mu  = value_rms.mean_f();
+    const float v_std = value_rms.std_dev();
+    const float inv_v_std = 1.f / v_std;
+
     for (int pi = start; pi < end; ++pi) {
         int idx = perm[pi];
         if (idx >= ng) continue;
 
-        const float* gx = gs[idx].data();
-        float h1[kHid], h2[kHid], pa1[kHid], pa2[kHid];
-        float V_new = critic.forward(gx, h1, h2, pa1, pa2);
-        float V_old = buffer_[idx].value;
-        float ret   = buffer_[idx].ret;
+        // FP-state assembly: system (gs) ++ agent obs (buffer_[idx].obs).
+        float gx[kCriticIn];
+        std::copy_n(gs[idx].data(),           kGlobSz,   gx);
+        std::copy_n(buffer_[idx].obs.data(),  kPolicySz, gx + kGlobSz);
 
-        // Value clipping
-        float V_clip     = V_old + std::clamp(V_new - V_old, -hparams.val_clip_eps, hparams.val_clip_eps);
-        float err_new    = V_new  - ret;
-        float err_clip   = V_clip - ret;
+        float h1[kHid], h2[kHid], pa1[kHid], pa2[kHid];
+        float V_new      = critic.forward(gx, h1, h2, pa1, pa2);   // normalised
+        // V_old was stored DENORMALISED in train_epoch (rescaled to raw scale
+        // for GAE). Re-normalise it here so value clipping operates in the
+        // same space as V_new.
+        float V_old_norm = (buffer_[idx].value - v_mu) * inv_v_std;
+        float ret_norm   = (buffer_[idx].ret    - v_mu) * inv_v_std;
+
+        // Value clipping (in normalised space — matches MAPPO Suggestion 1)
+        float V_clip     = V_old_norm + std::clamp(V_new - V_old_norm,
+                                                   -hparams.val_clip_eps,
+                                                    hparams.val_clip_eps);
+        float err_new    = V_new  - ret_norm;
+        float err_clip   = V_clip - ret_norm;
         mse_acc += std::max(err_new * err_new, err_clip * err_clip);
 
         float dz3 = 2.f * err_new * inv_n;  // gradient always via V_new
@@ -364,17 +398,17 @@ float ObjectiveDMPolicy::update_critic_mb(
         for (int i = 0; i < kHid; ++i) {
             float dz1 = dh1[i] * (pa1[i] > 0.f ? 1.f : 0.f);
             db1[i] += dz1;
-            for (int j = 0; j < kGlobSz; ++j) dW1[i*kGlobSz+j] += dz1 * gx[j];
+            for (int j = 0; j < kCriticIn; ++j) dW1[i*kCriticIn+j] += dz1 * gx[j];
         }
     }
 
     // L2 gradient norm clipping
     float* cg[] = { dW1, db1, dW2, db2, dW3, &db3 };
-    int    cs[] = { kHid*kGlobSz, kHid, kHid*kHid, kHid, kHid, 1 };
+    int    cs[] = { kHid*kCriticIn, kHid, kHid*kHid, kHid, kHid, 1 };
     clip_grad_norm(cg, cs, 6, hparams.max_grad_norm);
 
     float lr = hparams.lr_critic;
-    for (int i = 0; i < kHid*kGlobSz; ++i) critic.W1[i] -= lr * dW1[i];
+    for (int i = 0; i < kHid*kCriticIn; ++i) critic.W1[i] -= lr * dW1[i];
     for (int i = 0; i < kHid; ++i)          critic.b1[i] -= lr * db1[i];
     for (int i = 0; i < kHid*kHid; ++i)     critic.W2[i] -= lr * dW2[i];
     for (int i = 0; i < kHid; ++i)          critic.b2[i] -= lr * db2[i];
@@ -404,12 +438,36 @@ ObjectiveDMPolicy::TrainingStats ObjectiveDMPolicy::train_epoch(
     if (n == 0) return ts;
 
     // ── 1. Frozen V_old for GAE and value clipping ────────────────────────
-    if (ng > 0)
-        for (int i = 0; i < n && i < ng; ++i)
-            buffer_[i].value = critic.forward(global_states[i].data());
+    //
+    // MAPPO Suggestion 1 (Yu 2022 §5.1): the critic outputs values in the
+    // NORMALISED scale. Anything that consumes V(s) — here GAE and value
+    // clipping — must denormalise via the running rms snapshot captured at
+    // the start of training (i.e. the rms that the critic was last trained
+    // against). Using value_rms_old guarantees consistency even though we
+    // update value_rms below from the just-computed returns.
+    const float v_mu_old  = value_rms.mean_f();
+    const float v_std_old = value_rms.std_dev();
+    if (ng > 0) {
+        // Build FP-state per experience: system (20-d) ++ agent obs (12-d).
+        float fp[kCriticIn];
+        for (int i = 0; i < n && i < ng; ++i) {
+            std::copy_n(global_states[i].data(), kGlobSz, fp);
+            std::copy_n(buffer_[i].obs.data(),   kPolicySz, fp + kGlobSz);
+            const float v_norm = critic.forward(fp);
+            buffer_[i].value = v_norm * v_std_old + v_mu_old;
+        }
+    }
 
     // ── 2. Per-agent GAE ──────────────────────────────────────────────────
     compute_gae();
+
+    // ── 2.5 Update running mean/std of returns ────────────────────────────
+    //
+    // Done AFTER compute_gae so the rms reflects the raw return scale of this
+    // batch. The freshly-updated rms is used to normalise critic targets in
+    // the SGD loop below and to denormalise the critic's frozen V(s) in the
+    // NEXT train_epoch call.
+    for (const auto& e : buffer_) value_rms.update(e.ret);
 
     // ── 3. Global advantage normalisation (MAPPO recommendation) ─────────
     float adv_mean = 0.f;
@@ -478,7 +536,12 @@ ObjectiveDMPolicy::TrainingStats ObjectiveDMPolicy::train_epoch(
 }
 
 // ── Persistence ───────────────────────────────────────────────────────────────
-static constexpr uint32_t kMagicDM = 0xDEA110C0u;
+// Magic bumped (0xDEA110C0 → 0xDEA110C1) because file format changed: critic
+// is now trained in normalised space and the running mean/std snapshot must be
+// persisted alongside the weights. Old files will fail load() (returns false),
+// triggering a fresh Xavier init — acceptable since policies need re-training
+// against the new value-normalised critic anyway.
+static constexpr uint32_t kMagicDM = 0xDEA110C1u;
 
 void ObjectiveDMPolicy::save(const std::string& path) const {
     FILE* f = std::fopen(path.c_str(), "wb");
@@ -491,13 +554,15 @@ void ObjectiveDMPolicy::save(const std::string& path) const {
     std::fwrite(actor.b2, sizeof(float), kHid,             f);
     std::fwrite(actor.W3, sizeof(float), kHid,             f);
     std::fwrite(&actor.b3, sizeof(float), 1,               f);
-    // Critic weights
-    std::fwrite(critic.W1, sizeof(float), kHid * kGlobSz, f);
-    std::fwrite(critic.b1, sizeof(float), kHid,           f);
-    std::fwrite(critic.W2, sizeof(float), kHid * kHid,    f);
-    std::fwrite(critic.b2, sizeof(float), kHid,           f);
-    std::fwrite(critic.W3, sizeof(float), kHid,           f);
-    std::fwrite(&critic.b3, sizeof(float), 1,             f);
+    // Critic weights (kCriticIn = kGlobSz + kPolicySz = 32 after FP-state)
+    std::fwrite(critic.W1, sizeof(float), kHid * kCriticIn, f);
+    std::fwrite(critic.b1, sizeof(float), kHid,             f);
+    std::fwrite(critic.W2, sizeof(float), kHid * kHid,      f);
+    std::fwrite(critic.b2, sizeof(float), kHid,             f);
+    std::fwrite(critic.W3, sizeof(float), kHid,             f);
+    std::fwrite(&critic.b3, sizeof(float), 1,               f);
+    // Running mean/std of returns (value normalisation)
+    value_rms.save_to(f);
     std::fclose(f);
 }
 
@@ -515,12 +580,13 @@ bool ObjectiveDMPolicy::load(const std::string& path) {
     ok = ok && std::fread(actor.b2,  sizeof(float), kHid,             f) == static_cast<size_t>(kHid);
     ok = ok && std::fread(actor.W3,  sizeof(float), kHid,             f) == static_cast<size_t>(kHid);
     ok = ok && std::fread(&actor.b3, sizeof(float), 1,                f) == 1;
-    ok = ok && std::fread(critic.W1,  sizeof(float), kHid * kGlobSz,  f) == static_cast<size_t>(kHid * kGlobSz);
-    ok = ok && std::fread(critic.b1,  sizeof(float), kHid,            f) == static_cast<size_t>(kHid);
-    ok = ok && std::fread(critic.W2,  sizeof(float), kHid * kHid,     f) == static_cast<size_t>(kHid * kHid);
-    ok = ok && std::fread(critic.b2,  sizeof(float), kHid,            f) == static_cast<size_t>(kHid);
-    ok = ok && std::fread(critic.W3,  sizeof(float), kHid,            f) == static_cast<size_t>(kHid);
-    ok = ok && std::fread(&critic.b3, sizeof(float), 1,               f) == 1;
+    ok = ok && std::fread(critic.W1,  sizeof(float), kHid * kCriticIn, f) == static_cast<size_t>(kHid * kCriticIn);
+    ok = ok && std::fread(critic.b1,  sizeof(float), kHid,             f) == static_cast<size_t>(kHid);
+    ok = ok && std::fread(critic.W2,  sizeof(float), kHid * kHid,      f) == static_cast<size_t>(kHid * kHid);
+    ok = ok && std::fread(critic.b2,  sizeof(float), kHid,             f) == static_cast<size_t>(kHid);
+    ok = ok && std::fread(critic.W3,  sizeof(float), kHid,             f) == static_cast<size_t>(kHid);
+    ok = ok && std::fread(&critic.b3, sizeof(float), 1,                f) == 1;
+    ok = ok && value_rms.load_from(f);
     std::fclose(f);
     return ok;
 }

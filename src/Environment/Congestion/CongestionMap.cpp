@@ -23,27 +23,27 @@ void CongestionMap::update_load(
 }
 
 void CongestionMap::add_agent(
-    osmium::object_id_type way_id, int t_enter, int t_exit
+    osmium::object_id_type way_id, int t_enter, int t_exit, int weight
 ) {
-    update_load(way_id, t_enter, t_exit, +1);
+    update_load(way_id, t_enter, t_exit, +weight);
 }
 
 void CongestionMap::remove_agent(
-    osmium::object_id_type way_id, int t_enter, int t_exit
+    osmium::object_id_type way_id, int t_enter, int t_exit, int weight
 ) {
-    update_load(way_id, t_enter, t_exit, -1);
+    update_load(way_id, t_enter, t_exit, -weight);
 }
 
 void CongestionMap::add_ghost_load(
-    osmium::object_id_type way_id, int t_enter, int t_exit
+    osmium::object_id_type way_id, int t_enter, int t_exit, int weight
 ) {
-    update_load(way_id, t_enter, t_exit, +1);
+    update_load(way_id, t_enter, t_exit, +weight);
 }
 
 void CongestionMap::remove_ghost_load(
-    osmium::object_id_type way_id, int t_enter, int t_exit
+    osmium::object_id_type way_id, int t_enter, int t_exit, int weight
 ) {
-    update_load(way_id, t_enter, t_exit, -1);
+    update_load(way_id, t_enter, t_exit, -weight);
 }
 
 int CongestionMap::get_load(osmium::object_id_type way_id, int t) const {
@@ -60,10 +60,22 @@ float CongestionMap::adjusted_cost(
     int t
 ) const {
     const float load  = static_cast<float>(get_load(way_id, t));
+    if (load <= 0.f) return base_cost;            // free flow, common case — skip pow()
     const float cap   = edge_capacity(distance_meters);
     const float ratio = load / cap;
-    const float bpr   = 1.0f + params.bpr_alpha * std::pow(ratio, params.bpr_beta);
-    return base_cost * bpr;
+    // Hot-path specialisation: β=4 (the configured default) → r^4 = (r²)².
+    // std::pow is ~20× slower than two multiplications and dominates A*/Dijkstra
+    // expansion cost when many edges carry load.
+    float power;
+    if (params.bpr_beta == 4.0f) {
+        const float r2 = ratio * ratio;
+        power = r2 * r2;
+    } else if (params.bpr_beta == 2.0f) {
+        power = ratio * ratio;
+    } else {
+        power = std::pow(ratio, params.bpr_beta);
+    }
+    return base_cost * (1.0f + params.bpr_alpha * power);
 }
 
 void CongestionMap::advance(int t_now) {

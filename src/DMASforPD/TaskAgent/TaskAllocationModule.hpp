@@ -19,6 +19,15 @@ struct TaskOffer {
     std::vector<int> prev_agents;   // agents called before (context for the recipient)
     int              recall_round = 0;  // 0 = first round, 1..N = recall index
     int              max_recalls  = 3;  // for normalisation in PolicyFeatures
+    // ── MC TAM context (V2 input vector) ─────────────────────────────────────
+    // Populated by mc_score_agent before calling try_accept_task so the policy
+    // can build marginal_cost_relative and fleet_pressure without re-scanning
+    // the TAM internals. Zero-defaults are safe for non-MC code paths.
+    int   n_candidates_total = 0;   // size of mc_candidates_ on this round
+    float my_insertion_cost   = 0.f;// pickup_cost + delivery_cost for this agent
+    float cheapest_other_cost = 0.f;// min insertion cost across the OTHER candidates
+                                    // (0 if this agent is the only candidate)
+    int   mc_max_candidates   = 5;  // matches params_.mc_max_candidates (for norm)
 };
 
 // ---- Task Allocation Module (TAM) --------------------------------------
@@ -83,6 +92,34 @@ public:
     // should re-offer it later. Always false in legacy mode and in Format A.
     bool is_deferred()   const { return mc_deferred_; }
 
+    // ── Observability (TAM-efficiency metrics) ─────────────────────────────
+    // These getters let EpisodeRunner aggregate per-task TAM behaviour into
+    // episode-level ComparisonMetrics columns. They are read-only and zero-
+    // cost (just expose state already maintained).
+    //
+    // n_agents_offered  : how many distinct agents the TAM actually asked
+    //                     (offer_to_agent called at least once). For the
+    //                     paper's "minimise communication overhead" claim,
+    //                     this is THE number to track — lower than the
+    //                     fleet size means the responsibility-based
+    //                     decomposition is paying off.
+    // n_recall_rounds   : how many recall rounds the TAM ran before
+    //                     allocating / exhausting. 0 = first-pass success.
+    // n_candidates_scored : multi-candidate mode only; size of the
+    //                     candidate set scored at finalise. 0 in legacy
+    //                     mode (use n_agents_offered instead).
+    int n_agents_offered()    const;
+    int n_recall_rounds()     const { return recall_count_; }
+    int n_candidates_scored() const { return static_cast<int>(mc_candidates_.size()); }
+
+    // ── MC TAM reward-shaping accessor ───────────────────────────────────────
+    // After mc_finalise() runs, EpisodeRunner reads mc_candidates_in_order()
+    // to pair each scored agent with the buffer entry it produced (1 entry
+    // per candidate, in the order they were scored). The winner's buf_idx
+    // becomes task_accept_buf_idx_[task_id]; the others get the non-affected
+    // penalty.
+    const std::vector<int>& mc_candidates_in_order() const { return mc_candidates_; }
+
 private:
     // ---- Per-agent entry in the TAM matrix --------------------------------
     static constexpr float kNoContact = -1.0f;
@@ -117,7 +154,7 @@ private:
     bool  mc_deferred_          = false;  // Format B: all candidates scored < 0.5
     bool  mc_first_found_       = false;  // first valid candidate seen → budget set
     bool  mc_search_reset_done_ = false;  // search states reset once per allocation
-    std::vector<int> mc_candidates_;      // collected candidate agent ids
+    std::vector<int> mc_candidates_;      // collected candidate agent ids (scoring order)
 
     // Spatial pruning budget for both Dijkstra searches (meters).
     // Legacy mode : initialised on first step() as haversine(pickup,delivery)

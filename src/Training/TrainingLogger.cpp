@@ -2,9 +2,11 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <numeric>
 #include <sstream>
+#include <string>
 
 namespace fs = std::filesystem;
 
@@ -55,6 +57,18 @@ void TrainingLogger::write_header() {
           << "peak_congestion,mean_overlap_edges,congestion_variance,"
           << "route_congestion_exposure,"
           << "max_agent_completed,min_agent_completed,total_fleet_distance_m,"
+          // TAM efficiency (paper's "minimize comm overhead" claim)
+          << "mean_agents_offered_per_task,mean_recall_rounds_per_task,"
+          << "mean_candidates_scored_per_task,"
+          // Selection intelligence (delivery quality)
+          << "value_throughput_rate,mean_completion_value,value_loss_to_refusal,"
+          // Real impact on edge traversal (BPR factors paid)
+          << "mean_bpr_along_route,time_lost_to_congestion_steps,"
+          << "n_traversals_in_jam,"
+          // Allocation optimality vs MCA full-scan oracle
+          << "marginal_cost_ratio_vs_oracle,"
+          // Temporal complexity (allocation cost only)
+          << "mean_allocation_time_us,mean_tam_dijkstra_steps,"
           << "wallclock_ms\n";
     header_written_ = true;
 }
@@ -115,6 +129,18 @@ void TrainingLogger::write_row(const EpisodeRecord& r) {
           << r.max_agent_completed         << ','
           << r.min_agent_completed         << ','
           << r.total_fleet_distance_m      << ','
+          << r.mean_agents_offered_per_task    << ','
+          << r.mean_recall_rounds_per_task     << ','
+          << r.mean_candidates_scored_per_task << ','
+          << r.value_throughput_rate           << ','
+          << r.mean_completion_value           << ','
+          << r.value_loss_to_refusal           << ','
+          << r.mean_bpr_along_route            << ','
+          << r.time_lost_to_congestion_steps   << ','
+          << r.n_traversals_in_jam             << ','
+          << r.marginal_cost_ratio_vs_oracle   << ','
+          << r.mean_allocation_time_us         << ','
+          << r.mean_tam_dijkstra_steps         << ','
           << r.wallclock_ms     << '\n';
 }
 
@@ -134,27 +160,21 @@ void TrainingLogger::flush() {
 void TrainingLogger::write_summary(const std::string& path,
                                    const std::vector<EpisodeRecord>& records,
                                    int seed) {
-    bool exists = fs::exists(path);
-    std::ofstream f(path, std::ios::app);
-    if (!f.is_open()) return;
-
-    if (!exists) {
-        f << "seed,city,phase,policy_mode,"
-          << "n_episodes,"
-          << "throughput_mean,throughput_std,"
-          << "accept_rate_mean,accept_rate_std,"
-          << "latency_mean_mean,latency_mean_std,"
-          << "utilisation_mean,utilisation_std,"
-          << "mean_congestion_mean,mean_congestion_std,"
-          << "mean_trip_steps_mean,mean_trip_steps_std,"
-          << "mean_wait_steps_mean,mean_wait_steps_std,"
-          << "mean_road_pd_m_mean,mean_road_pd_m_std,"
-          << "delivery_route_efficiency_mean,delivery_route_efficiency_std,"
-          << "actor_loss_mean,critic_loss_mean,entropy_mean\n";
-    }
+    static constexpr const char* kHeader =
+        "seed,city,phase,policy_mode,"
+        "n_episodes,"
+        "throughput_mean,throughput_std,"
+        "accept_rate_mean,accept_rate_std,"
+        "latency_mean_mean,latency_mean_std,"
+        "utilisation_mean,utilisation_std,"
+        "mean_congestion_mean,mean_congestion_std,"
+        "mean_trip_steps_mean,mean_trip_steps_std,"
+        "mean_wait_steps_mean,mean_wait_steps_std,"
+        "mean_road_pd_m_mean,mean_road_pd_m_std,"
+        "delivery_route_efficiency_mean,delivery_route_efficiency_std,"
+        "actor_loss_mean,critic_loss_mean,entropy_mean";
 
     // Group by (city, phase, policy_mode) and compute stats.
-    struct Key { std::string city, phase, mode; };
     auto key_of = [](const EpisodeRecord& r) {
         return r.city + "|" + r.phase + "|" + r.policy_mode;
     };
@@ -165,6 +185,48 @@ void TrainingLogger::write_summary(const std::string& path,
         if (std::find(seen_keys.begin(), seen_keys.end(), k) == seen_keys.end())
             seen_keys.push_back(k);
     }
+
+    // Build the set of (seed,city,phase,mode) CSV-key prefixes we're about to
+    // write — any existing row with the same prefix is stale and must be
+    // dropped to keep summary.csv idempotent across re-runs.
+    auto csv_key = [seed](const std::string& city,
+                          const std::string& phase,
+                          const std::string& mode) {
+        return std::to_string(seed) + "," + city + "," + phase + "," + mode + ",";
+    };
+    std::vector<std::string> new_keys;
+    new_keys.reserve(seen_keys.size());
+    for (const auto& k : seen_keys) {
+        // unpack city|phase|mode
+        auto p1 = k.find('|');
+        auto p2 = k.find('|', p1 + 1);
+        new_keys.push_back(csv_key(k.substr(0, p1),
+                                   k.substr(p1 + 1, p2 - p1 - 1),
+                                   k.substr(p2 + 1)));
+    }
+
+    // Read surviving rows from the existing file (drop matching keys).
+    std::vector<std::string> surviving;
+    if (fs::exists(path)) {
+        std::ifstream in(path);
+        std::string line;
+        bool first = true;
+        while (std::getline(in, line)) {
+            if (first) { first = false; continue; }   // skip header
+            if (line.empty()) continue;
+            bool drop = false;
+            for (const auto& nk : new_keys) {
+                if (line.rfind(nk, 0) == 0) { drop = true; break; }
+            }
+            if (!drop) surviving.push_back(line);
+        }
+    }
+
+    // Truncate + rewrite: header, surviving rows, then new rows below.
+    std::ofstream f(path, std::ios::trunc);
+    if (!f.is_open()) return;
+    f << kHeader << '\n';
+    for (const auto& line : surviving) f << line << '\n';
 
     for (const auto& k : seen_keys) {
         std::vector<const EpisodeRecord*> group;
@@ -267,6 +329,18 @@ EpisodeRecord make_record(const RunResult& result,
     r.mean_overlap_edges            = m.mean_overlap_edges;
     r.congestion_variance           = m.congestion_variance;
     r.route_congestion_exposure     = m.route_congestion_exposure;
+    r.mean_agents_offered_per_task    = m.mean_agents_offered_per_task;
+    r.mean_recall_rounds_per_task     = m.mean_recall_rounds_per_task;
+    r.mean_candidates_scored_per_task = m.mean_candidates_scored_per_task;
+    r.value_throughput_rate           = m.value_throughput_rate;
+    r.mean_completion_value           = m.mean_completion_value;
+    r.value_loss_to_refusal           = m.value_loss_to_refusal;
+    r.mean_bpr_along_route            = m.mean_bpr_along_route;
+    r.time_lost_to_congestion_steps   = m.time_lost_to_congestion_steps;
+    r.n_traversals_in_jam             = m.n_traversals_in_jam;
+    r.marginal_cost_ratio_vs_oracle   = m.marginal_cost_ratio_vs_oracle;
+    r.mean_allocation_time_us         = m.mean_allocation_time_us;
+    r.mean_tam_dijkstra_steps         = m.mean_tam_dijkstra_steps;
     r.max_agent_completed           = m.max_agent_completed;
     r.min_agent_completed           = m.min_agent_completed;
     r.total_fleet_distance_m        = m.total_fleet_distance_m;

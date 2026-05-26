@@ -43,6 +43,9 @@
     <ClCompile Include="C:\ConflictualMAS\src\Tests\BaselinesMultiAgentTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Training\CityConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

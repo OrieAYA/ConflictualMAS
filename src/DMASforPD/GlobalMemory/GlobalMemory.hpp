@@ -6,8 +6,62 @@
 #include "DMASforPD/Utility/PDPTask.hpp"
 #include "DMASforPD/Utility/TimedPath.hpp"
 #include "DMASforPD/TaskAgent/TaskAgent.hpp"
+#include <deque>
 #include <unordered_map>
 #include <vector>
+
+// ── RegionStatsGrid — task density + congestion heatmap over the city bbox ───
+//
+// Lightweight 32×32 grid over the GeoBox bbox. Tracks:
+//   - Per-cell task arrival density (sliding window of `window_steps` steps)
+//   - Per-cell mean BPR multiplier (refreshed every kCacheRefreshSteps)
+//
+// Used by PolicyFeatures::area_heat_pickup = density_norm × congestion_norm.
+// Total memory: ~40 KB per episode (negligible). Total runtime: O(1) per task
+// arrival + O(N_cells × N_sampled_edges) every kCacheRefreshSteps steps.
+struct RegionStatsGrid {
+    static constexpr int kDim                = 32;
+    static constexpr int kSize               = kDim * kDim;
+    static constexpr int kMaxEdgesPerCell    = 16;     // sampled at init for BPR queries
+    static constexpr int kCacheRefreshSteps  = 50;     // congestion cache cadence
+
+    bool   inited      = false;
+    double min_lat = 0, min_lon = 0;
+    double cell_h_lat = 1, cell_w_lon = 1;
+
+    // ── Density tracking (sliding window of task arrivals) ──────────────────
+    int    task_counts[kSize]  = {};
+    int    max_count           = 1;
+    int    window_steps        = 600;
+    struct Event { int step; int cell; };
+    std::deque<Event> task_events;
+
+    // ── Congestion cache (refreshed every kCacheRefreshSteps) ───────────────
+    float  cell_cong_cache[kSize] = {};   // mean BPR multiplier (≥ 1.0)
+    float  max_cell_cong          = 1.f;  // for normalisation
+    int    last_cache_refresh     = -kCacheRefreshSteps;
+
+    // Per-cell sampled edge IDs (precomputed at init, capped at kMaxEdgesPerCell).
+    std::vector<osmium::object_id_type> cell_edges[kSize];
+
+    // Initialise grid bounds + precompute per-cell edge samples from geo_box.
+    void init(const GeoBox& gb);
+
+    // Hard reset between episodes (clears counts, keeps the edge sampling).
+    void reset_episode();
+
+    int  cell_of(double lat, double lon) const;
+    void register_task(double lat, double lon, int step);
+    void purge(int now);
+
+    void refresh_congestion_cache(const CongestionMap& cmap,
+                                   const GeoBox& gb,
+                                   int step);
+
+    float density_norm(double lat, double lon) const;     // ∈ [0,1]
+    float congestion_norm(double lat, double lon) const;  // ∈ [0,1]
+    float area_heat(double lat, double lon) const;        // density × congestion
+};
 
 // Top-level server memory for the PDP multi-agent system.
 //
@@ -94,6 +148,12 @@ public:
     enum class PolicyKind { kMAPPO = 0, kIPPO = 1, kMAPPER = 2,
                             kHybrid = 3, kFaithfulMAPPER = 4 };
     PolicyKind active_policy = PolicyKind::kMAPPO;
+
+    // ── Spatial heatmap : task density + congestion per cell ───────────────
+    // Initialised once at construction (via geo_box bbox), reset between
+    // episodes. EpisodeRunner calls register_task() on arrival and refresh
+    // happens lazily inside area_heat() via advance_time hooks.
+    RegionStatsGrid region_grid;
 
     PDPGlobalMemory() = delete;
     PDPGlobalMemory(GeoBox& box, Pathfinder& pf,

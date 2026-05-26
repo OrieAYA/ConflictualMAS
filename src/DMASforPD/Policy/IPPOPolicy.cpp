@@ -273,20 +273,24 @@ float IPPOPolicy::update_critic_mb(
     const float inv_n = 1.f / bsz;
     float mse_acc = 0.f;
 
+    const float v_mu      = value_rms.mean_f();
+    const float v_std     = value_rms.std_dev();
+    const float inv_v_std = 1.f / v_std;
+
     for (int pi = start; pi < end; ++pi) {
         const auto [aid, idx] = perm[pi];
         const Experience& e = buffers_.at(aid)[idx];
 
         float h1[kHid], h2[kHid], pa1[kHid], pa2[kHid];
-        float V_new = critic.forward(e.obs.data(), h1, h2, pa1, pa2);
-        float V_old = e.value;
-        float ret   = e.ret;
+        float V_new      = critic.forward(e.obs.data(), h1, h2, pa1, pa2);   // normalised
+        float V_old_norm = (e.value - v_mu) * inv_v_std;
+        float ret_norm   = (e.ret   - v_mu) * inv_v_std;
 
-        float V_clip   = V_old + std::clamp(V_new - V_old,
-                                            -hparams.val_clip_eps,
-                                             hparams.val_clip_eps);
-        float err_new  = V_new  - ret;
-        float err_clip = V_clip - ret;
+        float V_clip   = V_old_norm + std::clamp(V_new - V_old_norm,
+                                                 -hparams.val_clip_eps,
+                                                  hparams.val_clip_eps);
+        float err_new  = V_new  - ret_norm;
+        float err_clip = V_clip - ret_norm;
         mse_acc += std::max(err_new * err_new, err_clip * err_clip);
 
         float dz3 = 2.f * err_new * inv_n;
@@ -338,14 +342,24 @@ IPPOPolicy::TrainingStats IPPOPolicy::train_epoch() {
     ts.n_exp = total;
     if (total == 0) return ts;
 
-    // ── 1. Frozen V_old per buffer entry (shared critic, local obs). ───────
+    // ── 1. Frozen V_old per buffer entry (shared critic, local obs).
+    //      Denormalise via the rms snapshot the critic was last trained against.
+    const float v_mu_old  = value_rms.mean_f();
+    const float v_std_old = value_rms.std_dev();
     for (auto& [aid, buf] : buffers_) {
-        for (auto& e : buf)
-            e.value = critic.forward(e.obs.data());
+        for (auto& e : buf) {
+            const float v_norm = critic.forward(e.obs.data());
+            e.value = v_norm * v_std_old + v_mu_old;
+        }
     }
 
     // ── 2. Per-agent GAE (per-trajectory reverse sweep). ───────────────────
     for (auto& [aid, buf] : buffers_) compute_gae(buf);
+
+    // ── 2.5 Update running mean/std of returns (used for normalised critic
+    //       targets in update_critic_mb below and for the next V_old denorm). ─
+    for (auto& [aid, buf] : buffers_)
+        for (const auto& e : buf) value_rms.update(e.ret);
 
     // ── 3. Global advantage normalisation (shared actor + shared critic
     //      need consistent scales across agents). ─────────────────────────
@@ -428,10 +442,10 @@ IPPOPolicy::TrainingStats IPPOPolicy::train_epoch() {
 }
 
 // ── Persistence ─────────────────────────────────────────────────────────────
-// New magic for the paper-faithful (shared-critic) format. The old per-agent
-// critics format is intentionally incompatible — loading an old checkpoint
-// returns false rather than silently producing nonsense.
-static constexpr uint32_t kMagicIPPOFaithful = 0xDEA110C3u;
+// Magic bumped (0xDEA110C3 → 0xDEA110C4) — file format now includes a
+// RunningMeanStd snapshot after critic weights so value normalisation state
+// survives save/load.
+static constexpr uint32_t kMagicIPPOFaithful = 0xDEA110C4u;
 
 void IPPOPolicy::save(const std::string& path) const {
     FILE* f = std::fopen(path.c_str(), "wb");
@@ -453,6 +467,8 @@ void IPPOPolicy::save(const std::string& path) const {
     std::fwrite(critic.b2, sizeof(float), kHid,             f);
     std::fwrite(critic.W3, sizeof(float), kHid,             f);
     std::fwrite(&critic.b3, sizeof(float), 1,               f);
+    // Running mean/std of returns (value normalisation state).
+    value_rms.save_to(f);
     std::fclose(f);
 }
 
@@ -479,6 +495,7 @@ bool IPPOPolicy::load(const std::string& path) {
     ok = ok && std::fread(critic.b2, sizeof(float), kHid,             f) == static_cast<size_t>(kHid);
     ok = ok && std::fread(critic.W3, sizeof(float), kHid,             f) == static_cast<size_t>(kHid);
     ok = ok && std::fread(&critic.b3, sizeof(float), 1,               f) == 1;
+    ok = ok && value_rms.load_from(f);
 
     std::fclose(f);
     return ok;

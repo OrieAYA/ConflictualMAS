@@ -10,10 +10,32 @@
 #include "Tests/TamMcTest.hpp"
 #include "Tests/GeoBoxConnectivityTest.hpp"
 #include "Tests/BaselinesMultiAgentTest.hpp"
+#include "Tests/CongestionOnlyTest.hpp"
+#include <exception>
 #include <iostream>
 #include <string>
 
+// Forward-declares the actual main body so we can wrap it in a try/catch
+// without indenting every existing line. Without this guard, a thrown
+// std::runtime_error (notably from MultiCityTrainer::try_load when a
+// checkpoint is missing in eval_only mode) silently terminates the process
+// with no stderr output — extremely hard to debug.
+static int run_main();
+
 int main()
+{
+    try {
+        return run_main();
+    } catch (const std::exception& e) {
+        std::cerr << "\n[FATAL] " << e.what() << "\n" << std::flush;
+        return 1;
+    } catch (...) {
+        std::cerr << "\n[FATAL] unknown exception\n" << std::flush;
+        return 1;
+    }
+}
+
+static int run_main()
 {
     const std::string osm_file  = "C:\\ConflictualMAS\\src\\maps\\Tokyo.osm.pbf";
     const std::string cache_dir = "C:\\ConflictualMAS\\src\\geobox_cache_folder";
@@ -45,7 +67,9 @@ int main()
     std::cout << "  H  Eval — TAM multi-candidate Format B (threshold 0.5 + retry)\n";
     std::cout << "  J  TAM multi-candidate correctness test (Format A/B, small bbox)\n";
     std::cout << "  K  GeoBox connectivity check (smoke_test + tous les caches)\n";
-    std::cout << "  L  Baselines multi-agent LGPDP test (MCA/TP/TF/CA/PIBT/...)\n\n";
+    std::cout << "  L  Baselines multi-agent LGPDP test (MCA/TP/TF/CA/PIBT/...)\n";
+    std::cout << "  Z  Congestion-only test (ghost traffic impact on 6 cities × 5 scenarios)\n";
+    std::cout << "  Q  TAM + congestion validation (4 cities × 4 modes × 3 scenarios, ~2-4h)\n\n";
     std::cout << "Choice: ";
 
     std::string rep;
@@ -62,53 +86,126 @@ int main()
     else if (rep == "A" || rep == "a") test_amazon_routes(amazon_dir);
     else if (rep == "B" || rep == "b") test_comparison(amazon_dir);
     else if (rep == "T" || rep == "t") {
-        // ── MAPPO multi-city training ─────────────────────────────────────
-        // OSM files expected at:  <osm_root>/<CityName>.osm.pbf
-        // GeoBox JSON caches at:  <cache_root>/<CityName>.json  (auto-created)
-        // Results (CSV + policy) at:  <output_dir>/
+        // ── Option T — Unified training : MAPPO + IPPO + FaithfulMAPPER ──────
+        //
+        // PURPOSE
+        //   Single training run that produces the 3 checkpoints needed by the
+        //   Q / F evaluation. Environment matched to Q so train and eval see
+        //   the same congestion regime / planning back-end (no train-test shift).
+        //
+        // WHAT THIS CONFIG DOES
+        //   - Trains MAPPO, IPPO, and FaithfulMAPPER from scratch (fresh Xavier).
+        //   - Saves each checkpoint at the path the eval options expect.
+        //   - 3 Small training cities (Tokyo / Kyoto / LosAngeles) — Medium
+        //     and Large are NOT trained on (DbVNS pathology on Medium ; Large
+        //     is held out for generalization).
+        //   - Pure training: no in-loop eval. Run Q after T for evaluation.
+        //
+        // ENVIRONMENT (matches Y and Q exactly)
+        //   - DbVNS planning back-end (same as the eval pipeline).
+        //   - Per-city proportional ghost congestion: 5% of ways are hot, with
+        //     an average ghost density of 2 per hot way. Produces the same
+        //     peak BPR (×2.5 – ×6) across cities regardless of graph size.
+        //   - Heterogeneous agent capacity ∈ [3, 7].
+        //   - Latency shaping + task value heterogeneity (Option M Phase 2+3).
+        //   - Fleet shrink by 2 with load_per_agent=2 → same congestion
+        //     footprint, ~2× faster compute.
+        //
+        // ROOM FOR ITERATION
+        //   The input vector enrichment (Batch A/B features), the scenario
+        //   sampling tweaks, and the reward shaping fixes we discussed will be
+        //   layered on top of this config. Nothing here locks them out.
+        //
+        // ESTIMATED WALLCLOCK
+        //   ~6-10 h on the new optimised stack (3 policies × 60 rounds × 3
+        //   Small cities). FaithfulMAPPER is the slowest contributor (~12
+        //   per-agent networks updated independently).
         const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
         const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
         const std::string output_dir = "C:\\ConflictualMAS\\results";
-
-        // set_osm_root must be called BEFORE CityRegistry::all() (lazy static).
         CityRegistry::set_osm_root(osm_root);
 
         TrainingConfig cfg;
-        cfg.cache_root       = cache_root;
-        cfg.output_dir       = output_dir;
-        cfg.n_rounds         = 60;
-        cfg.n_seeds          = 1;
-        cfg.n_eval_episodes  = 3;
-        cfg.eval_every       = 20;
-        cfg.save_policy      = true;
-        cfg.verbose          = true;
+        cfg.cache_root      = cache_root;
+        cfg.output_dir      = output_dir;
+        cfg.n_rounds        = 60;
+        cfg.n_seeds         = 2;          // rng 42 + 43 → mean ± std for analysis
+        cfg.save_policy     = true;
+        cfg.verbose         = true;
 
-        // ── Lightweight periodic eval ────────────────────────────────────────
-        // The default eval array (12 modes × 6 cities × 3 eps = 216 eps per
-        // periodic eval) was taking 1-2h per eval window. With 3 eval windows
-        // per seed + final + stress + generalize, that's 6-8h of pure eval.
-        // The lightweight subset below (5 modes) drops periodic eval cost
-        // by 2.4× while keeping the comparison meaningful for monitoring.
-        // The FINAL exhaustive comparison should be done via option X.
-        cfg.eval_modes = {
-            PolicyMode::MAPPO,
-            PolicyMode::MAPPER,
-            PolicyMode::TamAlwaysAccept,
-            PolicyMode::Greedy
+        // Pure training. Q does the evaluation.
+        cfg.train_only            = true;
+        cfg.enable_generalization = false;
+
+        // 5 training cities — 3 Small + 2 Large (Tokyo_Large + London) for
+        // cross-scale generalisation. The policy sees both the short-trip
+        // regime (Small) and the long-trip / dense-graph regime (Large)
+        // BEFORE Q's held-out eval, so generalisation becomes a real test
+        // of robustness rather than an out-of-distribution surprise.
+        cfg.train_city_filter = {
+            "Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"
         };
-        // Periodic stress eval is expensive (same 5 modes × 6 cities); enable
-        // only at the end if needed. Generalize eval kept at end of each seed.
-        cfg.skip_stress_eval     = true;
-        cfg.skip_generalize_eval = false;
 
-        // Train on Tokyo/Kyoto/LA × Small/Medium only (6 cities). Generalisation
-        // eval on Tokyo_Large/Fukuoka/NewYork/Paris/London is disabled because
-        // the policy structure changed (lr_actor ×10, adv ×2) and the old
-        // generalization protocol added 3+ h that doesn't fit the overnight budget.
+        // ── Planning back-end : same as eval ────────────────────────────────
+        cfg.episode_cfg.use_dbvns_planning = true;
 
-        // To extend from a saved checkpoint (add more seeds / rounds):
-        //   cfg.load_policy  = true;
-        //   cfg.policy_path  = output_dir + "/policy_seed42.bin";
+        // ── Scenario sampler : full 4-regime distribution ───────────────────
+        cfg.disable_slack_regime = false;
+
+        // ── Congestion : matches Y / Q (per-city proportional) ──────────────
+        cfg.episode_cfg.enable_ghost_traffic       = true;
+        cfg.episode_cfg.ghost_hot_way_count        = 0;     // use fraction
+        cfg.episode_cfg.ghost_hot_way_frac         = 0.05f; // 5% hot ways per city
+        cfg.episode_cfg.ghost_density_per_hot_way  = 2.0f;  // n_max = 2 × n_hot
+        cfg.episode_cfg.ghost_window_steps         = 8;
+        cfg.episode_cfg.ghost_n_max                = 100;   // ignored (density)
+        cfg.episode_cfg.ghost_n_max_user_set       = false;
+
+        // ── Compute-amortisation : fleet ÷2 with load_per_agent=2 ───────────
+        cfg.episode_cfg.fleet_size_divisor   = 2;
+        cfg.episode_cfg.fleet_load_per_agent = 2;
+
+        // ── Heterogeneous capacity + latency shaping + task value het ───────
+        // Kept from Option M Phase 2/3 — these are what made the selectivity
+        // signal trainable in the first place. To be revisited when the new
+        // reward shaping lands.
+        cfg.episode_cfg.enable_heterogeneous_capacity = true;
+        cfg.episode_cfg.hetero_capacity_min           = 3;
+        cfg.episode_cfg.hetero_capacity_max           = 7;
+
+        cfg.episode_cfg.enable_latency_shaping     = true;
+        cfg.episode_cfg.latency_shaping_lambda     = 0.4f;
+        cfg.episode_cfg.latency_shaping_max_steps  = 1500;
+
+        cfg.episode_cfg.enable_task_value_heterogeneity = true;
+        cfg.episode_cfg.task_value_mul_min = 0.5f;
+        cfg.episode_cfg.task_value_mul_max = 2.0f;
+        cfg.episode_cfg.task_imp_min       = 0.3f;
+        cfg.episode_cfg.task_imp_max       = 3.0f;
+
+        // ── MC TAM Format A (matches Q) ─────────────────────────────────────
+        // Train under the EXACT TAM regime Q uses so the policy learns the
+        // right signal: be the argmax candidate among K bidders, not just
+        // score > 0.5. Without this, T → Q is a train/eval distribution shift.
+        cfg.episode_cfg.tam_multi_candidate     = true;
+        cfg.episode_cfg.tam_mc_force_assign     = true;     // Format A
+        cfg.episode_cfg.tam_mc_max_candidates   = 5;
+        cfg.episode_cfg.tam_mc_ratio_min        = 1.4f;
+        cfg.episode_cfg.tam_mc_ratio_max        = 3.0f;
+        cfg.episode_cfg.tam_mc_ratio_scale      = 2000.f;
+
+        // ── Checkpoint every 20 rounds (insurance against crash) ────────────
+        cfg.checkpoint_every_rounds = 20;
+
+        // ── Train MAPPO + IPPO + FaithfulMAPPER ─────────────────────────────
+        cfg.train_modes = {
+            PolicyMode::MAPPO,
+            PolicyMode::IPPO,
+            PolicyMode::FaithfulMAPPER
+        };
+
+        // Fresh Xavier init. Q picks up the produced checkpoints.
+        cfg.load_policy = false;
 
         MultiCityTrainer trainer;
         trainer.train(cfg);
@@ -345,7 +442,7 @@ int main()
         //
         // CITIES (7) — same as Option X for direct comparability :
         //   Train scope  : Tokyo_Small, Kyoto_Small, LosAngeles_Small
-        //   Held-out     : Tokyo_Large, Paris, NewYork, London
+        //   Held-out     : Tokyo_Large, Paris, NewYork  (London dropped: ~3-5h saved per mode)
         //
         // Coverage: 10 modes × 7 cities × 4 scenarios × 3 eps = 840 episodes.
         // Estimated wallclock: ~12-20h on a single seed (MAPPO pathology
@@ -370,18 +467,44 @@ int main()
         cfg.eval_modes = {
             PolicyMode::MAPPO,
             PolicyMode::FaithfulMAPPER,
-            PolicyMode::TamAlwaysAccept,
             PolicyMode::CongestionAware,
             PolicyMode::TrafficFlow,
             PolicyMode::TokenPassing
         };
 
-        // 4-scenario sweep — same as legacy Option Y.
+        // ── Y scenario sweep — congestion-profile × fleet-density diversity ──
+        //
+        // Goal: stress-test every architecture across the FULL congestion
+        // landscape (rush-hour, multi-peak, incident, monotone growth, calm)
+        // AND across the FULL fleet/density landscape (under-provisioned →
+        // over-provisioned by ~10×). This is the publication-grade sweep
+        // that gives reviewer-credible evidence on robustness.
+        //
+        // Per-scenario fields (density_mult, agents_mult, label, profile):
+        //   density_mult : multiplies the per-phase Poisson task arrival rate.
+        //   agents_mult  : multiplies the per-phase active-agent count. Pool
+        //                  is sized via cfg.episode_cfg.agent_pool_multiplier
+        //                  (bumped to 10 below) so values up to 10× are honoured.
+        //   profile      : temporal shape of background ghost congestion
+        //                  (see CongestionProfile in GhostTrafficController.hpp).
+        //
+        // Reading the matrix:
+        //   normal_wave         — baseline: nominal fleet, single-peak congestion.
+        //   normal_ramp         — multi-peak (matin/midi/après-midi/soir).
+        //   stress_shock        — incident: brief 100% traffic spike mid-episode.
+        //   stress_buildup      — saturation: linear 0 → 100% congestion buildup.
+        //   over_fleet          — over-provisioned fleet (10× agents) at low
+        //                          density: tests selectivity, free-agent
+        //                          discrimination (TokenPassing), and load
+        //                          balancing (PIBT/TrafficFlow) under abundance.
+        //
+        // Coverage: 5 scenarios × 6 modes × 6 cities × 3 eps = 540 eval episodes.
         cfg.eval_scenarios = {
-            EpisodeScenario{0.5f, 1.2f, "slack"},
-            EpisodeScenario{1.0f, 1.0f, "normal"},
-            EpisodeScenario{1.5f, 0.8f, "stress_light"},
-            EpisodeScenario{2.0f, 0.6f, "stress_heavy"},
+            EpisodeScenario{ 1.0f,  1.0f, "normal_wave",    CongestionProfile::Wave        },
+            EpisodeScenario{ 1.0f,  1.0f, "normal_ramp",    CongestionProfile::RampUpDown  },
+            EpisodeScenario{ 1.5f,  0.8f, "stress_shock",   CongestionProfile::ShockBurst  },
+            EpisodeScenario{ 2.0f,  0.6f, "stress_buildup", CongestionProfile::BuildingUp  },
+            EpisodeScenario{ 0.5f, 10.0f, "over_fleet",     CongestionProfile::Wave        },
         };
 
         // Match Option X environment exactly so RL policies are evaluated
@@ -389,12 +512,59 @@ int main()
         // baselines face the same congestion challenges.
         cfg.episode_cfg.use_dbvns_planning            = true;
         cfg.episode_cfg.enable_ghost_traffic          = true;
-        cfg.episode_cfg.ghost_n_max                   = 40;
-        cfg.episode_cfg.ghost_window_steps            = 5;
-        cfg.episode_cfg.ghost_hot_way_frac            = 0.30f;
+
+        // ── Meaningful-slowdown ghost parameters (publication-grade Y eval) ──
+        //
+        // Diagnostic Option Z proved the legacy params (n_max=20-80 dispersed
+        // over 11k-360k hot ways) produce peak load 1-2 and BPR ×1.000-×1.004
+        // — essentially no impact on edge costs, so dynamic-cost baselines
+        // cannot differentiate themselves from static-cost ones.
+        //
+        // The two changes below force ghosts to PILE UP on a small set of
+        // arteries so collisions create real BPR jams:
+        //
+        //   ghost_hot_way_count  = 150  (absolute, overrides hot_way_frac)
+        //   ghost_n_max          = 300  (same across cities)
+        //
+        // Expected behaviour at Wave/Ramp/Shock peaks (λ ≈ n_max / hot_count = 2.0):
+        //   - avg ghosts per hot way ≈ 300/150 = 2.0
+        //   - Poisson tail: ~150 × 5%   = ~8 edges with load ≥ 5 → BPR ×1.15-×1.66
+        //   - Peak load typical: 5-7 → BPR ×1.15 to ×1.66
+        //   - Rare edges at load 8+ → BPR ×2 (heaviest local jam)
+        //
+        // This sits in the "meaningful slowdown" band (BPR ×1.1-×2.0) per Option Z's
+        // interpretation legend — strong enough that dynamic-cost baselines can
+        // differentiate themselves, mild enough that the simulation remains
+        // realistic (no ×10 pathological jams that would dominate every route).
+        //
+        // ghost_n_max_user_set=true tells customize_episode_for_city NOT to
+        // reset ghost_n_max to its per-city tier value (20/40/80), so the
+        // 300 above is respected across all eval cities.
+        //
+        // ghost_window_steps bumped to 8 so each ghost lingers a bit longer,
+        // stabilising the average load profile (less Poisson churn).
+        cfg.episode_cfg.ghost_hot_way_count           = 0;     // use fraction
+        cfg.episode_cfg.ghost_hot_way_frac            = 0.05f; // 5% per city: ~78% route coverage on Small, ~55% on Large
+        cfg.episode_cfg.ghost_density_per_hot_way     = 2.0f;  // n_max = 2 × hot_count, preserves per-edge BPR
+        cfg.episode_cfg.ghost_window_steps            = 8;
+        cfg.episode_cfg.ghost_n_max                   = 100;   // ignored (density)
+        cfg.episode_cfg.ghost_n_max_user_set          = false; // density supersedes
+
         cfg.episode_cfg.enable_heterogeneous_capacity = true;
         cfg.episode_cfg.hetero_capacity_min           = 3;
         cfg.episode_cfg.hetero_capacity_max           = 7;
+
+        // Compute-amortisation: shrink the fleet by 2 while compensating with
+        // load_per_agent=2 so each real agent contributes the congestion
+        // footprint of two agents. Net effect: 2× fewer A* / policy decisions
+        // for an essentially identical congestion profile.
+        cfg.episode_cfg.fleet_size_divisor            = 2;
+        cfg.episode_cfg.fleet_load_per_agent          = 2;
+
+        // Bump the agent pool so the over_fleet scenario (agents_mult = 10)
+        // is actually instantiated. Default 1.5 clamps to 1.5× phase max,
+        // which would silently collapse over_fleet to ~standard fleet size.
+        cfg.episode_cfg.agent_pool_multiplier         = 10.0f;
 
         // Load RL checkpoints from Option M Phase 2+3 training.
         cfg.load_policy                 = true;
@@ -411,7 +581,7 @@ int main()
         };
         cfg.enable_generalization = true;
         cfg.gen_city_filter       = {
-            "Tokyo_Large", "Paris", "NewYork", "London"
+            "Tokyo_Large", "Paris", "NewYork"
         };
 
         MultiCityTrainer trainer;
@@ -558,7 +728,7 @@ int main()
         };
         cfg.enable_generalization = true;
         cfg.gen_city_filter       = {
-            "Tokyo_Large", "Paris", "NewYork", "London"
+            "Tokyo_Large", "Paris", "NewYork"
         };
 
         MultiCityTrainer trainer;
@@ -631,6 +801,11 @@ int main()
         cfg.episode_cfg.hetero_capacity_min           = 3;
         cfg.episode_cfg.hetero_capacity_max           = 7;
 
+        // Compute-amortisation (F/H): shrink fleet by 2, double per-agent
+        // load. ~2× speedup on A* / policy with preserved congestion footprint.
+        cfg.episode_cfg.fleet_size_divisor            = 2;
+        cfg.episode_cfg.fleet_load_per_agent          = 2;
+
         // ── TAM multi-candidate switch ──────────────────────────────────────
         cfg.episode_cfg.tam_multi_candidate     = true;
         cfg.episode_cfg.tam_mc_force_assign     = format_a;  // F = true, H = false
@@ -656,7 +831,7 @@ int main()
         };
         cfg.enable_generalization = true;
         cfg.gen_city_filter       = {
-            "Tokyo_Large", "Paris", "NewYork", "London"
+            "Tokyo_Large", "Paris", "NewYork"
         };
 
         std::cout << "[Option " << (format_a ? "F" : "H")
@@ -692,6 +867,146 @@ int main()
             data_dir + "/London.json",
             data_dir + "/Fukuoka.json"
         }, "production caches");
+    }
+    else if (rep == "Z" || rep == "z") {
+        // Congestion-only test: measure REAL impact of ghost traffic on edge
+        // costs, across all 6 Y-eval cities × 5 scenarios. No agents involved.
+        const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
+        const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
+        run_congestion_only_test(osm_root, cache_root);
+    }
+    else if (rep == "Q" || rep == "q") {
+        // ── Option Q — Focused TAM + congestion validation (~2-4h) ─────────────
+        //
+        // Purpose
+        //   Validate, in a single overnight-friendly run, that:
+        //     (a) the TAM remains efficient under the new meaningful-slowdown
+        //         congestion regime (mean_agents_offered_per_task << n_active);
+        //     (b) the ghost-traffic injection actually impacts the agents that
+        //         traverse the network (mean_congestion_at_decision > 0,
+        //         route_congestion_exposure > 0);
+        //     (c) the 3 TAM-driven modes (MAPPO / FaithfulMAPPER / TamAlwaysAccept)
+        //         + 1 SoTA reference (CongestionAware) produce coherent metrics
+        //         on which to base the next-iteration policy changes.
+        //
+        // Coverage
+        //   - 4 cities  : 3 train (Tokyo_Small, Kyoto_Small, LosAngeles_Small)
+        //                 + 1 held-out (Tokyo_Large)
+        //   - 4 modes   : MAPPO, FaithfulMAPPER, TamAlwaysAccept, CongestionAware
+        //   - 3 scenarios : normal_wave, normal_ramp, stress_shock
+        //   - 3 episodes per (city, mode, scenario)
+        //   Total : 4 × 4 × 3 × 3 = 144 episodes (≈2-4h on the new strong-
+        //   congestion config; Tokyo_Large is the dominant cost).
+        //
+        // Output
+        //   results/tam_validation/episodes_seed42.csv
+        //   (new columns include mean_agents_offered_per_task,
+        //    mean_recall_rounds_per_task, mean_candidates_scored_per_task)
+        //
+        // Recovery
+        //   Skipping Option Q has zero impact on F/H/X/Y artifacts (separate
+        //   output_dir). Re-running it overwrites only its own subdir.
+        const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
+        const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
+        const std::string output_dir = "C:\\ConflictualMAS\\results\\tam_validation";
+        CityRegistry::set_osm_root(osm_root);
+
+        TrainingConfig cfg;
+        cfg.cache_root       = cache_root;
+        cfg.output_dir       = output_dir;
+        cfg.n_seeds          = 1;
+        cfg.n_eval_episodes  = 3;
+        cfg.verbose          = true;
+
+        cfg.eval_only            = true;
+        cfg.skip_stress_eval     = true;   // 3-scenario sweep covers stress
+        cfg.skip_generalize_eval = false;  // Tokyo_Large is held-out
+
+        // The 3 RL policies trained by Option T + 1 SoTA reference
+        // (CongestionAware). MAPPO and IPPO probe the centralised-vs-local
+        // critic question, FaithfulMAPPER the per-agent population question.
+        cfg.eval_modes = {
+            PolicyMode::MAPPO,
+            PolicyMode::IPPO,
+            PolicyMode::FaithfulMAPPER,
+            PolicyMode::CongestionAware
+        };
+
+        // 3 scenarios covering the meaningful congestion regime.
+        cfg.eval_scenarios = {
+            EpisodeScenario{ 1.0f, 1.0f, "normal_wave",  CongestionProfile::Wave        },
+            EpisodeScenario{ 1.0f, 1.0f, "normal_ramp",  CongestionProfile::RampUpDown  },
+            EpisodeScenario{ 1.5f, 0.8f, "stress_shock", CongestionProfile::ShockBurst  },
+        };
+
+        // ── Environment: per-city proportional congestion (Y + Q matched) ─────
+        // Same per-edge BPR profile across cities (uniform density), but the
+        // hot pool covers a proportional FRACTION of each city's network →
+        // every city's agents have a similar probability of routing through
+        // a hot way. This is what makes cross-city generalization comparisons
+        // fair (Tokyo_Small vs Tokyo_Large).
+        //
+        //   ghost_hot_way_frac        = 0.10    → 10% of city ways are hot.
+        //                                          Route coverage > 95% on every
+        //                                          city (prob a 30-edge route
+        //                                          crosses a hot way = 1-0.9^30).
+        //   ghost_density_per_hot_way = 2.0     → avg 2 ghosts/hot way.
+        //                                          n_max derived per city:
+        //                                          Tokyo_Small ~14k, Tokyo_Large
+        //                                          ~240k. Preserves the BPR
+        //                                          profile observed in Z
+        //                                          (peak load 5-9, BPR ×1.5-×2.6).
+        //   ghost_window_steps        = 8       → each ghost lingers 8 steps.
+        cfg.episode_cfg.use_dbvns_planning            = true;
+        cfg.episode_cfg.enable_ghost_traffic          = true;
+        cfg.episode_cfg.ghost_hot_way_count           = 0;     // use fraction
+        cfg.episode_cfg.ghost_hot_way_frac            = 0.05f; // 5% — proportional coverage
+        cfg.episode_cfg.ghost_density_per_hot_way     = 2.0f;
+        cfg.episode_cfg.ghost_window_steps            = 8;
+        cfg.episode_cfg.ghost_n_max                   = 100;   // ignored (density-derived)
+        cfg.episode_cfg.ghost_n_max_user_set          = false; // tier-override fine, density supersedes
+        cfg.episode_cfg.enable_heterogeneous_capacity = true;
+        cfg.episode_cfg.hetero_capacity_min           = 3;
+        cfg.episode_cfg.hetero_capacity_max           = 7;
+        // Default pool multiplier (no over_fleet scenario here).
+
+        // Compute-amortisation (F/H): shrink fleet by 2, double per-agent load
+        // so the congestion footprint is preserved. ~2× speedup on A* / policy.
+        cfg.episode_cfg.fleet_size_divisor            = 2;
+        cfg.episode_cfg.fleet_load_per_agent          = 2;
+
+        // ── TAM multi-candidate Format A (matches Option F) ─────────────────
+        // Force-assign argmax: the TAM scores K candidates and the best wins
+        // unconditionally. Empirically the strongest mode for MAPPO/FM
+        // (F eval: MAPPO 0.549 vs H Format B 0.489). Gives the upper-bound
+        // policy performance and keeps the comparison apples-to-apples with F.
+        cfg.episode_cfg.tam_multi_candidate     = true;
+        cfg.episode_cfg.tam_mc_force_assign     = true;     // Format A
+        cfg.episode_cfg.tam_mc_max_candidates   = 5;
+        cfg.episode_cfg.tam_mc_ratio_min        = 1.4f;
+        cfg.episode_cfg.tam_mc_ratio_max        = 3.0f;
+        cfg.episode_cfg.tam_mc_ratio_scale      = 2000.0f;
+
+        // Checkpoints — paths match Option T's save layout.
+        cfg.load_policy                 = true;
+        cfg.policy_path                 = "C:\\ConflictualMAS\\results\\mappo\\"
+                                          "policy_seed42.bin";
+        cfg.ippo_policy_path            = "C:\\ConflictualMAS\\results\\ippo_faithful\\"
+                                          "ippo_seed42.bin";
+        cfg.faithful_mapper_policy_path = "C:\\ConflictualMAS\\results\\mapper_faithful\\"
+                                          "mapper_seed42.bin";
+
+        // City scope: 3 train Small + 1 held-out Large for the TAM under load.
+        cfg.train_city_filter     = {
+            "Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"
+        };
+        cfg.enable_generalization = true;
+        cfg.gen_city_filter       = { "Tokyo_Large" };
+
+        std::cout << "[Option Q] TAM + congestion validation\n";
+
+        MultiCityTrainer trainer;
+        trainer.train(cfg);
     }
     else if (rep == "L" || rep == "l") {
         // Baselines multi-agent LGPDP test — exercises every published baseline

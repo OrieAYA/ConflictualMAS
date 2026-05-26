@@ -57,6 +57,10 @@ public:
     MapperCriticMLP critic;
     PPOParams       hparams;
 
+    // Value normalisation (MAPPO Suggestion 1, also applied here for fairness
+    // and stability across cities with very different reward scales).
+    RunningMeanStd  value_rms;
+
     IPPOPolicy();
 
     // Singleton instance (parallels ObjectiveDMPolicy::shared() and

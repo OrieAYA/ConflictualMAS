@@ -275,20 +275,24 @@ float FaithfulMapperPolicy::update_critic_mb(
     const float inv_n = 1.f / bsz;
     float mse_acc = 0.f;
 
+    const float v_mu      = a.value_rms.mean_f();
+    const float v_std     = a.value_rms.std_dev();
+    const float inv_v_std = 1.f / v_std;
+
     for (int pi = start; pi < end; ++pi) {
         int idx = perm[pi];
         const Experience& e = a.buffer[idx];
 
         float h1[kHid], h2[kHid], pa1[kHid], pa2[kHid];
-        float V_new = a.critic.forward(e.obs.data(), h1, h2, pa1, pa2);
-        float V_old = e.value;
-        float ret   = e.ret;
+        float V_new      = a.critic.forward(e.obs.data(), h1, h2, pa1, pa2);   // normalised
+        float V_old_norm = (e.value - v_mu) * inv_v_std;
+        float ret_norm   = (e.ret   - v_mu) * inv_v_std;
 
-        float V_clip   = V_old + std::clamp(V_new - V_old,
-                                            -hparams.val_clip_eps,
-                                             hparams.val_clip_eps);
-        float err_new  = V_new  - ret;
-        float err_clip = V_clip - ret;
+        float V_clip   = V_old_norm + std::clamp(V_new - V_old_norm,
+                                                 -hparams.val_clip_eps,
+                                                  hparams.val_clip_eps);
+        float err_new  = V_new  - ret_norm;
+        float err_clip = V_clip - ret_norm;
         mse_acc += std::max(err_new * err_new, err_clip * err_clip);
 
         float dz3 = 2.f * err_new * inv_n;
@@ -349,10 +353,20 @@ FaithfulMapperPolicy::TrainingStats FaithfulMapperPolicy::train_epoch() {
         const int n = static_cast<int>(state.buffer.size());
         if (n == 0) continue;
 
-        for (auto& e : state.buffer)
-            e.value = state.critic.forward(e.obs.data());
+        // Frozen V_old — denormalise the critic's normalised output via the
+        // rms snapshot it was last trained against.
+        const float v_mu_old  = state.value_rms.mean_f();
+        const float v_std_old = state.value_rms.std_dev();
+        for (auto& e : state.buffer) {
+            const float v_norm = state.critic.forward(e.obs.data());
+            e.value = v_norm * v_std_old + v_mu_old;
+        }
 
         compute_gae(state);
+
+        // Update rms with the freshly-computed returns; this rms is used in
+        // update_critic_mb below for normalised targets and next time as v_old.
+        for (const auto& e : state.buffer) state.value_rms.update(e.ret);
 
         float adv_mean = 0.f;
         for (const auto& e : state.buffer) adv_mean += e.advantage;
@@ -530,7 +544,9 @@ int FaithfulMapperPolicy::evolutionary_step() {
 }
 
 // ── Persistence (distinct magic from MapperPolicy) ──────────────────────────
-static constexpr uint32_t kMagicMapperFaithful = 0xDEA110C4u;
+// Magic bumped (0xDEA110C4 → 0xDEA110C5) — per-agent RunningMeanStd snapshot
+// for value normalisation now persisted with each AgentState block.
+static constexpr uint32_t kMagicMapperFaithful = 0xDEA110C5u;
 
 void FaithfulMapperPolicy::save(const std::string& path) const {
     FILE* f = std::fopen(path.c_str(), "wb");
@@ -555,6 +571,7 @@ void FaithfulMapperPolicy::save(const std::string& path) const {
         std::fwrite(state.critic.b2, sizeof(float), kHid,             f);
         std::fwrite(state.critic.W3, sizeof(float), kHid,             f);
         std::fwrite(&state.critic.b3, sizeof(float), 1,               f);
+        state.value_rms.save_to(f);
     }
     std::fclose(f);
 }
@@ -588,6 +605,7 @@ bool FaithfulMapperPolicy::load(const std::string& path) {
         ok = ok && std::fread(s.critic.b2, sizeof(float), kHid,             f) == static_cast<size_t>(kHid);
         ok = ok && std::fread(s.critic.W3, sizeof(float), kHid,             f) == static_cast<size_t>(kHid);
         ok = ok && std::fread(&s.critic.b3, sizeof(float), 1,               f) == 1;
+        ok = ok && s.value_rms.load_from(f);
         if (ok) agents_.emplace(id, std::move(s));
     }
     std::fclose(f);

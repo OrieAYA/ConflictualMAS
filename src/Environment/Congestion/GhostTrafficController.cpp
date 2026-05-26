@@ -40,8 +40,29 @@ void GhostTrafficController::reset(
     all_ways.reserve(ways.size());
     for (const auto& [wid, _] : ways) all_ways.push_back(wid);
 
-    const float frac = std::clamp(cfg_.hot_way_fraction, 0.05f, 0.60f);
-    const size_t n_hot = std::max<size_t>(8, static_cast<size_t>(all_ways.size() * frac));
+    // Hot-way pool size: absolute count takes priority when > 0 (used by
+    // strong-congestion eval to force ghost concentration), otherwise the
+    // fractional-of-ways heuristic. Floor lifted to 0.001 so per-city
+    // proportional configs (e.g. 10% of ways per city for uniform agent
+    // exposure across scales) are honoured rather than clamped to 5%.
+    size_t n_hot;
+    if (cfg_.hot_way_count > 0) {
+        n_hot = std::min<size_t>(static_cast<size_t>(cfg_.hot_way_count),
+                                 all_ways.size());
+    } else {
+        const float frac = std::clamp(cfg_.hot_way_fraction, 0.001f, 0.60f);
+        n_hot = std::max<size_t>(8, static_cast<size_t>(all_ways.size() * frac));
+    }
+
+    // Density override: when density_per_hot_way > 0, derive n_max from the
+    // chosen hot pool size so the AVERAGE ghosts-per-hot-way is identical
+    // across cities. This is what gives uniform per-edge BPR profile
+    // regardless of graph size; without it, the same n_max diluted over
+    // a larger hot pool produces weaker per-edge congestion.
+    if (cfg_.density_per_hot_way > 0.f) {
+        cfg_.n_max = std::max(1, static_cast<int>(
+            std::ceil(cfg_.density_per_hot_way * static_cast<float>(n_hot))));
+    }
 
     // Partial shuffle: first n_hot picks are random distinct ways.
     const size_t take = std::min(n_hot, all_ways.size());
@@ -56,16 +77,13 @@ void GhostTrafficController::reset(
 void GhostTrafficController::step(int current_step) {
     if (!cmap_ || hot_ways_.empty() || cfg_.n_max <= 0) return;
 
-    // 1. Expire ghosts whose t_exit < current_step. They were registered with
-    //    +1/-1 windows; remove the -1 contribution from the map so the load
-    //    accounting stays clean.
+    const int w = std::max(1, cfg_.load_per_ghost);
+
+    // 1. Expire ghosts whose t_exit < current_step.
     for (size_t i = 0; i < active_.size(); ) {
         if (active_[i].t_exit < current_step) {
-            // The CongestionMap already drops past-step entries on advance(),
-            // so removing here is mostly a bookkeeping no-op when t_exit is
-            // already < t_now. Still call remove for safety against edge cases.
             cmap_->remove_ghost_load(active_[i].way_id,
-                                     active_[i].t_enter, active_[i].t_exit);
+                                     active_[i].t_enter, active_[i].t_exit, w);
             active_[i] = active_.back();
             active_.pop_back();
         } else {
@@ -73,16 +91,18 @@ void GhostTrafficController::step(int current_step) {
         }
     }
 
-    // 2. Top up to target. Sample fresh hot ways; allow collisions
-    //    (multiple ghosts on one way amplify load, which is the intent).
-    const int target = target_count(current_step);
+    // 2. Top up to target. With load_per_ghost=K, each ghost entry contributes
+    //    K load units, so we need ceil(target_load / K) entries to reach the
+    //    requested target load. Same congestion intensity for K× fewer entries.
+    const int target_load    = target_count(current_step);
+    const int target_entries = (target_load + w - 1) / w;
     std::uniform_int_distribution<size_t> pick(0, hot_ways_.size() - 1);
-    while (static_cast<int>(active_.size()) < target) {
+    while (static_cast<int>(active_.size()) < target_entries) {
         GhostLoad g;
         g.way_id  = hot_ways_[pick(rng_)];
         g.t_enter = current_step;
         g.t_exit  = current_step + std::max(1, cfg_.window_steps);
-        cmap_->add_ghost_load(g.way_id, g.t_enter, g.t_exit);
+        cmap_->add_ghost_load(g.way_id, g.t_enter, g.t_exit, w);
         active_.push_back(g);
     }
 
@@ -92,8 +112,9 @@ void GhostTrafficController::step(int current_step) {
 
 void GhostTrafficController::purge() {
     if (cmap_) {
+        const int w = std::max(1, cfg_.load_per_ghost);
         for (const auto& g : active_)
-            cmap_->remove_ghost_load(g.way_id, g.t_enter, g.t_exit);
+            cmap_->remove_ghost_load(g.way_id, g.t_enter, g.t_exit, w);
     }
     active_.clear();
 }

@@ -435,6 +435,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\Tests\TamMcTest.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Tests\GeoBoxConnectivityTest.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Tests\BaselinesMultiAgentTest.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Training\CityConfig.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeConfig.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeGenerator.cpp" />

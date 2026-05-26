@@ -349,6 +349,49 @@ private:
     int    accepts_low_cong_  = 0;
     int    refuses_low_cong_  = 0;
 
+    // TAM efficiency accumulators (one sample per offer_task call). For TAM
+    // modes the values come from the TAM getters; for SoTA baselines they
+    // default to n_active (uniform sentinel — the baseline scanned everyone).
+    long   tam_agents_offered_sum_     = 0;
+    long   tam_recall_rounds_sum_      = 0;
+    long   tam_candidates_scored_sum_  = 0;
+    int    tam_offer_samples_          = 0;
+
+    // Filled by offer_task() on each call; read by the surrounding run loop
+    // after the call to accumulate per-episode TAM efficiency stats.
+    struct LastOfferStats {
+        int       agents_offered    = 0;
+        int       recall_rounds     = 0;
+        int       candidates_scored = 0;
+        int       tam_dijkstra_steps = 0;   // TAM step() loop iterations
+        long long allocation_time_us = 0;   // wallclock of the offer_task call
+        // For oracle metric: marginal costs of every n_active agent for THIS
+        // task, in the PRE-allocation state (TAM had not committed yet).
+        std::vector<float> pre_marginal_costs;
+    };
+    LastOfferStats last_offer_stats_;
+
+    // Selection-intelligence accumulators (delivery quality, not just count).
+    double value_appeared_sum_  = 0.0;
+    double value_delivered_sum_ = 0.0;
+    double value_refused_sum_   = 0.0;
+
+    // Edge-traversal impact accumulators (real BPR impact on agents).
+    double bpr_along_route_sum_           = 0.0;
+    int    bpr_along_route_count_         = 0;
+    double time_lost_to_congestion_sum_   = 0.0;   // in steps
+    int    n_traversals_in_jam_           = 0;
+
+    // Allocation-optimality accumulator (vs MCA full-scan oracle).
+    double marginal_ratio_sum_   = 0.0;
+    int    marginal_ratio_count_ = 0;
+
+    // Temporal-complexity accumulators (allocation cost only).
+    long long allocation_time_us_sum_ = 0;
+    int       allocation_time_count_  = 0;
+    long long tam_dijkstra_steps_sum_ = 0;
+    int       tam_dijkstra_count_     = 0;
+
     // Network-level congestion impact accumulators (per-step sampling).
     int     peak_load_episode_   = 0;          // max load_now seen this episode
     long    overlap_edges_sum_   = 0;          // sum of n_edges_load_ge(2) per step

@@ -544,43 +544,113 @@ float DeliveryAgent::try_accept_task(const TaskOffer& offer, PDPGlobalMemory& me
 
     const float eps = 1e-6f;
 
-    // ── Build PolicyFeatures ───────────────────────────────────────────────────
+    // ── Build PolicyFeatures (V2 — 12-d redesigned) ────────────────────────────
     PolicyFeatures f;
-    f.cost_diff      = std::clamp(insertion_cost / kCostScale, 0.f, 1.f);
+
+    // GLOBAL CONTEXT (4)
     f.profit_rate    = std::clamp(offer.reward / (insertion_cost * 0.5f + eps), 0.f, 1.f);
-    f.current_load   = std::clamp(
-        static_cast<float>(local_memory.tasks.size()) / kMaxLoad, 0.f, 1.f);
+    {
+        const int n_agents = static_cast<int>(memory.all_delivery_agents().size());
+        f.n_agents_ratio = std::clamp(static_cast<float>(n_agents) / kMaxAgents, 0.f, 1.f);
+    }
+    {
+        const int total = memory.count_total();
+        f.n_alloc_ratio = (total > 0)
+            ? static_cast<float>(memory.count_allocated()) / total : 0.f;
+    }
+    f.time_remaining = std::clamp(1.f - memory.cur_time_ratio, 0.f, 1.f);
+
+    // AGENT STATE (3)
     f.queue_duration = std::clamp(route_cost / kQueueScale, 0.f, 1.f);
-    // Fractional route extension. Idle agents (route_cost ≈ 0) get 0 — they start
-    // fresh, no efficiency loss. Busy agents get insertion/(route+insertion) ∈ [0,1]:
-    // 0 = task is free relative to existing route, 1 = doubles the route.
-    // Previous formula insertion/(route+ε) collapsed to 1.0 for idle agents,
-    // signalling "worst case" exactly when the agent was most available.
+    // load_at_insertion : walk the planned sequence, tally pickups (+1) and
+    // deliveries (-1), track the PEAK onboard load along the route, then add
+    // 1 for this new task. More informative than "current task count" because
+    // it captures the maximum simultaneous load if we accept.
+    {
+        int onboard = 0, max_onboard = 0;
+        for (const auto& sn : solution.sequence) {
+            bool is_pickup = false;
+            for (const PDPTask* t : local_memory.tasks) {
+                if (t && t->pickup.id == sn.node.id) { is_pickup = true; break; }
+            }
+            onboard += is_pickup ? 1 : -1;
+            if (onboard < 0) onboard = 0;
+            if (onboard > max_onboard) max_onboard = onboard;
+        }
+        f.load_at_insertion = std::clamp(
+            static_cast<float>(max_onboard + 1) / kMaxLoad, 0.f, 1.f);
+    }
     f.efficiency_loss = (route_cost < 1.f)
         ? 0.f
         : std::clamp(insertion_cost / (route_cost + insertion_cost + eps), 0.f, 1.f);
-    f.rank_in_call   = 1.f - std::clamp(
-        static_cast<float>(offer.prev_agents.size()) / kMaxAgents, 0.f, 1.f);
-    f.task_importance= std::clamp(offer.importance / kImpMax, 0.f, 1.f);
-    f.recall_round_norm = std::clamp(
-        static_cast<float>(offer.recall_round)
-        / static_cast<float>(std::max(offer.max_recalls, 1)),
-        0.f, 1.f);
 
-    int n_agents = static_cast<int>(memory.all_delivery_agents().size());
-    int total    = memory.count_total();
-    f.n_agents_ratio = std::clamp(static_cast<float>(n_agents) / kMaxAgents, 0.f, 1.f);
-    f.n_alloc_ratio  = (total > 0)
-        ? static_cast<float>(memory.count_allocated()) / total : 0.f;
-    f.n_avail_ratio  = (total > 0)
-        ? static_cast<float>(memory.count_available()) / total : 0.f;
-    f.time_remaining = std::clamp(1.f - memory.cur_time_ratio, 0.f, 1.f);
+    // COMPETITION + IMPACT (3)
+    // marginal_cost_relative : (my_cost − cheapest_other) / cheapest_other.
+    //   0 = I'm the cheapest (or only) candidate. 1 = I'm 2× more expensive
+    //   than the next best. The TAM precomputes both costs and passes them
+    //   via the offer; if there is no competition, default 0.
+    if (offer.cheapest_other_cost > 1.f) {
+        const float delta = offer.my_insertion_cost - offer.cheapest_other_cost;
+        f.marginal_cost_relative = std::clamp(
+            delta / offer.cheapest_other_cost, 0.f, 1.f);
+    } else {
+        f.marginal_cost_relative = 0.f;     // I'm the only candidate.
+    }
+    f.fleet_pressure = std::clamp(
+        static_cast<float>(offer.n_candidates_total)
+        / static_cast<float>(std::max(1, offer.mc_max_candidates)), 0.f, 1.f);
+    // divergence_ratio : angle between (current → next planned objective) and
+    // (current → pickup). Idle agents (no plan) get 0 (no divergence cost).
+    {
+        f.divergence_ratio = 0.f;
+        if (!solution.sequence.empty()) {
+            auto get_xy = [&](osmium::object_id_type id) -> std::pair<float,float> {
+                auto it = memory.geo_box.data.nodes.find(id);
+                if (it == memory.geo_box.data.nodes.end()) return {0.f, 0.f};
+                return { static_cast<float>(it->second.lon),
+                         static_cast<float>(it->second.lat) };
+            };
+            auto [cx, cy] = get_xy(current_node);
+            auto [nx, ny] = get_xy(solution.sequence[0].node.id);
+            auto [px, py] = get_xy(task->pickup.id);
+            const float dx1 = nx - cx, dy1 = ny - cy;
+            const float dx2 = px - cx, dy2 = py - cy;
+            const float n1 = std::sqrt(dx1*dx1 + dy1*dy1);
+            const float n2 = std::sqrt(dx2*dx2 + dy2*dy2);
+            if (n1 > 1e-9f && n2 > 1e-9f) {
+                const float cos_a = (dx1*dx2 + dy1*dy2) / (n1 * n2);
+                f.divergence_ratio = std::clamp((1.f - cos_a) * 0.5f, 0.f, 1.f);
+            }
+        }
+    }
 
-    // (12-d feature vector — `deliverability` removed. Episode-end feasibility
-    //  is implicit via `time_remaining` and `cost_diff`. This matches the
-    //  May 17 baseline setup and keeps the local observation compact, in line
-    //  with MAPPER's design philosophy where the per-agent critic sees only
-    //  local features.)
+    // SPATIO-TEMPORAL (2)
+    // congestion_delta_contribution : proxy = network_mean_BPR × normalised
+    //   insertion distance. Captures "the network is busy AND I'd add a lot
+    //   of route" → I'm contributing meaningful extra congestion.
+    {
+        const float mean_load = memory.congestion_map.mean_load_now();
+        const float cap_est   = 5.f;     // typical BPR capacity per 100m edge
+        const float ratio     = mean_load / cap_est;
+        const float r2        = ratio * ratio;
+        const float bpr_proxy = 1.f + 0.15f * r2 * r2;     // matches β=4
+        const float norm_ins  = std::clamp(insertion_cost / kCostScale, 0.f, 1.f);
+        f.congestion_delta_contribution =
+            std::clamp((bpr_proxy - 1.f) * norm_ins, 0.f, 1.f);
+    }
+    // area_heat_pickup : density × congestion at the pickup cell, computed
+    // from RegionStatsGrid. Density tracks recent task arrivals (sliding
+    // window) ; congestion is the cell-level mean BPR multiplier (cached
+    // every kCacheRefreshSteps steps). Combined: "is this area hot ?".
+    {
+        auto it = memory.geo_box.data.nodes.find(task->pickup.id);
+        if (it != memory.geo_box.data.nodes.end()) {
+            f.area_heat_pickup = memory.region_grid.area_heat(
+                it->second.lat, it->second.lon);
+        } else {
+            f.area_heat_pickup = 0.f;
+        }
+    }
 
     // ── Stochastic action sampling ─────────────────────────────────────────────
     // PPO requires the recorded action to be sampled from π(a|s). Bernoulli(μ)

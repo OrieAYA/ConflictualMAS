@@ -21,47 +21,57 @@ namespace fs = std::filesystem;
 // experience. Adapted from city area (km²).
 static void customize_episode_for_city(EpisodeConfig& ep, const CityConfig& cc) {
     const double a = cc.area_km2;
+    // Per-city tier override: skipped when the caller has set
+    // ghost_n_max_user_set, so strong-congestion eval (Option Y) keeps a
+    // SAME-density ghost regime across cities (otherwise the tier would
+    // silently downgrade Tokyo_Large from a user-supplied 500 to 80).
+    const bool override_ghost = !ep.ghost_n_max_user_set;
+    // Fleet shrink factor: caller-controlled (Y/F/Q opt-in). Combined with
+    // fleet_load_per_agent on the CongestionMap to keep the same per-edge
+    // congestion footprint while paying K× less A* / policy compute.
+    const int fleet_div = std::max(1, ep.fleet_size_divisor);
+    auto shrink = [fleet_div](int n) {
+        return std::max(2, (n + fleet_div - 1) / fleet_div);
+    };
     // Tier thresholds match Tokyo_Small / Tokyo_Medium / Tokyo_Large areas.
     // Multi-task FIFO queue per agent — safe after the receive_task() reorder
     // fix. Bigger graph ⇒ deeper queue so agents stay busy across long trips.
     if (a < 50.0) {
-        // Small (~25 km²): ~150m–1500m trips, ~150 tasks/episode.
+        // Small (~25 km²): ~150m–1500m trips.
         ep.phases = {
-            { 1000,  6.f, 4, 5, 0.0f, 3 },
-            { 1500,  8.f, 5, 7, 0.5f, 4 },
-            { 1100, 10.f, 7, 8, 1.0f, 5 },
+            { 1000,  6.f,  shrink( 6), shrink( 8), 0.0f, 3 },
+            { 1500,  8.f,  shrink( 8), shrink(11), 0.5f, 4 },
+            { 1100, 10.f,  shrink(11), shrink(12), 1.0f, 5 },
         };
         ep.min_task_dist_m = 150.f;
         ep.max_task_dist_m = 1500.f;
         ep.hot_zone_radius = 300.f;
         ep.max_tasks_per_agent = 3;
-        // Background-traffic budget scaled to fleet size (~4× real fleet
-        // peak). Only used when ep.enable_ghost_traffic is true (Option M).
-        ep.ghost_n_max = 20;
+        if (override_ghost) ep.ghost_n_max = 30;
     } else if (a < 300.0) {
-        // Medium (~144 km²): ~250m–3500m trips, ~90 tasks/episode.
+        // Medium (~144 km²): ~250m–3500m trips.
         ep.phases = {
-            { 1000, 3.f,  6,  8, 0.0f, 4 },
-            { 1500, 4.f,  8, 10, 0.5f, 6 },
-            { 1100, 5.f, 10, 12, 1.0f, 7 },
+            { 1000, 3.f, shrink(10), shrink(14), 0.0f, 4 },
+            { 1500, 4.f, shrink(14), shrink(18), 0.5f, 6 },
+            { 1100, 5.f, shrink(18), shrink(22), 1.0f, 7 },
         };
         ep.min_task_dist_m = 250.f;
         ep.max_task_dist_m = 3500.f;
         ep.hot_zone_radius = 500.f;
         ep.max_tasks_per_agent = 3;
-        ep.ghost_n_max = 40;
+        if (override_ghost) ep.ghost_n_max = 72;
     } else {
-        // Large (>=300 km²): ~400m–5000m trips, ~80 tasks/episode.
+        // Large (>=300 km²): ~400m–5000m trips.
         ep.phases = {
-            { 1000, 2.f,  8, 10, 0.0f, 4 },
-            { 1500, 3.f, 10, 13, 0.5f, 6 },
-            { 1100, 4.f, 13, 15, 1.0f, 8 },
+            { 1000, 2.f, shrink(16), shrink(20), 0.0f, 4 },
+            { 1500, 3.f, shrink(20), shrink(26), 0.5f, 6 },
+            { 1100, 4.f, shrink(26), shrink(30), 1.0f, 8 },
         };
         ep.min_task_dist_m = 400.f;
         ep.max_task_dist_m = 5000.f;
         ep.hot_zone_radius = 800.f;
         ep.max_tasks_per_agent = 4;
-        ep.ghost_n_max = 80;
+        if (override_ghost) ep.ghost_n_max = 160;
     }
 }
 
@@ -466,14 +476,27 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
     fs::create_directories(cfg.output_dir);
 
     // ── 1. Load train cities ──────────────────────────────────────────────
-    auto train_ptrs_all = CityRegistry::train_cities();
+    // When no filter is set, fall back to the registry's default "train" set
+    // (TrainAndApply role). When a filter IS set, take the user's list at
+    // face value — they may include ComparisonOnly cities (Tokyo_Large,
+    // London, ...) intentionally to expand the training distribution.
     std::vector<const CityConfig*> train_ptrs;
     if (cfg.train_city_filter.empty()) {
-        train_ptrs = train_ptrs_all;
+        train_ptrs = CityRegistry::train_cities();
     } else {
-        for (const auto* cc : train_ptrs_all) {
-            for (const auto& want : cfg.train_city_filter) {
-                if (cc->name == want) { train_ptrs.push_back(cc); break; }
+        const auto& all_cities = CityRegistry::all();
+        for (const auto& want : cfg.train_city_filter) {
+            bool matched = false;
+            for (const auto& cc : all_cities) {
+                if (cc.name == want) {
+                    train_ptrs.push_back(&cc);
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                std::cout << "  [Warn] train_city_filter entry \"" << want
+                          << "\" not found in CityRegistry — skipped.\n";
             }
         }
     }

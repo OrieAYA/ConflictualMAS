@@ -10,6 +10,13 @@ struct CongestionParams {
     float bpr_alpha          = 0.15f;   // BPR function α
     float bpr_beta           = 4.0f;    // BPR function β
     float capacity_per_meter = 0.05f;   // agent slots per meter of edge length
+    // Load amplification per REAL agent's path edge. Symmetric to
+    // GhostTrafficController::Config::load_per_ghost: setting K>1 lets each
+    // real agent register K load units per edge, so a fleet of N agents
+    // produces the congestion footprint of N×K agents. Use to shrink the fleet
+    // (faster A*/Dijkstra, fewer policy decisions) while preserving the
+    // congestion intensity of a larger fleet.
+    int   load_per_agent     = 1;
 };
 
 // Sparse temporal edge-load map.
@@ -36,15 +43,19 @@ public:
 
     // Register / unregister an agent occupying edge `way_id` during [t_enter, t_exit].
     // Steps outside [t_now, t_now + horizon] are silently ignored.
-    void add_agent   (osmium::object_id_type way_id, int t_enter, int t_exit);
-    void remove_agent(osmium::object_id_type way_id, int t_enter, int t_exit);
+    // `weight` lets a single registration count for >1 unit of load — used to
+    // simulate K real agents with one bookkeeping entry (K× fewer hash ops at
+    // the price of quantised load resolution; BPR is polynomial degree β so
+    // small K has negligible numerical impact).
+    void add_agent   (osmium::object_id_type way_id, int t_enter, int t_exit, int weight = 1);
+    void remove_agent(osmium::object_id_type way_id, int t_enter, int t_exit, int weight = 1);
 
     // Ghost-load API — for synthetic background traffic injected by
     // GhostTrafficController (Option M). Conceptually identical to add_agent /
     // remove_agent, but kept under a separate name so future code can audit
     // real-agent vs ghost-agent contributions if needed.
-    void add_ghost_load   (osmium::object_id_type way_id, int t_enter, int t_exit);
-    void remove_ghost_load(osmium::object_id_type way_id, int t_enter, int t_exit);
+    void add_ghost_load   (osmium::object_id_type way_id, int t_enter, int t_exit, int weight = 1);
+    void remove_ghost_load(osmium::object_id_type way_id, int t_enter, int t_exit, int weight = 1);
 
     int get_load(osmium::object_id_type way_id, int t) const;
 

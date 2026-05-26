@@ -72,6 +72,21 @@ public:
         int   total_steps    = 3600;    // episode length
         int   window_steps   = 5;       // ghost occupies a way for this many steps
         float hot_way_fraction = 0.30f; // fraction of geo_box ways used as hot pool
+        // When > 0, overrides hot_way_fraction with an absolute hot-way count.
+        // Used by Option Y strong-congestion eval to force ghost concentration
+        // onto a small set of arteries so collisions create real BPR jams.
+        int   hot_way_count    = 0;
+        // When > 0, n_max is derived at reset time as ceil(density × n_hot)
+        // so the average ghost density per hot way is identical across cities.
+        // Set to 0 to keep the n_max value as-is (legacy behaviour).
+        float density_per_hot_way = 0.0f;
+        // Load amplification per ghost. With load_per_ghost=K, the controller
+        // spawns ceil(target_load / K) ghost ENTRIES that each contribute K
+        // units of load to the CongestionMap. Same BPR profile, K× fewer hash
+        // ops per spawn/expire cycle — the dominant cost driver at high n_max.
+        // Quantises load resolution by K; BPR being polynomial degree β, the
+        // numerical impact stays <1% up to K=5 in typical configs.
+        int   load_per_ghost      = 1;
         CongestionProfile profile = CongestionProfile::Flat;
     };
 
@@ -94,6 +109,7 @@ public:
     int   n_active_now() const { return static_cast<int>(active_.size()); }
     float mean_active() const;
     int   n_hot_ways() const { return static_cast<int>(hot_ways_.size()); }
+    int   n_max() const { return cfg_.n_max; }   // derived after reset()
     CongestionProfile profile() const { return cfg_.profile; }
 
 private:

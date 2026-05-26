@@ -77,6 +77,28 @@ struct EpisodeRecord {
     int   min_agent_completed      = 0;
     float total_fleet_distance_m   = 0.f;
 
+    // TAM efficiency (paper's "minimize communication overhead" claim)
+    float mean_agents_offered_per_task    = 0.f;
+    float mean_recall_rounds_per_task     = 0.f;
+    float mean_candidates_scored_per_task = 0.f;
+
+    // Selection intelligence (delivery quality, not just count)
+    float value_throughput_rate = 0.f;
+    float mean_completion_value = 0.f;
+    float value_loss_to_refusal = 0.f;
+
+    // Real impact on edge traversal (BPR factors paid by agents)
+    float mean_bpr_along_route          = 1.f;
+    float time_lost_to_congestion_steps = 0.f;
+    int   n_traversals_in_jam           = 0;
+
+    // Allocation optimality vs MCA full-scan oracle
+    float marginal_cost_ratio_vs_oracle = 1.f;
+
+    // Temporal complexity (allocation cost only)
+    float mean_allocation_time_us = 0.f;
+    float mean_tam_dijkstra_steps = 0.f;
+
     // MAPPO training signal (zeroed for non-MAPPO or eval mode)
     float actor_loss           = 0.f;
     float critic_loss          = 0.f;

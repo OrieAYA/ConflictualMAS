@@ -41,6 +41,7 @@ set(SOURCES
     src/Tests/TamMcTest.cpp
     src/Tests/GeoBoxConnectivityTest.cpp
     src/Tests/BaselinesMultiAgentTest.cpp
+    src/Tests/CongestionOnlyTest.cpp
     src/Training/CityConfig.cpp
     src/Training/EpisodeConfig.cpp
     src/Training/EpisodeGenerator.cpp

@@ -82,6 +82,11 @@ public:
         MapperCriticMLP         critic;
         std::vector<Experience> buffer;
         std::vector<float>      fitness_history;
+        // Per-agent value normalisation (MAPPO Suggestion 1, applied for
+        // consistency across the policy comparison). Each agent has its own
+        // critic trained on its own trajectory distribution, so per-agent rms
+        // is the natural choice — sharing would couple unrelated trajectories.
+        RunningMeanStd          value_rms;
     };
 
     PPOParams                  hparams;

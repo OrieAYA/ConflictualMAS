@@ -8,9 +8,17 @@
 #include <vector>
 
 // ── Normalisation constants ────────────────────────────────────────────────────
-static constexpr int   kPolicySz   = 12;        // feature vector length
+static constexpr int   kPolicySz   = 12;        // feature vector length (actor input)
 static constexpr int   kHid        = 64;         // hidden layer width (actor & critic)
-static constexpr int   kGlobSz     = 20;         // global state vector (critic input)
+static constexpr int   kGlobSz     = 20;         // system-only global state storage
+// MAPPO Suggestion 2 (Yu 2022 §5.2): the centralised critic should consume an
+// AGENT-SPECIFIC global state (Feature-Pruned variant). Here the input is the
+// concat of the 20-d system state and the 12-d PolicyFeatures of the agent
+// making the decision — built on-the-fly inside train_epoch and update_critic_mb
+// from buffer_[i].obs (already stored) plus global_states[i] (system, already
+// stored). Avoids changing the on-disk format of global_states_ while giving
+// the critic the agent-specific signal that EP-only inputs lack.
+static constexpr int   kCriticIn   = kGlobSz + kPolicySz;   // 32
 static constexpr float kCostScale  = 10'000.f;   // 10 km reference
 static constexpr float kQueueScale = 50'000.f;   // 50 km reference
 static constexpr float kMaxLoad    = 10.f;        // max tasks per agent
@@ -21,27 +29,41 @@ static constexpr float kImpMax     = 10.f;        // max task importance
 //
 // Built at try_accept_task() time from TaskOffer + GlobalMemory + local state.
 // All fields are clamped to [0, 1].
+//
+// V2 (post-input-vector-redesign) — 12 features grouped by semantics:
+//
+//   GLOBAL CONTEXT (4)     : profit_rate, n_agents_ratio, n_alloc_ratio, time_remaining
+//   AGENT STATE (3)        : queue_duration, load_at_insertion, efficiency_loss
+//   COMPETITION+IMPACT (3) : marginal_cost_relative, fleet_pressure, divergence_ratio
+//   SPATIO-TEMPORAL (2)    : congestion_delta_contribution, area_heat_pickup (placeholder)
 struct PolicyFeatures {
-    float cost_diff         = 0.f; // cheapest insertion cost / kCostScale
-    float profit_rate       = 0.f; // reward / (insertion_cost * 0.5 + ε)
-    float current_load      = 0.f; // tasks.size() / kMaxLoad
-    float queue_duration    = 0.f; // planned route cost / kQueueScale
-    float efficiency_loss   = 0.f; // insertion_cost / (route_cost + ε)
-    float rank_in_call      = 0.f; // 1 − prev_agents.size() / kMaxAgents
-    float task_importance   = 0.f; // importance / kImpMax  (boosted version)
+    // ── Global context (system-wide signals, ~constant within an offer) ──────
+    float profit_rate       = 0.f; // task reward / insertion_cost  ∈ [0,1]
     float n_agents_ratio    = 0.f; // active agents / kMaxAgents
     float n_alloc_ratio     = 0.f; // allocated tasks / total tasks
-    float n_avail_ratio     = 0.f; // available tasks / total tasks
-    float recall_round_norm = 0.f; // recall_round / max(max_recalls,1) ∈ [0,1]
-                                   // signals "task is being recalled; refusing
-                                   // again risks exhaustion (unfinished penalty)"
     float time_remaining    = 0.f; // 1 − step/total_steps ∈ [0,1]
-                                   // raw fraction of episode left.
-                                   // The policy infers task feasibility implicitly
-                                   // from this + cost_diff (no explicit deliverability
-                                   // feature — matches the May 17 baseline 12-d setup
-                                   // and keeps the architecture in line with the
-                                   // MAPPER paper's compact local observation).
+
+    // ── Agent state (this agent's situation) ─────────────────────────────────
+    float queue_duration    = 0.f; // planned route cost / kQueueScale
+    float load_at_insertion = 0.f; // tasks onboard AT THE PICKUP STEP / kMaxLoad
+                                   // (accounts for drops happening before pickup)
+    float efficiency_loss   = 0.f; // insertion_cost / (route_cost + insertion + ε)
+
+    // ── Competition + impact (per-candidate differentiators) ────────────────
+    float marginal_cost_relative = 0.f; // (my_cost − cheapest_other) / cheapest_other
+                                        // ∈ [0,1] : 0 = I'm cheapest, 1 = I'm ≥2× more expensive.
+                                        // The signal that tells the policy "am I really
+                                        // the best fit, or just a candidate ?"
+    float fleet_pressure         = 0.f; // n_candidates / max_candidates ∈ [0,1]
+                                        // High = many competitors → I can be picky.
+                                        // Low  = I'm the only option → must accept.
+    float divergence_ratio       = 0.f; // (1 − cos(angle(my_heading, pickup_dir))) / 2 ∈ [0,1]
+                                        // 0 = pickup is on my way, 1 = pickup is behind me.
+
+    // ── Spatio-temporal context ──────────────────────────────────────────────
+    float congestion_delta_contribution = 0.f; // BPR I'd add by accepting (proxy)
+    float area_heat_pickup              = 0.f; // task density × congestion @ pickup
+                                               // (placeholder until RegionStatsGrid lands)
 
     void to_array(float* dst) const;
 };
@@ -63,11 +85,16 @@ struct ActorMLP {
     void init_xavier(std::mt19937& rng);
 };
 
-// ── Critic MLP: kGlobSz → kHid → kHid → 1 (linear, no sigmoid) ──────────────
+// ── Critic MLP: kCriticIn → kHid → kHid → 1 (linear, no sigmoid) ────────────
 //
-// Takes a global state vector and returns a raw scalar value estimate V(s).
+// Takes a FP-state vector (system 20-d + agent-specific 12-d, MAPPO Suggestion
+// 2) and returns a raw scalar value estimate V(s). The caller is expected to
+// assemble the kCriticIn-sized vector by concatenating GlobalState::to_array()
+// (20 floats, system) with the per-agent PolicyFeatures (12 floats, captured
+// at decision time). Both consumers (train_epoch frozen V_old, update_critic_mb
+// forward) build the concat inline — no on-disk format change to global_states.
 struct CriticMLP {
-    float W1[kHid * kGlobSz]{};
+    float W1[kHid * kCriticIn]{};
     float b1[kHid]{};
     float W2[kHid * kHid]{};
     float b2[kHid]{};
@@ -91,6 +118,47 @@ struct Experience {
     float value       = 0.f; // V(s) from critic (filled during train_epoch)
     float advantage   = 0.f; // GAE estimate (filled during train_epoch)
     float ret         = 0.f; // discounted return (filled during train_epoch)
+};
+
+// ── Running mean/std tracker — used for value normalisation ─────────────────
+//
+// MAPPO paper Suggestion 1 (Yu et al. 2022, §5.1): stabilise value learning by
+// regressing the critic against NORMALISED return targets (ret - μ) / σ and
+// denormalising V̂(s) = V_net(s) · σ + μ everywhere it is consumed (GAE, advantage
+// estimation, downstream value queries). The running mean/std are updated with
+// Welford's online algorithm from the unnormalised returns of each training pass.
+// The single update path keeps numerical stability while letting the critic's
+// effective output scale auto-adapt to reward distributions that drift across
+// city/phase (which is exactly our setting: throughput-based rewards differ a lot
+// between Tokyo_Small eval and Tokyo_Large generalize).
+struct RunningMeanStd {
+    double mean    = 0.0;
+    double var     = 1.0;
+    long long count = 0;
+
+    void update(float x) {
+        ++count;
+        const double delta = static_cast<double>(x) - mean;
+        mean += delta / static_cast<double>(count);
+        const double delta2 = static_cast<double>(x) - mean;
+        var = (count > 1)
+            ? var + (delta * delta2 - var) / static_cast<double>(count)
+            : 1.0;
+    }
+
+    void update_batch(const float* xs, int n) {
+        for (int i = 0; i < n; ++i) update(xs[i]);
+    }
+
+    float std_dev() const {
+        return static_cast<float>(std::sqrt(std::max(1e-6, var)));
+    }
+    float mean_f() const { return static_cast<float>(mean); }
+
+    // Persistence — RMS state must be saved alongside critic weights so that
+    // resumed/loaded policies keep the same value scale.
+    void save_to(void* file) const;   // FILE* (kept void* to avoid <cstdio> here)
+    bool load_from(void* file);
 };
 
 // ── PPO hyper-parameters ──────────────────────────────────────────────────────
@@ -120,10 +188,12 @@ struct PPOParams {
     float ent_w_init    = 0.03f;  // high early — encourages exploration
     float ent_w_min     = 0.005f; // low late  — lets policy commit to a strategy
     int   epochs        = 10;     // max PPO gradient epochs per train_epoch call
-    int   batch_sz      = 32;     // mini-batch size (SoTA PPO uses 32-64; previous
-                                  //   256 was larger than the per-episode buffer
-                                  //   (~60-100 exp), reducing 10 epochs of SGD
-                                  //   to 10 full-batch steps with no stochasticity)
+    // MAPPO paper Suggestion 3 (Yu et al. 2022, §5.3): avoid splitting data
+    // into mini-batches in cooperative multi-agent settings. They report best
+    // performance with 1 mini-batch on 22/23 SMAC maps. The value is sized
+    // beyond any realistic buffer size so update_actor/critic_mb processes the
+    // entire buffer in one pass per epoch — true full-batch SGD.
+    int   batch_sz      = 1 << 20;
 };
 
 // ── MAPPO shared policy (singleton) ──────────────────────────────────────────
@@ -144,6 +214,12 @@ public:
     ActorMLP  actor;
     CriticMLP critic;
     PPOParams hparams;
+
+    // Running mean/std of return targets. Updated at the start of every
+    // train_epoch from the unnormalised returns. Used to (a) normalise critic
+    // targets during the SGD updates and (b) denormalise V(s) outputs whenever
+    // they are consumed downstream (GAE bootstrap, advantage computation).
+    RunningMeanStd value_rms;
 
     ObjectiveDMPolicy();
 

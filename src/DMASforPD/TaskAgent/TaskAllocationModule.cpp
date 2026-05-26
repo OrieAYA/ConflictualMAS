@@ -320,8 +320,29 @@ float TaskAllocationModule::mc_score_agent(int agent_id, PDPGlobalMemory& memory
         for (const auto& [aid, _] : matrix_)
             if (aid != agent_id) prev.push_back(aid);
 
+        // Build competition context for the V2 input vector (marginal cost +
+        // fleet pressure). Walk mc_candidates_ once to find the cheapest OTHER
+        // candidate's pickup+delivery cost.
+        const float my_cost = entry.pickup_cost + entry.delivery_cost;
+        float cheapest_other = 0.f;
+        bool  any_other      = false;
+        for (int other_aid : mc_candidates_) {
+            if (other_aid == agent_id) continue;
+            auto it = matrix_.find(other_aid);
+            if (it == matrix_.end()) continue;
+            const float oc = it->second.pickup_cost + it->second.delivery_cost;
+            if (!any_other || oc < cheapest_other) {
+                cheapest_other = oc;
+                any_other = true;
+            }
+        }
+
         TaskOffer offer{task_.task_id, task_.reward, task_.importance,
-                        std::move(prev), recall_count_, params_.max_recalls};
+                        std::move(prev), recall_count_, params_.max_recalls,
+                        static_cast<int>(mc_candidates_.size()),
+                        my_cost,
+                        cheapest_other,
+                        params_.mc_max_candidates};
         // Same policy call path as the legacy offer_to_agent — no change to
         // how policies are invoked.
         score = agent->try_accept_task(offer, memory);
@@ -460,4 +481,12 @@ bool TaskAllocationModule::step_multi_candidate(
         return mc_finalise(memory, speed_mps);
 
     return false;   // keep expanding on the next step()
+}
+
+// ── Observability impl ──────────────────────────────────────────────────────
+int TaskAllocationModule::n_agents_offered() const {
+    int n = 0;
+    for (const auto& [_, entry] : matrix_)
+        if (entry.call_count > 0) ++n;
+    return n;
 }
