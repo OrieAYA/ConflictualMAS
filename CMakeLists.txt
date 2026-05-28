@@ -46,9 +46,18 @@ set(SOURCES
     src/Training/EpisodeConfig.cpp
     src/Training/EpisodeGenerator.cpp
     src/Training/EpisodeRunner.cpp
+    src/Training/SharedEpisodeSetup.cpp
     src/Training/TrainingLogger.cpp
     src/Training/MultiCityTrainer.cpp
     src/Training/TrainingSmokeTest.cpp
+    src/SoTA/SolverRunner.cpp
+    src/SoTA/PathHelper.cpp
+    src/SoTA/TokenPassing/TokenPassingSolver.cpp
+    src/SoTA/CongestionAware/CongestionAwareSolver.cpp
+    src/SoTA/FaithfulCongestionAware/FaithfulCASolver.cpp
+    src/SoTA/TrafficFlow/TrafficFlowSolver.cpp
+    src/SoTA/RHCR/RHCRSolver.cpp
+    src/SoTA/SolverCSVLogger.cpp
     src/Legacy/Tests/LegacyTests.cpp
     src/DMASforPD/Tests/PDPTests.cpp
     src/AmazonDataset/AmazonTest.cpp

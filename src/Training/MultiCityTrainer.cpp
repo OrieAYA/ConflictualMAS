@@ -1,4 +1,5 @@
 #include "MultiCityTrainer.hpp"
+#include "SharedEpisodeSetup.hpp"
 #include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
 #include "DMASforPD/Policy/IPPOPolicy.hpp"
 #include "DMASforPD/Policy/MapperPolicy.hpp"
@@ -19,7 +20,7 @@ namespace fs = std::filesystem;
 // Scale per-city episode params so task duration is short relative to episode
 // length — needed so agents don't stay saturated and the policy gets enough
 // experience. Adapted from city area (km²).
-static void customize_episode_for_city(EpisodeConfig& ep, const CityConfig& cc) {
+void MultiCityTrainer::customize_episode_for_city(EpisodeConfig& ep, const CityConfig& cc) {
     const double a = cc.area_km2;
     // Per-city tier override: skipped when the caller has set
     // ghost_n_max_user_set, so strong-congestion eval (Option Y) keeps a
@@ -80,7 +81,7 @@ std::unique_ptr<CityAssets> MultiCityTrainer::load_city(
     const std::string& cache_root)
 {
     ep.city = &cc;
-    customize_episode_for_city(ep, cc);
+    MultiCityTrainer::customize_episode_for_city(ep, cc);
 
     GeoBox gb;
     const std::string cache_path = cache_root + "/" + cc.name + ".json";
@@ -236,9 +237,11 @@ static const char* policy_mode_label(PolicyMode m) {
         case PolicyMode::LaCAM:           return "LaCAM";
         case PolicyMode::PIBT:            return "PIBT";
         case PolicyMode::CongestionAware: return "CongestionAware";
+        case PolicyMode::FaithfulCongestionAware: return "FaithfulCongestionAware";
         case PolicyMode::MCA:             return "MCA";
         case PolicyMode::TrafficFlow:     return "TrafficFlow";
         case PolicyMode::TokenPassing:    return "TokenPassing";
+        case PolicyMode::RHCR:            return "RHCR";
         case PolicyMode::DoubleHorizon:   return "DoubleHorizon";
     }
     return "Unknown";
@@ -314,7 +317,18 @@ int MultiCityTrainer::run_eval(
                         + 101u * (sc_idx + 1)
                         + 10007u * (ca.index + 1)
                         + 1000003u * static_cast<uint32_t>(seed));
-                    RunResult res = runner.run(ca.index, num_cities, sc, ep_seed);
+                    // Publication-grade: build the canonical SharedEpisodeSetup
+                    // so every policy (and every SoTA solver run on the same
+                    // setup) sees a byte-identical environment. Opt-in via
+                    // cfg.use_shared_episode_setup so training remains unchanged.
+                    std::unique_ptr<SharedEpisodeSetup> setup;
+                    if (cfg.use_shared_episode_setup) {
+                        setup = std::make_unique<SharedEpisodeSetup>(
+                            build_shared_episode_setup(
+                                ep_seed, *ca.config, sc, ca.ep_cfg, ca.geo_box));
+                    }
+                    RunResult res = runner.run(ca.index, num_cities, sc,
+                                                ep_seed, setup.get());
                     EpisodeRecord rec = make_record(
                         res, seed, global_ep++,
                         ca.config->name, phase, name,
@@ -387,7 +401,14 @@ int MultiCityTrainer::run_generalize_eval(
                         + 101u * (sc_idx + 1)
                         + 10007u * (ca.index + 1)
                         + 1000003u * static_cast<uint32_t>(seed));
-                    RunResult res = runner.run(ca.index, num_gen, sc, ep_seed);
+                    std::unique_ptr<SharedEpisodeSetup> setup;
+                    if (cfg.use_shared_episode_setup) {
+                        setup = std::make_unique<SharedEpisodeSetup>(
+                            build_shared_episode_setup(
+                                ep_seed, *ca.config, sc, ca.ep_cfg, ca.geo_box));
+                    }
+                    RunResult res = runner.run(ca.index, num_gen, sc,
+                                                ep_seed, setup.get());
                     EpisodeRecord rec = make_record(
                         res, seed, global_ep++,
                         ca.config->name, phase, name,
@@ -549,7 +570,7 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
     const std::string summary_path = cfg.output_dir + "/summary.csv";
 
     for (int s = 0; s < cfg.n_seeds; ++s) {
-        const int seed = s + 42;
+        const int seed = s + cfg.start_seed;
         std::cout << "══════════════════════════════════════\n"
                   << " Seed " << s << "  (rng=" << seed << ")\n"
                   << "══════════════════════════════════════\n";

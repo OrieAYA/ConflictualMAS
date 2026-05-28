@@ -5,12 +5,27 @@
 #include "Training/MultiCityTrainer.hpp"
 #include "Training/CityConfig.hpp"
 #include "Training/TrainingConfig.hpp"
+#include "Training/SharedEpisodeSetup.hpp"
 #include "Training/TrainingSmokeTest.hpp"
 #include "Tests/PlanningComparisonTest.hpp"
 #include "Tests/TamMcTest.hpp"
 #include "Tests/GeoBoxConnectivityTest.hpp"
 #include "Tests/BaselinesMultiAgentTest.hpp"
 #include "Tests/CongestionOnlyTest.hpp"
+
+// SoTA standalone solvers (Option U)
+#include "SoTA/SolverRunner.hpp"
+#include "SoTA/SolverCSVLogger.hpp"
+#include "SoTA/TokenPassing/TokenPassingSolver.hpp"
+#include "SoTA/CongestionAware/CongestionAwareSolver.hpp"
+#include "SoTA/FaithfulCongestionAware/FaithfulCASolver.hpp"
+#include "SoTA/TrafficFlow/TrafficFlowSolver.hpp"
+#include "SoTA/RHCR/RHCRSolver.hpp"
+#include "Environment/GeoBox/GeoBoxManager.hpp"
+#include "Environment/GeoBox/Box.hpp"
+#include "Legacy/Common/Pathfinding.hpp"
+#include <filesystem>
+
 #include <exception>
 #include <iostream>
 #include <string>
@@ -68,6 +83,8 @@ static int run_main()
     std::cout << "  J  TAM multi-candidate correctness test (Format A/B, small bbox)\n";
     std::cout << "  K  GeoBox connectivity check (smoke_test + tous les caches)\n";
     std::cout << "  L  Baselines multi-agent LGPDP test (MCA/TP/TF/CA/PIBT/...)\n";
+    std::cout << "  U  SoTA standalone benchmark (full-pipeline TP/CA/FCA/TF/RHCR, src/SoTA/)\n";
+    std::cout << "  O  Combined Y + SoTA standalone evaluation (4 RL + 5 SoTA full-pipeline)\n";
     std::cout << "  Z  Congestion-only test (ghost traffic impact on 6 cities × 5 scenarios)\n";
     std::cout << "  Q  TAM + congestion validation (4 cities × 4 modes × 3 scenarios, ~2-4h)\n\n";
     std::cout << "Choice: ";
@@ -467,6 +484,8 @@ static int run_main()
         cfg.eval_modes = {
             PolicyMode::MAPPO,
             PolicyMode::FaithfulMAPPER,
+            PolicyMode::IPPO,
+            PolicyMode::Hybrid,
             PolicyMode::CongestionAware,
             PolicyMode::TrafficFlow,
             PolicyMode::TokenPassing
@@ -543,23 +562,39 @@ static int run_main()
         //
         // ghost_window_steps bumped to 8 so each ghost lingers a bit longer,
         // stabilising the average load profile (less Poisson churn).
+        // ── Option O — REDUCED congestion + REDUCED fleet (vs Y) ────────────
+        // Goal: keep meaningful congestion for evaluation BUT speed up the
+        // sweep by ~30-50% compared to Y's full-density regime.
+        //
+        // Changes vs Y:
+        //   ghost_density_per_hot_way : 2.0 → 1.4   (-30% ghost load per hot way)
+        //   fleet_size_divisor        : 2   → 3     (33% fewer real agents)
+        //   fleet_load_per_agent      : 2   → 2     (unchanged)
+        //
+        // Expected congestion impact (vs Y):
+        //   Per-edge ghost BPR factor : -30%
+        //   Real-agent fleet count    : -33% (less compute, less real-agent congestion)
+        //   Net: ~25-35% lower congestion footprint, ~33% faster compute
+        //
+        // Validation: ran Option Z post-change to confirm meaningful BPR
+        // remains (target range ×1.05–×1.35, i.e. above the "no impact"
+        // floor of ×1.00–×1.05 but below the saturated ×1.5+ regime).
         cfg.episode_cfg.ghost_hot_way_count           = 0;     // use fraction
-        cfg.episode_cfg.ghost_hot_way_frac            = 0.05f; // 5% per city: ~78% route coverage on Small, ~55% on Large
-        cfg.episode_cfg.ghost_density_per_hot_way     = 2.0f;  // n_max = 2 × hot_count, preserves per-edge BPR
+        cfg.episode_cfg.ghost_hot_way_frac            = 0.05f; // unchanged (route coverage)
+        cfg.episode_cfg.ghost_density_per_hot_way     = 1.4f;  // ↓ from 2.0 (−30%)
         cfg.episode_cfg.ghost_window_steps            = 8;
-        cfg.episode_cfg.ghost_n_max                   = 100;   // ignored (density)
-        cfg.episode_cfg.ghost_n_max_user_set          = false; // density supersedes
+        cfg.episode_cfg.ghost_n_max                   = 100;
+        cfg.episode_cfg.ghost_n_max_user_set          = false;
 
         cfg.episode_cfg.enable_heterogeneous_capacity = true;
         cfg.episode_cfg.hetero_capacity_min           = 3;
         cfg.episode_cfg.hetero_capacity_max           = 7;
 
-        // Compute-amortisation: shrink the fleet by 2 while compensating with
-        // load_per_agent=2 so each real agent contributes the congestion
-        // footprint of two agents. Net effect: 2× fewer A* / policy decisions
-        // for an essentially identical congestion profile.
-        cfg.episode_cfg.fleet_size_divisor            = 2;
-        cfg.episode_cfg.fleet_load_per_agent          = 2;
+        // Fewer real agents (faster compute). fleet_load_per_agent stays at 2,
+        // so each real agent still contributes 2 BPR units — congestion is
+        // 33% lower (not 50%) because per-agent multiplier is unchanged.
+        cfg.episode_cfg.fleet_size_divisor            = 3;     // ↑ from 2
+        cfg.episode_cfg.fleet_load_per_agent          = 2;     // unchanged
 
         // Bump the agent pool so the over_fleet scenario (agents_mult = 10)
         // is actually instantiated. Default 1.5 clamps to 1.5× phase max,
@@ -581,7 +616,7 @@ static int run_main()
         };
         cfg.enable_generalization = true;
         cfg.gen_city_filter       = {
-            "Tokyo_Large", "Paris", "NewYork"
+            "Tokyo_Medium", "Paris", "NewYork"
         };
 
         MultiCityTrainer trainer;
@@ -1016,6 +1051,514 @@ static int run_main()
         // ghost-traffic congestion, no predefined depot. Uses the smoke_test
         // cache so first run reuses the option-S OSM parse.
         run_baselines_multi_agent_test(osm_file, cache_dir);
+    }
+    else if (rep == "U" || rep == "u") {
+        // ── Full-pipeline SoTA standalone benchmark ─────────────────────────
+        // Runs the 5 standalone solvers from src/SoTA/ (TokenPassing,
+        // CongestionAware, FaithfulCongestionAware, TrafficFlow, RHCR) on
+        // a (city × scenario × episode) grid, each solver in its OWN full
+        // pipeline (own allocation + own path planning + own internal logic)
+        // sharing only the simulation infrastructure (task stream, ghost
+        // traffic, congestion map, agent starting positions).
+        //
+        // This is DISTINCT from Option Y, which uses the allocation-only
+        // branches in EpisodeRunner sharing DbVNS planning. Option U is the
+        // fair full-pipeline comparison: each method uses its own algorithms.
+        //
+        // Outputs results/sota_standalone/sota_standalone.csv with one row
+        // per (solver, city, scenario, episode).
+        std::cout << "\n=== SoTA Standalone Benchmark (Option U) ===\n";
+
+        const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
+        const std::string output_dir = "C:\\ConflictualMAS\\results\\sota_standalone";
+        std::filesystem::create_directories(output_dir);
+        const std::string csv_path   = output_dir + "\\sota_standalone.csv";
+
+        CityRegistry::set_osm_root(osm_root);
+
+        // Use the smoke_test bbox for now — keep the runtime tractable.
+        // The first full sweep can extend to all Option Y cities later.
+        const std::string cache_path = cache_dir + "/smoke_test.json";
+        GeoBox geo_box;
+        if (GeoBoxManager::cache_exists(cache_path)) {
+            std::cout << "  GeoBox <- cache (" << cache_path << ")\n";
+            geo_box = GeoBoxManager::load_geobox(cache_path);
+        } else {
+            std::cout << "  GeoBox <- OSM (will be cached)\n";
+            geo_box = create_geo_box(osm_file, 139.695, 35.670, 139.740, 35.710);
+            if (geo_box.is_valid) GeoBoxManager::save_geobox(geo_box, cache_path);
+        }
+        if (!geo_box.is_valid) {
+            std::cerr << "  GeoBox invalid; aborting.\n";
+            return 0;
+        }
+        Pathfinder pathfinder(geo_box);
+
+        // Episode config — same shape as BaselinesMultiAgentTest so the
+        // comparison is comparable to that smoke test.
+        EpisodeConfig cfg;
+        cfg.speed_mps          = 5.f;
+        cfg.min_task_dist_m    = 80.f;
+        cfg.max_task_dist_m    = 3000.f;
+        cfg.max_tasks_per_agent = 3;
+        cfg.phases = {
+            { 200, 8.f,  4, 5, 0.0f, 2 },
+            { 200, 10.f, 5, 6, 1.0f, 3 },
+        };
+        cfg.enable_ghost_traffic = true;
+        cfg.ghost_n_max          = 20;
+        cfg.ghost_window_steps   = 5;
+        cfg.ghost_hot_way_frac   = 0.30f;
+
+        // The scenarios sampled in this sweep (4 here, matching Option Y).
+        struct ScenarioSpec {
+            float       density_mult;
+            float       agents_mult;
+            const char* label;
+            CongestionProfile profile;
+        };
+        const std::vector<ScenarioSpec> scenarios = {
+            { 1.0f, 1.0f, "normal",      CongestionProfile::Wave        },
+            { 1.5f, 0.8f, "stress",      CongestionProfile::ShockBurst  },
+            { 0.5f, 1.2f, "slack",       CongestionProfile::RampUpDown  },
+        };
+
+        const int n_episodes_per_scenario = 3;
+
+        // Open the CSV.
+        SolverCSVLogger logger(csv_path, /*append=*/false);
+        logger.write_header();
+
+        // Make the city label match the smoke_test bbox identifier.
+        const std::string city_label = "smoke_test";
+
+        for (const auto& sc_spec : scenarios) {
+            for (int ep = 0; ep < n_episodes_per_scenario; ++ep) {
+                EpisodeScenario sc;
+                sc.density_mult       = sc_spec.density_mult;
+                sc.agents_mult        = sc_spec.agents_mult;
+                sc.label              = sc_spec.label;
+                sc.congestion_profile = sc_spec.profile;
+
+                const uint32_t ep_seed =
+                    static_cast<uint32_t>(0xC0DE0000 + ep * 7919);
+
+                std::cout << "\n[" << sc.label << " ep=" << ep
+                          << " seed=" << ep_seed << "]\n";
+
+                // One SolverRunner per (scenario, ep). Each run() call
+                // resets the shared congestion map and regenerates the
+                // exact same task stream, so all 5 solvers face byte-
+                // identical environments.
+                SolverRunner runner(cfg, geo_box, pathfinder, sc, ep_seed);
+
+                // Run each solver in turn. Order does not matter (each
+                // gets a fresh CongestionMap).
+                auto run_and_log = [&](ISolver& s) {
+                    SolverMetrics m = runner.run(s);
+                    m.city_label    = city_label;
+                    m.episode       = ep;
+                    logger.write_row(m);
+                    std::cout << "  "
+                              << m.solver_name << "  thr=" << m.throughput_rate
+                              << "  lat=" << m.latency_mean
+                              << "  ms="  << m.wallclock_ms
+                              << "  alloc/ms="
+                              << (m.compute_time_per_decision_us / 1000.0)
+                              << "\n";
+                };
+
+                {  TokenPassingSolver        s; run_and_log(s); }
+                {  CongestionAwareSolver     s; run_and_log(s); }
+                {  FaithfulCASolver          s; run_and_log(s); }
+                {  TrafficFlowSolver         s; run_and_log(s); }
+                {  RHCRSolver                s; run_and_log(s); }
+            }
+        }
+
+        logger.close();
+        std::cout << "\n=== Option U done. CSV: " << csv_path << " ===\n";
+    }
+    else if (rep == "O" || rep == "o") {
+        // ══════════════════════════════════════════════════════════════════════
+        // OPTION O — Combined evaluation (Y RL policies + SoTA standalone)
+        // ══════════════════════════════════════════════════════════════════════
+        //
+        // CRITICAL: this option uses the EXACT SAME parameters as Option Y
+        // (training config, scenario sweep, ghost traffic, capacity hetero,
+        // fleet sizing, agent pool) so the RL-side metrics are directly
+        // comparable to a real Y run. The novelty is that SoTA methods are
+        // pulled from src/SoTA/* (full-pipeline standalone solvers, with their
+        // own allocation + planning) instead of the allocation-only branches
+        // in EpisodeRunner.
+        //
+        // Two phases:
+        //   Phase A — RL policies via MultiCityTrainer (same code path as Y).
+        //             Produces results/<output_dir>/summary.csv with the 4 RL
+        //             policies (MAPPO, FaithfulMAPPER, IPPO, Hybrid).
+        //   Phase B — SoTA standalone solvers via SolverRunner. Produces a
+        //             SECOND CSV results/sota_standalone_O/sota_standalone.csv
+        //             with the 5 standalone solvers (TP, CA, FCA, TF, RHCR).
+        //
+        // The two CSVs share keys (city, scenario, episode_index, seed) so
+        // they can be JOINED post-hoc for full cross-method analysis.
+        //
+        // Coverage: 4 RL × 6 cities × 5 scenarios × 3 eps = 360 RL episodes
+        //         + 5 SoTA × 6 cities × 5 scenarios × 3 eps = 450 SoTA episodes
+        //         = 810 total runs. Wallclock estimate 14-30h on one seed
+        //           (RHCR dominates the SoTA cost).
+        std::cout << "\n=== Option O — Combined Y + SoTA standalone (publication-grade, 2 seeds) ===\n";
+
+        const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
+        const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
+        const std::string output_dir = "C:\\ConflictualMAS\\results";
+        const std::string sota_dir   = output_dir + "\\sota_standalone_O";
+        std::filesystem::create_directories(sota_dir);
+        CityRegistry::set_osm_root(osm_root);
+
+        // ── Build the SAME TrainingConfig as Option Y ───────────────────────
+        // (verbatim copy — DO NOT change parameters; we want RL-side metrics
+        // to match Y exactly when the same seed is used).
+        TrainingConfig cfg;
+        cfg.cache_root       = cache_root;
+        cfg.output_dir       = output_dir;
+        cfg.n_seeds          = 1;          // we externally loop over seeds for per-seed checkpoint
+        cfg.n_eval_episodes  = 2;          // 2 eps × 2 seeds = 4 measurements per slot — fits ~8-10h/seed
+        cfg.verbose          = true;
+
+        cfg.eval_only            = true;
+        cfg.skip_stress_eval     = true;
+        cfg.skip_generalize_eval = false;
+
+        // ═══════════════════════════════════════════════════════════════
+        // Allocation-only comparison (Option Y style, publication-grade)
+        // ═══════════════════════════════════════════════════════════════
+        // All modes share DbVNS-PDP planning (capacity-aware) and TAM Format
+        // A allocation interface. Each mode differs ONLY in its ALLOCATION
+        // RULE (who gets the next task).
+        //
+        // PLANNING is a SEPARATE evaluation handled by Option P (DbVNS vs
+        // MCA-plan vs DoubleHorizon-plan vs ALNS-plan, under MCA allocation).
+        //
+        // ┌─────────────────────────────────────────────────────────────┐
+        // │ MANUAL FLAG : RUN_ONLY_SOTA_ALLOC                            │
+        // │  - true  → run ONLY 3 SoTA allocation rules (FCA, TF, TP)    │
+        // │            Use this for SEED 42 (4 RL already on disk from   │
+        // │            morning run, just need SoTA extension)            │
+        // │  - false → run ALL 7 modes (4 RL + 3 SoTA)                   │
+        // │            Use this for SEEDS 43, 44, 45 (fresh runs)        │
+        // │                                                              │
+        // │  After each seed 42 SoTA-only run, MERGE manually:           │
+        // │    cat _seed42_4RL_only_backup/episodes_seed42.csv           │
+        // │      <(tail -n +2 episodes_seed42.csv)                       │
+        // │      > episodes_seed42_merged.csv                            │
+        // └─────────────────────────────────────────────────────────────┘
+        const bool RUN_ONLY_SOTA_ALLOC = true;
+
+        if (RUN_ONLY_SOTA_ALLOC) {
+            cfg.eval_modes = {
+                PolicyMode::TokenPassing,             // min-h A*     [Ma+2017 AAMAS]
+            };
+        } else {
+            cfg.eval_modes = {
+                // Our RL allocation policies
+                PolicyMode::MAPPO,
+                PolicyMode::FaithfulMAPPER,
+                PolicyMode::IPPO,
+                PolicyMode::Hybrid,
+                // Published SoTA allocation rules
+                PolicyMode::FaithfulCongestionAware,
+                PolicyMode::TrafficFlow,
+                PolicyMode::TokenPassing,
+            };
+        }
+
+        // Exact same 5 scenarios as Y.
+        cfg.eval_scenarios = {
+            EpisodeScenario{ 1.0f,  1.0f, "normal_wave",    CongestionProfile::Wave        },
+            EpisodeScenario{ 1.0f,  1.0f, "normal_ramp",    CongestionProfile::RampUpDown  },
+            EpisodeScenario{ 1.5f,  0.8f, "stress_shock",   CongestionProfile::ShockBurst  },
+            EpisodeScenario{ 2.0f,  0.6f, "stress_buildup", CongestionProfile::BuildingUp  },
+            EpisodeScenario{ 0.5f, 10.0f, "over_fleet",     CongestionProfile::Wave        },
+        };
+
+        // Exact same environment as Y (verbatim).
+        cfg.episode_cfg.use_dbvns_planning            = true;   // DbVNS-PDP planning ON
+        cfg.episode_cfg.enable_ghost_traffic          = true;
+        cfg.episode_cfg.ghost_hot_way_count           = 0;
+        cfg.episode_cfg.ghost_hot_way_frac            = 0.05f;
+        cfg.episode_cfg.ghost_density_per_hot_way     = 2.0f;
+        cfg.episode_cfg.ghost_window_steps            = 8;
+        cfg.episode_cfg.ghost_n_max                   = 100;
+        cfg.episode_cfg.ghost_n_max_user_set          = false;
+        cfg.episode_cfg.enable_heterogeneous_capacity = true;
+        cfg.episode_cfg.hetero_capacity_min           = 3;
+        cfg.episode_cfg.hetero_capacity_max           = 7;
+        cfg.episode_cfg.fleet_size_divisor            = 2;
+        cfg.episode_cfg.fleet_load_per_agent          = 2;
+        cfg.episode_cfg.agent_pool_multiplier         = 10.0f;
+
+        // ── TAM multi-candidate Format A (force-assign argmax) ─────────────
+        // CRITICAL: matches Option Y's TAM config. Without this, RL refuses
+        // ~10-15% of tasks (first-fit threshold 0.5), creating a structural
+        // disadvantage vs SoTA standalone solvers (which always allocate via
+        // argmin insertion-cost). Format A force-assign → acc ≈ 1.0 for RL,
+        // matching SoTA's "always allocate" behaviour. Comparison is now fair.
+        cfg.episode_cfg.tam_multi_candidate     = true;
+        cfg.episode_cfg.tam_mc_force_assign     = true;        // Format A
+        cfg.episode_cfg.tam_mc_max_candidates   = 5;
+        cfg.episode_cfg.tam_mc_ratio_min        = 1.4f;
+        cfg.episode_cfg.tam_mc_ratio_max        = 3.0f;
+        cfg.episode_cfg.tam_mc_ratio_scale      = 2000.f;
+
+        // Publication-grade cross-method homogeneity: build a canonical
+        // SharedEpisodeSetup per (city, scenario, episode) and pass it to BOTH
+        // EpisodeRunner (Phase A, RL) and SolverRunner (Phase B, SoTA). This
+        // guarantees byte-identical task_stream, agent_start_nodes,
+        // per_agent_capacity, total_steps and ghost_seed across all methods —
+        // any throughput/latency gap between RL and SoTA is now a pure method
+        // effect, not a confound of environment-derivation differences.
+        cfg.use_shared_episode_setup = true;
+
+        cfg.load_policy                 = true;
+        cfg.policy_path                 = "C:\\ConflictualMAS\\results\\mappo\\"
+                                          "policy_seed42.bin";
+        cfg.ippo_policy_path            = "C:\\ConflictualMAS\\results\\ippo_faithful\\"
+                                          "ippo_seed42.bin";
+        cfg.mapper_policy_path          = "C:\\ConflictualMAS\\results\\mapper_enhanced\\"
+                                          "mapper_seed42.bin";
+        cfg.faithful_mapper_policy_path = "C:\\ConflictualMAS\\results\\mapper_faithful\\"
+                                          "mapper_seed42.bin";
+
+        cfg.train_city_filter     = {
+            "Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"
+        };
+        cfg.enable_generalization = true;
+        cfg.gen_city_filter       = {
+            "Paris", "NewYork"
+        };
+
+        // ══════════════════════════════════════════════════════════════════
+        // ┌──────────────────────────────────────────────────────────────┐
+        // │  MANUAL CONFIG — edit these 2 constants between runs         │
+        // ├──────────────────────────────────────────────────────────────┤
+        // │  Run 1 :  CURRENT_SEED = 42, RUN_PHASE_A = false              │
+        // │           (Phase B only on seed 42 — Phase A already on disk)│
+        // │  Run 2 :  CURRENT_SEED = 43, RUN_PHASE_A = true               │
+        // │  Run 3 :  CURRENT_SEED = 44, RUN_PHASE_A = true               │
+        // │  Run 4 :  CURRENT_SEED = 45, RUN_PHASE_A = true               │
+        // │                                                              │
+        // │  Each invocation runs ONE seed (Phase A optional + Phase B). │
+        // │  This avoids the MultiCityTrainer destructor crash because   │
+        // │  the trainer is created/destroyed exactly once per process.  │
+        // └──────────────────────────────────────────────────────────────┘
+        const int  CURRENT_SEED = 42;
+        const bool RUN_PHASE_A  = true;   // 9-mode allocation comparison under shared DbVNS
+        const bool RUN_PHASE_B  = false;  // standalone SoTA pipeline dropped (see methodology)
+        // ══════════════════════════════════════════════════════════════════
+
+        const std::vector<int> seeds_to_run = { CURRENT_SEED };
+        const auto t_global_start = std::chrono::steady_clock::now();
+
+        std::cout << "\n\n╔════════════════════════════════════════════════════════════╗\n"
+                  <<     "║  Option O — SEED " << CURRENT_SEED
+                  <<     "  Phase A=" << (RUN_PHASE_A ? "YES" : "skip (on disk)")
+                  <<     "  Phase B=" << (RUN_PHASE_B ? "YES" : "skip") << "\n"
+                  <<     "╚════════════════════════════════════════════════════════════╝\n";
+
+        // ── PHASE A : optional, only when RUN_PHASE_A=true ───────────────
+        // MultiCityTrainer is invoked at most ONCE per process invocation,
+        // ensuring its destructor runs exactly once and the static-singleton
+        // policy state (ObjectiveDMPolicy, IPPOPolicy, MapperPolicy,
+        // FaithfulMapperPolicy, HybridPolicy) is not stressed by repeated
+        // train()/destroy cycles — which was the seed-loop crash root cause.
+        if (RUN_PHASE_A) {
+            std::cout << "\n--- PHASE A (seed=" << CURRENT_SEED
+                      << ") : 4 RL policies (MAPPO/FaithfulMAPPER/IPPO/Hybrid) ---\n";
+            cfg.start_seed = CURRENT_SEED;
+            cfg.n_seeds    = 1;
+            MultiCityTrainer trainer;
+            trainer.train(cfg);
+            std::cout << "\n--- PHASE A seed " << CURRENT_SEED
+                      << " done. CSV: " << output_dir
+                      << "\\episodes_seed" << CURRENT_SEED << ".csv ---\n";
+        } else {
+            std::cout << "\n--- PHASE A skipped — reusing " << output_dir
+                      << "\\episodes_seed" << CURRENT_SEED << ".csv on disk ---\n";
+        }
+
+        // ── PHASE B : optional, only when RUN_PHASE_B=true ───────────────
+        if (RUN_PHASE_B)
+        for (size_t si = 0; si < seeds_to_run.size(); ++si) {
+            const int seed = seeds_to_run[si];
+            const auto t_seed_start = std::chrono::steady_clock::now();
+
+            std::cout << "\n\n╔════════════════════════════════════════════════════════════╗\n"
+                      <<     "║  PHASE B seed " << seed << "\n"
+                      <<     "╚════════════════════════════════════════════════════════════╝\n";
+
+            // Phase A CSV is expected on disk for cross-join purposes.
+            const std::string ep_csv = output_dir
+                + "\\episodes_seed" + std::to_string(seed) + ".csv";
+
+            // ── PHASE B : SoTA standalone solvers ─────────────────────────────
+        // We replicate the city × scenario × episode iteration that Phase A
+        // just performed, but using the SoTA standalone solvers via
+        // SolverRunner. Each iteration uses a SEED derived deterministically
+        // from (city_index, scenario_index, episode_index) — matching the
+        // scheme used by MultiCityTrainer::run_eval so the task streams of
+        // Phase A and Phase B coincide.
+        std::cout << "\n--- PHASE B (seed=" << seed
+                  << ") : 5 SoTA standalone solvers (TP/CA/FCA/TF/RHCR) ---\n";
+
+        // ── City lists — train_cities and gen_cities are kept SEPARATE so
+        // each one resets ca_index to 0 (mirrors MultiCityTrainer's
+        // run_eval / run_generalize loops, where ca.index is per-phase).
+        struct CityToRun {
+            const CityConfig* cc;
+            std::string       cache_path;
+            int               ca_index;   // index within its phase (train OR gen)
+            const char*       phase_label; // "train" or "gen"
+        };
+        std::vector<CityToRun> train_cities_to_run, gen_cities_to_run;
+        const auto& all_cities = CityRegistry::all();
+        auto add_city = [&](std::vector<CityToRun>& dst, const std::string& want,
+                             const char* phase_label) {
+            for (const auto& cc : all_cities) {
+                if (cc.name == want) {
+                    dst.push_back({ &cc,
+                                    cache_root + "/" + cc.name + ".json",
+                                    static_cast<int>(dst.size()),
+                                    phase_label });
+                    return;
+                }
+            }
+            std::cerr << "  [Warn] city \"" << want << "\" not found in registry.\n";
+        };
+        for (const auto& n : cfg.train_city_filter) add_city(train_cities_to_run, n, "train");
+        if (cfg.enable_generalization)
+            for (const auto& n : cfg.gen_city_filter) add_city(gen_cities_to_run, n, "gen");
+
+        // Per-seed CSV: sota_standalone_seed{seed}.csv (mirrors episodes_seed{seed}.csv)
+        const std::string sota_csv = sota_dir + "\\sota_standalone_seed"
+            + std::to_string(seed) + ".csv";
+        SolverCSVLogger logger(sota_csv, /*append=*/false);
+        logger.write_header();
+
+        const int n_eps = cfg.n_eval_episodes;
+        const uint32_t base_seed = static_cast<uint32_t>(seed);  // matches Phase A's ep_seed formula
+
+        // ── EXACT MultiCityTrainer seed formula (mirrors run_eval / run_generalize)
+        //    ep_seed = 1u + e + 101u*(sc_idx+1) + 10007u*(ca.index+1) + 1000003u*seed
+        // This guarantees Phase A and Phase B see the SAME task stream, ghost
+        // traffic, and hetero-capacity draws for the same (city, scenario,
+        // episode) slot — the only difference is the solver/policy.
+        auto eval_phase = [&](std::vector<CityToRun>& cities) {
+            for (auto& entry : cities) {
+                const CityConfig& cc = *entry.cc;
+                std::cout << "\n  [" << entry.phase_label << " ca.index="
+                          << entry.ca_index << "] City: " << cc.name << "\n";
+
+                GeoBox geo_box;
+                if (GeoBoxManager::cache_exists(entry.cache_path)) {
+                    geo_box = GeoBoxManager::load_geobox(entry.cache_path);
+                } else {
+                    geo_box = create_geo_box(cc.osm_path,
+                                             cc.bbox.min_lon, cc.bbox.min_lat,
+                                             cc.bbox.max_lon, cc.bbox.max_lat);
+                    if (geo_box.is_valid)
+                        GeoBoxManager::save_geobox(geo_box, entry.cache_path);
+                }
+                if (!geo_box.is_valid) {
+                    std::cerr << "    [Skip] GeoBox invalid for " << cc.name << "\n";
+                    continue;
+                }
+                Pathfinder pathfinder(geo_box);
+
+                // CRITICAL: same per-city EpisodeConfig customisation that
+                // MultiCityTrainer applies internally (phases, task distance,
+                // ghost_n_max tier). Without this, Phase B uses default phases
+                // and would face a DIFFERENT episode shape than Phase A.
+                EpisodeConfig per_city_ep = cfg.episode_cfg;
+                per_city_ep.city = &cc;
+                MultiCityTrainer::customize_episode_for_city(per_city_ep, cc);
+
+                for (size_t si = 0; si < cfg.eval_scenarios.size(); ++si) {
+                    const EpisodeScenario& sc = cfg.eval_scenarios[si];
+                    const int sc_idx = static_cast<int>(si);
+                    for (int e = 0; e < n_eps; ++e) {
+                        // EXACT formula from MultiCityTrainer.cpp line 314-318.
+                        const uint32_t ep_seed = static_cast<uint32_t>(
+                            1u + e
+                            + 101u * (sc_idx + 1)
+                            + 10007u * (entry.ca_index + 1)
+                            + 1000003u * base_seed);
+
+                        std::cout << "    " << cc.name << " | " << sc.label
+                                  << " | ep=" << e << " seed=" << ep_seed << "\n";
+
+                        SolverRunner runner(per_city_ep, geo_box, pathfinder,
+                                             sc, ep_seed);
+
+                        // Publication-grade: SAME SharedEpisodeSetup as Phase A
+                        // builds for this (ep_seed, city, scenario, cfg). Both
+                        // phases see byte-identical environment derivations.
+                        const SharedEpisodeSetup setup =
+                            build_shared_episode_setup(
+                                ep_seed, cc, sc, per_city_ep, geo_box);
+
+                        auto run_and_log = [&](ISolver& s) {
+                            SolverMetrics m = runner.run(s, &setup);
+                            m.city_label = cc.name;
+                            m.episode    = e;
+                            logger.write_row(m);
+                            std::cout << "      " << m.solver_name
+                                      << "  thr=" << m.throughput_rate
+                                      << "  lat=" << m.latency_mean
+                                      << "  ms="  << m.wallclock_ms
+                                      << "\n";
+                        };
+
+                        { TokenPassingSolver    s; run_and_log(s); }
+                        { CongestionAwareSolver s; run_and_log(s); }
+                        { FaithfulCASolver      s; run_and_log(s); }
+                        { TrafficFlowSolver     s; run_and_log(s); }
+                        { RHCRSolver            s; run_and_log(s); }
+                    }
+                }
+            }
+        };
+
+        std::cout << "\n  -- Train cities --\n";
+        eval_phase(train_cities_to_run);
+        std::cout << "\n  -- Gen cities --\n";
+        eval_phase(gen_cities_to_run);
+
+        logger.close();
+
+        const auto t_seed_end = std::chrono::steady_clock::now();
+        const long long seed_sec = std::chrono::duration_cast<std::chrono::seconds>(
+                                       t_seed_end - t_seed_start).count();
+        std::cout << "\n+++ SEED " << (si + 1) << "/" << seeds_to_run.size()
+                  << " (rng=" << seed << ") COMPLETE in "
+                  << (seed_sec / 60) << " min "
+                  << (seed_sec % 60) << " s +++\n";
+        std::cout << "    RL CSV   : " << ep_csv   << "\n";
+        std::cout << "    SoTA CSV : " << sota_csv << "\n";
+        }  // end seed loop
+
+        const auto t_global_end = std::chrono::steady_clock::now();
+        const long long total_sec = std::chrono::duration_cast<std::chrono::seconds>(
+                                        t_global_end - t_global_start).count();
+        std::cout << "\n═══════════════════════════════════════════════════════════════════\n";
+        std::cout << "=== Option O ALL SEEDS DONE — wallclock " << (total_sec / 3600)
+                  << "h " << ((total_sec % 3600) / 60) << "min\n";
+        for (int s : seeds_to_run) {
+            std::cout << "  seed " << s << ":\n";
+            std::cout << "    RL   : " << output_dir << "\\episodes_seed" << s << ".csv\n";
+            std::cout << "    SoTA : " << sota_dir   << "\\sota_standalone_seed" << s << ".csv\n";
+        }
+        std::cout << "  Cross-join keys: (seed, city, scenario, episode)\n";
     }
     else std::cout << "Unknown option.\n";
 

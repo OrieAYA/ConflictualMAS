@@ -31,9 +31,11 @@ const char* mode_name(PolicyMode m) {
         case PolicyMode::LaCAM:           return "LaCAM";
         case PolicyMode::PIBT:            return "PIBT";
         case PolicyMode::CongestionAware: return "CongestionAware";
+        case PolicyMode::FaithfulCongestionAware: return "FaithfulCongestionAware";
         case PolicyMode::MCA:             return "MCA";
         case PolicyMode::TrafficFlow:     return "TrafficFlow";
         case PolicyMode::TokenPassing:    return "TokenPassing";
+        case PolicyMode::RHCR:            return "RHCR";
         case PolicyMode::DoubleHorizon:   return "DoubleHorizon";
         default:                          return "Unknown";
     }
@@ -183,9 +185,11 @@ bool run_baselines_multi_agent_test(const std::string& osm_file,
         PolicyMode::PIBT,
         PolicyMode::LaCAM,
         PolicyMode::CongestionAware,
+        PolicyMode::FaithfulCongestionAware,
         PolicyMode::TokenPassing,
         PolicyMode::MCA,
         PolicyMode::TrafficFlow,
+        PolicyMode::RHCR,
         PolicyMode::DoubleHorizon,
     };
 

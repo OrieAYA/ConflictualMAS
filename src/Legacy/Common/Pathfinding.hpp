@@ -123,6 +123,19 @@ public:
     );
 
     float heuristic(osmium::object_id_type act_node, osmium::object_id_type end_point);
+
+    // ── Single-source Dijkstra ─────────────────────────────────────────────
+    // Compute shortest-path distances (in metres along OSM way edges) from
+    // `source` to every reachable node in the GeoBox. Returns a map
+    // node_id -> distance. Used by SoTA allocation rules (TokenPassing,
+    // CongestionAware, FaithfulCongestionAware) to evaluate the
+    // current-node→pickup leg cost for ALL candidate agents in O(V+E log V)
+    // instead of O(N × A*) — i.e. one search per task arrival rather than
+    // n_active independent A* calls. The result is a snapshot of free-flow
+    // shortest-path distances (static cost); BPR-aware refinement is left
+    // to the downstream DbVNS-PDP planner that handles route execution.
+    std::unordered_map<osmium::object_id_type, float>
+        dijkstra_distances_from(osmium::object_id_type source);
     
     // Méthodes utilitaires
     void update_way_group(osmium::object_id_type way_id, int new_group);

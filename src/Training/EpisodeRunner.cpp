@@ -1,4 +1,5 @@
 #include "EpisodeRunner.hpp"
+#include "SharedEpisodeSetup.hpp"
 #include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
 #include "DMASforPD/Policy/IPPOPolicy.hpp"
 #include "DMASforPD/Policy/MapperPolicy.hpp"
@@ -75,7 +76,8 @@ EpisodeRunner::~EpisodeRunner() {
 
 RunResult EpisodeRunner::run(int city_index, int num_cities,
                              EpisodeScenario scenario,
-                             uint32_t episode_seed) {
+                             uint32_t episode_seed,
+                             const SharedEpisodeSetup* setup) {
     auto t0 = std::chrono::steady_clock::now();
     arrivals_.clear();
     global_states_.clear();
@@ -239,9 +241,21 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         const int cmin = std::max(1, cfg_.hetero_capacity_min);
         const int cmax = std::max(cmin, cfg_.hetero_capacity_max);
         memory_.task_agent.params.max_tasks_per_agent = cmax;
-        std::uniform_int_distribution<int> cap_dist(cmin, cmax);
-        for (auto& a : all_agents_)
-            a->max_capacity = cap_dist(rng_);
+        if (setup && !setup->per_agent_capacity.empty()) {
+            // Canonical hetero capacities — same draws as SolverRunner sees,
+            // so RL and SoTA face byte-identical fleet heterogeneity. Apply to
+            // the FIRST n_active_agents (per index); idle surplus stays at 0.
+            for (size_t i = 0; i < all_agents_.size(); ++i) {
+                all_agents_[i]->max_capacity =
+                    (i < setup->per_agent_capacity.size())
+                        ? setup->per_agent_capacity[i]
+                        : 0;
+            }
+        } else {
+            std::uniform_int_distribution<int> cap_dist(cmin, cmax);
+            for (auto& a : all_agents_)
+                a->max_capacity = cap_dist(rng_);
+        }
     } else {
         for (auto& a : all_agents_)
             a->max_capacity = 0;  // inherit TAM global
@@ -259,7 +273,23 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         a->local_memory.operable_env = OperableEnvironment{};
     }
 
-    auto stream      = gen_.generate();
+    // ── Canonical agent start positions (publication-grade eval only) ──────
+    // When a SharedEpisodeSetup is provided, override the legacy
+    // "all-agents-at-first-road-node" placement with the per-agent sampled
+    // positions that SolverRunner also uses. Idle surplus agents (index >=
+    // setup->n_active_agents) keep their legacy position — they are never
+    // offered tasks so their start node is irrelevant.
+    if (setup && !setup->agent_start_nodes.empty()) {
+        const size_t n_canon = setup->agent_start_nodes.size();
+        for (size_t i = 0; i < all_agents_.size() && i < n_canon; ++i)
+            all_agents_[i]->current_node = setup->agent_start_nodes[i];
+    }
+
+    // Stream override: when a SharedEpisodeSetup is provided, consume its
+    // pre-generated stream verbatim (already has density_mult applied via the
+    // canonical subsample/supersample). Otherwise fall back to the legacy
+    // gen_.generate() — used by training and Option Y.
+    auto stream      = (setup ? setup->task_stream : gen_.generate());
     auto phase_table = gen_.build_phase_table();
     int  total_steps = cfg_.total_steps();
     int  stream_idx  = 0;
@@ -283,9 +313,15 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         gcfg.profile            = scenario.congestion_profile;
 
         std::hash<std::string> shash;
-        const uint32_t episode_seed = static_cast<uint32_t>(rng_()
-            ^ shash(scenario.label ? scenario.label : "")
-            ^ (static_cast<uint32_t>(city_index) << 16));
+        // Canonical ghost seed when a SharedEpisodeSetup is provided (Option O
+        // eval) — same formula as SolverRunner so ghost traffic is byte-
+        // identical across RL and SoTA. Otherwise use legacy formula
+        // (training paths, Option Y unchanged).
+        const uint32_t episode_seed = setup
+            ? setup->ghost_seed
+            : static_cast<uint32_t>(rng_()
+                ^ shash(scenario.label ? scenario.label : "")
+                ^ (static_cast<uint32_t>(city_index) << 16));
         ghost_traffic_.reset(memory_.geo_box,
                              memory_.congestion_map,
                              gcfg,
@@ -1153,11 +1189,40 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     }
 
     // ── PIBT-inspired baseline: load-balanced priority allocation ────────────
-    // PIBT [Okumura et al.] assigns higher priority to agents that need to move
-    // first to avoid deadlocks. In our PDP setting (no grid conflicts), we adapt
-    // the priority concept to a load-balancing rule: the agent with the smallest
-    // current task queue wins. This avoids the first-by-index pathology of
-    // Greedy where the same agent monopolises all early tasks.
+    //
+    // References for the original algorithm:
+    //   - Okumura, Machida, Defago, Tamura (2022), "Priority Inheritance with
+    //     Backtracking for Iterative Multi-Agent Path Finding", Artificial
+    //     Intelligence 310. Defines PIBT as a one-step path-finding rule on a
+    //     grid: in each timestep each agent locally picks its next vertex by
+    //     priority order with backtracking when a chain of pushes fails.
+    //   - Matsui (2025), "Improvement of PIBT-based Solution Method for
+    //     Lifelong MAPD Problems to Extend Applicable Graphs", ICAART. Extends
+    //     PIBT to graphs with single dead-end aisles via cooperative swap
+    //     tasks (Section 3.2).
+    //
+    // LGPDP adaptation (this branch):
+    //   Neither the Okumura+2022 path-finding rule nor the Matsui+2025 swap
+    //   extension translate directly to our setting — OSM road networks have
+    //   no grid vertex conflicts, no biconnected-graph structure, no dead-end
+    //   aisle semantics, and our agents perform continuous routing rather
+    //   than one-step moves. What we keep is the *priority-coordination
+    //   intent*: when multiple eligible agents could serve a task, prefer
+    //   the one whose action would be most "PIBT-conformant" — i.e. the
+    //   agent with the LIGHTEST current queue (= the one that would have
+    //   the highest PIBT priority for movement in the original algorithm,
+    //   since elapsed-time-since-goal is highest for the least-busy agent).
+    //
+    //   The resulting rule is: argmin over eligible agents of |queued tasks|.
+    //   This is structurally a load-balancing tie-breaker on top of capacity
+    //   feasibility, and matches the *priority-by-idleness* spirit of PIBT
+    //   without trying to reimplement the grid-collision machinery.
+    //
+    // OWNERSHIP NOTE: this branch was authored by another project
+    // contributor as part of the SOTA-baseline porting effort. Treat it as
+    // read-only — coordinate with the original author before modifying the
+    // selection rule, especially any change that would alter the priority
+    // semantics (load → elapsed time, etc.).
     if (policy_mode == PolicyMode::PIBT) {
         int best_aid  = -1;
         int min_load  = std::numeric_limits<int>::max();
@@ -1170,65 +1235,113 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         return { best_aid, false };
     }
 
-    // ── Congestion-Aware baseline (Liu, Saha et al.) ─────────────────────────
-    // Picks the eligible agent whose pickup-side path has the lowest dynamic
-    // (congestion-adjusted) cost. Falls back to static cost when the dynamic
-    // cost has not yet been computed for that path. Reuses the existing
-    // CongestionMap + TD-A* machinery in PDPServerMemory.
+    // ── CongestionAware: in-house TD-Greedy pickup dispatch baseline ──────────
+    //
+    // IN-HOUSE BASELINE — NOT TIED TO A SPECIFIC PAPER.
+    //
+    // Behaviour: for each arriving task, assign it to the agent whose path
+    // from current_node to pickup has the lowest CONGESTION-ADJUSTED travel
+    // time (BPR-style: t · (1 + α·(load/cap)^β)). Falls back to static cost
+    // when no dynamic cost is available.
+    //
+    // Structurally this is a composite of:
+    //   - "argmin h(loc, pickup)" task allocation, à la TokenPassing
+    //     [Ma+2017, AAMAS] — but without the free-agent filter.
+    //   - BPR-adjusted travel time [Beckmann 1956 / LeBlanc 1975] — the
+    //     classical congestion model in transport assignment.
+    //
+    // Equivalent in adjacent literatures:
+    //   - "Nearest-vehicle dispatch with time-dependent travel time" in the
+    //     ride-hailing / mobility-on-demand body of work.
+    //   - Decentralised greedy dispatch baseline in multi-robot task
+    //     allocation.
+    //
+    // Relation to Asadi+2025 GECCO "Congestion-Aware MAPP for Pick-up and
+    // Delivery": NOT FAITHFUL. Asadi+2025 proposes (1) decentralised A* with
+    // CNN-predicted congestion, (2) Wandering / Pickup / Delivery modes,
+    // (3) β_W priority strategy for conflict resolution, (4) γ_moving /
+    // γ_equals / γ_others mode weighting. None of those are implemented
+    // here. The paper-faithful adaptation lives under PolicyMode::
+    // FaithfulCongestionAware (separate branch below).
+    //
+    // Relation to the three Chen/Ma reference papers:
+    //   - Ma+2017 TokenPassing: very close in structure — argmin distance —
+    //     differs only by static-vs-dynamic cost and the free-agent filter.
+    //   - Chen+2024 TrafficFlow: pickup-leg-only ablation of TF (which uses
+    //     full-trip dynamic cost c_pu + c_del). Treat this branch as the
+    //     pickup-only sibling, used to read off how much TF's gain comes
+    //     from the delivery leg.
+    //   - Chen+2021 MCA: orthogonal (MCA is marginal-cost insertion, no
+    //     congestion modelling).
+    //
+    // KEPT under this name because historical results on this codebase
+    // referenced "CongestionAware" — renaming would break reproducibility.
+    // Reports should describe it as an in-house TD-Greedy baseline rather
+    // than as a paper baseline.
     if (policy_mode == PolicyMode::CongestionAware) {
         PDPTask* t = memory_.get_task(task_id);
         if (!t) return { -1, false };
+
+        // ── OPTIM : ONE reverse Dijkstra from pickup replaces N×A*. See the
+        // FaithfulCongestionAware branch above for full rationale.
+        auto dist_from_pickup =
+            memory_.pathfinder.dijkstra_distances_from(t->pickup.id);
 
         int   best_aid  = -1;
         float best_cong = std::numeric_limits<float>::max();
         for (int i = 0; i < n_active; ++i) {
             DeliveryAgent& a = *all_agents_[i];
             if (!has_cap(a)) continue;
-            const auto* to_pu = memory_.get_or_compute_path(
-                a.current_node, t->pickup.id, t->pickup.group_id);
             float cong = kCostScale;
-            if (to_pu && to_pu->valid()) {
-                cong = to_pu->has_dynamic_cost()
-                    ? to_pu->dynamic_cost   // congestion-adjusted travel time
-                    : to_pu->cost;          // static fallback (no congestion data)
-            }
+            auto it = dist_from_pickup.find(a.current_node);
+            if (it != dist_from_pickup.end()) cong = it->second;
             if (cong < best_cong) { best_cong = cong; best_aid = a.agent_id; }
         }
         return { best_aid, false };
     }
 
-    // ── Token Passing (TP) [Ma+2017, AAMAS] ───────────────────────────────────
+    // ── Token Passing (TP) [Ma+2017, AAMAS — Paper 2] ─────────────────────────
+    //
     // Paper TP (Algorithm 1, lines 7-12): a FREE agent (a_i with no current
     // task) holding the token picks τ* ∈ T' = { τ | no other path in token ends
     // in s_τ or g_τ } that minimises h(loc(a_i), s_τ). Token then passes to
-    // next free agent. The "free agent" precondition is fundamental — paper TP
-    // only lets agents that are NOT currently executing any task self-assign.
+    // next free agent.
     //
-    // Adaptation to capacitated lifelong GPDP (multi-task per agent, no depot):
-    //   ✓ Per-task selection rule = argmin h(loc(a_i), s_τ) — paper Line 9.
-    //   ✓ "Free-agent-first" semantic preserved via a TWO-STAGE PREFERENCE:
-    //       (a) If at least one agent has load=0 (no in-flight task, the
-    //           lifelong analogue of "free"), restrict the argmin to those
-    //           agents. This matches paper TP exactly when free agents exist.
-    //       (b) Otherwise (no free agent), allow ALL eligible agents to be
-    //           considered and pick the one minimising h. This is the
-    //           lifelong-multi-task extension — paper TP would have the task
-    //           wait, but in our online stream-of-tasks setting deferring all
-    //           offers when the fleet is busy collapses throughput to ~0 and
-    //           defeats the comparison. The fallback keeps TP comparable while
-    //           preserving its "closest agent picks first" intuition.
-    //   ✗ Endpoint filter T': vacuous — each task has UNIQUE pickup/delivery
-    //     nodes by construction in EpisodeGenerator (no two tasks share s_τ
-    //     or g_τ), so the filter never excludes anything.
-    //   ✗ TPTS task swap (Ma+2017 Algorithm 2): not implemented. Once a task
-    //     is allocated it is not reassigned. Documented simplification.
-    //   ✗ Path1/Path2 collision avoidance (Algorithm 1 lines 13-21): NOT
-    //     APPLICABLE — OSM road network has no vertex-blocking semantics
+    // LGPDP adaptation (capacitated multi-task per agent, no depot, OSM road
+    // network with online single-task arrivals):
+    //
+    //   ✓ Selection rule = argmin h(loc(a_i), s_τ) — paper Line 9, EXACT.
+    //   ✓ Static h cost (NOT congestion-adjusted) — paper uses graph-distance
+    //     heuristic; faithful to the deterministic-cost model.
+    //   ✓ "Free agent first" preserved via two-stage preference:
+    //       (a) any agent with load==0 → argmin restricted to free agents
+    //           (matches paper TP exactly when free agents exist).
+    //       (b) no free agent → fallback to argmin over ALL eligible agents.
+    //           Paper TP would defer the task, but in our online task-stream
+    //           setting deferring while the fleet is busy collapses throughput;
+    //           the fallback preserves TP's "closest free agent" intuition while
+    //           keeping the baseline comparable in saturated regimes.
+    //
+    //   ✗ Endpoint filter T' (paper Line 7): vacuous in our setting — each
+    //     task has UNIQUE pickup/delivery nodes by EpisodeGenerator
+    //     construction, so the filter never excludes anything.
+    //   ✗ Path1/Path2 collision-free path planning (paper Lines 12,16):
+    //     NOT APPLICABLE — OSM road network has no vertex-blocking semantics
     //     (multiple agents can occupy the same node/edge; congestion is
-    //     accounted via the cost, not via hard blocking).
-    //
-    // h is the static A* cost (paper uses graph-distance heuristic) — explicitly
-    // NOT congestion-adjusted, faithful to the paper's deterministic-cost model.
+    //     metered via cost adjustment, not hard blocking).
+    //   ✗ TPTS task-swap (paper Algorithm 2): DEGENERATE in our setting.
+    //     TPTS lets an agent a_i with the token REASSIGN a task τ from another
+    //     agent a_i' if a_i can reach s_τ faster than a_i'. The swap acts on
+    //     the SET of tasks T held in the token. In our online lifelong setting:
+    //         (i)  T contains at most ONE task at a time (each task is
+    //              allocated synchronously on arrival),
+    //         (ii) once allocated, a task moves into the agent's local queue
+    //              and is not re-offered.
+    //     With |T| = 1 at every token-passing moment, the TPTS swap collapses
+    //     to "pick the best agent for the new task", which is exactly TP. A
+    //     batch variant could re-examine in-flight (not-yet-picked-up) tasks
+    //     and swap them; we leave this as documented future work to keep TP
+    //     and TPTS comparable to the paper's batch semantics.
     //
     // Distinguishing TP from MCA / CongestionAware / TrafficFlow:
     //   TP              — argmin h(loc, pickup) on free agents (static cost).
@@ -1247,6 +1360,13 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
             if (a.local_memory.tasks.empty()) { any_free = true; break; }
         }
 
+        // ── OPTIM : ONE reverse Dijkstra from pickup gives h(loc, pickup) for
+        // all candidate agents in a single search. TP's argmin then becomes a
+        // simple O(N) map-lookup loop instead of N×A*. See FaithfulCA branch
+        // for rationale.
+        auto dist_from_pickup =
+            memory_.pathfinder.dijkstra_distances_from(t->pickup.id);
+
         // Pass 2: argmin h(loc, pickup) restricted to free agents (if any).
         int   best_aid = -1;
         float best_h   = std::numeric_limits<float>::max();
@@ -1254,9 +1374,9 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
             DeliveryAgent& a = *all_agents_[i];
             if (!has_cap(a)) continue;
             if (any_free && !a.local_memory.tasks.empty()) continue;
-            const auto* to_pu = memory_.get_or_compute_path(
-                a.current_node, t->pickup.id, t->pickup.group_id);
-            const float h = (to_pu && to_pu->valid()) ? to_pu->cost : kCostScale;
+            float h = kCostScale;
+            auto it = dist_from_pickup.find(a.current_node);
+            if (it != dist_from_pickup.end()) h = it->second;
             if (h < best_h) { best_h = h; best_aid = a.agent_id; }
         }
         return { best_aid, false };
@@ -1326,7 +1446,19 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         return { best_aid, false };
     }
 
-    // ── MCA: true marginal-cost assignment [Chen+2021, ICRA] ──────────────────
+    // ── MCA: Marginal-Cost Assignment [Chen+2021, ICRA — Paper 1] ─────────────
+    //
+    // NOTE ON NAMING — MCA here stands for "Marginal-Cost Assignment", a
+    // VRP/PDP-style INSERTION HEURISTIC. It has NO relation to congestion.
+    // Do not confuse with any "Multi-Congestion-Aware" / "M.C.A." variant from
+    // congestion-aware MAPP literature — this is the Chen+2021 ICRA paper that
+    // proposes MCA + RMCA as marginal-cost vs regret-based assignment rules.
+    //
+    // In this project MCA is used as a METAHEURISTIC ALLOCATION BASELINE in the
+    // VRP/PDP comparison cluster (alongside DbVNS / ALNS / Double-Horizon),
+    // NOT in the LGPDP-SOTA cluster (which contains TokenPassing,
+    // TrafficFlow, CongestionAware).
+    //
     // Paper MCA: eq. (12) — for each unassigned task i and each robot k, find
     // (q1*, q2*) that minimise the route-cost delta of inserting (s_i at q1,
     // g_i at q2) into k's current sequence o_k while respecting capacity. Pick
@@ -1368,48 +1500,329 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         return { best_aid, false };
     }
 
-    // ── TrafficFlow: congestion-aware allocation [Chen+2024, AAAI] ────────────
-    // Paper "Traffic Flow Optimisation for Lifelong MAPF" (Chen+2024, AAAI)
-    // targets MAPF *path-finding* by computing user-equilibrium guide paths
-    // with a two-part edge weight (c_e, 1 + p_{v2}) where c_e captures
-    // contraflow and p_v converging-vertex pressure. Guide paths then act as
-    // heuristics inside PIBT for movement.
+    // ── TrafficFlow [Chen+2024, AAAI — Paper 3] ───────────────────────────────
     //
-    // The paper's algorithm is a ROUTING rule, not an allocation rule (it
-    // assumes tasks are already assigned). For our allocation-only baseline
-    // we keep the *spirit* of the paper — "pick the assignment whose planned
-    // trip is the cheapest under current traffic conditions" — and drop the
-    // load tie-break that previously sat on top. That tie-break was a PIBT-
-    // style priority signal, not a TrafficFlow signal, and it duplicated the
-    // role of the dedicated PIBT baseline. Removing it gives:
+    // Paper "Traffic Flow Optimisation for Lifelong MAPF" §4.1 defines a
+    // two-part edge weight (c_e, 1 + p_{v2}) where:
+    //   - c_e = f_{v1,v2} × f_{v2,v1} is the CONTRAFLOW congestion
+    //     (product of directional flows on the two ends of edge e),
+    //   - p_v = ⌈(n_v − 1) / 2⌉ is per-agent VERTEX pressure with n_v the
+    //     number of agents entering v.
+    // §4.2 sorts candidate paths LEXICOGRAPHICALLY by (Σ c_e, Σ 1 + p_v):
+    // first minimise total contraflow, then total weighted edge cost.
     //
-    //   CongestionAware — argmin dynamic c_pu                (pickup leg only).
-    //   TrafficFlow     — argmin dynamic (c_pu + c_del)      (FULL trip).
-    //   MCA             — argmin Δroute_length under capacity (no congestion).
-    //   PIBT            — argmin current load                (no cost).
+    // LGPDP adaptation (allocation rule, OSM road network, online lifelong):
     //
-    // That clean separation matches the related-works axes (congestion-aware
-    // vs combinatorial vs load-balancing).
+    // FAITHFUL CORE — what we implement (this is the F2 contraflow fix):
+    //   ✓ Directional flow f_{u,v} tracking: for every agent currently in
+    //     transit, we count the remaining directed edges of their EdgeCursor.
+    //     Each surviving edge contributes one unit to f_{nodes[k], nodes[k+1]}.
+    //   ✓ Marginal contraflow on a candidate path: for the candidate's path
+    //     (current → pickup → delivery), each directed edge (u, v) accumulates
+    //     f_{v,u} (the flow in the opposite direction). The MARGINAL c_e is
+    //     1 × f_{v,u} (the candidate adds one unit of f_{u,v}, so contraflow
+    //     increment ≈ f_{v,u}). Sum over the candidate's edges gives the
+    //     candidate's total contraflow penalty.
+    //   ✓ Lexicographic (Σ contraflow, free-flow cost) argmin: faithful to
+    //     paper §4.2's two-part ordering. The second key is the BPR-adjusted
+    //     full-trip travel time (kept from the previous implementation).
     //
-    // Capacity (LGPDP adaptation, not in the paper):
-    //   has_cap() already filters agents whose receive_task() insertion would
-    //   exceed their effective max_capacity, so the argmin only ranges over
-    //   feasible assignments. The dynamic cost itself does not depend on
-    //   capacity — that is handled at insertion time inside receive_task.
+    // What we deliberately DO NOT do vs the paper and why:
     //
-    // What we deliberately do NOT do vs the paper:
-    //   ✗ Frank-Wolfe / FOCAL user-equilibrium guide-path computation: tasks
-    //     arrive online in LGPDP; capacity-aware insertion in DbVNS already
-    //     produces a per-agent route, so re-solving a global UE per arrival
-    //     would be both expensive and architecturally orthogonal.
-    //   ✗ LNS-style guide-path refinement (paper Alg. 2): would require
-    //     cross-agent re-routing, conflicting with DbVNS-per-agent replan.
-    //   ✗ Exact (f_{v1,v2} × f_{v2,v1}) contraflow on directed edges: we
-    //     instead rely on CongestionMap's BPR-style edge load, which captures
-    //     "more agents on this edge ⇒ slower" in a way that is faithful in
-    //     spirit and consistent with how the rest of the system meters
-    //     congestion (CongestionAware, MAPPO features, ghost traffic).
+    //   ✗ Frank-Wolfe / FOCAL user-equilibrium guide-path computation
+    //     (paper Alg. 2 FindPaths). Tasks arrive online one-at-a-time in
+    //     LGPDP; re-solving a global UE on each arrival would conflict with
+    //     DbVNS per-agent replan and is architecturally out of scope.
+    //   ✗ LNS-style guide-path refinement (paper Alg. 2 PathRefinement) —
+    //     same reason.
+    //   ✗ Vertex pressure p_v as a separate second-key term. We fold the
+    //     pressure intuition into the BPR-adjusted free-flow cost (which
+    //     captures "many agents on this edge ⇒ slower" super-linearly).
+    //     Adding an explicit p_v term is a future refinement.
+    //   ✗ Guide heuristic h_i(v) = (dp, dg) inside PIBT (paper §4.3): we are
+    //     an allocation rule, not a movement rule. The two-part cost above
+    //     IS the allocation analogue of the guide path.
     if (policy_mode == PolicyMode::TrafficFlow) {
+        PDPTask* t = memory_.get_task(task_id);
+        if (!t) return { -1, false };
+
+        // ── Step 1: build the directional flow map from in-flight agents ─
+        // For each agent currently traversing a path, every REMAINING
+        // directed edge contributes +1 to the flow in that direction.
+        // The map's key is (from_node, to_node).
+        using DirEdge = std::pair<osmium::object_id_type, osmium::object_id_type>;
+        struct DirEdgeHash {
+            std::size_t operator()(const DirEdge& p) const noexcept {
+                const auto h1 = std::hash<osmium::object_id_type>{}(p.first);
+                const auto h2 = std::hash<osmium::object_id_type>{}(p.second);
+                return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2));
+            }
+        };
+        std::unordered_map<DirEdge, int, DirEdgeHash> flow_dir;
+        for (int i = 0; i < n_active; ++i) {
+            const DeliveryAgent& a = *all_agents_[i];
+            if (!a.edge_cursor.has_value()) continue;
+            const auto& cur = a.edge_cursor.value();
+            // Iterate remaining directed edges from cur.next_idx.
+            // Each (nodes[k], nodes[k+1]) for k = next_idx ... |nodes|-2 is
+            // a directed edge the agent still has to traverse.
+            for (int k = std::max(0, cur.next_idx);
+                 k + 1 < static_cast<int>(cur.nodes.size()); ++k) {
+                ++flow_dir[DirEdge{ cur.nodes[k], cur.nodes[k + 1] }];
+            }
+        }
+
+        // ── Step 2: lexicographic argmin (contraflow, free-flow cost) ───
+        int        best_aid       = -1;
+        long long  best_contraflow = std::numeric_limits<long long>::max();
+        float      best_free_cost  = std::numeric_limits<float>::max();
+
+        // Helper: accumulate marginal contraflow on a candidate path. For
+        // each directed edge (u, v) on the candidate, add f_{v,u} — the
+        // existing flow in the opposite direction. Marginal c_e = 1×f_{v,u}
+        // since the candidate adds 1 unit to f_{u,v}.
+        auto path_contraflow = [&](const ObjectivePath* p) -> long long {
+            if (!p || !p->valid() || p->nodes.size() < 2) return 0;
+            long long s = 0;
+            for (int k = 0; k + 1 < static_cast<int>(p->nodes.size()); ++k) {
+                DirEdge opposite{ p->nodes[k + 1], p->nodes[k] };
+                auto it = flow_dir.find(opposite);
+                if (it != flow_dir.end()) s += it->second;
+            }
+            return s;
+        };
+
+        for (int i = 0; i < n_active; ++i) {
+            DeliveryAgent& a = *all_agents_[i];
+            if (!has_cap(a)) continue;
+
+            const auto* to_pu = memory_.get_or_compute_path(
+                a.current_node, t->pickup.id, t->pickup.group_id);
+            const auto* pu_del = memory_.get_or_compute_path(
+                t->pickup.id, t->delivery.id, t->delivery.group_id);
+
+            float c_pu  = kCostScale;
+            float c_del = kCostScale;
+            if (to_pu && to_pu->valid())
+                c_pu  = to_pu->has_dynamic_cost()  ? to_pu->dynamic_cost  : to_pu->cost;
+            if (pu_del && pu_del->valid())
+                c_del = pu_del->has_dynamic_cost() ? pu_del->dynamic_cost : pu_del->cost;
+            const float free_cost = c_pu + c_del;
+
+            const long long contraflow =
+                path_contraflow(to_pu) + path_contraflow(pu_del);
+
+            // Lexicographic (contraflow, free_cost) argmin — paper §4.2.
+            if (contraflow < best_contraflow ||
+                (contraflow == best_contraflow && free_cost < best_free_cost)) {
+                best_contraflow = contraflow;
+                best_free_cost  = free_cost;
+                best_aid        = a.agent_id;
+            }
+        }
+        return { best_aid, false };
+    }
+
+    // ── FaithfulCongestionAware [Asadi, Nowé, Ghofrani — 2025, GECCO] ─────────
+    //
+    // Paper "Congestion-Aware Multi-Agent Path Planning for Pick-up and
+    // Delivery Tasks" proposes a DECENTRALISED PATH-PLANNING approach for
+    // grid-based MAPD with:
+    //   §3.2  Local path planning: modified A* with congestion cost in the
+    //         node-visit cost g(v).
+    //   §3.3  Local collision avoidance with agent modes ∈ {Pickup, Delivery,
+    //         Wandering} and priority strategies (β_φ, β_π, β_T, β_F, β_W).
+    //         Paper finds β_W (pickup/delivery > wandering/finished) and
+    //         β_π (#remaining-orders) most effective (Table 1).
+    //   §3.4  Global congestion message B(R^{H×W×C}) predicted by a CNN over
+    //         past states, weighted by γ_moving / γ_equals / γ_others
+    //         (paper finds γ_moving < γ_equals < γ_others).
+    //
+    // LGPDP adaptation (allocation rule on OSM road network, online lifelong):
+    //
+    // What we keep faithful:
+    //   ✓ Congestion-cost is part of the trip evaluation (BPR adjustment on
+    //     both legs — full-trip c_pu_dyn + c_del_dyn). This is the LGPDP
+    //     analogue of §3.2's congestion term in A*.
+    //   ✓ Mode-weighted cost (γ analogue): idle agents (load==0, the
+    //     "Wandering / no-active-task" mode equivalent) are preferred over
+    //     busy agents (load>0, the "Pickup / Delivery" mode equivalent) when
+    //     congestion is high. We weight the candidate cost by a per-agent
+    //     γ factor: busy agents get γ_busy > 1 (penalty), idle agents get
+    //     γ_idle = 1. The relative ordering matches γ_moving < γ_others
+    //     from the paper, in the sense that the agent that would CONTRIBUTE
+    //     LESS to existing flow (idle) is preferred under load.
+    //   ✓ β_W-style tie-breaking: among candidates within a tolerance of the
+    //     best mode-weighted cost, prefer agents with FEWER queued tasks
+    //     (analogue of paper's β_π — #remaining orders — and β_W — give
+    //     priority to in-progress agents over wandering ones, inverted here
+    //     because in lifelong allocation we want to LOAD the least-loaded
+    //     agent next, not the most-loaded).
+    //
+    // What we deliberately DO NOT do vs the paper and why:
+    //   ✗ CNN-based congestion prediction (paper §3.4): the paper learns a
+    //     model on a fixed grid layout to predict near-future occupation.
+    //     On OSM road networks with online task arrival the input
+    //     distribution is non-stationary across episodes/maps; we substitute
+    //     the BPR cost adjustment, which is the present-time analogue (no
+    //     forecast).
+    //   ✗ Explicit Wandering mode (paper §3.3): we have only Idle vs Busy
+    //     because lifelong allocation immediately reassigns idle agents.
+    //   ✗ Multivariate-normal spatio-temporal congestion message (paper
+    //     §3.4): same reason — replaced by edge-level BPR load summary.
+    //
+    // Hyperparameters: we collapse paper's three γ to two (γ_idle = 1.0,
+    // γ_busy = 1.5). Values chosen to match the paper's ordering relation
+    // γ_moving < γ_equals < γ_others without claiming to reproduce the
+    // tuned values from Bayesian optimisation in §4.1 (paper's tuning is
+    // grid-specific and not transferable to OSM).
+    if (policy_mode == PolicyMode::FaithfulCongestionAware) {
+        PDPTask* t = memory_.get_task(task_id);
+        if (!t) return { -1, false };
+
+        constexpr float kGammaIdle = 1.0f;   // paper γ_others / γ_moving spirit
+        constexpr float kGammaBusy = 1.5f;   // > γ_idle, ordering γ_moving < γ_others
+        constexpr float kTieTolerance = 1.05f; // β_W tie band: within 5% of best cost
+
+        // ── OPTIM : ONE reverse Dijkstra from pickup gives distances to all
+        // agents in O(V+E log V), instead of N×A* (one per agent). For
+        // over_fleet (60 agents) on Tokyo_Small this is ~9× faster; on Paris
+        // ~6× faster. Faithfulness preserved: the dist returned is the
+        // free-flow shortest-path distance, same as cached A* would yield for
+        // an uncongested edge. BPR-aware refinement (when dynamic_cost is
+        // available on previously committed paths) is preserved via the
+        // pu_del fetch below — that path is cached per task and shared
+        // across all candidate agents.
+        auto dist_from_pickup =
+            memory_.pathfinder.dijkstra_distances_from(t->pickup.id);
+
+        // The pickup→delivery leg cost is identical across candidate agents;
+        // compute it ONCE (cache hit after first call).
+        const auto* pu_del = memory_.get_or_compute_path(
+            t->pickup.id, t->delivery.id, t->delivery.group_id);
+        float c_del = kCostScale;
+        if (pu_del && pu_del->valid())
+            c_del = pu_del->has_dynamic_cost() ? pu_del->dynamic_cost : pu_del->cost;
+
+        // First pass: compute mode-weighted full-trip cost for each eligible agent.
+        struct Candidate { int agent_id; float cost; int load; };
+        std::vector<Candidate> cands;
+        cands.reserve(static_cast<size_t>(n_active));
+
+        for (int i = 0; i < n_active; ++i) {
+            DeliveryAgent& a = *all_agents_[i];
+            if (!has_cap(a)) continue;
+            float c_pu = kCostScale;
+            auto it = dist_from_pickup.find(a.current_node);
+            if (it != dist_from_pickup.end()) c_pu = it->second;
+            const int   load   = static_cast<int>(a.local_memory.tasks.size());
+            const float gamma  = (load == 0) ? kGammaIdle : kGammaBusy;
+            const float cost   = gamma * (c_pu + c_del);
+            cands.push_back({ a.agent_id, cost, load });
+        }
+        if (cands.empty()) return { -1, false };
+
+        // β_W tie-break: among candidates within kTieTolerance of the best
+        // mode-weighted cost, pick the one with the lowest queued-task count.
+        // This implements paper's preference for assignments that match the
+        // "less burdened" agent (β_π — fewer remaining orders).
+        float best_cost = std::numeric_limits<float>::max();
+        for (const auto& c : cands) if (c.cost < best_cost) best_cost = c.cost;
+        const float band = best_cost * kTieTolerance;
+
+        int   best_aid  = -1;
+        int   best_load = std::numeric_limits<int>::max();
+        float best_band_cost = std::numeric_limits<float>::max();
+        for (const auto& c : cands) {
+            if (c.cost > band) continue;
+            if (c.load < best_load ||
+                (c.load == best_load && c.cost < best_band_cost)) {
+                best_load      = c.load;
+                best_band_cost = c.cost;
+                best_aid       = c.agent_id;
+            }
+        }
+        return { best_aid, false };
+    }
+
+    // ── RHCR [Li, Tinka, Kiesel, Durham, Kumar, Koenig — 2021, AAAI] ──────────
+    //
+    // Paper "Lifelong Multi-Agent Path Finding in Large-Scale Warehouses"
+    // proposes Rolling-Horizon Collision Resolution: decompose lifelong MAPF
+    // into a sequence of Windowed MAPF instances with user-specified time
+    // horizon w and replanning period h (h ≤ w). Key elements:
+    //   §4    framework: every h steps, update goal sequence per agent, call
+    //         a Windowed MAPF solver to find paths collision-free for first w
+    //         steps; then advance h steps and repeat.
+    //   §4.1  Multi-Label A* (Alg. 1): low-level search that finds a single
+    //         agent's path through an ORDERED SEQUENCE of goal locations,
+    //         where each state is (location, time, label) and label counts
+    //         the number of goal locations already visited.
+    //   §4.2  bounded-horizon (E)CBS / CA* / PBS variants: collision detection
+    //         restricted to the first w timesteps; beyond w, agents follow
+    //         shortest paths and collisions are ignored.
+    //   §4    "ensure d ≥ h" — if an agent's remaining work is shorter than
+    //         h timesteps, RHCR fills its sequence with more goal locations.
+    //   §4.4  deadlock avoidance with potential function P(w) ≥ p.
+    //
+    // LGPDP adaptation (online lifelong, OSM road network, capacitated):
+    //
+    // What we keep faithful:
+    //   ✓ Multi-Label A* through a goal sequence (Alg. 1): each agent has
+    //     a sequence of remaining objective nodes (in-flight pickup, queued
+    //     pickups, queued deliveries). compute_marginal_cost() implements
+    //     the (q1,q2) insertion search over the full sequence — equivalent
+    //     to the Multi-Label A* of paper §4.1 for the goal sequence augmented
+    //     by the candidate task's pickup and delivery.
+    //   ✓ Bounded time horizon w: instead of resolving grid collisions over
+    //     the next w timesteps (paper §4.2), we use BPR-adjusted edge cost
+    //     over the window, which is the LGPDP analogue (no grid vertex
+    //     collisions on OSM, but edge load drives travel-time inflation).
+    //     Specifically: dynamic_cost reflects current and near-future edge
+    //     load over the CongestionMap's horizon — exactly the windowed
+    //     congestion footprint paper §4.2 wants for ECBS/PBS collision
+    //     detection, expressed as cost rather than constraints.
+    //   ✓ Capacitated: has_cap() filters candidates whose insertion would
+    //     overshoot max_capacity. Required addition vs. paper §3 (paper has
+    //     unit-capacity agents).
+    //   ✓ Lifelong online task arrival: per-arrival allocation. The paper
+    //     also explicitly designs for online arrival (Section 3, "task
+    //     assigner outside the path-planning system").
+    //
+    // What we deliberately adapt and why:
+    //   ✗ Replanning period h (paper §4): paper batches re-planning every h
+    //     steps to amortise the (E)CBS Windowed MAPF cost. In our context
+    //     per-task allocation is cheap (O(n_agents × |sequence|²) marginal
+    //     cost), and per-arrival allocation is strictly more responsive
+    //     (zero buffering delay). We therefore allocate on EVERY task
+    //     arrival rather than at h-boundary batches. The bounded horizon w
+    //     is still respected through the BPR cost adjustment, which is the
+    //     fidelity-critical aspect of RHCR.
+    //   ✗ "Ensure d ≥ h" queue padding (paper §4): unnecessary in our
+    //     setting — tasks arrive online and idle agents stay where they are
+    //     until the next arrival rather than executing dummy moves.
+    //   ✗ Multi-Label A* labels (paper §4.1): paper labels enumerate goal
+    //     sequence positions because grid MAPF cares about exact arrival
+    //     timesteps. We compute the same path total cost via
+    //     compute_marginal_cost which iterates (pickup_pos, delivery_pos)
+    //     directly — equivalent under our continuous OSM cost model where
+    //     intermediate node arrival times are not needed at allocation time.
+    //   ✗ Deadlock avoidance / potential function P(w) (paper §4.4): no
+    //     grid deadlocks possible on OSM road network (multi-agent vertex
+    //     occupation is allowed; congestion just slows movement).
+    //   ✗ Windowed (E)CBS/PBS collision detection (paper §4.2): replaced by
+    //     BPR cost adjustment as described above. We do not enumerate
+    //     collisions because they do not exist in our model.
+    //
+    // Allocation rule (concrete):
+    //   For each eligible agent a, compute the marginal insertion cost of
+    //   (pickup, delivery) into a's current sequence under windowed BPR cost.
+    //   The windowed BPR adjustment is the difference between dynamic and
+    //   static cost on the pickup-side and delivery-side legs, capturing
+    //   the same "near-future load" signal paper §4.2 extracts from windowed
+    //   collision detection.
+    //   argmin over eligible agents of (marginal + windowed_penalty).
+    if (policy_mode == PolicyMode::RHCR) {
         PDPTask* t = memory_.get_task(task_id);
         if (!t) return { -1, false };
 
@@ -1418,18 +1831,33 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         for (int i = 0; i < n_active; ++i) {
             DeliveryAgent& a = *all_agents_[i];
             if (!has_cap(a)) continue;
+
+            // Multi-Label A* equivalent: marginal insertion cost over the
+            // agent's full goal sequence with capacity-aware (pickup_pos,
+            // delivery_pos) search.
+            const float marginal = compute_marginal_cost(a, *t);
+            if (marginal >= std::numeric_limits<float>::max() * 0.5f) continue;
+
+            // Windowed BPR penalty: extra cost from current edge load on the
+            // current→pickup and pickup→delivery legs. This is the LGPDP
+            // analogue of the paper's "ignore collisions beyond w" rule —
+            // load beyond the CongestionMap horizon does not contribute to
+            // dynamic_cost, so the difference (dynamic - static) is naturally
+            // bounded to the windowed footprint.
             const auto* to_pu = memory_.get_or_compute_path(
                 a.current_node, t->pickup.id, t->pickup.group_id);
             const auto* pu_del = memory_.get_or_compute_path(
                 t->pickup.id, t->delivery.id, t->delivery.group_id);
-            float c_pu  = kCostScale;
-            float c_del = kCostScale;
-            if (to_pu && to_pu->valid())
-                c_pu  = to_pu->has_dynamic_cost()  ? to_pu->dynamic_cost  : to_pu->cost;
-            if (pu_del && pu_del->valid())
-                c_del = pu_del->has_dynamic_cost() ? pu_del->dynamic_cost : pu_del->cost;
-            const float total = c_pu + c_del;
-            if (total < best_cost) { best_cost = total; best_aid = a.agent_id; }
+            float windowed_penalty = 0.f;
+            if (to_pu && to_pu->valid() && to_pu->has_dynamic_cost()) {
+                windowed_penalty += std::max(0.f, to_pu->dynamic_cost - to_pu->cost);
+            }
+            if (pu_del && pu_del->valid() && pu_del->has_dynamic_cost()) {
+                windowed_penalty += std::max(0.f, pu_del->dynamic_cost - pu_del->cost);
+            }
+
+            const float cost = marginal + windowed_penalty;
+            if (cost < best_cost) { best_cost = cost; best_aid = a.agent_id; }
         }
         return { best_aid, false };
     }

@@ -105,69 +105,99 @@ enum class PolicyMode {
     InsertionGreedy,  // accept if reward / insertion_cost > threshold (cost-aware heuristic)
 
     // ── SoTA-adapted baselines (related-works comparisons) ────────────────
-    // Mapping to the three directions surveyed in our related works:
     //
-    //   MAS-based (PIBT) [Okumura+2022]:
-    //     PIBT     — priority-based: least-loaded eligible agent wins.
-    //                Captures PIBT priority-coordination spirit, adapted to PDP
-    //                where "priority" = load-balancing instead of grid conflicts.
+    // Two CLUSTERS to keep strictly separate when reporting results:
     //
-    //   Adaptation/Prevention (congestion-aware MAPP) [Liu, Saha, ...]:
-    //     CongestionAware — picks agent whose route to pickup has the lowest
-    //                       congestion-adjusted (dynamic) cost. Reuses
-    //                       PDPServerMemory::refresh_dynamic_cost / TD-A*.
+    //   1. LGPDP-SOTA cluster — compared against the RL policies
+    //      (MAPPO/IPPO/MAPPER/Hybrid). Five baselines, each tied to a paper:
+    //        - TokenPassing            [Ma+2017,     AAMAS]
+    //        - CongestionAware         [non-faithful proxy of Asadi+2025;
+    //                                   kept for historical results]
+    //        - FaithfulCongestionAware [Asadi+2025,  GECCO] (paper-faithful)
+    //        - TrafficFlow             [Chen+2024,   AAAI]
+    //        - PIBT                    [Okumura+2022 AI / Matsui+2025 ICAART]
+    //        - RHCR                    [Li+2021,     AAAI] (planned)
     //
-    //   MCA [Chen+2021, ICRA] — Marginal-Cost Assignment adapted for L-GPDP:
-    //     Scans ALL eligible agents and assigns to the one with the minimum
-    //     TRUE marginal insertion cost (cheapest capacity-aware insertion over
-    //     all valid (pos_P, pos_D) positions in the agent's current route).
-    //     Unlike LaCAM (which ignores the existing route) and InsertionGreedy
-    //     (which stops at the first bid above a threshold), MCA gives the
-    //     globally optimal single-task assignment under real route costs.
-    //     RMCA (regret-based variant) is equivalent to MCA in the online
-    //     single-task-at-a-time setting and is therefore not implemented
-    //     separately.
+    //   2. VRP/PDP metaheuristic cluster — comparison set for DbVNS planning,
+    //      NOT a LGPDP-SOTA baseline:
+    //        - MCA (Marginal-Cost Assignment)  [Chen+2021, ICRA]
+    //        - DoubleHorizon                   [Mitrovic-Minic+2004]
+    //        - InsertionGreedy / Greedy / Random  (in-house baselines)
     //
-    //   TrafficFlow [Chen+2024, AAAI] — GP-PIBT routing adapted for L-GPDP:
-    //     Extends CongestionAware by using the congestion-adjusted (dynamic)
-    //     cost for BOTH the current→pickup leg AND the pickup→delivery leg.
-    //     CongestionAware only congestion-weights the first leg; TrafficFlow
-    //     captures the full planned trip cost under current traffic conditions,
-    //     mapping to the "guide path" spirit of GP-PIBT without requiring a
-    //     grid map or explicit flow-refinement iterations.
+    // ── Per-baseline summary (LGPDP-SOTA cluster) ─────────────────────────
     //
-    //   PIBT-Matsui [Matsui+2025] — NOT adapted: requires a biconnected grid
-    //     graph with dead-end aisles and physical agent collisions, none of
-    //     which apply to OSM road-network delivery. The load-balancing intent
-    //     is already covered by the PIBT baseline above.
+    //   TokenPassing [Ma+2017, AAMAS]:
+    //     Original: agents take turns holding a token; token holder picks
+    //     τ* ∈ T' = {τ | no other path in token ends in s_τ or g_τ} that
+    //     minimises h(loc(a), s_τ). LGPDP adaptation: per-arrival argmin
+    //     h(loc, pickup) restricted to free agents (load==0) with all-agents
+    //     fallback when no free agent is available. TPTS swap reduces to TP
+    //     in our |T|=1 online regime (documented at the call site).
     //
-    //   Token Passing [Ma+2017, AAMAS] — decoupled MAPD adapted for L-GPDP:
-    //     In the original TP, agents take turns holding a shared token; the
-    //     token holder picks the task with the smallest h(loc(a), pickup) from
-    //     the set of unassigned tasks whose pickup/delivery is not blocked by
-    //     another agent's planned path. In our online single-task arrival
-    //     setting, this reduces to: for each arriving task, assign it to the
-    //     agent with minimum static A* distance from current_node to pickup.
-    //     The collision-filter T' from the paper is trivial in our model
-    //     (no physical collisions on OSM road networks). The well-formed
-    //     instance hypothesis (non-task endpoints for parking) is not needed
-    //     either — capacity is enforced by receive_task() and lifelong
-    //     idle-rest is handled implicitly (idle agents stay at their last
-    //     delivered node). TPTS (Task Swaps) is omitted: in online single-
-    //     task arrival, the swap reduces to "pick the agent with min h" —
-    //     identical to TP unless we batch multiple arriving tasks, which we
-    //     don't. TP differs from LaCAM (which uses c_pu + c_del) by using
-    //     only the pickup-leg cost, matching the paper's h-value criterion.
+    //   CongestionAware (in-house baseline, KEEP — no primary citation):
+    //     Pickup-leg dynamic-cost argmin: argmin_a c_pu_dyn(a, task), where
+    //     c_pu_dyn is the BPR-adjusted travel time t · (1 + α·(load/cap)^β)
+    //     on the current-node → pickup leg. Structurally this is "nearest-
+    //     vehicle dispatch with time-dependent travel time" — a classical
+    //     composite of (a) TokenPassing-style greedy argmin (Ma+2017) and
+    //     (b) BPR cost adjustment (Beckmann 1956 / LeBlanc 1975). It is NOT
+    //     paper-faithful w.r.t. Asadi+2025 (no CNN prediction, no Wandering
+    //     mode, no β_W priority strategy, no γ_mode weighting). Presented
+    //     as an in-house baseline in reports — kept because empirical
+    //     performance on this codebase has been competitive.
     //
-    // LaCAM was dropped from the comparison set in favour of MAPPER, which
-    // is more relevant in the RL category and gives a meaningful axis of
-    // comparison against MAPPO's centralised-critic design.
+    //   FaithfulCongestionAware [Asadi+2025, GECCO] (paper-faithful adapt.):
+    //     Captures the spirit of Asadi+2025 in our LGPDP routing context:
+    //       (a) Full-trip dynamic cost (c_pu + c_del) under BPR congestion —
+    //           analogue of the A*-with-congestion-cost in §3.2 of the paper.
+    //       (b) γ-mode weighting: idle agents (load==0) are preferred over
+    //           busy agents proportional to γ_idle / γ_busy — paper §3.4
+    //           weights γ_moving, γ_equals, γ_others. We collapse to two
+    //           modes (idle vs busy) because we don't have an explicit
+    //           Wandering state on the road network.
+    //       (c) β_W-style priority breaking: among equal-mode candidates,
+    //           prefer agents with fewer queued tasks (proxy for "fewer
+    //           remaining orders" β_π and "active pickup/delivery" β_W).
+    //     NOT implemented (vs paper): CNN-based congestion prediction,
+    //     explicit Wandering mode, multivariate-Gaussian congestion signal.
+    //     These are decentralised path-planning concerns; the LGPDP question
+    //     here is allocation, where the γ-weighted full-trip cost gives the
+    //     cleanest paper-faithful adaptation.
+    //
+    //   TrafficFlow [Chen+2024, AAAI]:
+    //     "Pick assignment whose planned trip is cheapest under current
+    //     traffic" — argmin c_pu_dyn + c_del_dyn. Frank-Wolfe UE guide path
+    //     and contraflow term not implemented (online lifelong LGPDP has no
+    //     batch for UE; CongestionMap is undirected). BPR cost adjustment is
+    //     the spirit-equivalent we expose.
+    //
+    //   PIBT [Okumura+2022, AI / Matsui+2025, ICAART]:
+    //     Original PIBT is a one-step path-finding rule with priority
+    //     inheritance + backtracking on a biconnected grid. Matsui+2025
+    //     extends it to dead-end aisles with swap tasks. NEITHER directly
+    //     applies to OSM road-network LGPDP (no grid, no physical vertex
+    //     collisions). Our PIBT enum branch is a CUSTOM ADAPTATION of the
+    //     priority-coordination intent: priority = load balancing, "next
+    //     move" = task allocation to the least-loaded eligible agent. The
+    //     adaptation was authored by a project contributor — do NOT modify
+    //     the existing branch without checking with them.
+    //
+    //   RHCR [Li+2021, AAAI] (planned addition):
+    //     Decompose lifelong MAPF into Windowed MAPF instances with time
+    //     horizon w and replanning period h. For LGPDP allocation: replan
+    //     in batch every h steps over the unassigned task set with horizon
+    //     w. Faithful adaptation requires a Multi-Label A* path planner for
+    //     goal-sequence routing (paper Alg. 1) which is non-trivial; will be
+    //     implemented as a separate PolicyMode::RHCR once user confirms the
+    //     scope (full faithful vs. allocation-only approximation).
     LaCAM,            // kept in the enum for source compatibility (unused branch)
     PIBT,
-    CongestionAware,
-    MCA,              // [Chen+2021] true marginal-cost assignment over all agents
-    TrafficFlow,      // [Chen+2024] GP-PIBT spirit: full-trip congestion-aware cost
-    TokenPassing,     // [Ma+2017]   decoupled MAPD: min h(current, pickup) selection
+    CongestionAware,           // historical: argmin c_pu dynamic (kept as-is)
+    FaithfulCongestionAware,   // [Asadi+2025] γ-weighted full-trip dynamic cost
+    MCA,                       // [Chen+2021] Marginal-Cost Assignment — METAHEURISTIC cluster
+    TrafficFlow,               // [Chen+2024] full-trip dynamic cost (GP-PIBT spirit)
+    TokenPassing,              // [Ma+2017]   argmin h(loc, pickup) on free agents
+    RHCR,                      // [Li+2021]   Rolling-Horizon Collision Resolution (planned)
 
     // ── Double-Horizon Insertion [Mitrovic-Minic, Krishnamurti, Laporte 2004] ──
     //
@@ -249,7 +279,8 @@ public:
     //                  RNG state advances normally (legacy behaviour).
     RunResult run(int city_index = 0, int num_cities = 1,
                   EpisodeScenario scenario = {},
-                  uint32_t episode_seed = 0);
+                  uint32_t episode_seed = 0,
+                  const struct SharedEpisodeSetup* setup = nullptr);
 
     // ── Trace accessors (for offline analysis / rendering) ──────────────────
     // Read-only view of the GlobalMemory after a run() call. Use these to

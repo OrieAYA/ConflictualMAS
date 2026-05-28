@@ -25,6 +25,7 @@ struct TrainingConfig {
     int n_rounds            = 200;         // rounds of multi-city training
     int n_eval_episodes     = 10;          // eval episodes per city × mode
     int n_seeds             = 3;           // independent seeds for significance
+    int start_seed          = 42;          // base seed; MultiCityTrainer uses s + start_seed for seed s
 
     // Evaluation is run after every eval_every rounds during training,
     // plus once at the very end.
@@ -81,6 +82,16 @@ struct TrainingConfig {
     // the saved checkpoints. Overrides eval_every and the skip_* flags above.
     // Training still saves checkpoints honouring save_policy + train_modes.
     bool        train_only          = false;
+
+    // ── Publication-grade cross-method homogeneity (eval-only) ────────────
+    // When true, run_eval / run_generalize_eval build a canonical
+    // SharedEpisodeSetup per (city, scenario, episode) and pass it to
+    // EpisodeRunner.run() so that the task stream, agent positions,
+    // hetero-capacity draws, and ghost seed are byte-identical to what a
+    // SolverRunner (with the same setup) would see. This is what makes
+    // Option O's RL vs SoTA comparison publishable. Off by default to
+    // preserve training behaviour byte-for-byte.
+    bool        use_shared_episode_setup = false;
 
     // ── Training mode subset ──────────────────────────────────────────────
     // Which RL policies to actually TRAIN per round. Default = all three.

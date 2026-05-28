@@ -60,6 +60,14 @@ class MultiCityTrainer {
 public:
     void train(const TrainingConfig& cfg);
 
+    // Public helper exposing the per-city EpisodeConfig customisation used
+    // internally by train() (phases sized to area_km2, task distance range,
+    // ghost_n_max tier, max_tasks_per_agent). Option O's Phase B calls this
+    // so the SoTA standalone solvers face the EXACT same episode shape as
+    // the RL policies in Phase A.
+    static void customize_episode_for_city(EpisodeConfig& ep,
+                                            const CityConfig& cc);
+
 private:
     static std::unique_ptr<CityAssets> load_city(const CityConfig& cc, int idx,
                                                   EpisodeConfig ep,

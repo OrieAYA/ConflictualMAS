@@ -87,7 +87,7 @@ ScenarioRun simulate_scenario(const GeoBox& geo_box,
     // density 2.0 → n_max derived per city, preserves per-edge BPR profile.
     gcfg.hot_way_count       = 0;      // disable absolute count
     gcfg.hot_way_fraction    = 0.05f;  // 5% — matches Y/Q proportional config
-    gcfg.density_per_hot_way = 2.0f;
+    gcfg.density_per_hot_way = 1.4f;   // ↓ from 2.0 (Option O reduction, −30%)
     gcfg.profile             = spec.profile;
 
     // Same seed across scenarios so the same hot-way SAMPLES are reused -- the

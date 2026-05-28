@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <vector>
 #include <limits>
+#include <queue>
+#include <functional>
 
 // Static member definition
 std::mutex Pathfinder::geobox_modification_mutex;
@@ -488,6 +490,69 @@ std::vector<osmium::object_id_type> Pathfinder::reconstruct_path(
 
 float Pathfinder::heuristic(osmium::object_id_type act_node, osmium::object_id_type end_point) {
     return 0.0f;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Single-source Dijkstra — used by SoTA allocation rules
+// ────────────────────────────────────────────────────────────────────────────
+//
+// Computes shortest-path distances from `source` to every reachable node.
+// Returns an unordered_map node_id → distance (in metres along OSM way edges).
+// O((V + E) log V) using binary heap; for OSM cities V ≈ 30k-800k.
+//
+// Why this exists: SoTA allocation rules (CongestionAware, FaithfulCA, etc.)
+// need to evaluate cost(agent.current_node → task.pickup) for EVERY candidate
+// agent at each task arrival. The naïve per-agent A* approach is O(N × E log V)
+// per task, prohibitive when n_active is large (e.g. 60 agents in over_fleet).
+// Replacing N A* calls with one reverse Dijkstra from the pickup yields the
+// same information in one search.
+std::unordered_map<osmium::object_id_type, float>
+Pathfinder::dijkstra_distances_from(osmium::object_id_type source) {
+    std::unordered_map<osmium::object_id_type, float> dist;
+
+    auto src_it = geo_box.data.nodes.find(source);
+    if (src_it == geo_box.data.nodes.end()) return dist;
+
+    // Min-heap keyed by (distance, node). Use std::greater for min-heap.
+    using QueueEntry = std::pair<float, osmium::object_id_type>;
+    std::priority_queue<QueueEntry,
+                        std::vector<QueueEntry>,
+                        std::greater<QueueEntry>> pq;
+
+    dist[source] = 0.0f;
+    pq.push({0.0f, source});
+
+    while (!pq.empty()) {
+        const auto [d, u] = pq.top();
+        pq.pop();
+
+        // Stale heap entry: a shorter distance was already settled.
+        auto du_it = dist.find(u);
+        if (du_it == dist.end() || d > du_it->second) continue;
+
+        auto node_it = geo_box.data.nodes.find(u);
+        if (node_it == geo_box.data.nodes.end()) continue;
+
+        for (const auto& way_id : node_it->second.incident_ways) {
+            auto way_it = geo_box.data.ways.find(way_id);
+            if (way_it == geo_box.data.ways.end()) continue;
+            const auto& way = way_it->second;
+
+            osmium::object_id_type v;
+            if      (way.node1_id == u) v = way.node2_id;
+            else if (way.node2_id == u) v = way.node1_id;
+            else continue;  // malformed way
+
+            const float nd = d + static_cast<float>(way.distance_meters);
+            auto dv_it = dist.find(v);
+            if (dv_it == dist.end() || nd < dv_it->second) {
+                dist[v] = nd;
+                pq.push({nd, v});
+            }
+        }
+    }
+
+    return dist;
 }
 
 // ====================================================================
