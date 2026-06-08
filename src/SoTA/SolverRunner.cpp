@@ -2,24 +2,44 @@
 #include "Training/SharedEpisodeSetup.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include <algorithm>
+#include <unordered_map>
 #include <chrono>
 #include <iostream>
 #include <random>
 
 // ── SolverContext helper ─────────────────────────────────────────────────────
 
-osmium::object_id_type SolverContext::sample_valid_node(std::mt19937& rng) const {
-    if (!geo_box || geo_box->data.nodes.empty()) return 0;
-    // Collect any node that is incident to at least one way (= traversable).
-    // Cheap because called rarely (only by solvers that need parking nodes).
-    std::vector<osmium::object_id_type> candidates;
-    candidates.reserve(geo_box->data.nodes.size() / 4);
-    for (const auto& [id, pt] : geo_box->data.nodes) {
-        if (!pt.incident_ways.empty()) candidates.push_back(id);
+namespace {
+// Process-scoped cache. Same homogeneity contract as SharedEpisodeSetup.cpp:
+// node_count guard detects stack-frame reuse across cities, NO sort to
+// preserve byte-identical sample order vs the previous uncached path.
+struct ValidNodesCacheEntry {
+    size_t node_count = 0;
+    std::vector<osmium::object_id_type> valid_nodes;
+};
+static std::unordered_map<const GeoBox*, ValidNodesCacheEntry>
+    s_valid_nodes_cache;
+
+const std::vector<osmium::object_id_type>&
+get_valid_nodes_for(const GeoBox& geo_box) {
+    auto& entry = s_valid_nodes_cache[&geo_box];
+    if (entry.node_count != geo_box.data.nodes.size()) {
+        entry.node_count = geo_box.data.nodes.size();
+        entry.valid_nodes.clear();
+        entry.valid_nodes.reserve(geo_box.data.nodes.size() / 4);
+        for (const auto& [id, pt] : geo_box.data.nodes)
+            if (!pt.incident_ways.empty()) entry.valid_nodes.push_back(id);
     }
-    if (candidates.empty()) return 0;
-    std::uniform_int_distribution<size_t> dist(0, candidates.size() - 1);
-    return candidates[dist(rng)];
+    return entry.valid_nodes;
+}
+} // namespace
+
+osmium::object_id_type SolverContext::sample_valid_node(std::mt19937& rng) const {
+    if (!geo_box) return 0;
+    const auto& valid = get_valid_nodes_for(*geo_box);
+    if (valid.empty()) return 0;
+    std::uniform_int_distribution<size_t> dist(0, valid.size() - 1);
+    return valid[dist(rng)];
 }
 
 // ── SolverRunner ─────────────────────────────────────────────────────────────

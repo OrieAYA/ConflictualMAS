@@ -96,12 +96,31 @@ public:
     // Convenience wrapper (no agent detection, returns path or nullptr).
     const ObjectivePath* discover_next_path(osmium::object_id_type from, const MyData& data);
 
+    // ── Time-Dependent variant ────────────────────────────────────────────
+    // Cost accumulation uses BPR-adjusted travel time evaluated at the
+    // predicted arrival step on each edge head (start_step + ceil(g_score)).
+    // g_score, max_cost, DiscoveryStep.cost are all in TIME units (steps).
+    // Reconstructed paths store TD-time in dynamic_cost; path.cost remains
+    // the static traversal cost (sum of edge lengths) for backward compat.
+    // Uses a separate search-state map from the legacy distance-based
+    // discover_step to avoid cost-unit collisions.
+    DiscoveryStep discover_step_td(
+        osmium::object_id_type from,
+        const MyData&          data,
+        int                    start_step,
+        float                  speed_mps,
+        const CongestionMap&   congestion,
+        const std::unordered_set<osmium::object_id_type>& agent_positions = {},
+        float                  max_cost = std::numeric_limits<float>::max()
+    );
+
     // Reset the incremental Dijkstra state for a given starting node.
     // Called before each new TAM agent search so stale closed-sets and
     // exhausted flags from prior tasks don't block re-discovery of agents
     // that have since moved. Memoised paths_ are NOT affected.
     void reset_search_state(osmium::object_id_type from) {
         search_states_.erase(from);
+        search_states_td_.erase(from);
     }
 
 private:
@@ -120,6 +139,9 @@ private:
     };
 
     std::unordered_map<osmium::object_id_type, SearchState> search_states_;
+    // Parallel state map for the TD variant — g_score in TIME units, not
+    // distance. Kept separate so cost-unit semantics don't collide.
+    std::unordered_map<osmium::object_id_type, SearchState> search_states_td_;
 
     static PathKey make_key(osmium::object_id_type a, osmium::object_id_type b);
 
@@ -142,6 +164,17 @@ public:
     PDPServerMemory() = delete;
     PDPServerMemory(GeoBox& box, Pathfinder& pf);
 
+    // ── Path-compute timing instrumentation ─────────────────────────────────
+    // Accumulates the total wallclock time (in microseconds for precision)
+    // spent inside get_or_compute_path. Reset at episode start by the
+    // EpisodeRunner; read at finalize() to derive (a) per-episode path-compute
+    // cost in ms, and (b) pure-allocation time by subtracting in-offer path
+    // time from total offer_task time. Static because path cache is global
+    // per (Pathfinder, GeoBox); the simulation is single-threaded so a plain
+    // static counter is sufficient.
+    static long long path_compute_time_us();
+    static void      reset_path_compute_time();
+
     void initialize_from_geobox();
 
     // Create an empty group cache if it doesn't already exist.
@@ -163,6 +196,20 @@ public:
     ObjectiveGroupCache::DiscoveryStep discover_step(
         osmium::object_id_type from,
         int group_id,
+        const std::unordered_set<osmium::object_id_type>& agent_positions = {},
+        float                  max_cost = std::numeric_limits<float>::max()
+    );
+
+    // Time-Dependent variant of discover_step. Cost units are TIME (steps);
+    // each edge contributes its BPR-adjusted travel time at the predicted
+    // arrival step at the edge tail. max_cost must therefore also be in
+    // time units (steps). See ObjectiveGroupCache::discover_step_td.
+    ObjectiveGroupCache::DiscoveryStep discover_step_td(
+        osmium::object_id_type from,
+        int group_id,
+        int                    start_step,
+        float                  speed_mps,
+        const CongestionMap&   congestion,
         const std::unordered_set<osmium::object_id_type>& agent_positions = {},
         float                  max_cost = std::numeric_limits<float>::max()
     );

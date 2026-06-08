@@ -1,0 +1,62 @@
+
+=== ConflictualMAS ===
+
+[Legacy]
+  G  Global Solution Constructor
+  V  VNS Orienteering
+  PSO  PSO MTTDS
+  E  Create GeoBox
+  I  Initialize POI (Flickr)
+  R  Render map
+
+[DMASforPD]
+  D  PDP System test
+  C  Create PDP GeoBox
+
+[Amazon Last Mile]
+  A  DbVNS on Amazon routes (new dataset, 13 routes)
+  B  DbVNS vs LKH benchmark (same routes, side-by-side)
+
+[MAPPO Training]
+  T  Multi-city MAPPO training (Tokyo/Kyoto/LosAngeles Å~ Small/Medium)
+  S  Training smoke test (uses kanto OSM, no extra files needed)
+  M  Multi-city MAPPER-only training (faster, no IPPO/MAPPO trained)
+  N  MAPPO DH training (re-train MAPPO under Double-Horizon planning)
+  X  Eval-only (load saved checkpoints, 4-mode: MAPPO+FM+Hybrid+TAM-AA)
+  P  Planning comparison test (Tokyo_Small, MCA vs Double-Horizon, SVG)
+  Y  SoTA architecture comparison (RL + 6 SoTA baselines, full sweep)
+  F  Eval ? TAM multi-candidate Format A (force-assign argmax)
+  H  Eval ? TAM multi-candidate Format B (threshold 0.5 + retry)
+  J  TAM multi-candidate correctness test (Format A/B, small bbox)
+  K  GeoBox connectivity check (smoke_test + tous les caches)
+  L  Baselines multi-agent LGPDP test (MCA/TP/TF/CA/PIBT/...)
+  U  SoTA standalone benchmark (full-pipeline TP/CA/FCA/TF/RHCR, src/SoTA/)
+  O  Combined Y + SoTA standalone evaluation (4 RL + 5 SoTA full-pipeline)
+  Z  Congestion-only test (ghost traffic impact on 6 cities Å~ 5 scenarios)
+  Q  TAM + congestion validation (4 cities Å~ 4 modes Å~ 3 scenarios, ~2-4h)
+
+Choice: Loading 3 train cities from C:\ConflictualMAS\data\cache
+  [Load] Tokyo_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Tokyo_Small.json
+Cache version: "1.0"
+GeoBox charg√©e avec succ√®s!
+  Nodes: 59297
+  Ways: 70715
+  Objective groups: 0
+  [Load] Kyoto_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Kyoto_Small.json
+Cache version: "1.0"
+GeoBox charg√©e avec succ√®s!
+  Nodes: 32718
+  Ways: 39677
+  Objective groups: 0
+  [Load] LosAngeles_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/LosAngeles_Small.json
+Cache version: "1.0"
+GeoBox charg√©e avec succ√®s!
+  Nodes: 48040
+  Ways: 59333
+  Objective groups: 0

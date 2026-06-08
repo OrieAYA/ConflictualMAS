@@ -129,6 +129,29 @@ public:
     // activated by training or global eval paths — those keep MCA/DH/DbVNS.
     bool  planning_use_alns  = false;
 
+    // ── MCA + anytime LNS improvement (Chen et al. 2021, ICRA — Algorithm 3) ─
+    // Set ONLY by the planning-comparison test (PolicyMode::MCA). When true,
+    // DeliveryAgent::receive_task runs an extra LNS-style improvement loop
+    // AFTER the cheapest-insertion of the new task:
+    //
+    //   while iter < budget:                       (paper Alg 3, line 1)
+    //     A', P^u ← destroyTasks(A, n_destroy)    (line 2: random removal)
+    //     A'      ← RMCA(r) re-insertion          (line 3: regret-r repair)
+    //     if cost(A') ≤ cost(A): A ← A'           (lines 4-6)
+    //
+    // Mutually exclusive with planning_use_alns / planning_use_dbvns /
+    // planning_use_double_horizon. The in-flight head seq[0] is preserved
+    // (paper-faithful: only non-picked tasks can be re-assigned in lifelong
+    // PDP — re-pickup of an already-picked task is undefined).
+    //
+    // Fidelity vs paper: paper does cross-agent reassignment in the LNS loop.
+    // In our online lifelong setting `receive_task` operates on ONE agent's
+    // sequence at a time, so the LNS is local to that agent. This still
+    // recovers the paper's main benefit (positional regret improvement after
+    // cheapest insertion) and is the published correction to MCA discussed
+    // in the audit (Chen+2021 §IV-D Algorithm 3).
+    bool  planning_use_mca_lns = false;
+
     // Active learning-policy dispatcher used by DeliveryAgent::try_accept_task.
     // Set by EpisodeRunner at the start of each run() based on policy_mode:
     //   - PolicyMode::MAPPO          → kMAPPO   (shared actor + centralised critic)
@@ -141,12 +164,17 @@ public:
     //                                            replacement + exact copy of best,
     //                                            no mutation noise)
     //   - PolicyMode::Hybrid         → kHybrid  (MAPPO base + per-agent residual)
+    //   - PolicyMode::RMCA           → kRMCA    (Chen+2021 RMCA(r): non-learning
+    //                                            marginal-cost insertion scorer;
+    //                                            no buffer, no Bernoulli sampling)
     // try_accept_task routes the feature vector to the corresponding policy
     // singleton (ObjectiveDMPolicy / IPPOPolicy / MapperPolicy / FaithfulMapperPolicy /
-    // HybridPolicy) and records the experience into the right buffer. Other modes
-    // (Greedy, Random, ...) bypass try_accept_task entirely so the kind is ignored.
+    // HybridPolicy) and records the experience into the right buffer. kRMCA
+    // short-circuits before any buffer write: it returns a deterministic score
+    // (transform of the eq.13 marginal cost) so the TAM argmax picks k1. Other
+    // modes (Greedy, Random, ...) bypass try_accept_task entirely so the kind is ignored.
     enum class PolicyKind { kMAPPO = 0, kIPPO = 1, kMAPPER = 2,
-                            kHybrid = 3, kFaithfulMAPPER = 4 };
+                            kHybrid = 3, kFaithfulMAPPER = 4, kRMCA = 5 };
     PolicyKind active_policy = PolicyKind::kMAPPO;
 
     // ── Spatial heatmap : task density + congestion per cell ───────────────
@@ -241,6 +269,17 @@ public:
         osmium::object_id_type to,
         int   start_time,
         float agent_speed) const;
+
+    // BPR replay of a CACHED STATIC path: congestion-adjusted travel cost when
+    // departing `depart_step`, with each edge sampled at its running arrival
+    // time (deeper into the route = later t). Returns a distance-equivalent
+    // cost (meters) in the SAME units as ObjectivePath::cost, so it is a
+    // drop-in replacement for the static matrix entry. Single forward pass,
+    // O(#edges), reads the load profile as-is (no fixed-point). Returns
+    // FLT_MAX when the path is invalid. Used by forward DbVNS to make the
+    // decomposition tree the operable environment (not the static matrix).
+    float bpr_path_cost(osmium::object_id_type from, osmium::object_id_type to,
+                        int group_id, int depart_step, float speed_mps);
 
     // ---- Simulation clock -----------------------------------------------
 

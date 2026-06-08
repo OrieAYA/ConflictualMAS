@@ -878,7 +878,12 @@ int run_planning_comparison_test(uint32_t base_seed,
     write_summary_header(summary);
 
     const std::vector<std::pair<PolicyMode, std::string>> modes = {
-        { PolicyMode::MCA,           "MCA_cheapest_insertion" },
+        // RMCA(r) = cheapest insertion (eq. 12) + anytime LNS Algorithm 3
+        // (destroy-3-random + greedy cheapest repair, 30 iters), local to each
+        // agent's queue. Paper-faithful for single-agent regret since regret
+        // collapses to cheapest-first in mono-route. See DeliveryAgent.cpp
+        // for the LNS body and EpisodeRunner.cpp MCA branch comment.
+        { PolicyMode::MCA,           "RMCA_Chen2021_LNS" },
         { PolicyMode::DoubleHorizon, "DoubleHorizon_MitrovicMinic" },
         { PolicyMode::DbVNS,         "DbVNS_lifelong_replan" },
         { PolicyMode::ALNS,          "ALNS_RopkePisinger" },

@@ -67,8 +67,11 @@ void TrainingLogger::write_header() {
           << "n_traversals_in_jam,"
           // Allocation optimality vs MCA full-scan oracle
           << "marginal_cost_ratio_vs_oracle,"
+          // RMCA(r) regret diagnostics [Chen et al. 2021] (RMCA mode only)
+          << "rmca_relative_regret,rmca_marginal_cost_k1,rmca_marginal_cost_k2,"
           // Temporal complexity (allocation cost only)
           << "mean_allocation_time_us,mean_tam_dijkstra_steps,"
+          << "path_compute_time_ms,mean_pure_alloc_time_ms,"
           << "wallclock_ms\n";
     header_written_ = true;
 }
@@ -139,8 +142,13 @@ void TrainingLogger::write_row(const EpisodeRecord& r) {
           << r.time_lost_to_congestion_steps   << ','
           << r.n_traversals_in_jam             << ','
           << r.marginal_cost_ratio_vs_oracle   << ','
+          << r.rmca_relative_regret            << ','
+          << r.rmca_marginal_cost_k1           << ','
+          << r.rmca_marginal_cost_k2           << ','
           << r.mean_allocation_time_us         << ','
           << r.mean_tam_dijkstra_steps         << ','
+          << r.path_compute_time_ms            << ','
+          << r.mean_pure_alloc_time_ms         << ','
           << r.wallclock_ms     << '\n';
 }
 
@@ -339,8 +347,13 @@ EpisodeRecord make_record(const RunResult& result,
     r.time_lost_to_congestion_steps   = m.time_lost_to_congestion_steps;
     r.n_traversals_in_jam             = m.n_traversals_in_jam;
     r.marginal_cost_ratio_vs_oracle   = m.marginal_cost_ratio_vs_oracle;
+    r.rmca_relative_regret            = m.rmca_relative_regret;
+    r.rmca_marginal_cost_k1           = m.rmca_marginal_cost_k1;
+    r.rmca_marginal_cost_k2           = m.rmca_marginal_cost_k2;
     r.mean_allocation_time_us         = m.mean_allocation_time_us;
     r.mean_tam_dijkstra_steps         = m.mean_tam_dijkstra_steps;
+    r.path_compute_time_ms            = m.path_compute_time_ms;
+    r.mean_pure_alloc_time_ms         = m.mean_pure_alloc_time_ms;
     r.max_agent_completed           = m.max_agent_completed;
     r.min_agent_completed           = m.min_agent_completed;
     r.total_fleet_distance_m        = m.total_fleet_distance_m;

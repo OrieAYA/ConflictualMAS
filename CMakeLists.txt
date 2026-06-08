@@ -55,8 +55,10 @@ set(SOURCES
     src/SoTA/TokenPassing/TokenPassingSolver.cpp
     src/SoTA/CongestionAware/CongestionAwareSolver.cpp
     src/SoTA/FaithfulCongestionAware/FaithfulCASolver.cpp
+    src/SoTA/FaithfulCongestionAwareCapacited/FaithfulCACapacitedSolver.cpp
     src/SoTA/TrafficFlow/TrafficFlowSolver.cpp
     src/SoTA/RHCR/RHCRSolver.cpp
+    src/SoTA/HybridAdaptivePredictive/HybridAdaptivePredictiveSolver.cpp
     src/SoTA/SolverCSVLogger.cpp
     src/Legacy/Tests/LegacyTests.cpp
     src/DMASforPD/Tests/PDPTests.cpp

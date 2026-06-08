@@ -1,0 +1,6 @@
+mode,throughput_rate,wallclock_ms,compute_time_per_task_ms,total_dist_m,latency_mean
+ALNS_RopkePisinger,0.3939,2436.24,120.3417,17685.727,1113.2591
+DbVNS_hybrid_K3,0.5134,3146.29,148.0245,26402.187,1185.3061
+DbVNS_lifelong_replan,0.5202,3205.52,150.4148,26600.78,1173.4162
+DoubleHorizon_MitrovicMinic,0.4845,3142.0,147.1529,25042.325,1206.013
+MCA_cheapest_insertion,0.4941,3151.58,147.3589,24989.314,1201.1121

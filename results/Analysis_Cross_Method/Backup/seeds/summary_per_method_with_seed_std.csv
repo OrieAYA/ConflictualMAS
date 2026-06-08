@@ -1,0 +1,8 @@
+method,throughput_rate__mean,throughput_rate__std,latency_mean__mean,latency_mean__std,mean_bpr_along_route__mean,mean_bpr_along_route__std,agent_completed_gini__mean,agent_completed_gini__std
+FaithfulCongestionAware,0.3896,0.0051,850.447,16.6096,1.0,0.0,0.1719,0.0035
+FaithfulMAPPER,0.8927,0.0043,488.6582,6.2195,4.7373,0.2231,0.2829,0.0031
+Hybrid,0.8943,0.0057,471.1787,5.2084,4.7364,0.1314,0.2764,0.003
+HybridAdaptivePredictive,0.3993,0.0045,974.523,31.9171,1.0,0.0,0.2026,0.0047
+IPPO,0.8933,0.002,477.0941,4.2596,4.8797,0.0643,0.2807,0.0057
+MAPPO,0.7543,0.0159,657.7783,5.9629,4.7573,0.2234,0.3292,0.0083
+TokenPassing,0.4525,0.0089,738.843,10.9606,4.9161,0.273,0.2637,0.0061

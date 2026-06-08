@@ -7,11 +7,11 @@
 
 namespace {
 
-// ── Xavier normal init (same as ObjectiveDMPolicy) ───────────────────────────
+// ── Orthogonal init (Yu+2022 MAPPO Tab.7) ────────────────────────────────────
+// MAPPER follows MAPPO's recipe; forwarder kept under the `xavier` name to keep
+// existing call sites untouched.
 void xavier(float* W, int fan_in, int fan_out, std::mt19937& rng) {
-    float s = std::sqrt(2.f / static_cast<float>(fan_in + fan_out));
-    std::normal_distribution<float> dist(0.f, s);
-    for (int i = 0; i < fan_in * fan_out; ++i) W[i] = dist(rng);
+    policy_optim::init_orthogonal(W, fan_out, fan_in, rng, std::sqrt(2.f));
 }
 
 void linrelu(const float* W, const float* b,
@@ -287,13 +287,28 @@ MapperPolicy::MBStats MapperPolicy::update_actor_mb(
     int    as[] = { kHid*kPolicySz, kHid, kHid*kHid, kHid, kHid, 1 };
     clip_grad_norm(ag, as, 6, hparams.max_grad_norm);
 
-    float lr = hparams.lr_actor;
-    for (int i = 0; i < kHid*kPolicySz; ++i) a.actor.W1[i] += lr * dW1[i];
-    for (int i = 0; i < kHid; ++i)            a.actor.b1[i] += lr * db1[i];
-    for (int i = 0; i < kHid*kHid; ++i)       a.actor.W2[i] += lr * dW2[i];
-    for (int i = 0; i < kHid; ++i)            a.actor.b2[i] += lr * db2[i];
-    for (int i = 0; i < kHid; ++i)            a.actor.W3[i] += lr * dW3[i];
-    a.actor.b3 += lr * db3;
+    // Ascent → descent sign flip for Adam.
+    for (int i = 0; i < kHid*kPolicySz; ++i) dW1[i] = -dW1[i];
+    for (int i = 0; i < kHid; ++i)            db1[i] = -db1[i];
+    for (int i = 0; i < kHid*kHid; ++i)       dW2[i] = -dW2[i];
+    for (int i = 0; i < kHid; ++i)            db2[i] = -db2[i];
+    for (int i = 0; i < kHid; ++i)            dW3[i] = -dW3[i];
+    db3 = -db3;
+
+    ++a.adam_t_actor;
+    const float lr = hparams.lr_actor;
+    policy_optim::adam_apply(a.actor.W1, dW1, a.a_W1_adam.m, a.a_W1_adam.v,
+                             kHid*kPolicySz, lr, a.adam_t_actor);
+    policy_optim::adam_apply(a.actor.b1, db1, a.a_b1_adam.m, a.a_b1_adam.v,
+                             kHid,           lr, a.adam_t_actor);
+    policy_optim::adam_apply(a.actor.W2, dW2, a.a_W2_adam.m, a.a_W2_adam.v,
+                             kHid*kHid,      lr, a.adam_t_actor);
+    policy_optim::adam_apply(a.actor.b2, db2, a.a_b2_adam.m, a.a_b2_adam.v,
+                             kHid,           lr, a.adam_t_actor);
+    policy_optim::adam_apply(a.actor.W3, dW3, a.a_W3_adam.m, a.a_W3_adam.v,
+                             kHid,           lr, a.adam_t_actor);
+    policy_optim::adam_apply_scalar(a.actor.b3, db3, a.a_b3_adam,
+                                    a.adam_t_actor, lr);
 
     return { -(L_acc * inv_n), ent_acc * inv_n, kl_acc * inv_n, clip_acc * inv_n };
 }
@@ -330,9 +345,13 @@ float MapperPolicy::update_critic_mb(
                                              hparams.val_clip_eps);
         float err_new  = V_new  - ret;
         float err_clip = V_clip - ret;
-        mse_acc += std::max(err_new * err_new, err_clip * err_clip);
 
-        float dz3 = 2.f * err_new * inv_n;
+        // Pessimistic Huber loss (Yu+2022 Tab.7, δ=10).
+        const float h_new  = policy_optim::huber_value(err_new);
+        const float h_clip = policy_optim::huber_value(err_clip);
+        mse_acc += std::max(h_new, h_clip);
+
+        float dz3 = policy_optim::huber_grad(err_new) * inv_n;
 
         db3 += dz3;
         float dh2[kHid]{};
@@ -363,13 +382,20 @@ float MapperPolicy::update_critic_mb(
     int    cs[] = { kHid*kPolicySz, kHid, kHid*kHid, kHid, kHid, 1 };
     clip_grad_norm(cg, cs, 6, hparams.max_grad_norm);
 
-    float lr = hparams.lr_critic;
-    for (int i = 0; i < kHid*kPolicySz; ++i) a.critic.W1[i] -= lr * dW1[i];
-    for (int i = 0; i < kHid; ++i)            a.critic.b1[i] -= lr * db1[i];
-    for (int i = 0; i < kHid*kHid; ++i)       a.critic.W2[i] -= lr * dW2[i];
-    for (int i = 0; i < kHid; ++i)            a.critic.b2[i] -= lr * db2[i];
-    for (int i = 0; i < kHid; ++i)            a.critic.W3[i] -= lr * dW3[i];
-    a.critic.b3 -= lr * db3;
+    ++a.adam_t_critic;
+    const float lr = hparams.lr_critic;
+    policy_optim::adam_apply(a.critic.W1, dW1, a.c_W1_adam.m, a.c_W1_adam.v,
+                             kHid*kPolicySz, lr, a.adam_t_critic);
+    policy_optim::adam_apply(a.critic.b1, db1, a.c_b1_adam.m, a.c_b1_adam.v,
+                             kHid,           lr, a.adam_t_critic);
+    policy_optim::adam_apply(a.critic.W2, dW2, a.c_W2_adam.m, a.c_W2_adam.v,
+                             kHid*kHid,      lr, a.adam_t_critic);
+    policy_optim::adam_apply(a.critic.b2, db2, a.c_b2_adam.m, a.c_b2_adam.v,
+                             kHid,           lr, a.adam_t_critic);
+    policy_optim::adam_apply(a.critic.W3, dW3, a.c_W3_adam.m, a.c_W3_adam.v,
+                             kHid,           lr, a.adam_t_critic);
+    policy_optim::adam_apply_scalar(a.critic.b3, db3, a.c_b3_adam,
+                                    a.adam_t_critic, lr);
 
     return mse_acc * inv_n;
 }

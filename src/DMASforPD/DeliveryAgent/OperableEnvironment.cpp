@@ -1,5 +1,6 @@
 #include "OperableEnvironment.hpp"
 #include "DMASforPD/GlobalMemory/GlobalMemory.hpp"
+#include <limits>
 
 // ---- Task management ---------------------------------------------------
 
@@ -100,4 +101,43 @@ void OperableEnvironment::refresh_costs(PDPGlobalMemory& memory) {
                 set_cost(i, j, path->cost);
         }
     }
+}
+
+// ---- Time-aware (congestion-BPR) cost ----------------------------------
+
+void OperableEnvironment::set_time_context(
+    PDPGlobalMemory& memory, float speed_mps, int base_step
+) {
+    mem_ctx_   = &memory;
+    speed_ctx_ = (speed_mps > 0.f) ? speed_mps : 1.f;
+    base_ctx_  = base_step;
+    tcost_memo_.clear();
+}
+
+float OperableEnvironment::get_cost_at(int i, int j, int depart_step) const {
+    const float static_c = get_cost(i, j);
+    if (!mem_ctx_ || static_c < 0.f) return static_c;   // no context / infeasible
+
+    // Memoise per (i, j, departure step). kBucket = 1 → EXACT per-step
+    // resolution (the load profile is indexed by integer step, so 1 is the
+    // finest meaningful granularity; 0 would be undefined). This re-costs every
+    // branch at its exact traversal time — no coarse collapsing. Cost stays
+    // bounded because re-exploring the SAME decomposition node yields the SAME
+    // exact depart_step → the memo still hits; only genuinely different-time
+    // evaluations of the same (i,j) edge are recomputed, which is the intended
+    // precision. The memo is cleared each replan (set_time_context), so
+    // forecasts are always recomputed fresh per planning call.
+    constexpr int kBucket = 1;                           // steps per bucket (1 = exact)
+    const int n      = static_cast<int>(nodes.size());
+    const int bucket = (depart_step > 0 ? depart_step : 0) / kBucket;
+    const long long key =
+        (static_cast<long long>(i * n + j) << 21) ^ static_cast<long long>(bucket);
+    auto it = tcost_memo_.find(key);
+    if (it != tcost_memo_.end()) return it->second;
+
+    const float c = mem_ctx_->bpr_path_cost(
+        nodes[i].id, nodes[j].id, nodes[i].group_id, bucket * kBucket, speed_ctx_);
+    const float result = (c < std::numeric_limits<float>::max()) ? c : static_c;
+    tcost_memo_[key] = result;
+    return result;
 }

@@ -223,7 +223,18 @@ struct FwdCtx {
     const std::vector<float>*        start_cost    = nullptr;
     int                              max_capacity  = 3;
     float                            min_edge_cost = 0.f;
+    // Congestion-aware (BPR per branch) context. When time_aware, each edge is
+    // costed at depart = base_step + cumulative_cost/speed, so branches deeper
+    // in the decomposition are sampled at later times.
+    bool                             time_aware    = false;
+    float                            speed         = 1.f;
+    int                              base_step     = 0;
 };
+
+// Departure step at the END of state `s` (= base + cumulative travel time).
+static inline int fwd_depart_step(float accumulated_cost, const FwdCtx& ctx) {
+    return ctx.base_step + static_cast<int>(accumulated_cost / ctx.speed);
+}
 
 // Pick the cheapest feasible next node from state `s`.
 // Feasibility = available && !forbidden && (load < cap if pickup).
@@ -236,7 +247,9 @@ static int fwd_best_neighbor(const FwdDecomp& s, const FwdCtx& ctx) {
         if (is_pickup && s.load >= ctx.max_capacity) continue;  // skip → postpone
         const float c = s.seq.empty()
             ? (*ctx.start_cost)[j]
-            : ctx.env->get_cost(s.seq.back(), j);
+            : (ctx.time_aware
+                 ? ctx.env->get_cost_at(s.seq.back(), j, fwd_depart_step(s.cost, ctx))
+                 : ctx.env->get_cost(s.seq.back(), j));
         if (c >= 0.f && c < 1e8f && c < best_c) { best_c = c; best_j = j; }
     }
     return best_j;
@@ -256,7 +269,9 @@ static FwdDecomp* fwd_greedy(FwdDecomp* current, const FwdCtx& ctx) {
 
     const float c = current->seq.empty()
         ? (*ctx.start_cost)[j]
-        : ctx.env->get_cost(current->seq.back(), j);
+        : (ctx.time_aware
+             ? ctx.env->get_cost_at(current->seq.back(), j, fwd_depart_step(current->cost, ctx))
+             : ctx.env->get_cost(current->seq.back(), j));
 
     FwdDecomp* child = new FwdDecomp;
     child->parent    = current;
@@ -344,6 +359,10 @@ static std::vector<ObjectiveNode> forward_dbvns(
 
     FwdCtx ctx{ n, &env, &delivery_of_idx, &pickup_of_idx, &start_cost,
                 std::max(1, max_capacity), min_edge };
+    // Congestion-aware per-branch BPR: each edge costed at its traversal time.
+    ctx.time_aware = env.time_aware();
+    ctx.speed      = env.plan_speed();
+    ctx.base_step  = env.plan_base();
 
     // Root of the decomposition tree.
     FwdDecomp* root = new FwdDecomp;

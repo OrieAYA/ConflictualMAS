@@ -95,9 +95,17 @@ struct EpisodeRecord {
     // Allocation optimality vs MCA full-scan oracle
     float marginal_cost_ratio_vs_oracle = 1.f;
 
+    // RMCA(r) regret diagnostics [Chen et al. 2021] (RMCA mode only, else 0)
+    float rmca_relative_regret  = 0.f;
+    float rmca_marginal_cost_k1 = 0.f;
+    float rmca_marginal_cost_k2 = 0.f;
+
     // Temporal complexity (allocation cost only)
     float mean_allocation_time_us = 0.f;
     float mean_tam_dijkstra_steps = 0.f;
+    // Path-compute breakdown (ms units, see EpisodeConfig.hpp for semantics).
+    float path_compute_time_ms    = 0.f;
+    float mean_pure_alloc_time_ms = 0.f;
 
     // MAPPO training signal (zeroed for non-MAPPO or eval mode)
     float actor_loss           = 0.f;

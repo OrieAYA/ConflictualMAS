@@ -1,6 +1,8 @@
 #ifndef OBJECTIVE_DM_POLICY_HPP
 #define OBJECTIVE_DM_POLICY_HPP
 
+#include "PolicyOptim.hpp"
+
 #include <array>
 #include <cmath>
 #include <random>
@@ -172,21 +174,28 @@ struct PPOParams {
     // Effective lr at each train_epoch — annealed linearly from *_init to *_min
     // by ObjectiveDMPolicy::set_progress(progress ∈ [0,1]). MAPPO SoTA (Yu+2022)
     // and standard PPO practice use linear LR decay over training.
-    float lr_actor      = 3e-3f;  // current actor lr (mutated by set_progress)
-    float lr_actor_init = 3e-3f;  // value at progress=0
-    float lr_actor_min  = 3e-4f;  // value at progress=1 (×0.1 of init)
-    float lr_critic     = 1e-3f;  // current critic lr
-    float lr_critic_init = 1e-3f;
-    float lr_critic_min  = 1e-4f;
-    float clip_eps      = 0.2f;   // PPO policy clip range ε
-    float val_clip_eps  = 0.2f;   // value function clip range (same ε, MAPPO standard)
-    float max_grad_norm = 0.5f;   // L2 gradient norm clipping
+    // Values aligned with Yu et al. 2022 appendix (lr=5e-4 for both networks).
+    float lr_actor      = 5e-4f;  // current actor lr (mutated by set_progress)
+    float lr_actor_init = 5e-4f;  // value at progress=0 (Yu+2022 default)
+    float lr_actor_min  = 5e-5f;  // value at progress=1 (×0.1 of init)
+    float lr_critic     = 5e-4f;  // current critic lr
+    float lr_critic_init = 5e-4f; // Yu+2022 default
+    float lr_critic_min  = 5e-5f;
+    // Clip range: Yu+2022 §5.3 reports smaller ε (0.05–0.1) yields more stable
+    // and higher final performance in MARL than the single-agent default 0.2;
+    // we pick 0.1 as a balanced compromise (slower than 0.2 but stable).
+    float clip_eps      = 0.1f;   // PPO policy clip range ε (MARL-tuned)
+    float val_clip_eps  = 0.1f;   // value function clip range (same ε)
+    // Gradient norm clip — Yu+2022 Tab.7 specifies 10.0 for MAPPO; deWitt+2020
+    // §4 specifies < 0.5 for IPPO. The IPPO policy overrides this value to 0.5
+    // in its constructor; MAPPO/MAPPER/FaithfulMAPPER use the default below.
+    float max_grad_norm = 10.0f;  // L2 gradient norm clipping (Yu+2022 Tab.7)
     float target_kl     = 0.01f;  // KL early-stop threshold (break epoch if exceeded)
     float gamma         = 0.99f;  // discount factor
     float lam_gae       = 0.95f;  // GAE λ
-    float ent_w         = 0.03f;  // entropy bonus coefficient (current, annealed)
-    float ent_w_init    = 0.03f;  // high early — encourages exploration
-    float ent_w_min     = 0.005f; // low late  — lets policy commit to a strategy
+    float ent_w         = 0.01f;  // entropy bonus coefficient (current, annealed)
+    float ent_w_init    = 0.01f;  // Yu+2022 default (sufficient for exploration)
+    float ent_w_min     = 0.001f; // low late — lets policy commit to a strategy
     int   epochs        = 10;     // max PPO gradient epochs per train_epoch call
     // MAPPO paper Suggestion 3 (Yu et al. 2022, §5.3): avoid splitting data
     // into mini-batches in cooperative multi-agent settings. They report best
@@ -285,6 +294,27 @@ public:
 private:
     std::vector<Experience> buffer_;
     std::mt19937            rng_;
+
+    // ── Adam optimiser state (paper-aligned: β1=0.9, β2=0.999, ε=1e-5) ──────
+    // Stored alongside the networks (not inside ActorMLP/CriticMLP) so the
+    // on-disk weight format stays stable; Adam moments are NOT persisted and
+    // reset to zero on load. Step counters are pre-incremented before each
+    // adam_apply (mandatory: bias correction with t=0 would divide by zero).
+    policy_optim::AdamBuf<kHid * kPolicySz>  a_W1_adam_;
+    policy_optim::AdamBuf<kHid>              a_b1_adam_;
+    policy_optim::AdamBuf<kHid * kHid>       a_W2_adam_;
+    policy_optim::AdamBuf<kHid>              a_b2_adam_;
+    policy_optim::AdamBuf<kHid>              a_W3_adam_;
+    policy_optim::AdamScalar                 a_b3_adam_;
+    int                                      adam_t_actor_  = 0;
+
+    policy_optim::AdamBuf<kHid * kCriticIn>  c_W1_adam_;
+    policy_optim::AdamBuf<kHid>              c_b1_adam_;
+    policy_optim::AdamBuf<kHid * kHid>       c_W2_adam_;
+    policy_optim::AdamBuf<kHid>              c_b2_adam_;
+    policy_optim::AdamBuf<kHid>              c_W3_adam_;
+    policy_optim::AdamScalar                 c_b3_adam_;
+    int                                      adam_t_critic_ = 0;
 
     // Mini-batch update stats.
     struct MBStats { float loss; float entropy; float kl; float clip_frac; };

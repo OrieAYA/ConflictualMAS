@@ -37,7 +37,9 @@ bool TaskAllocationModule::step(PDPGlobalMemory& memory, float speed_mps) {
         return step_multi_candidate(memory, speed_mps);
 
     // Lazy init of the spatial search budget on the first step.
-    // task_dist = haversine(pickup, delivery); budget = task_dist * mult.
+    // task_dist = haversine(pickup, delivery); budget = (task_dist / speed) * mult
+    // — converted to TIME units since the TD discover_step_td accumulates
+    // BPR-adjusted travel time, not distance.
     if (max_search_cost_ < 0.0f) {
         const auto& nodes = memory.geo_box.data.nodes;
         auto pit = nodes.find(task_.pickup.id);
@@ -46,7 +48,8 @@ bool TaskAllocationModule::step(PDPGlobalMemory& memory, float speed_mps) {
             const float task_dist = haversine_m(
                 pit->second.lat, pit->second.lon,
                 dit->second.lat, dit->second.lon);
-            max_search_cost_ = task_dist * params_.search_radius_mult;
+            const float safe_speed = (speed_mps > 0.1f) ? speed_mps : 1.f;
+            max_search_cost_ = (task_dist / safe_speed) * params_.search_radius_mult;
         } else {
             max_search_cost_ = std::numeric_limits<float>::max();
         }
@@ -62,16 +65,24 @@ bool TaskAllocationModule::step(PDPGlobalMemory& memory, float speed_mps) {
     }
 
     // 1. Expand pickup side (no agent-position check — per TAM spec).
-    DiscoveryStep ps = memory.server_memory.discover_step(
-        task_.pickup.id, pickup_group_id_, {}, max_search_cost_);
+    // Time-Dependent variant: BPR-adjusted travel time as cost. ds.cost is
+    // in TIME units (steps); we pass it (rather than path->cost which is
+    // static distance) so handle_pickup_node / handle_delivery_node record
+    // TD-aware costs in matrix_.
+    const int   td_start = memory.current_time();
+    const auto& td_cong  = memory.congestion_map;
+    DiscoveryStep ps = memory.server_memory.discover_step_td(
+        task_.pickup.id, pickup_group_id_, td_start, speed_mps, td_cong,
+        {}, max_search_cost_);
     if (ps.type == DiscoveryStep::Type::Path)
         handle_pickup_node(ps.path->node_b == task_.pickup.id
                            ? ps.path->node_a : ps.path->node_b,
-                           ps.path->cost, memory);
+                           ps.cost, memory);
 
     // 2. Expand delivery side (with idle-agent detection).
-    DiscoveryStep ds = memory.server_memory.discover_step(
-        task_.delivery.id, delivery_group_id_, idle_positions_cache_, max_search_cost_);
+    DiscoveryStep ds = memory.server_memory.discover_step_td(
+        task_.delivery.id, delivery_group_id_, td_start, speed_mps, td_cong,
+        idle_positions_cache_, max_search_cost_);
 
     if (ds.type == DiscoveryStep::Type::AgentPosition) {
         if (handle_delivery_node(ds.agent_node, ds.cost, memory, speed_mps))
@@ -79,7 +90,7 @@ bool TaskAllocationModule::step(PDPGlobalMemory& memory, float speed_mps) {
     } else if (ds.type == DiscoveryStep::Type::Path) {
         osmium::object_id_type found =
             (ds.path->node_b == task_.delivery.id) ? ds.path->node_a : ds.path->node_b;
-        handle_delivery_node(found, ds.path->cost, memory, speed_mps);
+        handle_delivery_node(found, ds.cost, memory, speed_mps);
     }
 
     // 3. Try agents reachable from both sides.
@@ -446,12 +457,20 @@ bool TaskAllocationModule::step_multi_candidate(
 
     // Expand both sides. Idle positions are passed to BOTH searches so idle
     // agents are discovered on either side (legacy only checked delivery).
-    DiscoveryStep ps = memory.server_memory.discover_step(
-        task_.pickup.id, pickup_group_id_, idle_positions_cache_, max_search_cost_);
+    // We use the Time-Dependent variant: edge costs are BPR-adjusted travel
+    // times at the predicted arrival step. Candidate ranking and the
+    // resulting marginal_cost_relative feature thus reflect actual
+    // congestion-aware travel time, not free-flow distance.
+    const int   td_start    = memory.current_time();
+    const auto& td_cong     = memory.congestion_map;
+    DiscoveryStep ps = memory.server_memory.discover_step_td(
+        task_.pickup.id, pickup_group_id_, td_start, speed_mps, td_cong,
+        idle_positions_cache_, max_search_cost_);
     record_side(ps, /*is_pickup=*/true);
 
-    DiscoveryStep ds = memory.server_memory.discover_step(
-        task_.delivery.id, delivery_group_id_, idle_positions_cache_, max_search_cost_);
+    DiscoveryStep ds = memory.server_memory.discover_step_td(
+        task_.delivery.id, delivery_group_id_, td_start, speed_mps, td_cong,
+        idle_positions_cache_, max_search_cost_);
     record_side(ds, /*is_pickup=*/false);
 
     // Rebuild the candidate set from the current matrix_.

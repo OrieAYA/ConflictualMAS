@@ -85,10 +85,16 @@
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\FaithfulCongestionAware\FaithfulCASolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\FaithfulCongestionAwareCapacited\FaithfulCACapacitedSolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\TrafficFlow\TrafficFlowSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\RHCR\RHCRSolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\HybridAdaptivePredictive\HybridAdaptivePredictiveSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\SolverCSVLogger.cpp">

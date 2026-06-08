@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1240">
+<rect width="1100" height="1100" fill="#fafbfc"/>
+<line x1="546.165" y1="138.72" x2="1041.07" y2="1041.07" stroke="rgb(100,105,154)" stroke-width="1.4" opacity="0.85"/>
+<line x1="1041.07" y1="1041.07" x2="132.671" y2="648.714" stroke="rgb(122,100,138)" stroke-width="1.4" opacity="0.85"/>
+<line x1="132.671" y1="648.714" x2="58.9286" y2="58.9286" stroke="rgb(214,79,70)" stroke-width="1.4" opacity="0.85"/>
+<line x1="58.9286" y1="58.9286" x2="546.165" y2="138.72" stroke="rgb(220,77,65)" stroke-width="1.4" opacity="0.85"/>
+<circle cx="1041.07" cy="1041.07" r="5" fill="rgb(61,114,183)" stroke="white" stroke-width="1.2"/>
+<rect x="127.671" y="643.714" width="10" height="10" fill="white" stroke="rgb(61,114,183)" stroke-width="2.2"/>
+<line x1="1041.07" y1="1041.07" x2="132.671" y2="648.714" stroke="rgb(61,114,183)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="58.9286" cy="58.9286" r="5" fill="rgb(191,84,87)" stroke="white" stroke-width="1.2"/>
+<rect x="541.165" y="133.72" width="10" height="10" fill="white" stroke="rgb(191,84,87)" stroke-width="2.2"/>
+<line x1="58.9286" y1="58.9286" x2="546.165" y2="138.72" stroke="rgb(191,84,87)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<rect y="1100" width="1100" height="140" fill="#edf0f3"/>
+<text x="12" y="1120" font-family="monospace" font-size="13" fill="#222">seed=-686795796  city=Kyoto_Small  mode=RMCA_Chen2021_LNS  density=0.64  agents=1.00  (low_saturation)</text>
+<text x="12" y="1140" font-family="monospace" font-size="12" fill="#222">arrived=2 accepted=2 delivered=2 unfinished=0 dist=5265m agents=1</text>
+<text x="12" y="1158" font-family="monospace" font-size="12" fill="#444">spatial: bbox=1.39km² hull=0.65km² meanPD=731m meanNN=2553m</text>
+<text x="12" y="1176" font-family="monospace" font-size="12" fill="#555">validity: pairing_viol=0 capacity_viol=0 wallclock=78ms</text>
+<rect x="12" y="1195" width="28" height="12" fill="rgb(40,120,200)"/>
+<rect x="39" y="1195" width="28" height="12" fill="rgb(70,112,177)"/>
+<rect x="67" y="1195" width="28" height="12" fill="rgb(101,105,154)"/>
+<rect x="94" y="1195" width="28" height="12" fill="rgb(132,98,131)"/>
+<rect x="122" y="1195" width="28" height="12" fill="rgb(162,91,108)"/>
+<rect x="149" y="1195" width="28" height="12" fill="rgb(193,84,85)"/>
+<rect x="177" y="1195" width="28" height="12" fill="rgb(224,77,62)"/>
+<rect x="204" y="1195" width="28" height="12" fill="rgb(255,70,40)"/>
+<text x="238" y="1205" font-family="monospace" font-size="11" fill="#444">time gradient: blue=t=0  red=t=3600</text>
+</svg>

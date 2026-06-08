@@ -449,8 +449,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\TokenPassing\TokenPassingSolver.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\CongestionAware\CongestionAwareSolver.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\FaithfulCongestionAware\FaithfulCASolver.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\FaithfulCongestionAwareCapacited\FaithfulCACapacitedSolver.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\TrafficFlow\TrafficFlowSolver.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\RHCR\RHCRSolver.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\HybridAdaptivePredictive\HybridAdaptivePredictiveSolver.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\SolverCSVLogger.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Tests\LegacyTests.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Tests\PDPTests.cpp" />

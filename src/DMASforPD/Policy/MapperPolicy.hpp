@@ -110,6 +110,25 @@ public:
         // Used by evolutionary_step() to rank agents. Trimmed to
         // EvolutionaryParams::fitness_window entries; FIFO eviction.
         std::vector<float>      fitness_history;
+
+        // ── Adam optimiser state (per agent, β1=0.9, β2=0.999, ε=1e-5) ────
+        // MAPPER uses N independent actor+critic pairs; each pair carries its
+        // own Adam moments. Not persisted (reset on load).
+        policy_optim::AdamBuf<kHid * kPolicySz>  a_W1_adam;
+        policy_optim::AdamBuf<kHid>              a_b1_adam;
+        policy_optim::AdamBuf<kHid * kHid>       a_W2_adam;
+        policy_optim::AdamBuf<kHid>              a_b2_adam;
+        policy_optim::AdamBuf<kHid>              a_W3_adam;
+        policy_optim::AdamScalar                 a_b3_adam;
+        int                                      adam_t_actor  = 0;
+
+        policy_optim::AdamBuf<kHid * kPolicySz>  c_W1_adam;
+        policy_optim::AdamBuf<kHid>              c_b1_adam;
+        policy_optim::AdamBuf<kHid * kHid>       c_W2_adam;
+        policy_optim::AdamBuf<kHid>              c_b2_adam;
+        policy_optim::AdamBuf<kHid>              c_W3_adam;
+        policy_optim::AdamScalar                 c_b3_adam;
+        int                                      adam_t_critic = 0;
     };
 
     PPOParams          hparams;

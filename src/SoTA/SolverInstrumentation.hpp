@@ -38,6 +38,12 @@ public:
     long   cong_n    = 0;
     int    peak_load = 0;
 
+    // BPR slowdown factor (adjusted / free-flow) actually experienced along
+    // executed edges; its mean over all traversals feeds mean_bpr_along_route
+    // (otherwise that field keeps its default 1.0 for SoTA solvers).
+    double bpr_sum = 0.0;
+    long   bpr_n   = 0;
+
     // Ghost active sampling.
     double ghost_mean = 0.0;
     long   ghost_n    = 0;
@@ -54,6 +60,7 @@ public:
         total_fleet_distance_m = 0.0;
         cong_mean = 0.0; cong_m2 = 0.0; cong_n = 0;
         peak_load = 0;
+        bpr_sum = 0.0; bpr_n = 0;
         ghost_mean = 0.0; ghost_n = 0;
         wallclock_ms = 0;
         n_allocation_calls = 0;
@@ -75,18 +82,25 @@ public:
         if (edge_length_m > 0.f) total_fleet_distance_m += edge_length_m;
     }
 
+    // Record the BPR slowdown factor (adjusted / free-flow) paid on one
+    // traversed edge at its entry step. Mean over traversals → mean_bpr_along_route.
+    void record_edge_bpr(float factor) {
+        if (factor > 0.f) { bpr_sum += static_cast<double>(factor); ++bpr_n; }
+    }
+
     // Sample the CongestionMap state — call ONCE per simulation step, AFTER
-    // congestion_map.advance(t).
+    // congestion_map.advance(t). Uses load_sample_now() which combines mean +
+    // peak in a single pass over load_ → 2× faster than the previous
+    // mean_load_now() + peak_load_now() sequence.
     void sample_congestion(const CongestionMap* cmap) {
         if (!cmap) return;
-        const float m = cmap->mean_load_now();
-        const int   p = cmap->peak_load_now();
-        if (p > peak_load) peak_load = p;
+        const auto s = cmap->load_sample_now();
+        if (s.peak > peak_load) peak_load = s.peak;
         // Welford online update.
         ++cong_n;
-        const double dx = static_cast<double>(m) - cong_mean;
+        const double dx = static_cast<double>(s.mean) - cong_mean;
         cong_mean += dx / cong_n;
-        cong_m2   += dx * (static_cast<double>(m) - cong_mean);
+        cong_m2   += dx * (static_cast<double>(s.mean) - cong_mean);
     }
 
     // Sample ghost traffic — call once per step.
@@ -177,6 +191,8 @@ public:
             ? static_cast<float>(cong_m2 / (cong_n - 1))
             : 0.f;
         m.peak_load = peak_load;
+        if (bpr_n > 0)
+            m.mean_bpr_along_route = bpr_sum / static_cast<double>(bpr_n);
         m.n_ghost_active_mean = static_cast<float>(ghost_mean);
 
         m.n_allocation_calls = n_allocation_calls;

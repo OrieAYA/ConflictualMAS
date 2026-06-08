@@ -25,10 +25,54 @@ void clip_grad_norm(float* arrays[], const int sizes[],
 } // namespace
 
 // ── IPPOPolicy ──────────────────────────────────────────────────────────────
+//
+// Hyperparameter overrides — faithful to the IPPO appendix of de Witt et al.
+// 2020 / Yu et al. 2022 (their IPPO baseline table). IPPO does not benefit
+// from a centralised critic to dampen variance, so its authors use a SMALLER
+// learning rate, a LOWER entropy bonus and FEWER PPO epochs than MAPPO; the
+// PPO clip is kept at the single-agent default 0.2 because the algorithm
+// does not enjoy MAPPO's CTDE stability margin. These differences are
+// deliberate: we follow each baseline's published recipe rather than apply
+// MAPPO-tuned values uniformly.
 IPPOPolicy::IPPOPolicy()
     : rng_(std::random_device{}()) {
-    actor.init_xavier(rng_);
-    critic.init_xavier(rng_);
+    // He / variance-scaling init with scale=2.0 (deWitt+2020 §4: "variance
+    // scaling initializer with truncated normal distribution with scale = 2.0"
+    // — well-suited to ReLU). Output layers keep the policy convention from
+    // ActorMLP::init_xavier (W3 × 0.01 so initial μ ≈ 0.5) and the critic head
+    // is left at the He scale (raw value head).
+    policy_optim::init_he_truncated(actor.W1, kPolicySz, kHid, rng_);
+    policy_optim::init_he_truncated(actor.W2, kHid,      kHid, rng_);
+    policy_optim::init_he_truncated(actor.W3, kHid,      1,    rng_);
+    for (int i = 0; i < kHid; ++i) actor.W3[i] *= 0.01f;  // neutral start μ≈0.5
+    std::fill(actor.b1, actor.b1 + kHid, 0.f);
+    std::fill(actor.b2, actor.b2 + kHid, 0.f);
+    actor.b3 = 0.f;
+
+    policy_optim::init_he_truncated(critic.W1, kPolicySz, kHid, rng_);
+    policy_optim::init_he_truncated(critic.W2, kHid,      kHid, rng_);
+    policy_optim::init_he_truncated(critic.W3, kHid,      1,    rng_);
+    std::fill(critic.b1, critic.b1 + kHid, 0.f);
+    std::fill(critic.b2, critic.b2 + kHid, 0.f);
+    critic.b3 = 0.f;
+
+    // IPPO-specific overrides (de Witt+2020 / Yu+2022 IPPO appendix).
+    hparams.lr_actor_init   = 1e-4f;   // smaller than MAPPO (variance-sensitive)
+    hparams.lr_actor_min    = 1e-5f;   // ×0.1 ratio kept
+    hparams.lr_actor        = 1e-4f;
+    hparams.lr_critic_init  = 1e-4f;
+    hparams.lr_critic_min   = 1e-5f;
+    hparams.lr_critic       = 1e-4f;
+    hparams.clip_eps        = 0.2f;    // de Witt+2020 default
+    hparams.val_clip_eps    = 0.2f;
+    hparams.ent_w_init      = 0.005f;  // de Witt+2020 / Yu+2022 dominant value
+    hparams.ent_w_min       = 0.0005f; // ×0.1 ratio
+    hparams.ent_w           = 0.005f;
+    hparams.epochs          = 4;       // de Witt+2020 / Yu+2022 IPPO table
+    // deWitt+2020 §4: "gradient clipping to restrict the norm of the gradient
+    // to be less than 0.5". IPPO needs the tighter clip; MAPPO (Yu+2022 Tab.7)
+    // uses 10.0 as the struct default.
+    hparams.max_grad_norm   = 0.5f;
 }
 
 IPPOPolicy& IPPOPolicy::shared() {
@@ -241,13 +285,28 @@ IPPOPolicy::MBStats IPPOPolicy::update_actor_mb(
     int    as[] = { kHid*kPolicySz, kHid, kHid*kHid, kHid, kHid, 1 };
     clip_grad_norm(ag, as, 6, hparams.max_grad_norm);
 
-    float lr = hparams.lr_actor;
-    for (int i = 0; i < kHid*kPolicySz; ++i) actor.W1[i] += lr * dW1[i];
-    for (int i = 0; i < kHid; ++i)            actor.b1[i] += lr * db1[i];
-    for (int i = 0; i < kHid*kHid; ++i)       actor.W2[i] += lr * dW2[i];
-    for (int i = 0; i < kHid; ++i)            actor.b2[i] += lr * db2[i];
-    for (int i = 0; i < kHid; ++i)            actor.W3[i] += lr * dW3[i];
-    actor.b3 += lr * db3;
+    // Actor gradients are in ASCENT direction; negate before Adam to match
+    // Adam's canonical "descend the loss" semantics.
+    for (int i = 0; i < kHid*kPolicySz; ++i) dW1[i] = -dW1[i];
+    for (int i = 0; i < kHid; ++i)            db1[i] = -db1[i];
+    for (int i = 0; i < kHid*kHid; ++i)       dW2[i] = -dW2[i];
+    for (int i = 0; i < kHid; ++i)            db2[i] = -db2[i];
+    for (int i = 0; i < kHid; ++i)            dW3[i] = -dW3[i];
+    db3 = -db3;
+
+    ++adam_t_actor_;
+    const float lr = hparams.lr_actor;
+    policy_optim::adam_apply(actor.W1, dW1, a_W1_adam_.m, a_W1_adam_.v,
+                             kHid*kPolicySz, lr, adam_t_actor_);
+    policy_optim::adam_apply(actor.b1, db1, a_b1_adam_.m, a_b1_adam_.v,
+                             kHid,           lr, adam_t_actor_);
+    policy_optim::adam_apply(actor.W2, dW2, a_W2_adam_.m, a_W2_adam_.v,
+                             kHid*kHid,      lr, adam_t_actor_);
+    policy_optim::adam_apply(actor.b2, db2, a_b2_adam_.m, a_b2_adam_.v,
+                             kHid,           lr, adam_t_actor_);
+    policy_optim::adam_apply(actor.W3, dW3, a_W3_adam_.m, a_W3_adam_.v,
+                             kHid,           lr, adam_t_actor_);
+    policy_optim::adam_apply_scalar(actor.b3, db3, a_b3_adam_, adam_t_actor_, lr);
 
     return { -(L_acc * inv_n), ent_acc * inv_n, kl_acc * inv_n, clip_acc * inv_n };
 }
@@ -291,9 +350,15 @@ float IPPOPolicy::update_critic_mb(
                                                   hparams.val_clip_eps);
         float err_new  = V_new  - ret_norm;
         float err_clip = V_clip - ret_norm;
-        mse_acc += std::max(err_new * err_new, err_clip * err_clip);
 
-        float dz3 = 2.f * err_new * inv_n;
+        // Pessimistic Huber loss (Yu+2022 Tab.7, δ=10). Same form for IPPO so
+        // both baselines share the value-loss recipe; only the critic *input*
+        // (local vs feature-pruned global) differs by design.
+        const float h_new  = policy_optim::huber_value(err_new);
+        const float h_clip = policy_optim::huber_value(err_clip);
+        mse_acc += std::max(h_new, h_clip);
+
+        float dz3 = policy_optim::huber_grad(err_new) * inv_n;
 
         db3 += dz3;
         float dh2[kHid]{};
@@ -324,13 +389,19 @@ float IPPOPolicy::update_critic_mb(
     int    cs[] = { kHid*kPolicySz, kHid, kHid*kHid, kHid, kHid, 1 };
     clip_grad_norm(cg, cs, 6, hparams.max_grad_norm);
 
-    float lr = hparams.lr_critic;
-    for (int i = 0; i < kHid*kPolicySz; ++i) critic.W1[i] -= lr * dW1[i];
-    for (int i = 0; i < kHid; ++i)            critic.b1[i] -= lr * db1[i];
-    for (int i = 0; i < kHid*kHid; ++i)       critic.W2[i] -= lr * dW2[i];
-    for (int i = 0; i < kHid; ++i)            critic.b2[i] -= lr * db2[i];
-    for (int i = 0; i < kHid; ++i)            critic.W3[i] -= lr * dW3[i];
-    critic.b3 -= lr * db3;
+    ++adam_t_critic_;
+    const float lr = hparams.lr_critic;
+    policy_optim::adam_apply(critic.W1, dW1, c_W1_adam_.m, c_W1_adam_.v,
+                             kHid*kPolicySz, lr, adam_t_critic_);
+    policy_optim::adam_apply(critic.b1, db1, c_b1_adam_.m, c_b1_adam_.v,
+                             kHid,           lr, adam_t_critic_);
+    policy_optim::adam_apply(critic.W2, dW2, c_W2_adam_.m, c_W2_adam_.v,
+                             kHid*kHid,      lr, adam_t_critic_);
+    policy_optim::adam_apply(critic.b2, db2, c_b2_adam_.m, c_b2_adam_.v,
+                             kHid,           lr, adam_t_critic_);
+    policy_optim::adam_apply(critic.W3, dW3, c_W3_adam_.m, c_W3_adam_.v,
+                             kHid,           lr, adam_t_critic_);
+    policy_optim::adam_apply_scalar(critic.b3, db3, c_b3_adam_, adam_t_critic_, lr);
 
     return mse_acc * inv_n;
 }

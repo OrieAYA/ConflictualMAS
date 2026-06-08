@@ -27,11 +27,17 @@ bool RunningMeanStd::load_from(void* file_v) {
 
 namespace {
 
-// ── Xavier normal initialisation ──────────────────────────────────────────────
+// ── Orthogonal initialisation (Yu+2022 MAPPO default) ────────────────────────
+//
+// MAPPO Yu+2022 Tab.7: "network initialization Orthogonal". Forwarder around
+// policy_optim::init_orthogonal to keep the original `xavier()` call sites
+// untouched. Default gain = √2 (ReLU); callers shrink the output layer by 0.01
+// for the policy head, per CleanRL / Tab.17 ("gain = 0.01").
 void xavier(float* W, int fan_in, int fan_out, std::mt19937& rng) {
-    float s = std::sqrt(2.f / static_cast<float>(fan_in + fan_out));
-    std::normal_distribution<float> dist(0.f, s);
-    for (int i = 0; i < fan_in * fan_out; ++i) W[i] = dist(rng);
+    // fan_in × fan_out treated as (rows=fan_out, cols=fan_in) row-major because
+    // the loops above iterate row-major (output_idx * in_n + input_idx). Use the
+    // smaller dimension for orthonormalisation — handled inside the helper.
+    policy_optim::init_orthogonal(W, fan_out, fan_in, rng, std::sqrt(2.f));
 }
 
 // ── Linear + ReLU layer ───────────────────────────────────────────────────────
@@ -311,18 +317,33 @@ ObjectiveDMPolicy::MBStats ObjectiveDMPolicy::update_actor_mb(
         }
     }
 
-    // L2 gradient norm clipping
+    // L2 gradient norm clipping. The gradients here are in the ASCENT direction
+    // (∂objective/∂θ); we negate them before Adam so Adam's canonical "descend
+    // the loss" semantics apply (W ← W − lr · Adam(∇L_loss), with L_loss = −L_clip).
     float* ag[] = { dW1, db1, dW2, db2, dW3, &db3 };
     int    as[] = { kHid*kPolicySz, kHid, kHid*kHid, kHid, kHid, 1 };
     clip_grad_norm(ag, as, 6, hparams.max_grad_norm);
 
-    float lr = hparams.lr_actor;
-    for (int i = 0; i < kHid*kPolicySz; ++i) actor.W1[i] += lr * dW1[i];
-    for (int i = 0; i < kHid; ++i)            actor.b1[i] += lr * db1[i];
-    for (int i = 0; i < kHid*kHid; ++i)       actor.W2[i] += lr * dW2[i];
-    for (int i = 0; i < kHid; ++i)            actor.b2[i] += lr * db2[i];
-    for (int i = 0; i < kHid; ++i)            actor.W3[i] += lr * dW3[i];
-    actor.b3 += lr * db3;
+    for (int i = 0; i < kHid*kPolicySz; ++i) dW1[i] = -dW1[i];
+    for (int i = 0; i < kHid; ++i)            db1[i] = -db1[i];
+    for (int i = 0; i < kHid*kHid; ++i)       dW2[i] = -dW2[i];
+    for (int i = 0; i < kHid; ++i)            db2[i] = -db2[i];
+    for (int i = 0; i < kHid; ++i)            dW3[i] = -dW3[i];
+    db3 = -db3;
+
+    ++adam_t_actor_;
+    const float lr = hparams.lr_actor;
+    policy_optim::adam_apply(actor.W1, dW1, a_W1_adam_.m, a_W1_adam_.v,
+                             kHid*kPolicySz, lr, adam_t_actor_);
+    policy_optim::adam_apply(actor.b1, db1, a_b1_adam_.m, a_b1_adam_.v,
+                             kHid,           lr, adam_t_actor_);
+    policy_optim::adam_apply(actor.W2, dW2, a_W2_adam_.m, a_W2_adam_.v,
+                             kHid*kHid,      lr, adam_t_actor_);
+    policy_optim::adam_apply(actor.b2, db2, a_b2_adam_.m, a_b2_adam_.v,
+                             kHid,           lr, adam_t_actor_);
+    policy_optim::adam_apply(actor.W3, dW3, a_W3_adam_.m, a_W3_adam_.v,
+                             kHid,           lr, adam_t_actor_);
+    policy_optim::adam_apply_scalar(actor.b3, db3, a_b3_adam_, adam_t_actor_, lr);
 
     return { -(L_acc * inv_n), ent_acc * inv_n, kl_acc * inv_n, clip_acc * inv_n };
 }
@@ -380,9 +401,15 @@ float ObjectiveDMPolicy::update_critic_mb(
                                                     hparams.val_clip_eps);
         float err_new    = V_new  - ret_norm;
         float err_clip   = V_clip - ret_norm;
-        mse_acc += std::max(err_new * err_new, err_clip * err_clip);
 
-        float dz3 = 2.f * err_new * inv_n;  // gradient always via V_new
+        // Pessimistic Huber loss (Yu+2022 Tab.7, δ=10): take the larger of the
+        // unclipped and clipped Huber values, gradient routes through V_new only.
+        const float h_new  = policy_optim::huber_value(err_new);
+        const float h_clip = policy_optim::huber_value(err_clip);
+        mse_acc += std::max(h_new, h_clip);
+
+        // dHuber/dV_new = clamp(err_new, -δ, +δ); divided by bsz for mean-grad.
+        float dz3 = policy_optim::huber_grad(err_new) * inv_n;
 
         db3 += dz3;
         float dh2[kHid]{};
@@ -402,18 +429,25 @@ float ObjectiveDMPolicy::update_critic_mb(
         }
     }
 
-    // L2 gradient norm clipping
+    // L2 gradient norm clipping. Critic gradients are in DESCENT direction
+    // already (∇L_huber), so no sign flip before Adam.
     float* cg[] = { dW1, db1, dW2, db2, dW3, &db3 };
     int    cs[] = { kHid*kCriticIn, kHid, kHid*kHid, kHid, kHid, 1 };
     clip_grad_norm(cg, cs, 6, hparams.max_grad_norm);
 
-    float lr = hparams.lr_critic;
-    for (int i = 0; i < kHid*kCriticIn; ++i) critic.W1[i] -= lr * dW1[i];
-    for (int i = 0; i < kHid; ++i)          critic.b1[i] -= lr * db1[i];
-    for (int i = 0; i < kHid*kHid; ++i)     critic.W2[i] -= lr * dW2[i];
-    for (int i = 0; i < kHid; ++i)          critic.b2[i] -= lr * db2[i];
-    for (int i = 0; i < kHid; ++i)          critic.W3[i] -= lr * dW3[i];
-    critic.b3 -= lr * db3;
+    ++adam_t_critic_;
+    const float lr = hparams.lr_critic;
+    policy_optim::adam_apply(critic.W1, dW1, c_W1_adam_.m, c_W1_adam_.v,
+                             kHid*kCriticIn, lr, adam_t_critic_);
+    policy_optim::adam_apply(critic.b1, db1, c_b1_adam_.m, c_b1_adam_.v,
+                             kHid,           lr, adam_t_critic_);
+    policy_optim::adam_apply(critic.W2, dW2, c_W2_adam_.m, c_W2_adam_.v,
+                             kHid*kHid,      lr, adam_t_critic_);
+    policy_optim::adam_apply(critic.b2, db2, c_b2_adam_.m, c_b2_adam_.v,
+                             kHid,           lr, adam_t_critic_);
+    policy_optim::adam_apply(critic.W3, dW3, c_W3_adam_.m, c_W3_adam_.v,
+                             kHid,           lr, adam_t_critic_);
+    policy_optim::adam_apply_scalar(critic.b3, db3, c_b3_adam_, adam_t_critic_, lr);
 
     return mse_acc * inv_n;
 }

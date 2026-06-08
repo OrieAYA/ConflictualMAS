@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1240">
+<rect width="1100" height="1100" fill="#fafbfc"/>
+<line x1="586.629" y1="481.66" x2="866.206" y2="58.9286" stroke="rgb(124,100,137)" stroke-width="1.4" opacity="0.85"/>
+<line x1="866.206" y1="58.9286" x2="719.391" y2="341.274" stroke="rgb(152,93,116)" stroke-width="1.4" opacity="0.85"/>
+<line x1="719.391" y1="341.274" x2="275.283" y2="825.237" stroke="rgb(202,82,79)" stroke-width="1.4" opacity="0.85"/>
+<line x1="275.283" y1="825.237" x2="58.9286" y2="1041.07" stroke="rgb(202,82,79)" stroke-width="1.4" opacity="0.85"/>
+<line x1="58.9286" y1="1041.07" x2="159.709" y2="968.663" stroke="rgb(212,79,71)" stroke-width="1.4" opacity="0.85"/>
+<line x1="159.709" y1="968.663" x2="150.062" y2="648.078" stroke="rgb(236,74,53)" stroke-width="1.4" opacity="0.85"/>
+<line x1="150.062" y1="648.078" x2="1041.07" y2="329.704" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
+<line x1="1041.07" y1="329.704" x2="978.572" y2="321.476" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
+<circle cx="866.206" cy="58.9286" r="5" fill="rgb(88,108,163)" stroke="white" stroke-width="1.2"/>
+<rect x="714.391" y="336.274" width="10" height="10" fill="white" stroke="rgb(88,108,163)" stroke-width="2.2"/>
+<line x1="866.206" y1="58.9286" x2="719.391" y2="341.274" stroke="rgb(88,108,163)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="275.283" cy="825.237" r="5" fill="rgb(116,102,143)" stroke="white" stroke-width="1.2"/>
+<rect x="145.062" y="643.078" width="10" height="10" fill="white" stroke="rgb(116,102,143)" stroke-width="2.2"/>
+<line x1="275.283" y1="825.237" x2="150.062" y2="648.078" stroke="rgb(116,102,143)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="58.9286" cy="1041.07" r="5" fill="rgb(119,101,140)" stroke="white" stroke-width="1.2"/>
+<rect x="154.709" y="963.663" width="10" height="10" fill="white" stroke="rgb(119,101,140)" stroke-width="2.2"/>
+<line x1="58.9286" y1="1041.07" x2="159.709" y2="968.663" stroke="rgb(119,101,140)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="1041.07" cy="329.704" r="5" fill="rgb(202,82,79)" stroke="white" stroke-width="1.2"/>
+<rect x="973.572" y="316.476" width="10" height="10" fill="white" stroke="rgb(202,82,79)" stroke-width="2.2"/>
+<line x1="1041.07" y1="329.704" x2="978.572" y2="321.476" stroke="rgb(202,82,79)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<rect y="1100" width="1100" height="140" fill="#edf0f3"/>
+<text x="12" y="1120" font-family="monospace" font-size="13" fill="#222">seed=-686795716  city=Tokyo_Small  mode=RMCA_Chen2021_LNS  density=0.62  agents=1.00  (low_saturation)</text>
+<text x="12" y="1140" font-family="monospace" font-size="12" fill="#222">arrived=4 accepted=4 delivered=1 unfinished=3 dist=15117m agents=1</text>
+<text x="12" y="1158" font-family="monospace" font-size="12" fill="#444">spatial: bbox=20.99km² hull=6.74km² meanPD=842m meanNN=1465m</text>
+<text x="12" y="1176" font-family="monospace" font-size="12" fill="#555">validity: pairing_viol=0 capacity_viol=0 wallclock=431ms</text>
+<rect x="12" y="1195" width="28" height="12" fill="rgb(40,120,200)"/>
+<rect x="39" y="1195" width="28" height="12" fill="rgb(70,112,177)"/>
+<rect x="67" y="1195" width="28" height="12" fill="rgb(101,105,154)"/>
+<rect x="94" y="1195" width="28" height="12" fill="rgb(132,98,131)"/>
+<rect x="122" y="1195" width="28" height="12" fill="rgb(162,91,108)"/>
+<rect x="149" y="1195" width="28" height="12" fill="rgb(193,84,85)"/>
+<rect x="177" y="1195" width="28" height="12" fill="rgb(224,77,62)"/>
+<rect x="204" y="1195" width="28" height="12" fill="rgb(255,70,40)"/>
+<text x="238" y="1205" font-family="monospace" font-size="11" fill="#444">time gradient: blue=t=0  red=t=3600</text>
+</svg>

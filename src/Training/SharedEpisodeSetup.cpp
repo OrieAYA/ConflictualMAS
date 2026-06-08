@@ -7,19 +7,52 @@
 
 namespace {
 
-// Sample one valid (road-incident) node from the GeoBox. Mirrors the
-// deterministic candidate collection used by SolverContext::sample_valid_node
-// so SharedEpisodeSetup produces the same node IDs given the same rng state.
+// Process-scoped cache of "road-incident node" candidate vectors. Keyed by
+// GeoBox pointer, with a content guard (node_count) to detect stack-frame
+// reuse when main.cpp's city for-loop destroys/recreates GeoBox at the same
+// address.
+//
+// CRITICAL HOMOGENEITY NOTE: we DO NOT sort the candidates vector. The
+// previous (uncached) implementation iterated geo_box.data.nodes directly,
+// producing candidates in unordered_map iteration order. That order is
+// stable across calls for a given binary build → the agent_start_nodes
+// produced by build_shared_episode_setup are byte-identical to those used
+// by the prior TP/RL runs whose CSVs we want to join with HAPC's results.
+// Sorting here would silently shuffle the sample index → different agent
+// starts → broken homogeneity. Don't reintroduce the sort.
+struct ValidNodesCacheEntry {
+    size_t node_count = 0;
+    std::vector<osmium::object_id_type> valid_nodes;
+};
+static std::unordered_map<const GeoBox*, ValidNodesCacheEntry>
+    s_valid_nodes_cache;
+
+const std::vector<osmium::object_id_type>&
+get_valid_nodes(const GeoBox& geo_box) {
+    auto& entry = s_valid_nodes_cache[&geo_box];
+    if (entry.node_count != geo_box.data.nodes.size()) {
+        // Either uncached or stale (same address, different city's data —
+        // happens when main.cpp's stack-local geo_box gets reused).
+        entry.node_count = geo_box.data.nodes.size();
+        entry.valid_nodes.clear();
+        entry.valid_nodes.reserve(geo_box.data.nodes.size() / 4);
+        for (const auto& [id, pt] : geo_box.data.nodes)
+            if (!pt.incident_ways.empty()) entry.valid_nodes.push_back(id);
+        // ── NO SORT — preserves the exact order produced by the prior
+        // uncached implementation so agent_start_nodes match byte-for-byte.
+    }
+    return entry.valid_nodes;
+}
+
+// Sample one valid (road-incident) node from the GeoBox. Uses the cached
+// candidates vector — equivalent to the prior implementation but O(1) per
+// call instead of O(V).
 osmium::object_id_type sample_road_node(const GeoBox& geo_box,
                                          std::mt19937& rng) {
-    if (geo_box.data.nodes.empty()) return 0;
-    std::vector<osmium::object_id_type> candidates;
-    candidates.reserve(geo_box.data.nodes.size() / 4);
-    for (const auto& [id, pt] : geo_box.data.nodes)
-        if (!pt.incident_ways.empty()) candidates.push_back(id);
-    if (candidates.empty()) return 0;
-    std::uniform_int_distribution<size_t> dist(0, candidates.size() - 1);
-    return candidates[dist(rng)];
+    const auto& valid = get_valid_nodes(geo_box);
+    if (valid.empty()) return 0;
+    std::uniform_int_distribution<size_t> dist(0, valid.size() - 1);
+    return valid[dist(rng)];
 }
 
 } // namespace

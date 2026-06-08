@@ -251,7 +251,27 @@ enum class PolicyMode {
     //
     // Used ONLY by the planning-comparison test. Training and global eval keep
     // their default planning path (MCA / DH / DbVNS).
-    ALNS
+    ALNS,
+
+    // ── RMCA(r): Regret-based Marginal-Cost Assignment [Chen et al. 2021, ICRA]─
+    //
+    // SoTA non-learning POLICY baseline — drop-in replacement for the RL scorer
+    // (MAPPO/IPPO/...), used in Option O for a fair "learned vs heuristic"
+    // comparison. Unlike the MCA *metaheuristic* branch (full-scan inline), RMCA
+    // is wired EXACTLY like the RL policies: it goes through the TAM Format A
+    // candidate pre-pruning and is invoked per-candidate inside
+    // DeliveryAgent::try_accept_task (active_policy = kRMCA), so its candidate
+    // set, planning (DbVNS) and force-assign behaviour are byte-identical to the
+    // RL methods — only the scoring function differs.
+    //
+    // Per-candidate score = monotone-decreasing transform of the paper's
+    // marginal insertion cost (eq.13, capacity feasibility eq.9). The TAM's
+    // argmax therefore selects k1 = argmin marginal cost — the agent RMCA(r)
+    // returns. In our ONLINE single-task setting the regret-based task ORDERING
+    // (eq.16) is degenerate (|P^u| = 1), so the relative regret mc(k2)/mc(k1) is
+    // computed and LOGGED per allocation for analysis (k1/k2 = cheapest / 2nd
+    // cheapest over the eligible agents), faithful to eq.13/14/16.
+    RMCA
 };
 
 class EpisodeRunner {
@@ -396,11 +416,20 @@ private:
         int       candidates_scored = 0;
         int       tam_dijkstra_steps = 0;   // TAM step() loop iterations
         long long allocation_time_us = 0;   // wallclock of the offer_task call
+        long long path_time_us       = 0;   // time spent in get_or_compute_path within this offer
+        long long pure_alloc_time_us = 0;   // = allocation_time_us - path_time_us (TAM+policy only)
         // For oracle metric: marginal costs of every n_active agent for THIS
         // task, in the PRE-allocation state (TAM had not committed yet).
         std::vector<float> pre_marginal_costs;
     };
     LastOfferStats last_offer_stats_;
+
+    // Effective active fleet for the current episode = the provisioned agent
+    // pool scaled by scenario.agents_mult (matches SolverRunner's
+    // setup->n_active_agents). Used as the agent_utilisation denominator AND
+    // the logged n_agents — NOT cfg_.max_agents() (the nominal peak, which
+    // ignored agents_mult and under-reported the fleet by 10× in over_fleet).
+    int episode_fleet_size_ = 0;
 
     // Selection-intelligence accumulators (delivery quality, not just count).
     double value_appeared_sum_  = 0.0;
@@ -417,11 +446,30 @@ private:
     double marginal_ratio_sum_   = 0.0;
     int    marginal_ratio_count_ = 0;
 
+    // RMCA(r) regret accumulators [Chen et al. 2021, eq.13/14/16]. Populated
+    // only when policy_mode == RMCA: per allocation we read mc(k1)=cheapest and
+    // mc(k2)=2nd-cheapest insertion cost over the eligible agents (from
+    // last_offer_stats_.pre_marginal_costs) and accumulate the relative regret
+    // mc(k2)/mc(k1). Means are exported in finalize().
+    double rmca_regret_sum_  = 0.0;   // Σ relative regret  (eq.16)
+    double rmca_mc_k1_sum_   = 0.0;   // Σ cheapest insertion cost (m)
+    double rmca_mc_k2_sum_   = 0.0;   // Σ 2nd-cheapest insertion cost (m)
+    int    rmca_regret_count_ = 0;
+
+    // Accumulate one RMCA(r) regret sample from the pre-allocation marginal
+    // costs of every eligible agent. No-op unless policy_mode == RMCA.
+    void accumulate_rmca_regret(const std::vector<float>& pre_marginal_costs);
+
     // Temporal-complexity accumulators (allocation cost only).
     long long allocation_time_us_sum_ = 0;
     int       allocation_time_count_  = 0;
     long long tam_dijkstra_steps_sum_ = 0;
     int       tam_dijkstra_count_     = 0;
+    // Pure TAM+policy allocation time (excludes path-cache lookups), summed
+    // across offers. Mean = sum / allocation_time_count_. Plus per-episode
+    // total path-compute time (read once at finalize from PDPServerMemory).
+    long long pure_alloc_time_us_sum_ = 0;
+    long long path_compute_time_us_ep_ = 0;
 
     // Network-level congestion impact accumulators (per-step sampling).
     int     peak_load_episode_   = 0;          // max load_now seen this episode

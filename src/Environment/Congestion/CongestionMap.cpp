@@ -118,6 +118,24 @@ int CongestionMap::peak_load_now() const {
     return peak;
 }
 
+CongestionMap::LoadSample CongestionMap::load_sample_now() const {
+    LoadSample s{0.f, 0};
+    if (load_.empty()) return s;
+    int sum_load = 0, n_edges = 0, peak = 0;
+    for (const auto& [way_id, steps] : load_) {
+        auto jt = steps.find(t_now_);
+        if (jt != steps.end()) {
+            sum_load += jt->second;
+            ++n_edges;
+            if (jt->second > peak) peak = jt->second;
+        }
+    }
+    if (n_edges > 0)
+        s.mean = static_cast<float>(sum_load) / static_cast<float>(n_edges);
+    s.peak = peak;
+    return s;
+}
+
 int CongestionMap::n_edges_load_ge(int threshold) const {
     int n = 0;
     for (const auto& [way_id, steps] : load_) {

@@ -132,6 +132,9 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         case PolicyMode::Hybrid:
             memory_.active_policy = PDPGlobalMemory::PolicyKind::kHybrid;
             break;
+        case PolicyMode::RMCA:
+            memory_.active_policy = PDPGlobalMemory::PolicyKind::kRMCA;
+            break;
         default:
             memory_.active_policy = PDPGlobalMemory::PolicyKind::kMAPPO;
             break;
@@ -175,10 +178,18 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     n_traversals_in_jam_         = 0;
     marginal_ratio_sum_     = 0.0;
     marginal_ratio_count_   = 0;
+    rmca_regret_sum_        = 0.0;
+    rmca_mc_k1_sum_         = 0.0;
+    rmca_mc_k2_sum_         = 0.0;
+    rmca_regret_count_      = 0;
     allocation_time_us_sum_ = 0;
     allocation_time_count_  = 0;
     tam_dijkstra_steps_sum_ = 0;
     tam_dijkstra_count_     = 0;
+    pure_alloc_time_us_sum_ = 0;
+    path_compute_time_us_ep_ = 0;
+    // Reset the global path-compute timer so this episode's value starts at 0.
+    PDPServerMemory::reset_path_compute_time();
     peak_load_episode_   = 0;
     overlap_edges_sum_   = 0;
     overlap_steps_       = 0;
@@ -231,6 +242,16 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         (cfg_dh || policy_mode == PolicyMode::DoubleHorizon)
         && !memory_.planning_use_dbvns;
     memory_.planning_use_alns  = (policy_mode == PolicyMode::ALNS);
+    // MCA + anytime LNS improvement (Chen et al. 2021, ICRA — Algorithm 3).
+    // Activated only on the MCA branch of the planning comparison; mutually
+    // exclusive with DbVNS / DH / ALNS (those have their own replanner). The
+    // LNS body lives in DeliveryAgent::receive_task right after the regular
+    // cheapest-insertion commit — see the audit fix described there.
+    memory_.planning_use_mca_lns =
+        (policy_mode == PolicyMode::MCA)
+        && !memory_.planning_use_dbvns
+        && !memory_.planning_use_double_horizon
+        && !memory_.planning_use_alns;
 
     // Per-agent capacity sampling (heterogeneous fleet, Option M).
     // When disabled, max_capacity stays 0 → DeliveryAgent falls back to
@@ -284,6 +305,19 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         for (size_t i = 0; i < all_agents_.size() && i < n_canon; ++i)
             all_agents_[i]->current_node = setup->agent_start_nodes[i];
     }
+
+    // ── Effective active fleet for this episode ───────────────────────────
+    // The provisioned pool actually used, scaled by scenario.agents_mult — the
+    // SAME value SolverRunner logs (setup->n_active_agents). Reported as
+    // n_agents and used as the agent_utilisation denominator, replacing the
+    // nominal cfg_.max_agents() which ignored agents_mult and under-reported
+    // the fleet by the agents_mult factor (e.g. 6 vs 60 in over_fleet), even
+    // though the candidate pool (n_active) was already scaled internally.
+    episode_fleet_size_ = (setup && setup->n_active_agents > 0)
+        ? std::min(static_cast<int>(all_agents_.size()), setup->n_active_agents)
+        : std::min(static_cast<int>(all_agents_.size()),
+                   std::max(1, static_cast<int>(std::round(
+                       cfg_.max_agents() * scenario.agents_mult))));
 
     // Stream override: when a SharedEpisodeSetup is provided, consume its
     // pre-generated stream verbatim (already has density_mult applied via the
@@ -414,6 +448,7 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
                 tam_candidates_scored_sum_ += last_offer_stats_.candidates_scored;
                 tam_offer_samples_         += 1;
                 allocation_time_us_sum_    += last_offer_stats_.allocation_time_us;
+                pure_alloc_time_us_sum_    += last_offer_stats_.pure_alloc_time_us;
                 allocation_time_count_     += 1;
                 if (last_offer_stats_.tam_dijkstra_steps > 0) {
                     tam_dijkstra_steps_sum_ += last_offer_stats_.tam_dijkstra_steps;
@@ -432,6 +467,7 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
                         marginal_ratio_sum_   += static_cast<double>(chosen) / oracle;
                         marginal_ratio_count_ += 1;
                     }
+                    accumulate_rmca_regret(pmc);   // RMCA(r) eq.16 (no-op otherwise)
                 }
                 if (rres.deferred) {
                     retry_queue_[qi].retry_step = step + retry_interval;
@@ -519,6 +555,7 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
                     marginal_ratio_sum_   += static_cast<double>(chosen) / oracle;
                     marginal_ratio_count_ += 1;
                 }
+                accumulate_rmca_regret(pmc);   // RMCA(r) eq.16 (no-op otherwise)
             }
             if (res.deferred) {
                 // TAM multi-candidate Format B — neither accepted nor refused
@@ -611,8 +648,16 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     int mean_active = (active_steps_ > 0) ? (active_sum_ / active_steps_) : 1;
     if (mean_active > 0)
         metrics.latency_per_agent = metrics.latency_mean / mean_active;
+    // Utilisation against the EFFECTIVE provisioned fleet (scenario-scaled),
+    // matching Option OP's denominator. Was cfg_.max_agents() (nominal peak),
+    // which ignored scenario.agents_mult → ~10× inflation in over_fleet.
+    const int util_fleet = std::max(1, episode_fleet_size_);
     metrics.agent_utilisation = (active_steps_ > 0 && n_accepted_ > 0)
-        ? static_cast<float>(active_sum_) / active_steps_ / cfg_.max_agents() : 0.f;
+        ? static_cast<float>(active_sum_) / active_steps_ / util_fleet : 0.f;
+    // Report the effective (scaled) fleet as n_agents — identical to the value
+    // SolverRunner logs for the same (city, scenario, episode), restoring
+    // cross-method fleet-size homogeneity in the CSV.
+    metrics.n_agents_max = episode_fleet_size_;
     metrics.total_steps = total_steps;
     metrics.mean_congestion = (congestion_steps_ > 0)
         ? static_cast<float>(congestion_sum_ / congestion_steps_) : 0.f;
@@ -668,12 +713,30 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         ? static_cast<float>(marginal_ratio_sum_ / marginal_ratio_count_)
         : 1.f;
 
+    // ── RMCA(r) regret diagnostics (Chen+2021 eq.13/14/16; RMCA mode only) ─
+    metrics.rmca_relative_regret  = (rmca_regret_count_ > 0)
+        ? static_cast<float>(rmca_regret_sum_ / rmca_regret_count_) : 0.f;
+    metrics.rmca_marginal_cost_k1 = (rmca_regret_count_ > 0)
+        ? static_cast<float>(rmca_mc_k1_sum_ / rmca_regret_count_) : 0.f;
+    metrics.rmca_marginal_cost_k2 = (rmca_regret_count_ > 0)
+        ? static_cast<float>(rmca_mc_k2_sum_ / rmca_regret_count_) : 0.f;
+
     // ── Temporal complexity (allocation-only wallclock + TAM Dijkstra) ────
     metrics.mean_allocation_time_us = (allocation_time_count_ > 0)
         ? static_cast<float>(allocation_time_us_sum_) / allocation_time_count_
         : 0.f;
     metrics.mean_tam_dijkstra_steps = (tam_dijkstra_count_ > 0)
         ? static_cast<float>(tam_dijkstra_steps_sum_) / tam_dijkstra_count_
+        : 0.f;
+
+    // ── Path-compute breakdown (ms units) ──────────────────────────────────
+    //   path_compute_time_ms    : total time spent in get_or_compute_path
+    //                              across the whole episode
+    //   mean_pure_alloc_time_ms : per-offer TAM+policy time (no path-cache)
+    path_compute_time_us_ep_ = PDPServerMemory::path_compute_time_us();
+    metrics.path_compute_time_ms = static_cast<float>(path_compute_time_us_ep_) / 1000.f;
+    metrics.mean_pure_alloc_time_ms = (allocation_time_count_ > 0)
+        ? (static_cast<float>(pure_alloc_time_us_sum_) / allocation_time_count_) / 1000.f
         : 0.f;
 
     // ── Multi-axis performance diagnostics (Option X) ──────────────────────
@@ -940,8 +1003,16 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
                       [](const Ev& a, const Ev& b){ return a.step < b.step; });
             int load = 0, peak = 0;
             for (const auto& e : evs) { load += e.delta; if (load > peak) peak = load; }
-            if (peak > max_carry)
-                metrics.capacity_violations_runtime += peak - max_carry;
+            // Use the agent's OWN capacity, not the global TAM ceiling. With a
+            // heterogeneous fleet (max_capacity ∈ [min,max]) the global ceiling
+            // equals hetero_capacity_max, so a cap=3 agent carrying 5 would be a
+            // real violation (5>3) yet slip past a 5>7 test. Fall back to the
+            // global ceiling only for homogeneous fleets (max_capacity == 0).
+            const DeliveryAgent* a = memory_.get_delivery_agent(aid);
+            const int agent_cap = (a && a->max_capacity > 0) ? a->max_capacity
+                                                             : max_carry;
+            if (peak > agent_cap)
+                metrics.capacity_violations_runtime += peak - agent_cap;
         }
     }
 
@@ -1077,6 +1148,42 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     return result;
 }
 
+// ── RMCA(r) relative regret [Chen et al. 2021, eq.13/14/16] ──────────────────
+//
+// From the pre-allocation marginal costs of every eligible agent (= R in the
+// paper), read mc(k1) = cheapest and mc(k2) = 2nd-cheapest insertion cost, and
+// accumulate the relative regret mc(k2)/mc(k1). Only active for RMCA. mc(k1) is
+// floored at 1 m to avoid division blow-ups on near-coincident pickups, and the
+// ratio is clamped to [1, 50] to keep the episode mean robust to such outliers.
+// A single eligible candidate ⇒ no second-best ⇒ regret = 1 (no competition).
+void EpisodeRunner::accumulate_rmca_regret(
+    const std::vector<float>& pre_marginal_costs)
+{
+    if (policy_mode != PolicyMode::RMCA) return;
+
+    // compute_marginal_cost returns FLT_MAX for capacity-infeasible agents
+    // (eq.9 violated); treat anything above this threshold as "no insertion".
+    constexpr float kInfeasible = 1e30f;
+    float mc1 = std::numeric_limits<float>::max();   // cheapest        (k1)
+    float mc2 = std::numeric_limits<float>::max();   // second cheapest (k2)
+    for (float c : pre_marginal_costs) {
+        if (!std::isfinite(c) || c < 0.f || c > kInfeasible) continue;
+        if      (c < mc1) { mc2 = mc1; mc1 = c; }
+        else if (c < mc2) { mc2 = c; }
+    }
+    if (mc1 > kInfeasible) return;                   // no feasible agent at all
+
+    const bool  has_k2 = (mc2 <= kInfeasible);       // a genuine 2nd-best exists
+    const float mc1f   = std::max(mc1, 1.0f);        // floor at 1 m (avoid /0)
+    const float mc2f   = has_k2 ? mc2 : mc1;         // single candidate ⇒ k2 := k1
+    const float regret = std::clamp(mc2f / mc1f, 1.0f, 50.0f);
+
+    rmca_mc_k1_sum_    += static_cast<double>(mc1);
+    rmca_mc_k2_sum_    += static_cast<double>(mc2f);
+    rmca_regret_sum_   += static_cast<double>(regret);
+    rmca_regret_count_ += 1;
+}
+
 // ── Task offer ────────────────────────────────────────────────────────────────
 
 EpisodeRunner::OfferResult EpisodeRunner::offer_task(
@@ -1098,17 +1205,26 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     // Wallclock timing for the entire offer_task call (TAM Dijkstra + every
     // policy score). Read at function exit by recording the value via a small
     // RAII guard that updates last_offer_stats_.allocation_time_us regardless
-    // of which return path is taken.
+    // of which return path is taken. The guard also snapshots the global
+    // path-compute counter to compute, in addition:
+    //   path_time_us       — time spent inside get_or_compute_path during this offer
+    //   pure_alloc_time_us — TAM + policy time only (= allocation_time - path_time)
     const auto offer_t0 = std::chrono::steady_clock::now();
+    const long long path_us_before = PDPServerMemory::path_compute_time_us();
     struct TimerGuard {
         std::chrono::steady_clock::time_point t0;
+        long long path_us_at_start;
         LastOfferStats& stats;
         ~TimerGuard() {
             const auto t1 = std::chrono::steady_clock::now();
-            stats.allocation_time_us = std::chrono::duration_cast<
+            const long long total_us = std::chrono::duration_cast<
                 std::chrono::microseconds>(t1 - t0).count();
+            const long long path_us = PDPServerMemory::path_compute_time_us() - path_us_at_start;
+            stats.allocation_time_us  = total_us;
+            stats.path_time_us        = path_us;
+            stats.pure_alloc_time_us  = (total_us > path_us) ? (total_us - path_us) : 0;
         }
-    } _timer_guard{ offer_t0, last_offer_stats_ };
+    } _timer_guard{ offer_t0, path_us_before, last_offer_stats_ };
 
     // Pre-compute marginal cost of inserting THIS task into every eligible
     // agent's current sequence — BEFORE any allocation mutates state. Used
@@ -1475,12 +1591,14 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     //     one-at-a-time (online lifelong), so there is no batch ordering for
     //     the regret-based variant (paper eq. 16) to exploit. Per-task winner
     //     is the same agent under MCA and RMCA(r) in the |P^u| = 1 regime.
-    //   ✗ Anytime LNS improvement (Algorithm 3, paper Section IV-D): not
-    //     implemented. The paper shows this is what unlocks RMCA's edge over
-    //     MCA for batch instances. In lifelong with a continuous stream, the
-    //     online window is small and re-assigning is risky (already-picked
-    //     tasks cannot be moved). Documented limitation — could be added as
-    //     a periodic destroy-and-reassign pass on unpicked tasks (future work).
+    //   ✓ Anytime LNS improvement (Algorithm 3, paper Section IV-D): NOW
+    //     implemented inside DeliveryAgent::receive_task, gated by
+    //     memory_.planning_use_mca_lns (set above on the MCA branch). After
+    //     the cheapest-insertion commits the new task, a short LNS loop
+    //     (30 iters × destroy-3 random unpicked tasks + greedy cheapest
+    //     re-insertion) refines the agent's local sequence. Already-picked
+    //     tasks are never displaced (paper-faithful — lifelong constraint).
+    //     Closes the audit's "MCA missing LNS" gap.
     //   ✗ Prioritised path planning (Section IV-A): we substitute DbVNS-PDP
     //     replan inside DeliveryAgent::receive_task. This means we measure
     //     route-distance delta, not collision-free TTD — but in OSM continuous
@@ -2191,24 +2309,33 @@ int EpisodeRunner::schedule_next_edge(int agent_id, int current_step) {
         dist = fallback_cost(agent->current_node, dest_node);
     }
 
-    int steps   = std::max(1, static_cast<int>(std::ceil(dist / cfg_.speed_mps)));
+    // ── Congestion-aware traversal time ──────────────────────────────────
+    // The agent is slowed by the load present on this edge at the instant it
+    // ENTERS (current_step), via the BPR factor. Travel time is computed on
+    // the congestion-ADJUSTED effective distance, so jams actually delay the
+    // agent's arrival — the operational environment is no longer free-flow.
+    // adjusted is reused below for the real-impact metrics (single eval).
+    float eff_dist = dist;
+    if (edge_id != 0 && dist > 0.f) {
+        eff_dist = memory_.congestion_map.adjusted_cost(
+            edge_id, dist, dist, current_step);
+    }
+
+    int steps   = std::max(1, static_cast<int>(std::ceil(eff_dist / cfg_.speed_mps)));
     int arrival = current_step + steps;
 
     bool is_last = cur.is_last_edge();
 
     // ── Real-impact accumulators: BPR along route + time lost + jam hits ──
-    // Sample the dynamic load + BPR-adjusted cost at the moment this agent
-    // ENTERS the edge. This captures the slowdown each agent actually pays
-    // due to ghost traffic + concurrent fleet — what we'd want to show the
-    // policy reduces vs the SoTA baselines that ignore traversal congestion.
+    // Sampled at the moment this agent ENTERS the edge. Now that eff_dist
+    // drives `steps`, this slowdown is the delay the agent ACTUALLY pays
+    // (realized travel time), not just a measured externality.
     if (edge_id != 0 && dist > 0.f) {
-        const float adjusted = memory_.congestion_map.adjusted_cost(
-            edge_id, dist, dist, current_step);
-        const float bpr_factor = adjusted / dist;   // 1.0 = no slowdown
+        const float bpr_factor = eff_dist / dist;   // 1.0 = no slowdown
         bpr_along_route_sum_         += bpr_factor;
         bpr_along_route_count_       += 1;
         // Extra distance in metres -> divide by speed for extra steps.
-        const float extra_dist = std::max(0.f, adjusted - dist);
+        const float extra_dist = std::max(0.f, eff_dist - dist);
         time_lost_to_congestion_sum_ += extra_dist / std::max(0.1f, cfg_.speed_mps);
         // Edge with load >= 5 at the moment of entry = real chokepoint.
         const int load_now = memory_.congestion_map.get_load(edge_id, current_step);
@@ -2285,9 +2412,17 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
         memory_.commit_plan(agent_id, cfg_.speed_mps);
 
     } else {
+        // Invariant guard: a task is delivered exactly once, so throughput
+        // (latency_count_ / appeared) can never exceed 1. The ROOT cause of the
+        // rare double-count (next-leg identity mislabeled via the ambiguous
+        // node→task map) is fixed above; this guard additionally protects every
+        // delivery-side metric should any other path ever re-reach a delivered
+        // task's node.
+        const bool first_delivery = (task->timeline.delivered_step < 0);
         task->mark_delivered(current_step);
 
         int latency = current_step - task->timeline.created_step;
+        if (first_delivery) {
         latency_sum_   += latency;
         latency_count_ += 1;
 
@@ -2318,6 +2453,7 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
             road_pd_sum_      += static_cast<double>(dist_m);
             road_pd_count_    += 1;
         }
+        }   // ── end "first delivery only" metric guard (throughput ≤ 1) ──
 
         // Reward shaping: add the remaining delivery credit on top of the
         // partial pickup credit already given. Total accumulated reward equals
@@ -2392,9 +2528,34 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
                 next_path = memory_.get_or_compute_path(
                     agent->current_node, next_obj.id, 1);
 
-            PDPTask* next_task    = memory_.get_task_for_node(next_obj.id);
-            int      next_task_id = next_task ? next_task->task_id : -1;
-            bool     next_pickup  = next_task && (next_task->pickup.id == next_obj.id);
+            // Resolve the next leg's task identity from the agent's OWN pending
+            // tasks, disambiguated by pickup/delivery STATE — NOT from the global
+            // node→task map (node_to_task_id_). That map keeps only ONE task per
+            // node, so when two tasks share a node (e.g. one task's pickup node
+            // coincides with another's delivery node) it returns the wrong task and
+            // flips is_pickup, which makes a pickup leg get counted as a delivery
+            // (and inflates throughput above 1). The agent's own task set is
+            // unambiguous: a not-yet-picked task at this node ⇒ pickup leg; an
+            // already-picked, not-yet-delivered task at this node ⇒ delivery leg.
+            int  next_task_id = -1;
+            bool next_pickup  = false;
+            for (const PDPTask* t : agent->local_memory.tasks) {
+                if (!t) continue;
+                if (t->timeline.picked_step < 0 && t->pickup.id == next_obj.id) {
+                    next_task_id = t->task_id; next_pickup = true;  break;
+                }
+                if (t->timeline.picked_step >= 0 && t->timeline.delivered_step < 0
+                    && t->delivery.id == next_obj.id) {
+                    next_task_id = t->task_id; next_pickup = false; break;
+                }
+            }
+            if (next_task_id < 0) {
+                // Defensive fallback (objective not found among the agent's tasks):
+                // keep the legacy global lookup so the agent never stalls.
+                PDPTask* nt = memory_.get_task_for_node(next_obj.id);
+                next_task_id = nt ? nt->task_id : -1;
+                next_pickup  = nt && (nt->pickup.id == next_obj.id);
+            }
             agent->begin_leg(next_path, next_task_id, next_pickup);
             agent->prefetch_next_path(memory_);
             schedule_next_edge(agent_id, current_step);

@@ -19,8 +19,10 @@
 #include "SoTA/TokenPassing/TokenPassingSolver.hpp"
 #include "SoTA/CongestionAware/CongestionAwareSolver.hpp"
 #include "SoTA/FaithfulCongestionAware/FaithfulCASolver.hpp"
+#include "SoTA/FaithfulCongestionAwareCapacited/FaithfulCACapacitedSolver.hpp"
 #include "SoTA/TrafficFlow/TrafficFlowSolver.hpp"
 #include "SoTA/RHCR/RHCRSolver.hpp"
+#include "SoTA/HybridAdaptivePredictive/HybridAdaptivePredictiveSolver.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include "Legacy/Common/Pathfinding.hpp"
@@ -145,8 +147,10 @@ static int run_main()
         TrainingConfig cfg;
         cfg.cache_root      = cache_root;
         cfg.output_dir      = output_dir;
-        cfg.n_rounds        = 60;
-        cfg.n_seeds         = 2;          // rng 42 + 43 → mean ± std for analysis
+        cfg.n_rounds        = 50;         // reduced from 60 for shorter wallclock
+        cfg.n_seeds         = 1;          // seed 42 only (single training run)
+                                          // raise to 2-3 for multi-seed retraining
+                                          // (start_seed=42 default, so 42 / 42+43 / 42+43+44).
         cfg.save_policy     = true;
         cfg.verbose         = true;
 
@@ -166,8 +170,13 @@ static int run_main()
         // ── Planning back-end : same as eval ────────────────────────────────
         cfg.episode_cfg.use_dbvns_planning = true;
 
-        // ── Scenario sampler : full 4-regime distribution ───────────────────
-        cfg.disable_slack_regime = false;
+        // ── Scenario sampler : 3-regime distribution (slack removed) ────────
+        // The slack regime (low density × many agents) carried a weak learning
+        // signal — accept_rate trivially saturates to 1. Eval's `over_fleet`
+        // scenario (agents×10) is already a held-out generalisation test, so
+        // dropping slack does not introduce a train/eval shift on the
+        // in-distribution evaluation regimes (normal, stress_light, stress_heavy).
+        cfg.disable_slack_regime = true;
 
         // ── Congestion : matches Y / Q (per-city proportional) ──────────────
         cfg.episode_cfg.enable_ghost_traffic       = true;
@@ -211,8 +220,8 @@ static int run_main()
         cfg.episode_cfg.tam_mc_ratio_max        = 3.0f;
         cfg.episode_cfg.tam_mc_ratio_scale      = 2000.f;
 
-        // ── Checkpoint every 20 rounds (insurance against crash) ────────────
-        cfg.checkpoint_every_rounds = 20;
+        // ── Checkpoint every 10 rounds (insurance against crash) ────────────
+        cfg.checkpoint_every_rounds = 10;
 
         // ── Train MAPPO + IPPO + FaithfulMAPPER ─────────────────────────────
         cfg.train_modes = {
@@ -1173,6 +1182,7 @@ static int run_main()
                 {  FaithfulCASolver          s; run_and_log(s); }
                 {  TrafficFlowSolver         s; run_and_log(s); }
                 {  RHCRSolver                s; run_and_log(s); }
+                {  HybridAdaptivePredictiveSolver s; run_and_log(s); }
             }
         }
 
@@ -1211,7 +1221,12 @@ static int run_main()
 
         const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
         const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
-        const std::string output_dir = "C:\\ConflictualMAS\\results";
+        // Option O — RL + TP allocation on the 5 Small cities (Tokyo, Kyoto,
+        // LA, NewYork, Paris — all _Small ~25 km²). HAPC is split into a
+        // dedicated Option OP (same env, parallel run).
+        // Each option has its own top-level results folder so the two runs
+        // can't overwrite each other when run in parallel.
+        const std::string output_dir = "C:\\ConflictualMAS\\results\\Option_O_results";
         const std::string sota_dir   = output_dir + "\\sota_standalone_O";
         std::filesystem::create_directories(sota_dir);
         CityRegistry::set_osm_root(osm_root);
@@ -1241,37 +1256,41 @@ static int run_main()
         // MCA-plan vs DoubleHorizon-plan vs ALNS-plan, under MCA allocation).
         //
         // ┌─────────────────────────────────────────────────────────────┐
-        // │ MANUAL FLAG : RUN_ONLY_SOTA_ALLOC                            │
-        // │  - true  → run ONLY 3 SoTA allocation rules (FCA, TF, TP)    │
-        // │            Use this for SEED 42 (4 RL already on disk from   │
-        // │            morning run, just need SoTA extension)            │
-        // │  - false → run ALL 7 modes (4 RL + 3 SoTA)                   │
-        // │            Use this for SEEDS 43, 44, 45 (fresh runs)        │
+        // │ OPTION O — RL + TP on the 5 Small cities                     │
+        // │  Tokyo_Small + Kyoto_Small + LosAngeles_Small +              │
+        // │  NewYork_Small + Paris_Small  (all ~25 km², Small tier)      │
         // │                                                              │
-        // │  After each seed 42 SoTA-only run, MERGE manually:           │
-        // │    cat _seed42_4RL_only_backup/episodes_seed42.csv           │
-        // │      <(tail -n +2 episodes_seed42.csv)                       │
-        // │      > episodes_seed42_merged.csv                            │
+        // │ HAPC has been split off into Option OP (same env, runs in    │
+        // │ parallel — separate output_dir).                             │
+        // │                                                              │
+        // │ Phase A runs MAPPO, FaithfulMAPPER, IPPO, Hybrid (4 RL) +    │
+        // │ TokenPassing (allocation only). All 5 share the SAME         │
+        // │ DbVNS-PDP planner — publication-grade A/B test of allocation.│
+        // │                                                              │
+        // │ Both Option O and Option OP target the same 5 cities so the  │
+        // │ joined CSVs cover (city × method × scenario × episode)       │
+        // │ uniformly. The ep_seed formula is shared verbatim, so for    │
+        // │ each (city, scenario, episode_index) both options see the    │
+        // │ SAME task_stream / agent_start_nodes / ghost_seed (byte-     │
+        // │ identical SharedEpisodeSetup).                               │
+        // │                                                              │
+        // │ FINAL MERGE (manual, 2-way):                                 │
+        // │   Option_O_results\episodes_seed43.csv      (RL + TP)        │
+        // │ + Option_OP_results\sota_standalone_O\                       │
+        // │     sota_standalone_seed43.csv              (HAPC standalone)│
         // └─────────────────────────────────────────────────────────────┘
-        const bool RUN_ONLY_SOTA_ALLOC = true;
-
-        if (RUN_ONLY_SOTA_ALLOC) {
-            cfg.eval_modes = {
-                PolicyMode::TokenPassing,             // min-h A*     [Ma+2017 AAMAS]
-            };
-        } else {
-            cfg.eval_modes = {
-                // Our RL allocation policies
-                PolicyMode::MAPPO,
-                PolicyMode::FaithfulMAPPER,
-                PolicyMode::IPPO,
-                PolicyMode::Hybrid,
-                // Published SoTA allocation rules
-                PolicyMode::FaithfulCongestionAware,
-                PolicyMode::TrafficFlow,
-                PolicyMode::TokenPassing,
-            };
-        }
+        // RMCA(r) SoTA baseline only [Chen et al. 2021] — the RL / Hybrid / TP
+        // evaluations are already on disk (episodes_seed4{2,3,4}.csv), so this
+        // run appends ONLY the RMCA(r) rows (same env / scenarios / shared setup
+        // → directly comparable). Restore the full set below to re-run everything.
+        cfg.eval_modes = {
+            PolicyMode::RMCA,                     // marginal-cost insertion + regret (Chen+2021)
+            PolicyMode::MAPPO,
+            PolicyMode::FaithfulMAPPER,
+            PolicyMode::IPPO,
+            PolicyMode::Hybrid,
+            PolicyMode::TokenPassing,          // task allocation only (Ma+2017)
+        };
 
         // Exact same 5 scenarios as Y.
         cfg.eval_scenarios = {
@@ -1330,12 +1349,28 @@ static int run_main()
         cfg.faithful_mapper_policy_path = "C:\\ConflictualMAS\\results\\mapper_faithful\\"
                                           "mapper_seed42.bin";
 
+        // ── City split (CRITICAL for homogeneity with Option OP) ──────────
+        // MultiCityTrainer's run_generalize_eval ONLY loads ComparisonOnly
+        // cities, so Tokyo_Small / Kyoto_Small / LosAngeles_Small (registered
+        // as TrainAndApply) MUST go in train_city_filter. Paris_Small and
+        // NewYork_Small are ComparisonOnly so they go in gen_city_filter.
+        //
+        // All 5 cities have area=25 km² → customize_episode_for_city applies
+        // the SAME Small tier (n_agents 6-12, ghost_n_max=30, max_task_dist
+        // 1500m, max_tasks_per_agent=3) so the per-city environment is
+        // uniform regardless of the train/gen label. The CSV phase column
+        // will say "eval_X" vs "generalize_X" but the underlying simulation
+        // is on the same scale.
+        //
+        // The IDENTICAL split is mirrored in Option OP so ca.index matches
+        // for the same city in both options → byte-identical ep_seed and
+        // SharedEpisodeSetup.
         cfg.train_city_filter     = {
             "Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"
         };
         cfg.enable_generalization = true;
         cfg.gen_city_filter       = {
-            "Paris", "NewYork"
+            "NewYork_Small", "Paris_Small"
         };
 
         // ══════════════════════════════════════════════════════════════════
@@ -1352,9 +1387,15 @@ static int run_main()
         // │  This avoids the MultiCityTrainer destructor crash because   │
         // │  the trainer is created/destroyed exactly once per process.  │
         // └──────────────────────────────────────────────────────────────┘
-        const int  CURRENT_SEED = 42;
-        const bool RUN_PHASE_A  = true;   // 9-mode allocation comparison under shared DbVNS
-        const bool RUN_PHASE_B  = false;  // standalone SoTA pipeline dropped (see methodology)
+        
+        std::cout << "Seed: ";
+
+        int seed;
+        std::cin >> seed;
+
+        const int  CURRENT_SEED = seed;     // seeds 42, 43 already on disk → use 44 for fresh eval
+        const bool RUN_PHASE_A  = true;   // 4 RL + TP allocation on the 5 Small cities
+        const bool RUN_PHASE_B  = false;  // HAPC standalone runs in Option OP (parallel)
         // ══════════════════════════════════════════════════════════════════
 
         const std::vector<int> seeds_to_run = { CURRENT_SEED };
@@ -1409,7 +1450,7 @@ static int run_main()
         // scheme used by MultiCityTrainer::run_eval so the task streams of
         // Phase A and Phase B coincide.
         std::cout << "\n--- PHASE B (seed=" << seed
-                  << ") : 5 SoTA standalone solvers (TP/CA/FCA/TF/RHCR) ---\n";
+                  << ") : HAPC standalone smoke test (Cortés+2009) ---\n";
 
         // ── City lists — train_cities and gen_cities are kept SEPARATE so
         // each one resets ca_index to 0 (mirrors MultiCityTrainer's
@@ -1519,11 +1560,17 @@ static int run_main()
                                       << "\n";
                         };
 
-                        { TokenPassingSolver    s; run_and_log(s); }
-                        { CongestionAwareSolver s; run_and_log(s); }
-                        { FaithfulCASolver      s; run_and_log(s); }
-                        { TrafficFlowSolver     s; run_and_log(s); }
-                        { RHCRSolver            s; run_and_log(s); }
+                        // Option O Phase B is DISABLED by default (RUN_PHASE_B
+                        // = false above). HAPC has been split off into
+                        // Option G to run in parallel. If Phase B is ever
+                        // re-enabled here, comment in the solvers you want.
+                        // { TokenPassingSolver    s; run_and_log(s); }
+                        // { CongestionAwareSolver s; run_and_log(s); }
+                        // { FaithfulCASolver      s; run_and_log(s); }
+                        // { TrafficFlowSolver     s; run_and_log(s); }
+                        // { RHCRSolver            s; run_and_log(s); }
+                        // HAPC lives in Option G:
+                        // { HybridAdaptivePredictiveSolver s; run_and_log(s); }
                     }
                 }
             }
@@ -1559,6 +1606,535 @@ static int run_main()
             std::cout << "    SoTA : " << sota_dir   << "\\sota_standalone_seed" << s << ".csv\n";
         }
         std::cout << "  Cross-join keys: (seed, city, scenario, episode)\n";
+    }
+    else if (rep == "OP" || rep == "op") {
+        // ══════════════════════════════════════════════════════════════════════
+        // OPTION OP — HAPC standalone (parallel sibling of Option O)
+        // ══════════════════════════════════════════════════════════════════════
+        //
+        // EXACT same environment as Option O: the 5 Small cities (Tokyo_Small,
+        // Kyoto_Small, LosAngeles_Small, NewYork_Small, Paris_Small), same
+        // scenarios, same SharedEpisodeSetup, same ghost traffic, same hetero
+        // capacity, same ep_seed formula, same CURRENT_SEED. The ONLY
+        // difference: this option runs HAPC (Cortés+2009) standalone via
+        // SolverRunner, while Option O runs RL + TP allocation via
+        // MultiCityTrainer.
+        //
+        // Designed to run IN PARALLEL with Option O — they write to DIFFERENT
+        // output directories so there's no file contention. Combined, they
+        // produce the full publication comparison on the 5 Small cities ×
+        // 5 scenarios × 2 episodes × (4 RL + TP + HAPC).
+        //
+        // HOMOGENEITY GUARANTEE: for every (city, scenario, episode_index),
+        // both options' SharedEpisodeSetup yields byte-identical task streams,
+        // agent_start_nodes, per_agent_capacity, and ghost_seed. The merged
+        // CSV is therefore directly comparable cell-by-cell across methods.
+        //
+        // CSV output:
+        //   results\Option_OP_results\sota_standalone_O\
+        //     sota_standalone_seed{CURRENT_SEED}.csv
+        // Joinable with Option O's CSV on (city, scenario, episode).
+        std::cout << "\n=== Option OP — FCA + HAPC on GEN cities (NewYork, Paris) — seeds 42, 43, 44 ===\n";
+
+        const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
+        const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
+        // Separate top-level results folder — keeps Option OP's outputs apart
+        // from Option O's so the two runs can execute in parallel.
+        const std::string output_dir = "C:\\ConflictualMAS\\results\\Option_OP_results";
+        // Gen-cities FCA+HAPC re-run lands in its OWN subdir so it does NOT
+        // overwrite any prior fca_standalone / sota_standalone_O outputs — the
+        // existing merged unified data is preserved. Only NewYork/Paris rows
+        // (FCA + HAPC) are produced here, for a later re-merge into the unified.
+        const std::string sota_dir   = output_dir + "\\fca_gencities";
+        std::filesystem::create_directories(sota_dir);
+        CityRegistry::set_osm_root(osm_root);
+
+        TrainingConfig cfg;
+        cfg.cache_root       = cache_root;
+        cfg.output_dir       = output_dir;
+        cfg.n_seeds          = 1;
+        cfg.n_eval_episodes  = 2;
+        cfg.verbose          = true;
+        cfg.eval_only            = true;
+        cfg.skip_stress_eval     = true;
+        cfg.skip_generalize_eval = false;
+
+        // Same scenarios as Option O — must match for cross-join.
+        cfg.eval_scenarios = {
+            EpisodeScenario{ 1.0f,  1.0f, "normal_wave",    CongestionProfile::Wave        },
+            EpisodeScenario{ 1.0f,  1.0f, "normal_ramp",    CongestionProfile::RampUpDown  },
+            EpisodeScenario{ 1.5f,  0.8f, "stress_shock",   CongestionProfile::ShockBurst  },
+            EpisodeScenario{ 2.0f,  0.6f, "stress_buildup", CongestionProfile::BuildingUp  },
+            EpisodeScenario{ 0.5f, 10.0f, "over_fleet",     CongestionProfile::Wave        },
+        };
+
+        // Same environment as Option O (verbatim).
+        cfg.episode_cfg.use_dbvns_planning            = true;
+        cfg.episode_cfg.enable_ghost_traffic          = true;
+        cfg.episode_cfg.ghost_hot_way_count           = 0;
+        cfg.episode_cfg.ghost_hot_way_frac            = 0.05f;
+        cfg.episode_cfg.ghost_density_per_hot_way     = 2.0f;
+        cfg.episode_cfg.ghost_window_steps            = 8;
+        cfg.episode_cfg.ghost_n_max                   = 100;
+        cfg.episode_cfg.ghost_n_max_user_set          = false;
+        cfg.episode_cfg.enable_heterogeneous_capacity = true;
+        cfg.episode_cfg.hetero_capacity_min           = 3;
+        cfg.episode_cfg.hetero_capacity_max           = 7;
+        cfg.episode_cfg.fleet_size_divisor            = 2;
+        cfg.episode_cfg.fleet_load_per_agent          = 2;
+        cfg.episode_cfg.agent_pool_multiplier         = 10.0f;
+        cfg.episode_cfg.tam_multi_candidate     = true;
+        cfg.episode_cfg.tam_mc_force_assign     = true;
+        cfg.episode_cfg.tam_mc_max_candidates   = 5;
+        cfg.episode_cfg.tam_mc_ratio_min        = 1.4f;
+        cfg.episode_cfg.tam_mc_ratio_max        = 3.0f;
+        cfg.episode_cfg.tam_mc_ratio_scale      = 2000.f;
+        cfg.use_shared_episode_setup = true;
+
+        // ── Same train/gen split as Option O (CRITICAL for homogeneity) ──
+        // ca.index in the ep_seed formula is per-phase:
+        //   train_cities_to_run : Tokyo=0, Kyoto=1, LosAngeles=2
+        //   gen_cities_to_run   : NewYork=0, Paris=1
+        // Option O's MultiCityTrainer assigns these same indices, so for
+        // any (city, scenario, episode) both options produce the SAME
+        // ep_seed → SharedEpisodeSetup byte-identical → task_stream,
+        // agent_start_nodes, ghost_seed all match.
+        cfg.train_city_filter     = {
+            "Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"
+        };
+        cfg.enable_generalization = true;
+        cfg.gen_city_filter       = {
+            "NewYork_Small", "Paris_Small"
+        };
+
+        // ── SEEDS 42, 43, 44 RUN — FCA standalone across all seeds ───────
+        // Reuses Option O's per-seed SharedEpisodeSetup verbatim (byte-
+        // identical task streams) so each new CSV cross-joins with the
+        // existing episodes_seed{42,43,44} RL CSVs.
+        // FCA-Cap is currently disabled (see solver call site below) —
+        // re-enable by uncommenting the FaithfulCACapacitedSolver line if
+        // a load-aware insertion variant is implemented in the future.
+        const std::vector<int> seeds_to_run = { 42, 43, 44 };
+        const auto t_global_start = std::chrono::steady_clock::now();
+
+        std::cout << "\n\n╔════════════════════════════════════════════════════════════╗\n"
+                  <<     "║  Option OP — FCA standalone — SEEDS";
+        for (int s : seeds_to_run) std::cout << " " << s;
+        std::cout <<     "\n╚════════════════════════════════════════════════════════════╝\n";
+
+        for (size_t si = 0; si < seeds_to_run.size(); ++si) {
+            const int seed = seeds_to_run[si];
+            const auto t_seed_start = std::chrono::steady_clock::now();
+
+            std::cout << "\n--- FCA standalone (seed=" << seed
+                      << ", " << (si + 1) << "/" << seeds_to_run.size() << ") ---\n";
+
+            struct CityToRun {
+                const CityConfig* cc;
+                std::string       cache_path;
+                int               ca_index;
+                const char*       phase_label;
+            };
+            std::vector<CityToRun> train_cities_to_run, gen_cities_to_run;
+            const auto& all_cities = CityRegistry::all();
+            auto add_city = [&](std::vector<CityToRun>& dst, const std::string& want,
+                                 const char* phase_label) {
+                for (const auto& cc : all_cities) {
+                    if (cc.name == want) {
+                        dst.push_back({ &cc,
+                                        cache_root + "/" + cc.name + ".json",
+                                        static_cast<int>(dst.size()),
+                                        phase_label });
+                        return;
+                    }
+                }
+                std::cerr << "  [Warn] city \"" << want << "\" not found in registry.\n";
+            };
+            for (const auto& n : cfg.train_city_filter) add_city(train_cities_to_run, n, "train");
+            if (cfg.enable_generalization)
+                for (const auto& n : cfg.gen_city_filter) add_city(gen_cities_to_run, n, "gen");
+
+            const std::string sota_csv = sota_dir + "\\sota_standalone_seed"
+                + std::to_string(seed) + ".csv";
+            SolverCSVLogger logger(sota_csv, /*append=*/false);
+            logger.write_header();
+
+            const int n_eps = cfg.n_eval_episodes;
+            const uint32_t base_seed = static_cast<uint32_t>(seed);
+
+            auto eval_phase = [&](std::vector<CityToRun>& cities) {
+                for (auto& entry : cities) {
+                    const CityConfig& cc = *entry.cc;
+                    std::cout << "\n  [" << entry.phase_label << " ca.index="
+                              << entry.ca_index << "] City: " << cc.name << "\n";
+
+                    GeoBox geo_box;
+                    if (GeoBoxManager::cache_exists(entry.cache_path)) {
+                        geo_box = GeoBoxManager::load_geobox(entry.cache_path);
+                    } else {
+                        geo_box = create_geo_box(cc.osm_path,
+                                                 cc.bbox.min_lon, cc.bbox.min_lat,
+                                                 cc.bbox.max_lon, cc.bbox.max_lat);
+                        if (geo_box.is_valid)
+                            GeoBoxManager::save_geobox(geo_box, entry.cache_path);
+                    }
+                    if (!geo_box.is_valid) {
+                        std::cerr << "    [Skip] GeoBox invalid for " << cc.name << "\n";
+                        continue;
+                    }
+                    Pathfinder pathfinder(geo_box);
+
+                    EpisodeConfig per_city_ep = cfg.episode_cfg;
+                    per_city_ep.city = &cc;
+                    MultiCityTrainer::customize_episode_for_city(per_city_ep, cc);
+
+                    for (size_t sci = 0; sci < cfg.eval_scenarios.size(); ++sci) {
+                        const EpisodeScenario& sc = cfg.eval_scenarios[sci];
+                        const int sc_idx = static_cast<int>(sci);
+                        for (int e = 0; e < n_eps; ++e) {
+                            // EXACT same ep_seed formula as Option O — guarantees
+                            // byte-identical task_stream, agents, ghost_seed.
+                            const uint32_t ep_seed = static_cast<uint32_t>(
+                                1u + e
+                                + 101u * (sc_idx + 1)
+                                + 10007u * (entry.ca_index + 1)
+                                + 1000003u * base_seed);
+
+                            std::cout << "    " << cc.name << " | " << sc.label
+                                      << " | ep=" << e << " seed=" << ep_seed << "\n";
+
+                            SolverRunner runner(per_city_ep, geo_box, pathfinder,
+                                                 sc, ep_seed);
+                            const SharedEpisodeSetup setup =
+                                build_shared_episode_setup(
+                                    ep_seed, cc, sc, per_city_ep, geo_box);
+
+                            auto run_and_log = [&](ISolver& s) {
+                                SolverMetrics m = runner.run(s, &setup);
+                                m.city_label = cc.name;
+                                m.episode    = e;
+                                logger.write_row(m);
+                                std::cout << "      " << m.solver_name
+                                          << "  thr=" << m.throughput_rate
+                                          << "  lat=" << m.latency_mean
+                                          << "  ms="  << m.wallclock_ms
+                                          << "\n";
+                            };
+
+                            // FCA standalone — the capacitated extension FCA-Cap
+                            // was disabled after seed=42 experiments showed it
+                            // consistently underperforms single-task FCA across
+                            // all tested regimes (mean throughput drop ~30-50%,
+                            // collapses on over_fleet). Documented as negative
+                            // result in the paper; the call site is preserved
+                            // commented out for traceability and to allow
+                            // re-enabling with a load-aware insertion objective.
+                            { FaithfulCASolver               s; run_and_log(s); }
+                            // { HybridAdaptivePredictiveSolver s; run_and_log(s); }
+                            // { FaithfulCACapacitedSolver  s; run_and_log(s); }
+                        }
+                    }
+                }
+            };
+
+            // ── ALL CITIES (train + gen) ─────────────────────────────────────
+            // Run on the full 5-city set. Per-phase ca_index (train: Tokyo=0,
+            // Kyoto=1, LosAngeles=2 ; gen: NewYork=0, Paris=1) matches Option O's
+            // MultiCityTrainer indices, so ep_seed — hence the SharedEpisodeSetup
+            // (task stream, agent starts, ghost seed) — is byte-identical to
+            // Option O on every city, giving homogeneous baselines across all 5.
+            std::cout << "\n  -- Train cities --\n";
+            eval_phase(train_cities_to_run);
+            std::cout << "\n  -- Gen cities --\n";
+            eval_phase(gen_cities_to_run);
+
+            logger.close();
+
+            const auto t_seed_end = std::chrono::steady_clock::now();
+            const long long seed_sec = std::chrono::duration_cast<std::chrono::seconds>(
+                                           t_seed_end - t_seed_start).count();
+            std::cout << "\n+++ Option OP SEED " << seed << " COMPLETE in "
+                      << (seed_sec / 60) << " min "
+                      << (seed_sec % 60) << " s +++\n";
+            std::cout << "    FCA CSV : " << sota_csv << "\n";
+        }
+
+        const auto t_global_end = std::chrono::steady_clock::now();
+        const long long total_sec = std::chrono::duration_cast<std::chrono::seconds>(
+                                        t_global_end - t_global_start).count();
+        std::cout << "\n═══════════════════════════════════════════════════════════════════\n";
+        std::cout << "=== Option OP DONE — wallclock " << (total_sec / 3600)
+                  << "h " << ((total_sec % 3600) / 60) << "min\n";
+        for (int s : seeds_to_run) {
+            std::cout << "  FCA seed " << s << ": " << sota_dir
+                      << "\\sota_standalone_seed" << s << ".csv\n";
+        }
+        std::cout << "  Cross-join with Option O on: (city, scenario, episode)\n";
+    }
+
+        else if (rep == "OQ" || rep == "oq") {
+        // ══════════════════════════════════════════════════════════════════════
+        // OPTION OP — HAPC standalone (parallel sibling of Option O)
+        // ══════════════════════════════════════════════════════════════════════
+        //
+        // EXACT same environment as Option O: the 5 Small cities (Tokyo_Small,
+        // Kyoto_Small, LosAngeles_Small, NewYork_Small, Paris_Small), same
+        // scenarios, same SharedEpisodeSetup, same ghost traffic, same hetero
+        // capacity, same ep_seed formula, same CURRENT_SEED. The ONLY
+        // difference: this option runs HAPC (Cortés+2009) standalone via
+        // SolverRunner, while Option O runs RL + TP allocation via
+        // MultiCityTrainer.
+        //
+        // Designed to run IN PARALLEL with Option O — they write to DIFFERENT
+        // output directories so there's no file contention. Combined, they
+        // produce the full publication comparison on the 5 Small cities ×
+        // 5 scenarios × 2 episodes × (4 RL + TP + HAPC).
+        //
+        // HOMOGENEITY GUARANTEE: for every (city, scenario, episode_index),
+        // both options' SharedEpisodeSetup yields byte-identical task streams,
+        // agent_start_nodes, per_agent_capacity, and ghost_seed. The merged
+        // CSV is therefore directly comparable cell-by-cell across methods.
+        //
+        // CSV output:
+        //   results\Option_OP_results\sota_standalone_O\
+        //     sota_standalone_seed{CURRENT_SEED}.csv
+        // Joinable with Option O's CSV on (city, scenario, episode).
+        std::cout << "\n=== Option OP — HAPC on GEN cities (NewYork, Paris) — seeds 42, 43, 44 ===\n";
+
+        const std::string osm_root   = "C:\\ConflictualMAS\\src\\maps";
+        const std::string cache_root = "C:\\ConflictualMAS\\data\\cache";
+        // Separate top-level results folder — keeps Option OP's outputs apart
+        // from Option O's so the two runs can execute in parallel.
+        const std::string output_dir = "C:\\ConflictualMAS\\results\\Option_OP_results";
+        // Gen-cities FCA+HAPC re-run lands in its OWN subdir so it does NOT
+        // overwrite any prior fca_standalone / sota_standalone_O outputs — the
+        // existing merged unified data is preserved. Only NewYork/Paris rows
+        // (FCA + HAPC) are produced here, for a later re-merge into the unified.
+        const std::string sota_dir   = output_dir + "\\hapc_gencities";
+        std::filesystem::create_directories(sota_dir);
+        CityRegistry::set_osm_root(osm_root);
+
+        TrainingConfig cfg;
+        cfg.cache_root       = cache_root;
+        cfg.output_dir       = output_dir;
+        cfg.n_seeds          = 1;
+        cfg.n_eval_episodes  = 2;
+        cfg.verbose          = true;
+        cfg.eval_only            = true;
+        cfg.skip_stress_eval     = true;
+        cfg.skip_generalize_eval = false;
+
+        // Same scenarios as Option O — must match for cross-join.
+        cfg.eval_scenarios = {
+            EpisodeScenario{ 1.0f,  1.0f, "normal_wave",    CongestionProfile::Wave        },
+            EpisodeScenario{ 1.0f,  1.0f, "normal_ramp",    CongestionProfile::RampUpDown  },
+            EpisodeScenario{ 1.5f,  0.8f, "stress_shock",   CongestionProfile::ShockBurst  },
+            EpisodeScenario{ 2.0f,  0.6f, "stress_buildup", CongestionProfile::BuildingUp  },
+            EpisodeScenario{ 0.5f, 10.0f, "over_fleet",     CongestionProfile::Wave        },
+        };
+
+        // Same environment as Option O (verbatim).
+        cfg.episode_cfg.use_dbvns_planning            = true;
+        cfg.episode_cfg.enable_ghost_traffic          = true;
+        cfg.episode_cfg.ghost_hot_way_count           = 0;
+        cfg.episode_cfg.ghost_hot_way_frac            = 0.05f;
+        cfg.episode_cfg.ghost_density_per_hot_way     = 2.0f;
+        cfg.episode_cfg.ghost_window_steps            = 8;
+        cfg.episode_cfg.ghost_n_max                   = 100;
+        cfg.episode_cfg.ghost_n_max_user_set          = false;
+        cfg.episode_cfg.enable_heterogeneous_capacity = true;
+        cfg.episode_cfg.hetero_capacity_min           = 3;
+        cfg.episode_cfg.hetero_capacity_max           = 7;
+        cfg.episode_cfg.fleet_size_divisor            = 2;
+        cfg.episode_cfg.fleet_load_per_agent          = 2;
+        cfg.episode_cfg.agent_pool_multiplier         = 10.0f;
+        cfg.episode_cfg.tam_multi_candidate     = true;
+        cfg.episode_cfg.tam_mc_force_assign     = true;
+        cfg.episode_cfg.tam_mc_max_candidates   = 5;
+        cfg.episode_cfg.tam_mc_ratio_min        = 1.4f;
+        cfg.episode_cfg.tam_mc_ratio_max        = 3.0f;
+        cfg.episode_cfg.tam_mc_ratio_scale      = 2000.f;
+        cfg.use_shared_episode_setup = true;
+
+        // ── Same train/gen split as Option O (CRITICAL for homogeneity) ──
+        // ca.index in the ep_seed formula is per-phase:
+        //   train_cities_to_run : Tokyo=0, Kyoto=1, LosAngeles=2
+        //   gen_cities_to_run   : NewYork=0, Paris=1
+        // Option O's MultiCityTrainer assigns these same indices, so for
+        // any (city, scenario, episode) both options produce the SAME
+        // ep_seed → SharedEpisodeSetup byte-identical → task_stream,
+        // agent_start_nodes, ghost_seed all match.
+        cfg.train_city_filter     = {
+            "Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"
+        };
+        cfg.enable_generalization = true;
+        cfg.gen_city_filter       = {
+            "NewYork_Small", "Paris_Small"
+        };
+
+        // ── SEEDS 42, 43, 44 RUN — FCA standalone across all seeds ───────
+        // Reuses Option O's per-seed SharedEpisodeSetup verbatim (byte-
+        // identical task streams) so each new CSV cross-joins with the
+        // existing episodes_seed{42,43,44} RL CSVs.
+        // FCA-Cap is currently disabled (see solver call site below) —
+        // re-enable by uncommenting the FaithfulCACapacitedSolver line if
+        // a load-aware insertion variant is implemented in the future.
+        const std::vector<int> seeds_to_run = { 42, 43, 44 };
+        const auto t_global_start = std::chrono::steady_clock::now();
+
+        std::cout << "\n\n╔════════════════════════════════════════════════════════════╗\n"
+                  <<     "║  Option OP — FCA standalone — SEEDS";
+        for (int s : seeds_to_run) std::cout << " " << s;
+        std::cout <<     "\n╚════════════════════════════════════════════════════════════╝\n";
+
+        for (size_t si = 0; si < seeds_to_run.size(); ++si) {
+            const int seed = seeds_to_run[si];
+            const auto t_seed_start = std::chrono::steady_clock::now();
+
+            std::cout << "\n--- FCA standalone (seed=" << seed
+                      << ", " << (si + 1) << "/" << seeds_to_run.size() << ") ---\n";
+
+            struct CityToRun {
+                const CityConfig* cc;
+                std::string       cache_path;
+                int               ca_index;
+                const char*       phase_label;
+            };
+            std::vector<CityToRun> train_cities_to_run, gen_cities_to_run;
+            const auto& all_cities = CityRegistry::all();
+            auto add_city = [&](std::vector<CityToRun>& dst, const std::string& want,
+                                 const char* phase_label) {
+                for (const auto& cc : all_cities) {
+                    if (cc.name == want) {
+                        dst.push_back({ &cc,
+                                        cache_root + "/" + cc.name + ".json",
+                                        static_cast<int>(dst.size()),
+                                        phase_label });
+                        return;
+                    }
+                }
+                std::cerr << "  [Warn] city \"" << want << "\" not found in registry.\n";
+            };
+            for (const auto& n : cfg.train_city_filter) add_city(train_cities_to_run, n, "train");
+            if (cfg.enable_generalization)
+                for (const auto& n : cfg.gen_city_filter) add_city(gen_cities_to_run, n, "gen");
+
+            const std::string sota_csv = sota_dir + "\\sota_standalone_seed"
+                + std::to_string(seed) + ".csv";
+            SolverCSVLogger logger(sota_csv, /*append=*/false);
+            logger.write_header();
+
+            const int n_eps = cfg.n_eval_episodes;
+            const uint32_t base_seed = static_cast<uint32_t>(seed);
+
+            auto eval_phase = [&](std::vector<CityToRun>& cities) {
+                for (auto& entry : cities) {
+                    const CityConfig& cc = *entry.cc;
+                    std::cout << "\n  [" << entry.phase_label << " ca.index="
+                              << entry.ca_index << "] City: " << cc.name << "\n";
+
+                    GeoBox geo_box;
+                    if (GeoBoxManager::cache_exists(entry.cache_path)) {
+                        geo_box = GeoBoxManager::load_geobox(entry.cache_path);
+                    } else {
+                        geo_box = create_geo_box(cc.osm_path,
+                                                 cc.bbox.min_lon, cc.bbox.min_lat,
+                                                 cc.bbox.max_lon, cc.bbox.max_lat);
+                        if (geo_box.is_valid)
+                            GeoBoxManager::save_geobox(geo_box, entry.cache_path);
+                    }
+                    if (!geo_box.is_valid) {
+                        std::cerr << "    [Skip] GeoBox invalid for " << cc.name << "\n";
+                        continue;
+                    }
+                    Pathfinder pathfinder(geo_box);
+
+                    EpisodeConfig per_city_ep = cfg.episode_cfg;
+                    per_city_ep.city = &cc;
+                    MultiCityTrainer::customize_episode_for_city(per_city_ep, cc);
+
+                    for (size_t sci = 0; sci < cfg.eval_scenarios.size(); ++sci) {
+                        const EpisodeScenario& sc = cfg.eval_scenarios[sci];
+                        const int sc_idx = static_cast<int>(sci);
+                        for (int e = 0; e < n_eps; ++e) {
+                            // EXACT same ep_seed formula as Option O — guarantees
+                            // byte-identical task_stream, agents, ghost_seed.
+                            const uint32_t ep_seed = static_cast<uint32_t>(
+                                1u + e
+                                + 101u * (sc_idx + 1)
+                                + 10007u * (entry.ca_index + 1)
+                                + 1000003u * base_seed);
+
+                            std::cout << "    " << cc.name << " | " << sc.label
+                                      << " | ep=" << e << " seed=" << ep_seed << "\n";
+
+                            SolverRunner runner(per_city_ep, geo_box, pathfinder,
+                                                 sc, ep_seed);
+                            const SharedEpisodeSetup setup =
+                                build_shared_episode_setup(
+                                    ep_seed, cc, sc, per_city_ep, geo_box);
+
+                            auto run_and_log = [&](ISolver& s) {
+                                SolverMetrics m = runner.run(s, &setup);
+                                m.city_label = cc.name;
+                                m.episode    = e;
+                                logger.write_row(m);
+                                std::cout << "      " << m.solver_name
+                                          << "  thr=" << m.throughput_rate
+                                          << "  lat=" << m.latency_mean
+                                          << "  ms="  << m.wallclock_ms
+                                          << "\n";
+                            };
+
+                            // FCA standalone — the capacitated extension FCA-Cap
+                            // was disabled after seed=42 experiments showed it
+                            // consistently underperforms single-task FCA across
+                            // all tested regimes (mean throughput drop ~30-50%,
+                            // collapses on over_fleet). Documented as negative
+                            // result in the paper; the call site is preserved
+                            // commented out for traceability and to allow
+                            // re-enabling with a load-aware insertion objective.
+                            // { FaithfulCASolver               s; run_and_log(s); }
+                            { HybridAdaptivePredictiveSolver s; run_and_log(s); }
+                            // { FaithfulCACapacitedSolver  s; run_and_log(s); }
+                        }
+                    }
+                }
+            };
+
+            // ── ALL CITIES (train + gen) ─────────────────────────────────────
+            // Run on the full 5-city set. Per-phase ca_index (train: Tokyo=0,
+            // Kyoto=1, LosAngeles=2 ; gen: NewYork=0, Paris=1) matches Option O's
+            // MultiCityTrainer indices, so ep_seed — hence the SharedEpisodeSetup
+            // (task stream, agent starts, ghost seed) — is byte-identical to
+            // Option O on every city, giving homogeneous baselines across all 5.
+            std::cout << "\n  -- Train cities --\n";
+            eval_phase(train_cities_to_run);
+            std::cout << "\n  -- Gen cities --\n";
+            eval_phase(gen_cities_to_run);
+
+            logger.close();
+
+            const auto t_seed_end = std::chrono::steady_clock::now();
+            const long long seed_sec = std::chrono::duration_cast<std::chrono::seconds>(
+                                           t_seed_end - t_seed_start).count();
+            std::cout << "\n+++ Option OP SEED " << seed << " COMPLETE in "
+                      << (seed_sec / 60) << " min "
+                      << (seed_sec % 60) << " s +++\n";
+            std::cout << "    FCA CSV : " << sota_csv << "\n";
+        }
+
+        const auto t_global_end = std::chrono::steady_clock::now();
+        const long long total_sec = std::chrono::duration_cast<std::chrono::seconds>(
+                                        t_global_end - t_global_start).count();
+        std::cout << "\n═══════════════════════════════════════════════════════════════════\n";
+        std::cout << "=== Option OP DONE — wallclock " << (total_sec / 3600)
+                  << "h " << ((total_sec % 3600) / 60) << "min\n";
+        for (int s : seeds_to_run) {
+            std::cout << "  FCA seed " << s << ": " << sota_dir
+                      << "\\sota_standalone_seed" << s << ".csv\n";
+        }
+        std::cout << "  Cross-join with Option O on: (city, scenario, episode)\n";
     }
     else std::cout << "Unknown option.\n";
 
@@ -1742,11 +2318,13 @@ static int run_main()
 // MAPPO HYPERPARAMETERS
 // =============================================================================
 //
-//   PPO clip eps      = 0.20
+//   PPO clip eps      = 0.10  (Yu+2022 §5.3 MARL recommendation)
 //   gamma             = 0.99
 //   lambda (GAE)      = 0.95
+//   lr (actor/critic) = 5e-4 → 5e-5 (linear anneal, Yu+2022 default)
+//   entropy bonus     = 0.01 → 0.001 (linear anneal)
 //   epochs / episode  = 10  (with KL early stop at 0.01)
-//   Grad-norm clipping (max_norm=0.5), mini-batch SGD.
+//   Grad-norm clipping (max_norm=0.5), full-batch SGD (Yu+2022 §5.3).
 //
 // Policy feature vector (12 floats, see ObjectiveDMPolicy::PolicyFeatures):
 //   Rentability : profit_rate, insertion_cost_norm

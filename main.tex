@@ -1,0 +1,784 @@
+\documentclass[sigconf]{acmart}
+
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    Bib\TeX}}}
+
+\usepackage[utf8]{inputenc}
+\usepackage{CJKutf8}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\renewcommand{\shortauthors}{Crepin et al.}
+ 
+\begin{document}
+
+\title{An Agent-Based Architecture for the Congestion-Aware Lifelong General Pickup and Delivery Problem}
+
+\author{Simon Franck Crepin}
+\orcid{0009-0009-0108-8554}
+\affiliation{
+  \department{Faculty of Systems Design}
+  \institution{Metropolitan University of Tokyo}
+  \city{Tokyo}
+  \country{Japan}
+}
+\email{crepin.simonfranck@gmail.com}
+
+\author{Shohei Yokoyama}
+\orcid{0000-0002-0550-617X}
+\affiliation{
+  \department{Faculty of Systems Design}
+  \institution{Metropolitan University of Tokyo}
+  \city{Tokyo}
+  \country{Japan}
+}
+\email{shohei@tmu.ac.jp}
+
+\author{Matono Akiyoshi}
+\orcid{0000-0002-7242-5126}
+\affiliation{
+  \department{Data Platform Research Group}
+  \institution{National Institute of Advanced Industrial Science and Technology}
+  \city{Tokyo}
+  \country{Japan}
+}
+\email{a.matono@aist.go.jp}
+
+\author{Salman Ahmed Shaikh}
+\orcid{0000-0002-2204-8561}
+\affiliation{
+  \department{Data Platform Research Group}
+  \institution{National Institute of Advanced Industrial Science and Technology}
+  \city{Tokyo}
+  \country{Japan}
+}
+\email{shaikh.salman@aist.go.jp}
+
+\authornote{All authors contributed equally to this research.}
+
+\authornotemark
+
+\begin{abstract}
+This work proposes an agent-based architecture to address the Congestion-Aware Lifelong General Pickup and Delivery Problem (GPDP) in dynamic geospatial environments. In this context, different pickup and delivery and capacitated settings are considered. It involves multiple agents operating tasks over time in a shared environment. Factors such as congestion level, task arrivals, and environment elements continuously evolve. These affect the quality of solutions over time, as the emergence of impacts from agent actions. Given these dynamics and their uncertain nature, finding and maintaining an optimal solution becomes challenging. To address this, the proposed approach models the system as a collection of locally independent agents. The framework aims to enable adaptive behavior to changing conditions while contributing to shared global objectives. A single-layer problem decomposition allows the model’s components to be solved separately while effectively coordinated. The method combines multi-agent reinforcement learning with metaheuristic techniques to balance global decision-making and local planning. Three state-of-the-art policies are adapted to this context besides the introduction of a hybrid approach for task allocation. The proposed framework is compared with four state-of-the-art approaches covering centralized task allocation, independent single-agent planning, and architecture-level methods. The evaluation is conducted using different benchmark scenarios, including five geographic locations based on OpenStreetMap (OSM) data with varying levels of congestion and task dynamics. Performance is assessed using metrics centered around throughput, solution quality, response time, and environmental impacts. Results demonstrate that the proposed approach can effectively adapt to dynamic environments and maintain high performance.
+\end{abstract}
+
+\begin{CCSXML}
+<ccs2012>
+   <concept>
+       <concept_id>10010147.10010178.10010199.10010202</concept_id>
+       <concept_desc>Computing methodologies~Multi-agent planning</concept_desc>
+       <concept_significance>500</concept_significance>
+       </concept>
+   <concept>
+       <concept_id>10010147.10010178.10010199.10010201</concept_id>
+       <concept_desc>Computing methodologies~Planning under uncertainty</concept_desc>
+       <concept_significance>500</concept_significance>
+       </concept>
+   <concept>
+       <concept_id>10010147.10010178.10010219.10010220</concept_id>
+       <concept_desc>Computing methodologies~Multi-agent systems</concept_desc>
+       <concept_significance>500</concept_significance>
+       </concept>
+   <concept>
+       <concept_id>10010147.10010257.10010258.10010261.10010275</concept_id>
+       <concept_desc>Computing methodologies~Multi-agent reinforcement learning</concept_desc>
+       <concept_significance>500</concept_significance>
+       </concept>
+   <concept>
+       <concept_id>10003752.10010070.10011796</concept_id>
+       <concept_desc>Theory of computation~Theory of randomized search heuristics</concept_desc>
+       <concept_significance>300</concept_significance>
+       </concept>
+   <concept>
+       <concept_id>10010147.10010178.10010199.10010200</concept_id>
+       <concept_desc>Computing methodologies~Planning for deterministic actions</concept_desc>
+       <concept_significance>500</concept_significance>
+       </concept>
+ </ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Computing methodologies~Multi-agent planning}
+\ccsdesc[500]{Computing methodologies~Planning under uncertainty}
+\ccsdesc[500]{Computing methodologies~Multi-agent systems}
+\ccsdesc[500]{Computing methodologies~Multi-agent reinforcement learning}
+\ccsdesc[300]{Theory of computation~Theory of randomized search heuristics}
+\ccsdesc[500]{Computing methodologies~Planning for deterministic actions}
+
+\keywords{Metaheuristic, Multi-Agent Systems, Multi-Agent Reinforcement Learning, Pickup and Delivery Problem, Dynamic Environment Adaptation}
+
+\maketitle
+
+\section{Introduction}
+\label{sec:introduction}
+
+Multi-agent multi-objective optimization problems arise in numerous real-world applications. Multiple entities must continuously make optimized decisions and actions in a shared and evolving environment. Domains such as logistics systems, urban mobility, and autonomous delivery can be considered. These systems are inherently dynamic, as both the environment and agents' actions evolve over time while interacting with each other: they depend or have influence on each other.
+
+In geospatial routing contexts, additional complexity is introduced due to spatio-temporal dependencies, heterogeneous topologies, and continuously changing conditions such as congestion status. Unlike classical routing formulations, real-world systems exhibit lifelong characteristics, where tasks arrive continuously. Previously planned optimized solutions may rapidly lose in quality, become suboptimal or infeasible.
+
+This work focuses on the study of the Congestion-Aware Lifelong General Pickup and Delivery Problem (CA-L-GPDP) in such environments. The GPDP extends classical routing problems such as the Traveling Salesman Problem (TSP) and the Vehicle Routing Problem (VRP). It requires paired pickup and delivery operations under constraints such as capacity, time windows, and precedence. In its lifelong variant, tasks are not known \emph{a priori} but arrive continuously over time.
+
+The Congestion-Aware lifelong GPDP belongs to this class of multi-agent multi-objective optimization problems. This research scope will approach the GPDP with capacitated, multi delivery agents, and single delivery (or task) by pickup each with independent locations settings (i.e., non-depot-based). Time windows are disregarded for independent task; however episode time constraints define it within its set.
+
+This problem class has a specific feature such that the problem is described in its environment: modifications appear along the solving process, and its environment will present alterations. The relation between environment and problem feature is close enough to be studied together.
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Admissible Alterations.png}
+    \caption{Admissible Alterations}
+    \label{fig:admalterations}
+\end{figure}
+
+With a decomposition approach, each delivery agent solves a local routing problem while contributing to global objectives. However, local decisions directly impact global system performance, particularly when congestion effects are considered: a good task repartition permits optimized routing while avoiding conflictual situations. In this work, congestion is modeled as a dynamic factor influencing edge traversal costs over time, leading to a time-dependent graph formulation $G = (V, E)$, where edge weights fluctuate along a function $w$ (\ref{eq:weighting_function}), with $T$ as the temporal dimension.
+
+\begin{equation}
+w: E \times \mathcal{T} \rightarrow \mathbb{R}^+
+\label{eq:weighting_function}
+\end{equation}
+
+The CA-L-GPDP introduces several challenges: dynamic and uncertain environments, non-stationary optimization, strong coupling between agents through shared resources, and scalability difficulties. A solution that is optimal at time $t_n$ may become suboptimal or even infeasible at $t_{n+1}$, as illustrated in Figure \ref{fig:admalterations}. This highlights the need for continuous adaptation in the solving process to ensure sustained feasibility and efficiency over time. Geospatial environments further amplify these challenges due to their heterogeneous topologies, irregular density distributions, and continuous variations.
+
+According to \cite{Savelsbergh1995}, the General Pickup and Delivery Problem (GPDP) is defined as follows. It is the transportation of loads from specific origins to specific destinations. This transportation uses a fleet of vehicles $A$. Each request $i \in R$ is defined by a pickup location $P_i$ and all $n \in \mathbb{Z}$ delivery locations (if multiple) $D_{i_z}$ such that $i = (P_i, D_{i_1} \dots D_{i_n})$, a tuple. The objective is to minimize a global cost function $z$ under the following formal constraints:
+
+\begin{itemize}
+    \item Capacity: for each vehicle $a \in A$, the load must not exceed its maximum capacity $Q_a$.
+    \item Time Windows: each service must occur within a specific interval $[e_i, l_i]$.
+    \item Precedence: for every request $i$, the pickup must be visited before the delivery, such that $t_{P_i} < t_{D_{i_z}}$.
+\end{itemize}
+
+In the case of a single vehicle, the problem reduces to a sequence constrained Traveling Salesman Problem (TSP): \cite{miller1960} propose a formulation for the general TSP. With multiple vehicles, it becomes a Vehicle Routing Problem (VRP). In other words, it is a sequence of constrained TSP. The inclusion of pickup--delivery pairing significantly increases the combinatorial complexity of the problem.
+
+In a multi-agent setting, each vehicle operates as an independent agent, solving its own local routing problem while contributing to the overall system performance. This introduces two fundamental challenges: task allocation and agent coordination. Local decisions have direct and often significant impacts on global solution quality.
+
+The problem becomes even more challenging in lifelong environments, where new tasks $i_{n+1}$ continuously arrive over time. As a result, the system must adapt continuously to maintain solutions valid and optimized.
+
+Overall, the Lifelong GPDP (L-GPDP) involves tightly coupled local and global optimization processes. To effectively address it, this work models the L-GPDP as a single-layer problem, enabling more efficient decentralized coordination.
+
+Unlike the Multi-Agent Pickup and Delivery problem (MAPD) \cite{stern2019}, derived from Multi-Agent Path Finding, typically focuses on collision avoidance, this work considers congestion as a soft constraint (conflictual situation). The proposed setting assumes that agent interactions influence the system implicitly through its actions.
+
+To address these challenges, different solution paradigms have been explored in the literature. In this work, we focus on two main families of methods, whose complementary strengths motivate the hybrid approach proposed in this paper.
+
+Hybrid approaches combining multi-agent systems and metaheuristics have been explored in prior work \cite{crepin2025}. They allow combining efficient search with adaptive coordination strategies. In large search spaces, combining different techniques allows complementary behaviors to emerge, improving the balance between exploration and exploitation while reducing the risk of premature convergence to local optima.
+
+However, such approaches remain limited in highly dynamic environments. Continuous variations in these environments induce frequent re-planning and coordination overhead. Inspired by the state of the art, we proposed in previous work the Distributed Multi-Meta Agent Solver (DMAS)~\cite{crepin2026}. This framework serves as the foundation for the approach proposed in this paper.
+
+In parallel, learning-based methods have been widely explored for dynamic routing and planning \cite{nazari2018}. Particularly through Multi-Agent Reinforcement Learning (MARL), these methods permit adaptive decision policies from experience \cite{sutton1998} and are well suited for non-stationary environments. In this work, we consider three approaches in the context of CA-L-GPDP: MAPPO~\cite{yu2022}, IPPO~\cite{dewitt2020}, and MAPPER~\cite{liu2020} detailed in Section \ref{sec:related_works}, each adapted from PPO~\cite{schulman2017}.
+
+Nevertheless, learning methods alone often exhibit performance gap when addressing combinatorial optimization nature of routing problems, which can be filled with the coordinated use of metaheuristics.
+
+On the other side, its usages for appropriate task allocation seems more adapted rather than metaheuristic methods: learning approaches provide adaptive consideration of a situation context.
+
+Overall, hybrid approaches appear particularly promising for CA-L-GPDP, as they combine distributed optimization, adaptive coordination, and learning mechanisms, complementary properties essential for solving such complex dynamic problems.
+
+In summary, the Congestion-Aware Lifelong General Pickup and Delivery Problem introduces significant challenges due to dynamic task arrivals, congestion effects, and the need for scalable coordination in realistic geospatial environments. To address these challenges, this work proposes a framework that combines adaptive learning mechanisms with efficiency task allocation paradigm and routing optimizations.
+
+The main contribution of this work is the introduction of a multi-agent architecture aiming to ensures admissible solution quality through the effective combination of independent mechanisms in diverse and dynamic scenarios.
+
+To this effect, we propose:
+\begin{itemize}
+	\item A formalization of CA-L-GPDP under dynamic and congestion-aware geospatial settings.
+    \item A hybrid approach integrating MARL and metaheuristic optimization.
+	\item A decomposition-based planning strategy for singular agent GPDP.
+	\item A task allocation mechanism based on independent agent scoring and neighboring consensus.
+	\item An evaluation on OSM-based \cite{haklay2008} benchmarks demonstrating improved performance over existing methods.
+\end{itemize}
+
+\section{Related Works}
+\label{sec:related_works}
+
+Different existing approaches can be used and compared in this context. However, the combination of the tackled problem settings makes most of them only partially applicable. To this effect, we present a selection of them, organized by type of method and usage.
+
+\paragraph{Decision Making and MARL.}
+Multi-Agent PPO~\cite{yu2022} follows centralized training and decentralized execution: a shared actor takes local decisions, paired with a centralized critic conditioned on a global state to guide learning. In a more decentralized setting, Independent PPO~\cite{dewitt2020} also shares actor and critic parameters across agents. However, it conditions the critic on local observations only. MAPPER~\cite{liu2020} introduces a population-based actor-critic architecture for routing problems with evolutionary policy: at fixed intervals, low-fitness agents probabilistically inherit weights from higher-fitness ones, which speeds up convergence and enhance adaptation capacities. These methods were for most designed for general cooperative control, and not directly for online task allocation in congested geospatial routing: prescription for task allocation using scoring, and it is unclear \emph{a priori} which design (centralized, local, or population-based) generalizes best across such dynamic environments. This motivates comparing the three under a common architecture.
+
+\paragraph{Task Allocation.}
+Token Passing~\cite{ma2017} is a classical non-learning approach for MAPD: agents share a token containing all current paths and task assignments; when an agent becomes free, it requests the token to plan a collision-free path to the nearest available task. RMCA~\cite{chen2021} is also a MAPD method that couples task assignment with route planning through a marginal-cost (regret-based) heuristic: re-evaluating candidate insertions before committing. Token Passing was conceived for grid MAPD with collision-free path commitments, and RMCA for warehouse pickup-and-delivery; both assign essentially one task at a time and score it without congestion awareness. This motivates our task-allocation contribution in enhanced settings.
+
+\paragraph{Overall Architecture.}
+The following methods present characteristics close enough to our context to serve as relevant comparison bases. HAPC~\cite{cortes2009} introduces a capacitated PDP heuristic pairing adaptive large-neighborhood search with a predictive congestion estimator. It targets dense urban environments with multiple agents. Restricted to single-task assignment, Congestion-Aware MAPP~\cite{asadi2025} is a congestion-adaptive baseline where each agent estimates the BPR footprint of its insertion before committing to it. HAPC was built for passenger ride with offline demand and Euclidean travel, and CA for grid single-task routing. Their reliance on offline data, grid topology or static planning makes them only partially suited to our problem settings, which motivates our architecture introduction for CA-L-GPDP in geospatial environments.
+
+\section{Research Challenges and Methodological Framework}
+\label{sec:methodology}
+
+The scope of this study focuses on solving the Congestion-Aware Lifelong General Pickup and Delivery Problem (L-GPDP) in dynamic geospatial environments. Particular attention is given to decentralized coordination, adaptation to evolving constraints, and the integration of multiple solving mechanisms within a unified architecture. 
+
+\subsection{Challenges and Positioning}
+
+Multi-agent multi-objective optimization problems remain challenging, from both system complexity and environmental dynamicity. While decentralized solving improves exploration capabilities and scalability, interactions between agents introduce additional constraints, affecting both local and global solution quality. This induce increasing coordination cost in such approaches.
+
+Facing such dynamicity, maintaining stable performance over time and scale becomes particularly difficult. Classical combinatorial optimization methods provide strong guarantees for static instances, but their cost grows quickly when considered under dynamic re-planning: their applicability is limited in lifelong settings.
+
+Recent advances in learning-based approaches question the necessity of fully centralized critics in cooperative settings. IPPO~\cite{dewitt2020} demonstrates that local-observation critics can achieve competitive performance compared to centralized methods. Similarly, population-based approaches such as MAPPER~\cite{liu2020} introduce alternative coordination paradigms through distributed policy evolution rather than joint optimization. These suggest multiple viable design choices, motivating a comparison across the three approaches in common architecture, rather than committing to a single paradigm.
+
+In previous work~\cite{crepin2025}, we proposed a hierarchical decomposition approach of the problem into distinct layers. Such decompositions simplify problem resolution, but may reduce coordination efficiency and increase recomputation overhead. This limitation motivates the exploration of a singular layer and decentralized architecture, to improve solution quality stability.
+
+\subsection{Methodology and Objectives}
+
+This research aims to design an adaptive solving paradigm for such class of problems, that balance agent independence with effective coordination. The guiding purpose is to maximize local autonomy by the use of complementary mechanisms, while maintaining shared environmental representations to support indirect coordination.
+
+The proposed framework combines problem decomposition with independent solving mechanisms. Coordination emerges through shared environmental information, including congestion levels and agent activity. This enables scalable interaction without requiring explicit centralized control.
+
+Rather than searching for the optimal solving mechanism, the objective is to effectively implement complementary methods within a fixed architecture: combine the qualities of optimized mechanisms.
+
+Introducing additional communication or elements in a multi-agent system can improve its performance easily, but often at the cost of increased computational and coordination overhead. Therefore, this work emphasizes compatibility and modularity between solving mechanisms, ensuring scalability and minimum system complexity while preserving efficiency. Extending the framework toward a fully agentic system remains an important direction for future research.
+
+Based on these considerations, the research is guided by the following questions:
+
+\begin{itemize}
+    \item What are adapted structures for temporal and spatial dimensions expression in graphs, for efficient solving process in dynamic environments?
+    \item Which of the possible decompositions of sub-problems in the CA-L-GPDP is adequate and what are its associated solving mechanisms?
+    \item How can independently operating agents ensure admissible solution while being coordinated?
+    \item To what extent independent solving mechanisms are separately applicable and comparable within their respective domains?
+    \item To which extent the design of a Multi-Agent Reinforcement Learning policy impact adaptability and generalization across geospatial contexts?
+    \item How can combinatorial optimization methods present adaptable behavior in dynamic settings while maintaining solution quality and solving complexity at scale?
+\end{itemize}
+
+During the implementation phase of this work, Claude Code (Opus 4.6, Anthropic) was used as a development support tool: restricted to implementation reliability verifying, workflow reviewing, infrastructure correct functioning verification, and assisting in the identification and comprehension of compilation errors. All generated code was strictly reviewed. All architectural decisions, algorithmic contributions, experimental designs, and result analyses were performed exclusively by the authors.
+
+\section{Architecture}
+\label{sec:architecture}
+
+The proposed architecture is composed of three main elements. The first is a set of delivery agents $\mathcal{A} = \{a_1, \dots, a_n\}$. The second is a centralized environment manager $\mathcal{M}$. This manager holds the shared spatio-temporal and problem information. The third element consists of task agents $\mathcal{TA} = \{ta_1, \dots, ta_m\}$ in charge of every new appearing one. This separation directly reflects the proposed objective. Responsibilities are decentralized among agents. Environmental information remains centralized to minimize communication overhead.
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Proposed Architecture.png}
+    \caption{Proposed Architecture}
+    \label{fig:proposedarchitecture}
+\end{figure}
+
+In our context, we assume each tasks posses one pickup and one delivery node such that $i = (P_i, D_i)$. In addition, from each agent a capacity is affected such that an agent can transport $Load_k(t) \le n, \forall t \in \mathcal{T}$ packages at the same time.
+
+The manager $\mathcal{M}$ does not take decisions on behalf of agents. It maintains the global environment representation, planned movements, and congestion estimations. The environment is represented as a directed graph $G = (V, E)$. Here, $V$ corresponds to nodes (for instance intersections, pickup or delivery points), $E$ to road segments, associated to a $w$ time-dependent edge weighting function.
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Proposed Model.png}
+    \caption{Proposed Model}
+    \label{fig:proposedmodel}
+\end{figure}
+
+Each delivery agent $a_k$ is modeled as an independent solving entity. It is responsible for planning, and action execution. Defined by its current position and planning for its assigned tasks: expressed as pairs of objective node $R_k = \{i_1, \dots, i_m\} \subseteq R$, such that $P_i = o_x, D_i = o_y$ where $o_x, o_y \in \mathcal{O} \subseteq V$, the objective nodes set. It possesses its own operable environment used to perform planning actions: $w^*(o_i, o_j, t)$ is the shortest congestion-aware travel time from $o_i$ to $o_j$ at time $t$. Concretely, this operable environment is a static cost matrix $M_k$ where $M_k[o_i, o_j]$ is the free-flow shortest-path travel time between two objective nodes, from which the congestion-aware $w^*(o_i, o_j, t)$ is recovered by re-evaluating the BPR weight (\ref{eq:bpr}) along its cached path at time $t$. These value can be retrieved from $\mathcal{M}$ when necessary. This representation allows agents to efficiently create a plan sequence $\sigma_k = (o_1, \dots, o_m) \subseteq \mathcal{O}$. Meanwhile, $\mathcal{M}$ handles detailed optimised path computations and updates. In addition, each agent posses a policy $\pi$ used for task allocation. It permit to retrieving an action score determining independently its promising status to fulfill a specific task.
+
+Communication is limited to three types of exchanges: task assignment from $ta_l$ to candidate $a_k$; environment updates from $\mathcal{M}$ to $a_k$; planned sequence from $a_k$ to $\mathcal{M}$. Delivery agents do not communicate directly together. All interactions are created through the congestion expression in the $\mathcal{M}$ environment.
+
+\subsection{Action and Structures}
+ 
+Once the planning is performed, the agents execute their movements and delivery actions. $\mathcal{M}$ continuously updates the congestion estimations from the planned, executed movements, and other agent information. The shared environment expresses congestion through a temporal load mapped by edge on the basis of planned movements. The travel-time cost of an edge was defined using the Bureau of Public Roads (BPR) function~\cite{bpr1964}.
+\begin{equation}
+w(e, t) = \ell(e) \cdot \left(1 + \alpha \cdot \left(\frac{n(e, t)}{c(e)}\right)^\beta \right)
+\label{eq:bpr}
+\end{equation}
+where $\ell(e)$ is the static traversal cost of the edge, $n(e, t)$ the predicted load on $e$ at time $t$, and $c(e)$ the edge capacity proportional to its length. The BPR coefficients have been fixed at $\alpha = 0.15$ and $\beta = 4$. The cost is recomputed on demand from the current $n(e, t)$.
+
+Detailed paths between two objectives nodes are calculated using a time-dependent A\* search~\cite{demiryurek2011} with Euclidean distance heuristic. As congestion evolves, $\mathcal{M}$ can update path caches if its current path becomes infeasible or significantly suboptimal. This update mechanism is local: agents does not directly need to re-plan, $\mathcal{M}$ keep path optimality until usage.
+
+Path Caches (\ref{eq:path_cache}) are also implemented within each objective node. It is the set of paths from an objective node $o_i$ between a set of other objective nodes $o_j \in \mathcal{O}$ expanding on necessity: all objectives path cache combination, converges to a complete graph. These paths and set are updated from agents demand (necessary for planning), and during task allocation process. When an objective is completed, its associated path cache is removed with it. At first, each $p_{o_i \to o_j}$ is the static shortest path in the environment and calculated through (\ref{eq:path_cache_path_cost}) to estimate congestion level from an objective to another using BPR as heuristic to give an affordable admissible prediction of congestion within time.
+
+\begin{equation}
+PC_{o_i} = {\{p_{o_i \to o_j} \mid p_{o_i \to o_j} = (e_1, \dots e_n), o_j \in \mathcal{Q}_{o_i} \subseteq \mathcal{O}\}}
+\label{eq:path_cache}
+\end{equation}
+
+\begin{equation}
+\text{C}(p_{o_i \to o_j}, t) = \sum_{e \in p_{o_i \to o_j}} w(e, t_e)
+\label{eq:path_cache_path_cost}
+\end{equation}
+
+To this effect, executed paths from delivery agents are being calculated using TD-A\* for ensured quality: planning is based on estimations, movements on optimization. Actual position to next objective node and following objective node path are constantly known of each delivery agents to prevent from deadlocks. When an objective node is reached, the second path becomes the first and is checked with call to $\mathcal{M}$ followed by the new following path if existing (remaining tasks).
+
+For better environment comprehension, $\mathcal{M}$ maintains congestion and task distribution heatmaps on a regular grid over the city bounding box. Each cell aggregates two notions: a task arrival count over a sliding temporal window. This provides a compact indicator of zones that are simultaneously task-dense and traffic-saturated for the policy.
+
+\subsection{Task Allocation}
+
+When a new task $i_{new}$ appears, $\mathcal{M}$ instantiates a dedicated Task Agent $ta_l$. This agent runs the Task Allocation Module (TAM) with is details in Algorithm \ref{alg:tam-mc-formatA}. Two incremental adapted Dijkstra searches are launched from $P_{i_{new}}$ and $D_{i_{new}}$. They expand until a valid candidate agent $a_k$ is reachable. A valid agent $a_k$ is reachable if founded from $P_{i_{new}}$ and IDLE: no task affected at this time; or $a_k$ planned movements to founded (from expansion) objective node $o_p$ from $P_{i_{new}}$ and $o_d$ from $D_{i_{new}}$ with $o_p$ before $o_d$ in $a_k$ plan sequence. A bounded continuation of the expansion is performed. The limit is scaled within the cost needed to find the first valid candidate. It ensures at least one candidate is always recovered. Other valid candidates $\mathcal{A}=\{a_1, \dots,a_n\}$ are then retrieved from the expansion. Each calculated paths updates its objective node associated path cache $PC_{o_i}$.
+
+\begin{algorithm}[!htbp]
+\caption{Task Allocation Module}
+\label{alg:tam-mc-formatA}
+\begin{algorithmic}[1]
+\REQUIRE New task $i_{new}$, agent set $\mathcal{A}$, max candidates $K$, adaptive budget function $\rho$
+\ENSURE Allocated winner $a^*$
+\STATE Launch incremental Dijkstra from $P_{i_{new}}$ and from $D_{i_{new}}$
+\STATE $\mathcal{C} \gets \emptyset$, budget $\gets \infty$
+\REPEAT
+    \STATE Expand one step on each Dijkstra side
+    \IF{a new valid agent $a_k$ becomes reachable from both sides}
+        \STATE $c_k \gets c_P(a_k) + c_D(a_k)$
+        \STATE $\mathcal{C} \gets \mathcal{C} \cup \{(a_k, c_k)\}$
+        \IF{$|\mathcal{C}|=1$}
+            \STATE budget $\gets c_k \cdot \rho(c_k)$
+        \ENDIF
+    \ENDIF
+\UNTIL{$|\mathcal{C}| \geq K$ \textbf{or} current cost $>$ budget \textbf{or} both searches exhausted}
+\STATE Sort $\mathcal{C}$ by ascending $c_k$, keep at most $K$
+\FOR{each $a_k \in \mathcal{C}$}
+    \STATE $\mu_k \gets \pi(\mathbf{x}_{\mathit{in}})$
+    \IF{$\mu_k > \mu_k^*$}
+        \STATE $\mu_k^* \gets \mu_k$
+        \STATE $a^* \gets a_k$
+    \ENDIF
+\ENDFOR
+\STATE Assign $i_{new}$ to $a^*$
+\RETURN $a^*$
+\end{algorithmic}
+\end{algorithm}
+
+Different $\pi$ can be implemented within the fleet: it can be independent, grouped or global to the agents. In this context, we chose a fixed-length input vector for each policy. Its elements can be categorized into categories: profitability, general fleet, actual problem state, and geospatial information’s are considered. An agent state expresses its own local situation. Including planned route cost, future load states, and new task insertion cost estimation. The policy returns an Action Score $\mu \in [0, 1]$. This score determines the agent’s promising status independently at the time invoked. It is finally used in comparison with other candidate agents. The most promising agent on the base of his Action Score $\mu_i$ view then himself being affected the task when it satisfty (\ref{eq:allocation_forall}).
+
+\begin{equation}
+\forall j\in \{1,\dots,\lvert \mathcal{A} \rvert \}, j \neq i, \ \mu_i > \mu_j
+\label{eq:allocation_forall}
+\end{equation}
+
+\subsection{Objective Policy}
+
+To compare different designs, three policy variants have been trained in parallel. They share the same environment, reward shaping, and TAM logic: it is independent to delivery agents. At first, a centralized-critic approach called MAPPO~\cite{yu2022}. The critic gets a global state of the system actions and observations while each agent acts on their own observations. On a common approach, independent PPO (IPPO)~\cite{dewitt2020} differs on critic implementation. Each agent possesses a critic only acting on local observations. Finally, a decentralized cooperative method with evolutionary policy selection on the base of the MAPPER architecture~\cite{liu2020} modules. Each agent maintains its own actor and critic, where low-fitness agents probabilistically inherit weights from promising ones at defined intervals.
+
+\subsubsection{Input Vector}
+
+The input vector $\mathbf{x}_{\mathit{in}} = (v_1, \dots, v_{12}) \in [0,1]^{12}$ is affected to each actors and integrated to the critic input with its parameter presented in Table \ref{tab:input-vector}. All entries are adapted to a value $\mathcal{x}\in[0,1]$ before usage. The following notation is proposed: task insertion cost as $c_{\mathit{ins}}(i) = c_{P_i} + c_{D_i}$ (sum of pickup and delivery costs), and $c^*_{\mathit{oth}}$ is the cheapest insertion cost among the candidates retrieved from the TAM searches; $\sigma_k$ is the planned route after insertion with $\mathrm{cost}(\sigma_k)$ its total length and $\mathit{onb}_j(\sigma_k)$ its load at stop $j$; $\mathcal{A}_{\mathrm{active}}$ is the active fleet at this time, $|\mathcal{T}|$ and $|\mathcal{T}_{\mathrm{alloc}}|$ the total and currently-allocated task counts; $\mathcal{C}$ the candidates of the current call, $K$ the maximum number of agent TAM can call; $\vec{v}_{\mathit{head}}$ and $\vec{v}_{\mathit{pickup}}$ are the vectors from the agent's current position to next objective node and new pickup; $\bar{n}$ is the current mean number of active agents per edge in the network (other agents and delivery agents), and $B$ the BPR multiplier (\ref{eq:bpr}); and $\rho_{\mathit{cell}}(p), \beta_{\mathit{cell}}(p)$ the normalized task density and congestion at the pickup heatmap cell.
+
+\begin{table}[!htbp]
+\centering
+\caption{12-dimensional policy input vector}
+\label{tab:input-vector}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}p{0.18\columnwidth}p{0.30\columnwidth}p{0.42\columnwidth}@{}}
+\toprule
+\textbf{Group} & \textbf{Feature} & \textbf{Definition} \\
+\midrule
+\multirow{4}{*}{\parbox{0.18\columnwidth}{Global context}}
+ & profit\_rate     & $\mathrm{reward}_i / (0.5\,c_{\mathit{ins}} + \varepsilon)$ \\
+ & n\_agents\_ratio & $|\mathcal{A}_{\mathrm{active}}| / N_{\max}$ \\
+ & n\_alloc\_ratio  & $|\mathcal{T}_{\mathrm{alloc}}| / |\mathcal{T}|$ \\
+ & time\_remaining  & $1 - t/T$ \\
+\midrule
+\multirow{3}{*}{\parbox{0.18\columnwidth}{Agent state}}
+ & queue\_duration    & $\mathrm{cost}(\sigma_k) / Q_{\mathrm{scale}}$ \\
+ & load\_at\_insertion & $(\max_{j \in \sigma_k} \mathit{onb}_j(\sigma_k) + 1) / Q_{\max}$ \\
+ & efficiency\_loss   & $c_{\mathit{ins}} / (\mathrm{cost}(\sigma_k) + c_{\mathit{ins}} + \varepsilon)$ \\
+\midrule
+\multirow{3}{*}{\parbox{0.18\columnwidth}{Competition + impact}}
+ & marginal\_cost\_rel. & $\max(0, (c_k - c^*_{\mathit{oth}}) / c^*_{\mathit{oth}})$ \\
+ & fleet\_pressure     & $|\mathcal{C}| / K$ \\
+ & divergence\_ratio   & $(1 - \cos \angle(\vec{v}_{\mathit{head}}, \vec{v}_{\mathit{pickup}})) / 2$ \\
+\midrule
+\multirow{2}{*}{\parbox{0.18\columnwidth}{Spatio-temporal}}
+ & congestion\_delta  & $(B(\bar{n}) - 1) \cdot c_{\mathit{ins}} / C_{\mathrm{scale}}$ \\
+ & area\_heat\_pickup & $\rho_{\mathit{cell}}(p) \cdot \beta_{\mathit{cell}}(p)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Reward Shaping}
+ 
+Following a structured approach in accordance with \cite{ng1999}, the reward design is structured to give each agent decisions local directions. It also tries to give global observations through complementary signals. Rewards are defined through three categories: allocation for the most promising candidate, execution when pickup reached or delivery process, and end-of-episode for each undelivered tasks penalization.
+
+A task $i$ value is defined by its importance $\mathrm{imp}_i$ and associated reward $r_i$, where $\mathrm{val}_i = r_i \cdot \mathrm{imp}_i$. The TAM can then adapt the task value depending on the context. Pickup and delivery rewards are split through $\gamma_p \in [0,1]$. The first part is received when pickup is reached and the remaining $(1-\gamma_p)$ at delivery. Additionally, it is adjusted by a latency factor (\ref{eq:latency}), where $\lambda \in [0,1]$ represents the maximum penalty coefficient. It permit agents to adapt their solutions while ensuring its quality for its set of tasks. It also reduce long processes between accept and delivery.
+
+\begin{equation}
+\varphi(t_d - t_p) = 1 - \lambda \min\!\bigl(1, (t_d-t_p)/t_{\max}\bigr)
+\label{eq:latency}
+\end{equation}
+
+At affectation time, the candidate receives a negative reward proportional to the insertion induced congestion, $\Delta_{\mathrm{cong}}(W)$ (\ref{eq:induced_congestion}), calculated in accordance with the policy input observations.
+
+\begin{equation}
+\Delta_{\mathrm{cong}}(W) = \mathrm{clip}\!\left(\bigl(B(\bar{n}) - 1\bigr)\cdot \min\!\Bigl(1, \tfrac{d_{a\to p}+d_{p\to d}}{L_{\max}}\Bigr),\; 0,\; 1\right)
+\label{eq:induced_congestion}
+\end{equation}
+
+Where $L_{\max}$ is a fixed reference path length used to normalize the insertion cost into $[0, 1]$. Other candidates also receive a small penalty scaled by $\mathrm{imp}_i$ to ensure each policy competitiveness. Agent IDLE states implicate $w_{\mathrm{idle}}$ penalties per offer entries during the episode to improve distribution and action flow over the fleet. Also at the end of the episode, tasks assigned but not delivered at debit proportionally to the remaining delivery rewards value such that $\mathrm{lost\_frac}_i = 1 - \gamma_p$ when pickup was reached, otherwise $\mathrm{lost\_frac}_i = 1$. It permits to ensure task completeness capability learning, in particular under capacitated settings.
+ 
+Overall, the objective is that the policy learns to be aware of global states. While being centered on agents local situations, it gives a fair opinion of its promising-ness without relying on a global team reward.
+ 
+\begin{table}[!htbp]
+\centering
+\caption{Reward shaping}
+\label{tab:reward-shaping}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}lp{0.40\columnwidth}r@{}}
+\toprule
+\textbf{Stage} & \textbf{Term}& \textbf{Default} \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Allocation (TAM resolution)}} \\
+Winner & $-w_{\mathit{cong}} \cdot \Delta_{\mathit{cong}}(W) \cdot \mathrm{imp}_i$ & $0.15$ \\
+Losers & $-w_{\mathit{naff}} \cdot \mathrm{imp}_i$ & $0.03$ \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Execution (online)}} \\
+Pickup reached   & $+\gamma_p \cdot \mathrm{val}_i$ & $\gamma_p = 0.25$ \\
+Delivery reached & $+(1-\gamma_p) \cdot \mathrm{val}_i \cdot \varphi(t_d - t_p)$ & $\lambda = 0.4$ \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{End-of-episode}} \\
+Unfinished & $-w_{\mathit{unf}} \cdot \mathit{lost\_frac}_i \cdot \mathrm{val}_i$ & $0.7$ \\
+Idle agent & $-w_{\mathit{idle}}$ per offer entry & $0.05$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Policy Configuration}
+
+The three used RL baselines share the same actor architecture (MLP $12{\to}64{\to}64{\to}1$, sigmoid) and PPO approach: using clipping, value clipping, KL early stop, value normalization, linear LR annealing, and differ on the critic input, on a few hyperparameter optimization. While trying to keep faithful to their source, some structure settings have been adapted. MAPPO~\cite{yu2022} uses a centralized critic on a $32$-dimensional Feature-Pruned global state ($20$ dimension system state with the input vector $12$ parameters), a tighter clip $\epsilon = 0.1$, and the default learning rate $5 \cdot 10^{-4}$. IPPO~\cite{dewitt2020} shares both actor and critic parameters across agents but feeds the critic with each agent's local observation. The clip $\epsilon = 0.2$ is faithful with its source, a smaller learning rate $10^{-4}$, and only $4$ PPO epochs per round are kept. MAPPER~\cite{liu2020} maintains one actor and one critic per agent structure, with three adaptations to our context: PPO replaces the original A2C (inheriting MAPPO settings), the input is the shared $12$ dimension vector instead of the original three-channel image, and the action space becomes the action score instead of multi-action navigation. The evolutionary replacement is run every $5$ rounds: agents are ranked by mean cumulative reward $R_i$ and range-normalized to $\bar{R}_i = R_i / (R_{\max} - R_{\min})$, then each replaces its weights with the best agent's by probability $p_i = 1 - \exp(\eta\,\bar{R}_i)/\exp(\eta\,\bar{R}_{\mathrm{best}})$, $\eta = 2$. The idle penalty is adapted for MAPPO due to its centralized critic structure: an equivalent signal is provided through the global-state input.
+
+A proposed Hybrid approach combines trained MAPPO base $\pi_\theta$ actor with agent specialization. Specialization occurs during execution permitting local adaptation to different scenarios. Each agent $i$ owns a small linear residual $(\mathbf{w}_i, b_i) \in \mathbb{R}^{12} \times \mathbb{R}$ initialized at zero, applied additively in logit space:
+
+\begin{equation}
+\mu_i(x) = \mathrm{sigmoid}\!\bigl(z_\theta(x) + \mathbf{w}_i^\top x + b_i\bigr)
+\label{eq:specialization_logits}
+\end{equation}
+
+where $z_\theta(x)$ is the MAPPO base actor logit foundation. It is updated through online reinforcement where each decision contributes by its realized reward, applied as soon as it becomes observable; the base $\pi_\theta$ stays frozen through the execution process. Two safety mechanisms protect from divergences: a relative rollback divide $(\mathbf{w}_i, b_i)$ by half if the agent's fitness falls bellow the fleet mean; and a resets of its state to initial when the agent's reward drops more than $M$ standard deviations below its own baseline. Boundaries are defined as $\|\mathbf{w}_i\|_\infty \le 0.5$ and $|b_i| \le 2.0$. This bounded online residual is a central novelty of the proposed task allocation: it keeps every agent hot-started at the shared MAPPO optimum while granting a small, reversible degree of online specialization to its local task and congestion regime, recovering the adaptability of population-based policies without their training cost or instability.
+ 
+\subsection{Local Planning}
+ 
+Once a task is accepted, an agent $a_k$ integrates it within its sequence $\sigma_k$. A single-agent Pickup and Delivery, or a sequence constraint TSP, is solved using the operable environment.
+ 
+In our implementation, the Decomposition-based Variable Neighborhood Search (DbVNS)~\cite{crepin2026} inspired from \cite{mladenovic1997} is adapted to the GPDP case described in Algorithm \ref{alg:dbvns-pdp}. The construction starts from the agent current position. An unordered list $L$ of objective nodes: remaining pickup and associated delivery to already explored ones is used. When a pickup is explored, its node is removed from its search branch $L$ and its associated delivery node inserted. When a delivery node is explored, it is removed from $L$. The procedure terminates when $L$ is empty.
+
+Re-planning is triggered on every accepted task to maintain solution quality. At each construction step, the lowest cost node in $L$ is selected, and a new branch is created in the decomposition tree. A shake alterate the current best leaf by a depth $k$ in the tree; at every parent visited, the following node is added to that parent's forbidden set. Exploration is re-run from other branches whose lower bound remains within $(1+\tau)$ of the current best cost (at most $D_{\max}$ kept per iteration). The depth $k$ is reset to $1$ on improvement, otherwise it increment up to $k_{\max}$. The tree is preserved across re-planning calls within the same agent reducing recomputation.
+ 
+\begin{algorithm}[!htbp]
+\caption{DbVNS-Single Agent PDP}
+\label{alg:dbvns-pdp}
+\begin{algorithmic}[1]
+\REQUIRE Agent $a_k$ at position $o_0$, assigned tasks $R_k$, operable matrix $M_k$,
+         capacity $Q_k$, initial load $\ell_0$, parameters
+         $(k_{\max}, D_{\max}, \tau, \text{iter}_{\max})$
+\ENSURE Validated sequence $\sigma_k$ respecting precedence and capacity
+\STATE Initialize decomposition-tree root with available list
+       $L = \{P_i \mid i \in R_k\}$ (each delivery unlocked once its pickup is served), load $\ell_0$
+\STATE $\sigma_k \gets \textit{GreedyDescent}(\text{root}, M_k)$
+       \hfill\COMMENT{lowest-cost feasible node in $L$, respects precedence + capacity $Q_k$}
+\STATE $k \gets 1$
+\FOR{$\text{iter} = 1$ \TO $\text{iter}_{\max}$}
+    \STATE \textbf{Shake:} climb the best leaf up by $\min\!\bigl(\lfloor k\,|\sigma_k|/k_{\max}\rfloor,\, |\sigma_k|-2\bigr)$ levels
+    \STATE \textbf{Decompose:} along the climbed chain, add each visited choice to its parent's forbidden set
+    \STATE \textbf{Prune:} keep parents with lower bound $< (1+\tau)\cdot \mathrm{cost}(\sigma_k)$; retain at most $D_{\max}$
+    \STATE \textbf{Explore:} run $\textit{GreedyDescent}(\cdot, M_k)$ from each retained node
+    \IF{a completion improves on $\sigma_k$}
+        \STATE $\sigma_k \gets$ best completion;\quad $k \gets 1$
+    \ELSE
+        \STATE $k \gets \min(k + 1, k_{\max})$
+    \ENDIF
+\ENDFOR
+\RETURN $\sigma_k$
+\end{algorithmic}
+\medskip
+\footnotesize
+\textbf{Parameters used:}
+$\tau = 0.7$ (pruning tolerance),
+$k_{\max} = 4$ (max shake depth),
+$D_{\max} = 5$ (max decompositions explored per iteration),
+$\text{iter}_{\max} = 100$ (max VNS iterations).
+\end{algorithm}
+ 
+\section{Geospatial Experimentation}
+\label{sec:experimentation}
+
+The proposed approach is evaluated in dynamic geospatial environments. The objective is to assess solution quality and adaptability under varying conditions. Global system performance, local optimization, and independent mechanism comparisons are all considered. This section describes the experimental setup, comparison protocol, and used metrics. All experiments use a seed protocol for its scenarios: task arrivals, and ghost traffic. Evaluations on different methods replays each setup from these seeds (city, scenario, episode) across compared methods to ensure homogeneity and fair comparison.
+
+\subsection{Environments}
+
+Environments are built from OpenStreetMap data through a GeoBox processing extracting environments elements into a weighted graph. Cities such as New-York and Paris are added to the one used in training on same scale. This permits to propose different configuration and urban complexities to ensure both globalization and efficiency of evaluated methods.
+
+\subsection{Delivery Agents}
+
+Each agent's capacity is sampled in $[Q_{\min}, Q_{\max}]$ at episode start, for heterogeneity, and initialized at random nodes. The simulation then runs over a continuous time horizon during which tasks appear and agents continuously execute movements and re-plan. Every agents posses the same speed $v_0$.
+
+\subsection{Tasks}
+
+Task arrivals follow a process where its intensity evolves across each episode. Divided into phases, each fix a task density for the number of delivery agents. Pickup locations are randomly sampled from a combination of global repartition and hot zones based on a Gaussian distribution. Similarly, delivery location of each pickup is decided under an interval of haversine distance to the pickup in $[d_{\min}, d_{\max}]$, scaled to the city. Hot zones are resampled to ensure diversity across the episode. In addition, each task carries a value multiplier in $[v_{\min}, v_{\max}]$ and an importance in $[\iota_{\min}, \iota_{\max}]$, decoupling task value from task effort.
+
+Three regimes have been defined for each policy $\pi$ training. A task number is generated by respectively a density and agent multiplier (randomly chosen within defined intervals for wider context spectrum): a Normal one with $[0.7, 1.3]$ and $[0.8, 1.2]$ for realizable scenarios, most present case in real world applications; a Light stress one for peak scenarios with $[1.3, 1.8]$ and $[0.6, 0.9]$ intervals; Heavy stress represents exceptional scenarios with $[1.8, 2.8]$ density and $[0.4, 0.7]$ agent multiplier intervals.
+
+\subsection{Congestion}
+
+External traffic is simulated using the Ghost Traffic Controller. At episode start, a portion $\phi_h$ of the road segments is sampled as a set of hot ways $\mathcal{H}$; ghost loads are then instanced on $\mathcal{H}$ elements throughout the episode: distribute the congestion. This permits delivery agents to complete tasks in all cases. The peak number of simultaneous ghost loads is defined as $n_{\max} = \lceil \delta \cdot |\mathcal{H}| \rceil$, where $\delta$ is the density per hot way. The number of active ghosts $n_{\mathrm{target}}(t) = f_{\mathrm{profile}}(t/T) \cdot n_{\max}$, varies at time $t$ among its window $T$, with the episode profile. Each ghost occupies a single edge for a fixed window before expiring; the controller adds new ones on random hot ways to keep the active count close to the target.
+
+\begin{table}[!htbp]
+\centering
+\caption{Congestion profiles}
+\label{tab:profiles}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}lp{0.65\columnwidth}@{}}
+\toprule
+\textbf{Profile} & \textbf{Shape} $f(\tau)$ \\
+\midrule
+Flat     & $0.10$ (constant) \\
+Wave     & $\sin(\pi \tau)$ \\
+Pulse    & linear: $0 \to 0.3 \to 0.1 \to 0.5 \to 1.0$ over quarters\\
+Spike    & $0.05$ if $\tau<0.6$; $1.00$ if $\tau\in[0.6,0.8]$; $0.30$ otherwise \\
+Climbing & $\tau$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Scenarios}
+
+Each episode follow five scenario profiles detailed in Table \ref{tab:eval-scenarios}, performed on each cities: two under the normal regime (wave, pulse) probing different temporal shapes; two stress regimes (shock, buildup) increasing demand while reducing fleet size, and one over-fleet regime testing generalization to extreme fleet over-provisioning never seen during training.
+
+\begin{table}[!htbp]
+\centering
+\caption{Evaluation Scenarios}
+\label{tab:eval-scenarios}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}lp{0.42\columnwidth}l@{}}
+\toprule
+\textbf{Scenario} & \textbf{Regime (fixed)} & \textbf{Profile (fixed)} \\
+\midrule
+wave            & density $1.0$, agents $1.0$  & Wave \\
+pulse           & density $1.0$, agents $1.0$  & Pulse \\
+stress\_shock   & density $1.5$, agents $0.8$  & Spike \\
+stress\_buildup & density $2.0$, agents $0.6$  & Climbing \\
+over\_fleet     & density $0.5$, agents $10.0$ & Wave \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Training}
+
+Training runs $50$ rounds on three cities: Tokyo, Kyoto, Los Angeles; on a single seed (used for scenario simulations). Each round visits each city once per method, giving $9$ episodes per round and $450$ episodes total per seed. The Ghost Traffic Controller simulates congestion on $5\%$ of the ways with an average density of $2$ ghost units per hot way. Episodes are sampled across the three task regimes, following the presented five congestion profiles in Table \ref{tab:profiles}. Each agent and ghost contributes double load to optimize the simulation process, while preserving the congestion estimation.
+
+Optimization follows the recommendations of~\cite{yu2022,dewitt2020} for Multi-Agent PPO, including: full-batch gradient steps with Adam ($\beta_1 = 0.9$, $\beta_2 = 0.999$, $\epsilon = 10^{-5}$), KL early stopping at $\delta = 0.01$, Huber value loss with $\delta_{H} = 10$, and global advantage normalization once per episode before the PPO epoch loop. Networks are initialized orthogonally for MAPPO and MAPPER, and with He variance~\cite{he2015} scaling for IPPO, matching their respective source structures. Learning rate and entropy bonus are linearly annealed across training rounds from the values in Table \ref{tab:hyperparams}. Checkpoints are saved every $10$ rounds.
+
+\subsection{Evaluation setup}
+
+Evaluation covers $5$ cities (training ones plus New York and Paris) over the presented $5$ scenarios, with $2$ episodes per scenario in each city. All samples derive from a single seed preserving task and congestion homogeneity across episodes. Each method has been evaluated on three seeds making 150 episodes by method.
+
+Comparisons are conducted at four levels. At the policy level, RMCA~\cite{chen2021} replaces the learned policy $\pi$ inside our TAM and DbVNS planning: only its scoring is reused. The candidate insertion cost being mapped to an action score $\mu = 1/\!\left(1 + mc^{+}/\kappa\right) \in [0,1]$, where $mc^{+}$ is the non-negative marginal insertion cost and $\kappa$ a fixed scale; its own assignment loop and routing are not used.
+
+At task-allocation level, Token Passing~\cite{ma2017} replaces the TAM and Objective Policy. To isolate its allocation behavior, it is implemented on the task agents rather than the delivery agents for a fair comparison purpose.
+
+At the system level, HAPC~\cite{cortes2009} and CA~\cite{asadi2025} are implemented as faithfully as possible. For HAPC we keep the two-steps-ahead predictive insertion and the capacity feasibility, but replace its particle-swarm search by exhaustive insertion enumeration, and its Euclidean travel by shortest-path routing. For CA we keep the single-task congestion-aware A\* and its $\gamma$-mode weighting, but substitute its trained CNN congestion predictor by the shared CongestionMap (BPR, (\ref{eq:bpr})) and the grid by the OSM road network.
+
+\begin{table}[!htbp]
+\centering
+\caption{Implemented Hyperparameter}
+\label{tab:hyperparams}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{@{}llr@{}}
+\toprule
+\textbf{Module} & \textbf{Parameter} & \textbf{Value} \\
+\midrule
+\multirow{4}{*}{Network}
+ & input dim $d_V$               & $12$ \\
+ & critic FP input dim (MAPPO)   & $32$ \\
+ & hidden width per layer        & $64$ \\
+ & hidden layers                 & $2$ \\
+\midrule
+\multirow{6}{*}{PPO (MAPPO)}
+ & clip $\epsilon$               & $0.10$ \\
+ & target KL                     & $0.01$ \\
+ & epochs per round              & $10$ \\
+ & batch                         & full-buffer \\
+ & gradient norm clip            & $10.0$ \\
+ & entropy (init $\to$ min)      & $10^{-2} \to 10^{-3}$ \\
+\midrule
+\multirow{2}{*}{LR (MAPPO)}
+ & actor (init $\to$ min)        & $5{\cdot}10^{-4} \to 5{\cdot}10^{-5}$ \\
+ & critic (init $\to$ min)       & $5{\cdot}10^{-4} \to 5{\cdot}10^{-5}$ \\
+\midrule
+\multirow{4}{*}{IPPO overrides}
+ & clip $\epsilon$               & $0.20$ \\
+ & epochs per round              & $4$ \\
+ & gradient norm clip            & $0.5$ \\
+ & lr / entropy                  & $10^{-4} / 5{\cdot}10^{-3}$ \\
+\midrule
+\multirow{3}{*}{Optimizer}
+ & Adam $(\beta_1, \beta_2, \epsilon)$ & $(0.9, 0.999, 10^{-5})$ \\
+ & value loss                          & Huber, $\delta_H = 10$ \\
+ & init (MAPPO/MAPPER) / IPPO          & orthogonal / He \\
+\midrule
+\multirow{4}{*}{TAM (Format A)}
+ & max candidates $K$                  & $5$ \\
+ & ratio $\rho_{\max} \to \rho_{\min}$ & $3.0 \to 1.4$ \\
+ & ratio decay scale                   & $2000$ m \\
+ & force\_assign                       & true \\
+\midrule
+\multirow{3}{*}{BPR}
+ & $\alpha$                            & $0.15$ \\
+ & $\beta$                             & $4$ \\
+ & capacity $\kappa$                   & $0.05$ slot/m \\
+\midrule
+\multirow{3}{*}{Ghost traffic}
+ & hot way fraction $\phi_h$           & $0.05$ \\
+ & density / hot way $\delta$          & $2.0$ \\
+ & residence window                    & $8$ steps \\
+\midrule
+\multirow{6}{*}{Reward weights}
+ & pickup share $\gamma_p$             & $0.25$ \\
+ & latency $\lambda$ / $t_{\max}$      & $0.4$ / $1500$ \\
+ & $w_{\mathit{cong}}$                 & $0.15$ \\
+ & $w_{\mathit{naff}}$                 & $0.03$ \\
+ & $w_{\mathit{idle}}$                 & $0.05$ \\
+ & $w_{\mathit{unf}}$                  & $0.70$ \\
+\midrule
+\multirow{3}{*}{Task spatial}
+ & $d_{\min}, d_{\max}$                & $150, 1500$ m \\
+ & $r_{\text{hot\_zone}}$              & $300$ m \\
+ & feasibility margin                  & $2.2$ \\
+\midrule
+\multirow{3}{*}{Task heterogeneity}
+ & value mult. $[v_{\min}, v_{\max}]$  & $[0.5, 2.0]$ \\
+ & importance $[\iota_{\min}, \iota_{\max}]$ & $[0.3, 3.0]$ \\
+ & agent capacity $[Q_{\min}, Q_{\max}]$ & $[3, 7]$ \\
+\midrule
+\multirow{3}{*}{Heatmap (Region Grid)}
+ & grid resolution                     & $32 \times 32$ \\
+ & arrival window                      & $600$ steps \\
+ & congestion refresh                  & every $50$ steps \\
+\midrule
+\multirow{4}{*}{Training}
+ & cities                              & 3 Small (Tokyo, Kyoto, LA) \\
+ & rounds per seed                     & $50$ \\
+ & seeds                               & $1$ \\
+ & checkpoint frequency                & every $10$ rounds \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At the planning level, DbVNS-PDP is compared on the single-agent lifelong pickup and delivery against ALNS~\cite{ropke2006}, Double-Horizon~\cite{mitrovic2004}. All share the same structures for fair comparison, each constrained to respect pairing and capacity.
+
+Each adaptation is proposed for fair comparison in this context; adjustments implying too much divergence from a method or from its original comparison setting were avoided.
+
+\section{Analysis}
+\label{sec:analysis}
+
+In this section, an analysis over the evaluation setup is proposed. All values are means over every city or scenario episodes, aggregated across three seeds. Primary axes metrics in throughput, efficiency, congestion impact are explained on Table \ref{tab:analysis-main}; following by computing complexity and generalization capacities in Table \ref{tab:analysis-seeds-cost}.
+
+The identified throughput are defined using (\ref{eq:throughput_function}). It is the percentage of solved tasks within an episode, such that each task is independently feasible within it.
+
+\begin{equation}
+\text{Thr} = \frac{|\{i \in R : i \text{ delivered}\}|}{|R|}
+\label{eq:throughput_function}
+\end{equation}
+
+The efficiency is mainly evaluated through the latency per task. Representing independent quality service, it is the relative number of steps (or time) between affectation and completeness. Congestion impact is evaluated through the mean BPR factor experienced along the agents executed routes.
+
+Each metrics is calculated within the whole system: agent performances are not independently evaluated; the global performances within an episode is aimed.
+
+\subsection{Cross-method Performance}
+
+On throughput, the four proposed policies stay within a near range (around $0.78$), with the Hybrid reaching the best mean value. By combining the stability of a shared optimum with a light local adaptation, it was enough to reach the best throughput. The proposed approach proposes a great consistency while having evident ratios in the different scenarios. Beyond outperforming SOTA methods in most cases, it also demonstrate better generalization: as of the results in Figure \ref{fig:throughput_per_scenarios} showing mean results on throughput for different scenarios.
+
+\begin{table}[!htbp]
+\centering
+\caption{Cross-method comparison}
+\label{tab:analysis-main}
+\footnotesize
+\setlength{\tabcolsep}{10pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Method} & \textbf{Thr} & \textbf{Lat} (steps) & \textbf{BPR} \\
+\midrule
+\multicolumn{4}{@{}l}{\textit{Proposed (allocation policies)}} \\
+MAPPO          & $0.782$ & $\mathbf{574}$ & $2.82$ \\
+IPPO           & $0.774$ & $582$ & $2.92$ \\
+MAPPER         & $0.778$ & $584$ & $2.83$ \\
+Hybrid         & $\mathbf{0.788}$ & $585$ & $2.87$ \\
+\midrule
+\multicolumn{4}{@{}l}{\textit{SoTA baselines}} \\
+RMCA           & $0.569$ & $629$ & $2.71$ \\
+CA             & $0.371$ & $850$ & $\mathbf{2.69}$ \\
+HAPC           & $0.391$ & $975$ & $2.79$ \\
+TP             & $0.313$ & $892$ & $3.05$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+However, SOTA performs well in over\_fleet scenarios as of their original construction purpose. CA~\cite{asadi2025} is close to optimal under slack, TP~\cite{ma2017} inherits its strength from collision-free MAPD and excels in such scenario, and the predictive estimator of HAPC~\cite{cortes2009} even gives it a small advantage over CA under stress. In the regimes they target, these baselines match or exceed the proposed approach; their limitation is adaptability in other cases.
+
+In other cases, TP throughput collapses: a strong planner alone is not sufficient; it shows the TAM search and scoring importance: present an optimized distribution of tasks, allowing higher and more consistent throughput.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{Throughput per Scenario.png}
+    \caption{Throughput per Scenario (with error bars $\pm$ std across seeds)}
+    \label{fig:throughput_per_scenarios}
+\end{figure}
+
+RMCA already recovers most of this gap, confirming the necessity of the TAM. Even if it proposes great results, the importance of scoring methods, MARL and Hybrid performances is empirically demonstrated within this scope.
+
+Efficiency follows the same ordering: the evaluated policies are the fastest. This can be explained by two factors: the distribution of the tasks is optimized enough to permit efficient routing; DbVNS independently find admissible sequences of execution with high quality in accordance with this distribution.
+
+\begin{table}[!htbp]
+\centering
+\caption{Inter-seed stability and computational complexity}
+\label{tab:analysis-seeds-cost}
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Method} & \textbf{Thr.} $\sigma_{\mathrm{seed}}$ & \textbf{Lat.} $\sigma_{\mathrm{seed}}$ (steps) & \textbf{Compute\,/\,task} (ms) \\
+\midrule
+MAPPO          & $0.007$ & $\mathbf{2.3}$ & $121$ \\
+IPPO           & $0.007$ & $9.6$ & $79$ \\
+MAPPER         & $0.004$ & $6.2$ & $88$ \\
+Hybrid         & $\mathbf{0.003}$ & $9.2$ & $\mathbf{78}$ \\
+\midrule
+RMCA           & $0.011$ & $12.2$ & $643$ \\
+CA             & $0.005$ & $16.6$ & $1637$ \\
+HAPC           & $0.004$ & $31.9$ & $8790$ \\
+TP             & $0.011$ & $28.8$ & $974$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+RMCA follows these results, and the standalone baselines with TP reaches peaks. This is explainable by the task-to-agent affectation: the learned policies select tasks they can serve quickly while SOTA methods present difficulties to assign tasks to the appropriate agent.
+
+Concerning the congestion impact: the proposed policies show a moderate but highest route BPR estimations. This may be explainable by the number of deliveries: a busier fleet accumulates more traversals through loaded edges. Indeed, the mean network congestion (on the base of BPR estimations) stays the lowest for the proposed approaches ($4.45$ for the policies, with $4.46$ for RMCA, $4.48$ for TP and HAPC, $4.49$ for CA). This implies a good distribution of planned movements by DbVNS.
+
+This adaptability holds across seeds with results comparison in Table \ref{tab:analysis-seeds-cost}, scenarios and cities: the proposed throughput varies very little, against higher fluctuations for RMCA and TP, with Hybrid being the most reproducible in comparison to the other policies. Although trained only on Tokyo, Kyoto and Los Angeles, the policies generalize well. It is observable that MAPPO shows the smallest gain and the highest seed variability, which is explainable by its centralized critic: a more deterministic behavior, uniform across contexts. This motivates the more adaptive designs of the local critic of IPPO, or the population-based design of MAPPER inspired one. All of this comes at a competitive cost: the decomposition of responsibilities among mechanisms permit a form of optimization. Overall, the proposed approach offers the best compromise and generalization among proposed metrics.
+
+\subsection{Planning Modules: Single-Agent Comparison}
+
+\begin{table}[!htbp]
+\centering
+\caption{Single-agent planning comparison}
+\label{tab:analysis-planning}
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Planner} & \textbf{Thr} & \textbf{Lat} (steps) & \textbf{Compute\,/\,task} (ms) \\
+\midrule
+DbVNS-PDP (proposed) & $\mathbf{0.409}$ & $1186$ & $227$ \\
+ALNS                 & $0.329$ & $\mathbf{1136}$ & $\mathbf{165}$ \\
+Double-Horizon       & $0.382$ & $1244$ & $218$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At the planning level, the DbVNS-PDP module is evaluated in isolation against two classical PDP solvers, ALNS and Double-Horizon: performances in Table \ref{tab:analysis-planning}. Each method has been run with a similar seed on 100 episodes, taking the same settings as the architecture evaluation. It is performed in singular-agent: every tasks are assigned at appearance.
+
+The proposed planner, gives the best throughput and stays competitive on latency. It should be noted that this quality comes at a higher computing cost, where ALNS reaches a lower per-task time and a slightly better latency, giving it a more favorable ratio. The proposed planner is therefore preferable when solution quality is the priority with cautions on computational complexity.
+
+\section{Conclusion and Future Works}
+ 
+An Agent-Based architecture to solve the CA-L-GPDP with capacitated and geospatial dynamic environments settings has been proposed. Across an evaluation on OSM data, and comparisons with a set of related methods, its efficiency demonstrated great results in such context. In addition, adaptability and generalization capacities were revealed. The decomposition of the problem allowed to combine complementary mechanisms suggesting a form of optimized solving. Furthermore, generated solution quality among different scenarios shows great consistency, and ensure its practical viability. Several further research directions also remain open: for instance, its decentralization aspects let us think about a study of its scalability; the introduction of a Liquid State Machine mechanism, to support the refinement of congestion level prediction. Finally, an extension toward an agentic system is envisioned, to dynamically select and combine mechanisms, based on the structure of encountered sub-problems.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{refs}
+\end{document}

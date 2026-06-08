@@ -82,6 +82,12 @@ public:
     // Useful to detect peak congestion (vs the mean).
     int peak_load_now() const;
 
+    // Combined mean + peak in a SINGLE pass over load_ — avoids the 2× cost
+    // of calling mean_load_now() and peak_load_now() back-to-back from per-
+    // step instrumentation (3600 calls/episode × N_edges iteration each).
+    struct LoadSample { float mean; int peak; };
+    LoadSample load_sample_now() const;
+
     // Number of edges with load >= threshold at the current step.
     // n_edges_load_ge(2) counts overlap incidents (≥2 entities sharing an
     // edge in the same step). Used to quantify network conflict density.

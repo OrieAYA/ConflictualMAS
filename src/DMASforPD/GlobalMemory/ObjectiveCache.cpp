@@ -1,8 +1,14 @@
 #include "ObjectiveCache.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <queue>
+
+// ── Path-compute timing accumulator (single-threaded simulation) ────────────
+namespace { long long g_path_compute_time_us = 0; }
+long long PDPServerMemory::path_compute_time_us()        { return g_path_compute_time_us; }
+void      PDPServerMemory::reset_path_compute_time()     { g_path_compute_time_us = 0; }
 
 // ---- ObjPairHash -------------------------------------------------------
 
@@ -37,7 +43,26 @@ void ObjectiveGroupCache::episode_reset() {
     objective_ids_.clear();
     obj_pair_count_ = 0;
     search_states_.clear();
-    // paths_ intentionally kept: A* results are permanent road-network geometry
+    // search_states_td_ MUST also be cleared — otherwise the TD-aware Dijkstra
+    // states accumulate across episodes (one entry per agent × task origin),
+    // growing unboundedly and ultimately triggering bad_alloc after ~10 rounds.
+    search_states_td_.clear();
+    // paths_ intentionally kept: the static geometry (nodes/edges/cost) is
+    // permanent road-network data, safe to reuse across episodes AND methods.
+    // BUT the per-path DYNAMIC cache (congestion-adjusted TD travel time) is
+    // episode-specific: it was computed against the previous episode's clock and
+    // congestion map. The clock resets to 0 each episode, so a leftover
+    // dynamic_step (e.g. 1500) would wrongly satisfy the
+    // "dynamic_step >= current_step" freshness guard in refresh_dynamic_cost and
+    // leak the previous episode's congestion costs into this one (consumed by
+    // push_rerouted_path at every leg boundary, and by the CongestionAware /
+    // FaithfulCongestionAware branches). Invalidate it so each episode recomputes
+    // its own dynamic costs from a clean slate.
+    for (auto& [key, path] : paths_) {
+        (void)key;
+        path.dynamic_cost = std::numeric_limits<float>::max();
+        path.dynamic_step = -1;
+    }
 }
 
 bool ObjectiveGroupCache::is_complete() const {
@@ -230,6 +255,112 @@ ObjectiveGroupCache::DiscoveryStep ObjectiveGroupCache::discover_step(
     return {};  // type == Exhausted
 }
 
+// ── Time-Dependent variant of discover_step ────────────────────────────────
+// Cost accumulator is in TIME units (steps); each edge contributes the
+// BPR-adjusted travel time evaluated at the predicted arrival step at the
+// edge's tail (start_step + ceil(g_score_so_far)). Reconstructed paths
+// store both the static distance (path.cost) and the TD-time (path.dynamic_cost).
+ObjectiveGroupCache::DiscoveryStep ObjectiveGroupCache::discover_step_td(
+    osmium::object_id_type from,
+    const MyData&          data,
+    int                    start_step,
+    float                  speed_mps,
+    const CongestionMap&   congestion,
+    const std::unordered_set<osmium::object_id_type>& agent_positions,
+    float                  max_cost
+) {
+    if (agent_positions.empty() && is_complete()) return {};
+    if (speed_mps <= 0.f) speed_mps = 1.f;
+
+    auto& state = search_states_td_[from];
+    if (state.exhausted) return {};
+
+    if (state.g_score.empty()) {
+        state.g_score[from] = 0.0f;          // g_score = TD-time in steps
+        state.open.push_back({0.0f, from});
+    }
+
+    using OpenEntry = SearchState::OpenEntry;
+    auto cmp = [](const OpenEntry& a, const OpenEntry& b){ return a.first > b.first; };
+
+    while (!state.open.empty()) {
+        std::pop_heap(state.open.begin(), state.open.end(), cmp);
+        auto [cost, current] = state.open.back();
+        state.open.pop_back();
+
+        if (state.closed.count(current)) continue;
+
+        // Time-budget pruning (same recall semantics as the legacy variant).
+        if (cost > max_cost) {
+            state.open.push_back({cost, current});
+            std::push_heap(state.open.begin(), state.open.end(), cmp);
+            return {};
+        }
+
+        state.closed.insert(current);
+
+        auto node_it = data.nodes.find(current);
+        if (node_it != data.nodes.end()) {
+            const int t_enter = start_step
+                              + static_cast<int>(std::ceil(cost));
+            for (const auto& way_id : node_it->second.incident_ways) {
+                auto way_it = data.ways.find(way_id);
+                if (way_it == data.ways.end()) continue;
+                const auto& way = way_it->second;
+                osmium::object_id_type nb =
+                    (way.node1_id == current) ? way.node2_id : way.node1_id;
+                if (state.closed.count(nb)) continue;
+                const float length_m = way.distance_meters;
+                if (length_m <= 0.f) continue;
+                const float base_time = length_m / speed_mps;
+                const float adj_time  = congestion.adjusted_cost(
+                                            way_id, base_time, length_m, t_enter);
+                float nc = cost + adj_time;
+                if (nc > max_cost) continue;
+                auto g_it = state.g_score.find(nb);
+                if (g_it == state.g_score.end() || nc < g_it->second) {
+                    state.g_score[nb]   = nc;
+                    state.came_from[nb] = {current, way_id};
+                    state.open.push_back({nc, nb});
+                    std::push_heap(state.open.begin(), state.open.end(), cmp);
+                }
+            }
+        }
+
+        if (current != from && !agent_positions.empty() && agent_positions.count(current)) {
+            DiscoveryStep step;
+            step.type       = DiscoveryStep::Type::AgentPosition;
+            step.agent_node = current;
+            step.cost       = cost;             // TD-time at this agent's node
+            return step;
+        }
+
+        if (current != from && objective_ids_.count(current) && !has_path(from, current)) {
+            // Reconstruct path; recompute static distance separately so
+            // path.cost retains its legacy "free-flow distance" semantics.
+            ObjectivePath path = reconstruct_path(state, from, current, cost);
+            // Override path.cost with static distance, store TD-time in dynamic_cost.
+            float static_dist = 0.f;
+            for (auto eid : path.edges) {
+                auto wit = data.ways.find(eid);
+                if (wit != data.ways.end()) static_dist += wit->second.distance_meters;
+            }
+            path.cost = static_dist;
+            path.dynamic_cost = cost;
+            path.dynamic_step = start_step;
+            store_path(path);
+            DiscoveryStep step;
+            step.type = DiscoveryStep::Type::Path;
+            step.path = get_path(from, current);
+            step.cost = cost;                   // TD-time
+            return step;
+        }
+    }
+
+    state.exhausted = true;
+    return {};
+}
+
 const ObjectivePath* ObjectiveGroupCache::discover_next_path(
     osmium::object_id_type from, const MyData& data
 ) {
@@ -263,12 +394,18 @@ void PDPServerMemory::ensure_group(int group_id) {
 const ObjectivePath* PDPServerMemory::get_or_compute_path(
     osmium::object_id_type from, osmium::object_id_type to, int group_id
 ) {
+    const auto t0 = std::chrono::steady_clock::now();
     auto it = group_caches_.find(group_id);
-    if (it == group_caches_.end()) return nullptr;
-    auto& cache = it->second;
-    if (!cache.has_path(from, to))
-        cache.store_path(compute_path(from, to, group_id));
-    return cache.get_path(from, to);
+    const ObjectivePath* result = nullptr;
+    if (it != group_caches_.end()) {
+        auto& cache = it->second;
+        if (!cache.has_path(from, to))
+            cache.store_path(compute_path(from, to, group_id));
+        result = cache.get_path(from, to);
+    }
+    const auto t1 = std::chrono::steady_clock::now();
+    g_path_compute_time_us += std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+    return result;
 }
 
 const ObjectivePath* PDPServerMemory::discover_next_path(
@@ -288,6 +425,22 @@ ObjectiveGroupCache::DiscoveryStep PDPServerMemory::discover_step(
     auto it = group_caches_.find(group_id);
     if (it == group_caches_.end()) return {};
     return it->second.discover_step(from, geo_box.data, agent_positions, max_cost);
+}
+
+ObjectiveGroupCache::DiscoveryStep PDPServerMemory::discover_step_td(
+    osmium::object_id_type from,
+    int group_id,
+    int start_step,
+    float speed_mps,
+    const CongestionMap& congestion,
+    const std::unordered_set<osmium::object_id_type>& agent_positions,
+    float max_cost
+) {
+    auto it = group_caches_.find(group_id);
+    if (it == group_caches_.end()) return {};
+    return it->second.discover_step_td(
+        from, geo_box.data, start_step, speed_mps, congestion,
+        agent_positions, max_cost);
 }
 
 ObjectivePath* PDPServerMemory::refresh_dynamic_cost(

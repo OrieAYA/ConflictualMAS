@@ -87,6 +87,23 @@ public:
         // critic trained on its own trajectory distribution, so per-agent rms
         // is the natural choice — sharing would couple unrelated trajectories.
         RunningMeanStd          value_rms;
+
+        // ── Adam optimiser state (β1=0.9, β2=0.999, ε=1e-5) ──────────────
+        policy_optim::AdamBuf<kHid * kPolicySz>  a_W1_adam;
+        policy_optim::AdamBuf<kHid>              a_b1_adam;
+        policy_optim::AdamBuf<kHid * kHid>       a_W2_adam;
+        policy_optim::AdamBuf<kHid>              a_b2_adam;
+        policy_optim::AdamBuf<kHid>              a_W3_adam;
+        policy_optim::AdamScalar                 a_b3_adam;
+        int                                      adam_t_actor  = 0;
+
+        policy_optim::AdamBuf<kHid * kPolicySz>  c_W1_adam;
+        policy_optim::AdamBuf<kHid>              c_b1_adam;
+        policy_optim::AdamBuf<kHid * kHid>       c_W2_adam;
+        policy_optim::AdamBuf<kHid>              c_b2_adam;
+        policy_optim::AdamBuf<kHid>              c_W3_adam;
+        policy_optim::AdamScalar                 c_b3_adam;
+        int                                      adam_t_critic = 0;
     };
 
     PPOParams                  hparams;

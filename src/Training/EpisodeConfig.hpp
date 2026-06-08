@@ -688,6 +688,16 @@ struct ComparisonMetrics {
     //                                    quality" claim.
     float marginal_cost_ratio_vs_oracle = 1.f;
 
+    // ── RMCA(r) regret diagnostics [Chen et al. 2021, eq.13/14/16] ─────────
+    // Populated only for PolicyMode::RMCA; mean over the episode's allocations.
+    //   rmca_relative_regret  : mean mc(k2)/mc(k1)  — best vs 2nd-best agent.
+    //   rmca_marginal_cost_k1 : mean cheapest insertion cost (metres).
+    //   rmca_marginal_cost_k2 : mean 2nd-cheapest insertion cost (metres).
+    // Zero for every non-RMCA mode (no regret is computed there).
+    float rmca_relative_regret  = 0.f;
+    float rmca_marginal_cost_k1 = 0.f;
+    float rmca_marginal_cost_k2 = 0.f;
+
     // ── Temporal complexity (per-allocation cost) ──────────────────────────
     //
     // compute_time_per_task_ms / compute_time_per_decision_us (existing) are
@@ -706,6 +716,18 @@ struct ComparisonMetrics {
     //                              the TAM did. 0 for non-TAM baselines.
     float mean_allocation_time_us = 0.f;
     float mean_tam_dijkstra_steps = 0.f;
+    // Path-compute breakdown (ms, per episode):
+    //   path_compute_time_ms    : total wallclock spent inside
+    //                              PDPServerMemory::get_or_compute_path during
+    //                              the episode (A* cache lookups + misses).
+    //   mean_pure_alloc_time_ms : per-offer TAM + policy time only,
+    //                              equal to mean(allocation_time - path_time)
+    //                              over all offer_task calls. Lets the user
+    //                              isolate the policy/TAM cost from the
+    //                              path-cache cost, which is shared across
+    //                              methods and warms up over the episode.
+    float path_compute_time_ms    = 0.f;
+    float mean_pure_alloc_time_ms = 0.f;
 
     // ── TAM efficiency metrics (paper's "minimize comm overhead" claim) ────
     //

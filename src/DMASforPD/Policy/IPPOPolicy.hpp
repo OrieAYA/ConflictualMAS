@@ -123,6 +123,25 @@ private:
     std::mt19937                                     rng_;
     std::vector<std::pair<int,int>>                  recent_records_;
 
+    // ── Adam optimiser state (β1=0.9, β2=0.999, ε=1e-5) ───────────────────
+    // IPPO uses a local-observation critic (input dim = kPolicySz), so the
+    // critic W1 buffer is kHid×kPolicySz (smaller than MAPPO's kHid×kCriticIn).
+    policy_optim::AdamBuf<kHid * kPolicySz>  a_W1_adam_;
+    policy_optim::AdamBuf<kHid>              a_b1_adam_;
+    policy_optim::AdamBuf<kHid * kHid>       a_W2_adam_;
+    policy_optim::AdamBuf<kHid>              a_b2_adam_;
+    policy_optim::AdamBuf<kHid>              a_W3_adam_;
+    policy_optim::AdamScalar                 a_b3_adam_;
+    int                                      adam_t_actor_  = 0;
+
+    policy_optim::AdamBuf<kHid * kPolicySz>  c_W1_adam_;
+    policy_optim::AdamBuf<kHid>              c_b1_adam_;
+    policy_optim::AdamBuf<kHid * kHid>       c_W2_adam_;
+    policy_optim::AdamBuf<kHid>              c_b2_adam_;
+    policy_optim::AdamBuf<kHid>              c_W3_adam_;
+    policy_optim::AdamScalar                 c_b3_adam_;
+    int                                      adam_t_critic_ = 0;
+
     std::vector<Experience>& get_or_create_buffer(int agent_id);
 
     // Per-trajectory GAE sweep (one agent's buffer at a time).

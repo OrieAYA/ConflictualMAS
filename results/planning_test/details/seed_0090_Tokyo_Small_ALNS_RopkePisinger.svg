@@ -1,30 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1240">
 <rect width="1100" height="1100" fill="#fafbfc"/>
-<line x1="364.962" y1="320.466" x2="1041.07" y2="903.032" stroke="rgb(120,101,140)" stroke-width="1.4" opacity="0.85"/>
-<line x1="1041.07" y1="903.032" x2="486.413" y2="1041.07" stroke="rgb(147,94,119)" stroke-width="1.4" opacity="0.85"/>
-<line x1="486.413" y1="1041.07" x2="135.833" y2="340.98" stroke="rgb(181,87,94)" stroke-width="1.4" opacity="0.85"/>
-<line x1="135.833" y1="340.98" x2="58.9286" y2="446.858" stroke="rgb(188,85,89)" stroke-width="1.4" opacity="0.85"/>
-<line x1="58.9286" y1="446.858" x2="375.405" y2="786.587" stroke="rgb(207,81,75)" stroke-width="1.4" opacity="0.85"/>
-<line x1="375.405" y1="786.587" x2="164.446" y2="323.914" stroke="rgb(241,73,49)" stroke-width="1.4" opacity="0.85"/>
-<line x1="164.446" y1="323.914" x2="579.968" y2="58.9286" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
-<line x1="579.968" y1="58.9286" x2="164.446" y2="323.914" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
-<circle cx="1041.07" cy="903.032" r="5" fill="rgb(57,115,186)" stroke="white" stroke-width="1.2"/>
-<rect x="481.413" y="1036.07" width="10" height="10" fill="white" stroke="rgb(57,115,186)" stroke-width="2.2"/>
-<line x1="1041.07" y1="903.032" x2="486.413" y2="1041.07" stroke="rgb(57,115,186)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
-<circle cx="135.833" cy="340.98" r="5" fill="rgb(138,97,126)" stroke="white" stroke-width="1.2"/>
-<rect x="53.9286" y="441.858" width="10" height="10" fill="white" stroke="rgb(138,97,126)" stroke-width="2.2"/>
-<line x1="135.833" y1="340.98" x2="58.9286" y2="446.858" stroke="rgb(138,97,126)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
-<circle cx="375.405" cy="786.587" r="5" fill="rgb(153,93,115)" stroke="white" stroke-width="1.2"/>
-<rect x="159.446" y="318.914" width="10" height="10" fill="white" stroke="rgb(153,93,115)" stroke-width="2.2"/>
-<line x1="375.405" y1="786.587" x2="164.446" y2="323.914" stroke="rgb(153,93,115)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
-<circle cx="823.369" cy="322.167" r="5" fill="rgb(171,89,101)" stroke="white" stroke-width="1.2"/>
-<rect x="574.968" y="53.9286" width="10" height="10" fill="white" stroke="rgb(171,89,101)" stroke-width="2.2"/>
-<line x1="823.369" y1="322.167" x2="579.968" y2="58.9286" stroke="rgb(171,89,101)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<line x1="586.629" y1="481.66" x2="866.206" y2="58.9286" stroke="rgb(124,100,137)" stroke-width="1.4" opacity="0.85"/>
+<line x1="866.206" y1="58.9286" x2="719.391" y2="341.274" stroke="rgb(152,93,116)" stroke-width="1.4" opacity="0.85"/>
+<line x1="719.391" y1="341.274" x2="275.283" y2="825.237" stroke="rgb(202,82,79)" stroke-width="1.4" opacity="0.85"/>
+<line x1="275.283" y1="825.237" x2="58.9286" y2="1041.07" stroke="rgb(202,82,79)" stroke-width="1.4" opacity="0.85"/>
+<line x1="58.9286" y1="1041.07" x2="159.709" y2="968.663" stroke="rgb(212,79,71)" stroke-width="1.4" opacity="0.85"/>
+<line x1="159.709" y1="968.663" x2="150.062" y2="648.078" stroke="rgb(236,74,53)" stroke-width="1.4" opacity="0.85"/>
+<line x1="150.062" y1="648.078" x2="1041.07" y2="329.704" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
+<line x1="1041.07" y1="329.704" x2="978.572" y2="321.476" stroke="rgb(255,70,40)" stroke-width="1.4" opacity="0.85"/>
+<circle cx="866.206" cy="58.9286" r="5" fill="rgb(88,108,163)" stroke="white" stroke-width="1.2"/>
+<rect x="714.391" y="336.274" width="10" height="10" fill="white" stroke="rgb(88,108,163)" stroke-width="2.2"/>
+<line x1="866.206" y1="58.9286" x2="719.391" y2="341.274" stroke="rgb(88,108,163)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="275.283" cy="825.237" r="5" fill="rgb(116,102,143)" stroke="white" stroke-width="1.2"/>
+<rect x="145.062" y="643.078" width="10" height="10" fill="white" stroke="rgb(116,102,143)" stroke-width="2.2"/>
+<line x1="275.283" y1="825.237" x2="150.062" y2="648.078" stroke="rgb(116,102,143)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="58.9286" cy="1041.07" r="5" fill="rgb(119,101,140)" stroke="white" stroke-width="1.2"/>
+<rect x="154.709" y="963.663" width="10" height="10" fill="white" stroke="rgb(119,101,140)" stroke-width="2.2"/>
+<line x1="58.9286" y1="1041.07" x2="159.709" y2="968.663" stroke="rgb(119,101,140)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+<circle cx="1041.07" cy="329.704" r="5" fill="rgb(202,82,79)" stroke="white" stroke-width="1.2"/>
+<rect x="973.572" y="316.476" width="10" height="10" fill="white" stroke="rgb(202,82,79)" stroke-width="2.2"/>
+<line x1="1041.07" y1="329.704" x2="978.572" y2="321.476" stroke="rgb(202,82,79)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
 <rect y="1100" width="1100" height="140" fill="#edf0f3"/>
-<text x="12" y="1120" font-family="monospace" font-size="13" fill="#222">seed=442261759  city=Tokyo_Small  mode=ALNS_RopkePisinger  density=0.51  agents=1.00  (low_saturation)</text>
-<text x="12" y="1140" font-family="monospace" font-size="12" fill="#222">arrived=4 accepted=4 delivered=3 unfinished=1 dist=11278m agents=1</text>
-<text x="12" y="1158" font-family="monospace" font-size="12" fill="#444">spatial: bbox=6.53km² hull=3.79km² meanPD=1020m meanNN=1468m</text>
-<text x="12" y="1176" font-family="monospace" font-size="12" fill="#555">validity: pairing_viol=0 capacity_viol=0 wallclock=143ms</text>
+<text x="12" y="1120" font-family="monospace" font-size="13" fill="#222">seed=-686795716  city=Tokyo_Small  mode=ALNS_RopkePisinger  density=0.62  agents=1.00  (low_saturation)</text>
+<text x="12" y="1140" font-family="monospace" font-size="12" fill="#222">arrived=4 accepted=4 delivered=1 unfinished=3 dist=15117m agents=1</text>
+<text x="12" y="1158" font-family="monospace" font-size="12" fill="#444">spatial: bbox=20.99km² hull=6.74km² meanPD=842m meanNN=1465m</text>
+<text x="12" y="1176" font-family="monospace" font-size="12" fill="#555">validity: pairing_viol=0 capacity_viol=0 wallclock=456ms</text>
 <rect x="12" y="1195" width="28" height="12" fill="rgb(40,120,200)"/>
 <rect x="39" y="1195" width="28" height="12" fill="rgb(70,112,177)"/>
 <rect x="67" y="1195" width="28" height="12" fill="rgb(101,105,154)"/>

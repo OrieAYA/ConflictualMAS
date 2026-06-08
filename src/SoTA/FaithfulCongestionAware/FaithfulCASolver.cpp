@@ -64,7 +64,7 @@ void FaithfulCASolver::inject_task(const ScheduledTask& task, int step) {
 }
 
 int FaithfulCASolver::edge_arrival_step(osmium::object_id_type edge_id,
-                                         int t_enter) const {
+                                         int t_enter) {
     if (!ctx_) return t_enter + 1;
     const auto& ways = ctx_->geo_box->data.ways;
     auto it = ways.find(edge_id);
@@ -74,6 +74,12 @@ int FaithfulCASolver::edge_arrival_step(osmium::object_id_type edge_id,
     const float adj = ctx_->congestion_map
         ? ctx_->congestion_map->adjusted_cost(edge_id, base_time, length_m, t_enter)
         : base_time;
+    // Record the BPR factor at the edge's ENTRY step (t_enter = current step at
+    // all call sites). Must be sampled here, NOT at completion: CongestionMap::
+    // advance() purges past steps, so a later query at the entry step reads
+    // load 0 → BPR 1.0. Mirrors EpisodeRunner::schedule_next_edge.
+    if (ctx_->congestion_map && base_time > 0.f)
+        instr_.record_edge_bpr(adj / base_time);
     return t_enter + std::max(1, static_cast<int>(std::ceil(adj)));
 }
 
@@ -277,11 +283,8 @@ bool FaithfulCASolver::begin_leg_bpr(AgentState& a,
     a.next_idx = 0;
     a.current_edge_t_enter = step;
     a.arrival_step_next_node = edge_arrival_step(a.current_path_edges.front(), step);
-
-    if (ctx_->congestion_map) {
-        ctx_->congestion_map->add_agent(a.current_path_edges.front(), step,
-                                         a.arrival_step_next_node);
-    }
+    // Congestion footprint is registered for the FULL remaining route by
+    // recommit_route() (Option O commit_plan-style), not edge-by-edge here.
     return true;
 }
 
@@ -292,7 +295,8 @@ void FaithfulCASolver::advance_agent(AgentState& a, int step) {
         return;
     }
 
-    // Track distance on the edge just completed.
+    // Track distance on the edge just completed (BPR is sampled at ENTRY inside
+    // edge_arrival_step — past steps are purged from the CongestionMap).
     if (ctx_ && a.next_idx < static_cast<int>(a.current_path_edges.size())) {
         const auto& ways = ctx_->geo_box->data.ways;
         auto wit = ways.find(a.current_path_edges[a.next_idx]);
@@ -343,16 +347,39 @@ void FaithfulCASolver::advance_agent(AgentState& a, int step) {
             a.current_path_edges.clear();
             a.next_idx = 0;
         }
+        // Plan changed (stop reached) → refresh the full-route footprint.
+        recommit_route(a, step);
         return;
     }
 
     a.current_edge_t_enter = step;
     const osmium::object_id_type next_edge = a.current_path_edges[a.next_idx];
     a.arrival_step_next_node = edge_arrival_step(next_edge, step);
-    if (ctx_->congestion_map) {
-        ctx_->congestion_map->add_agent(next_edge, step, a.arrival_step_next_node);
-    }
     ++active_steps_sum_;
+}
+
+// Re-register the agent's full remaining route on the shared CongestionMap,
+// exactly like Option O's commit_plan: unregister the previous footprint, then
+// add every edge of every remaining leg with free-flow windows weighted by
+// load_per_agent. Called on every plan change (allocation, stop reached).
+void FaithfulCASolver::recommit_route(AgentState& a, int step) {
+    if (!ctx_ || !ctx_->congestion_map || !ctx_->geo_box) return;
+    std::vector<osmium::object_id_type> stops;
+    if (a.active_task_id >= 0 && a.active_task_id < static_cast<int>(tasks_.size())) {
+        const TaskRecord& t = tasks_[a.active_task_id];
+        if (a.active_is_pickup_leg) {
+            stops.push_back(t.pickup_node);
+            stops.push_back(t.delivery_node);
+        } else {
+            stops.push_back(t.delivery_node);
+        }
+    }
+    commit_agent_route(
+        *ctx_->congestion_map, *ctx_->geo_box, ctx_->speed_mps,
+        a.current_node, stops, step, a.committed_occ,
+        [this](osmium::object_id_type f, osmium::object_id_type to, int t) {
+            return bpr_a_star(f, to, t).edges;
+        });
 }
 
 bool FaithfulCASolver::try_allocate_one(int step) {
@@ -442,6 +469,7 @@ bool FaithfulCASolver::try_allocate_one(int step) {
         pending_task_ids_.push_back(tid);
         return false;
     }
+    recommit_route(a, step);   // register the full pickup→delivery route footprint
     return true;
 }
 

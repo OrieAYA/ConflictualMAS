@@ -243,6 +243,7 @@ static const char* policy_mode_label(PolicyMode m) {
         case PolicyMode::TokenPassing:    return "TokenPassing";
         case PolicyMode::RHCR:            return "RHCR";
         case PolicyMode::DoubleHorizon:   return "DoubleHorizon";
+        case PolicyMode::RMCA:            return "RMCA";
     }
     return "Unknown";
 }
@@ -332,7 +333,7 @@ int MultiCityTrainer::run_eval(
                     EpisodeRecord rec = make_record(
                         res, seed, global_ep++,
                         ca.config->name, phase, name,
-                        ca.ep_cfg.max_agents());
+                        res.metrics.n_agents_max);
                     logger.push(rec);
                     std::cout << "    [" << phase
                               << " " << ca.config->name << "/" << name
@@ -412,7 +413,7 @@ int MultiCityTrainer::run_generalize_eval(
                     EpisodeRecord rec = make_record(
                         res, seed, global_ep++,
                         ca.config->name, phase, name,
-                        ca.ep_cfg.max_agents());
+                        res.metrics.n_agents_max);
                     logger.push(rec);
                     std::cout << "    [" << phase
                               << " " << ca.config->name << "/" << name
@@ -477,7 +478,7 @@ int MultiCityTrainer::run_stress_eval(
                 EpisodeRecord rec = make_record(
                     res, seed, global_ep++,
                     ca.config->name, "stress", name,
-                    ca.ep_cfg.max_agents());
+                    res.metrics.n_agents_max);
                 logger.push(rec);
                 std::cout << "    [stress " << ca.config->name << "/" << name
                           << "/" << (e + 1) << "/" << cfg.n_eval_episodes
@@ -783,7 +784,7 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                     logger.push(make_record(
                         res, seed, global_ep++,
                         ca.config->name, "train", "IPPO",
-                        ca.ep_cfg.max_agents()));
+                        res.metrics.n_agents_max));
                     if (global_ep % cfg.log_every == 0)
                         log_train(res, "IPPO", ippo.hparams.epochs);
                 }
@@ -796,7 +797,7 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                     logger.push(make_record(
                         res, seed, global_ep++,
                         ca.config->name, "train", "MAPPER",
-                        ca.ep_cfg.max_agents()));
+                        res.metrics.n_agents_max));
                     if (global_ep % cfg.log_every == 0)
                         log_train(res, "MAPPER", mapper.hparams.epochs);
                 }
@@ -813,7 +814,7 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                     logger.push(make_record(
                         res, seed, global_ep++,
                         ca.config->name, "train", "FaithfulMAPPER",
-                        ca.ep_cfg.max_agents()));
+                        res.metrics.n_agents_max));
                     if (global_ep % cfg.log_every == 0)
                         log_train(res, "FMAPPER", faithful.hparams.epochs);
                 }
@@ -826,7 +827,7 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                     logger.push(make_record(
                         res, seed, global_ep++,
                         ca.config->name, "train", "MAPPO",
-                        ca.ep_cfg.max_agents()));
+                        res.metrics.n_agents_max));
                     if (global_ep % cfg.log_every == 0)
                         log_train(res, "MAPPO", policy.hparams.epochs);
                 }

@@ -3,6 +3,7 @@
 
 #include "SoTA/ISolver.hpp"
 #include "SoTA/SolverInstrumentation.hpp"
+#include "SoTA/SolverCongestion.hpp"
 #include <vector>
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -124,6 +125,10 @@ private:
 
         std::vector<int> in_flight_task_ids;
         int  capacity = 1;
+
+        // Full-route congestion footprint registered on the shared map
+        // (replicates Option O's commit_plan); removed/re-added on every replan.
+        CommittedOcc committed_occ;
     };
 
     struct TaskRecord {
@@ -186,7 +191,11 @@ private:
                        osmium::object_id_type target_node,
                        int step);
     void advance_agent(AgentState& a, int step);
-    int  edge_arrival_step(osmium::object_id_type edge_id, int t_enter) const;
+    int  edge_arrival_step(osmium::object_id_type edge_id, int t_enter);
+
+    // Re-register the agent's full remaining route on the shared CongestionMap
+    // (Option O commit_plan-style footprint). Called on every plan change.
+    void recommit_route(AgentState& a, int step);
 };
 
 #endif // SOTA_FAITHFUL_CA_SOLVER_HPP
