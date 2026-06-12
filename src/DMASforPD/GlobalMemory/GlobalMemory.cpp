@@ -284,33 +284,45 @@ const AgentSolution* PDPGlobalMemory::get_solution(int agent_id) const {
 
 namespace {
 
-// Build a TimedPath from a cached ObjectivePath at a given speed.
-// edge_steps[i] = max(1, ceil(adjusted_cost_i / speed_mps)), where the per-edge
-// travel time is the BPR congestion-adjusted cost evaluated at the edge's
-// predicted ENTRY step (leg_start + cumulative steps so far). This publishes
-// occupancy windows that MATCH the congestion-slowed execution timeline
-// (schedule_next_edge uses the same BPR factor at the actual entry step) and
-// mirrors the SoTA FaithfulCASolver per-edge arrival rule, keeping Option O
-// and OP on the same operational environment. Single forward pass — reads the
-// load profile as-is (no fixed-point).
-TimedPath make_timed_path(const ObjectivePath& path, float speed_mps,
+// Build a TimedPath from a cached ObjectivePath at a given speed, ORIENTED so
+// the walk starts at `from`. The path cache stores each (a,b) pair once, in
+// the direction it was first computed; a leg traversing it the other way must
+// replay edges in reverse order, otherwise the published occupancy windows
+// (and arrival estimates) describe a walk from the wrong end of the path.
+//
+// edge_steps[i] = CongestionMap::traversal_steps evaluated at the edge's
+// predicted ENTRY step (leg_start + cumulative steps so far) — the same
+// authority the movement engine uses, so estimation and execution agree.
+TimedPath make_timed_path(const ObjectivePath& path,
+                          osmium::object_id_type from,
+                          float speed_mps,
                           const MyData& data, const CongestionMap& congestion,
                           int leg_start_step) {
     TimedPath tp;
-    tp.from_node      = path.nodes.empty() ? path.node_a : path.nodes.front();
-    tp.to_node        = path.nodes.empty() ? path.node_b : path.nodes.back();
-    tp.nodes          = path.nodes;
-    tp.total_distance = path.cost;
+    if (path.nodes.size() < 2) {
+        tp.from_node = path.node_a;
+        tp.to_node   = path.node_b;
+        return tp;
+    }
+    const bool forward = (path.nodes.front() == from) || (path.nodes.back() != from);
 
-    for (const auto& way_id : path.edges) {
+    tp.total_distance = path.cost;
+    const std::size_t ne = path.edges.size();
+    tp.nodes.reserve(path.nodes.size());
+    tp.edge_ids.reserve(ne);
+    tp.edge_steps.reserve(ne);
+    if (forward) tp.nodes = path.nodes;
+    else         tp.nodes.assign(path.nodes.rbegin(), path.nodes.rend());
+    tp.from_node = tp.nodes.front();
+    tp.to_node   = tp.nodes.back();
+
+    for (std::size_t k = 0; k < ne; ++k) {
+        const osmium::object_id_type way_id =
+            forward ? path.edges[k] : path.edges[ne - 1 - k];
         auto it = data.ways.find(way_id);
-        float dist  = (it != data.ways.end()) ? it->second.distance_meters : 0.0f;
-        int   steps = 1;
-        if (speed_mps > 0.0f && dist > 0.0f) {
-            const int   entry    = leg_start_step + tp.total_steps;
-            const float eff_dist = congestion.adjusted_cost(way_id, dist, dist, entry);
-            steps = std::max(1, static_cast<int>(std::ceil(eff_dist / speed_mps)));
-        }
+        const float dist = (it != data.ways.end()) ? it->second.distance_meters : 0.0f;
+        const int entry  = leg_start_step + tp.total_steps;
+        const int steps  = congestion.traversal_steps(way_id, dist, entry, speed_mps);
         tp.edge_ids.push_back(way_id);
         tp.edge_steps.push_back(steps);
         tp.total_steps += steps;
@@ -322,16 +334,15 @@ TimedPath make_timed_path(const ObjectivePath& path, float speed_mps,
 }  // namespace
 
 void PDPGlobalMemory::unregister_committed_plan(int agent_id) {
-    auto it = committed_plans_.find(agent_id);
-    if (it == committed_plans_.end()) return;
-    const int w = std::max(1, congestion_map.params.load_per_agent);
-    for (auto& [tp, departure] : it->second) {
-        for (std::size_t i = 0; i < tp.edge_ids.size(); ++i)
-            congestion_map.remove_agent(tp.edge_ids[i],
-                                        tp.abs_entry(i, departure),
-                                        tp.abs_exit (i, departure), w);
-    }
-    committed_plans_.erase(it);
+    auto it = committed_loads_.find(agent_id);
+    if (it == committed_loads_.end()) return;
+    // Exact removal of what was added. Steps already purged by advance()
+    // (t < t_now) are skipped inside update_load, which is harmless: their
+    // contribution no longer exists. Steps were clamped to the registration
+    // window at add time, so nothing here can exceed the current window.
+    for (const LoadWindow& lw : it->second)
+        congestion_map.remove_agent(lw.way, lw.t_lo, lw.t_hi, lw.weight);
+    committed_loads_.erase(it);
 }
 
 void PDPGlobalMemory::register_committed_plan(int agent_id, float speed_mps) {
@@ -341,39 +352,38 @@ void PDPGlobalMemory::register_committed_plan(int agent_id, float speed_mps) {
     AgentSolution& sol = agent->solution;
     if (!sol.valid() || sol.empty()) return;
 
-    std::vector<std::pair<TimedPath, int>>& plan = committed_plans_[agent_id];
-    plan.clear();
+    std::vector<LoadWindow>& ledger = committed_loads_[agent_id];
+    ledger.clear();
 
     int t = current_time_;
-    const int w = std::max(1, congestion_map.params.load_per_agent);
+    const int w  = std::max(1, congestion_map.params.load_per_agent);
+    const int lo = congestion_map.window_lo();
+    const int hi = congestion_map.window_hi();
 
-    // First leg: current node → sequence[0]
-    {
-        const ObjectiveNode& next = sol.sequence[0].node;
-        const ObjectivePath* path = get_or_compute_path(*sol.current_position, next.id, next.group_id);
-        if (path && path->valid()) {
-            TimedPath tp = make_timed_path(*path, speed_mps, geo_box.data, congestion_map, t);
-            sol.sequence[0].estimated_arrival = t + tp.total_steps;
-            for (std::size_t i = 0; i < tp.edge_ids.size(); ++i)
-                congestion_map.add_agent(tp.edge_ids[i], tp.abs_entry(i, t), tp.abs_exit(i, t), w);
-            plan.push_back({std::move(tp), t});
-            t = sol.sequence[0].estimated_arrival;
+    auto register_leg = [&](osmium::object_id_type from, const ObjectiveNode& to)
+        -> int /* arrival step, or -1 if no path */ {
+        const ObjectivePath* path = get_or_compute_path(from, to.id, to.group_id);
+        if (!path || !path->valid()) return -1;
+        TimedPath tp = make_timed_path(*path, from, speed_mps,
+                                       geo_box.data, congestion_map, t);
+        for (std::size_t i = 0; i < tp.edge_ids.size(); ++i) {
+            const int e_lo = std::max(lo, tp.abs_entry(i, t));
+            const int e_hi = std::min(hi, tp.abs_exit (i, t));
+            if (e_lo > e_hi) continue;          // outside the registrable window
+            congestion_map.add_agent(tp.edge_ids[i], e_lo, e_hi, w);
+            ledger.push_back({tp.edge_ids[i], e_lo, e_hi, w});
         }
-    }
+        return t + tp.total_steps;
+    };
 
-    // Remaining legs: sequence[k] → sequence[k+1]
-    for (std::size_t k = 0; k + 1 < sol.sequence.size(); ++k) {
-        const ObjectiveNode& a = sol.sequence[k].node;
-        const ObjectiveNode& b = sol.sequence[k + 1].node;
-        const ObjectivePath* path = get_or_compute_path(a.id, b.id, a.group_id);
-        if (path && path->valid()) {
-            TimedPath tp = make_timed_path(*path, speed_mps, geo_box.data, congestion_map, t);
-            sol.sequence[k + 1].estimated_arrival = t + tp.total_steps;
-            for (std::size_t i = 0; i < tp.edge_ids.size(); ++i)
-                congestion_map.add_agent(tp.edge_ids[i], tp.abs_entry(i, t), tp.abs_exit(i, t), w);
-            plan.push_back({std::move(tp), t});
-            t = sol.sequence[k + 1].estimated_arrival;
-        }
+    // First leg: current node → sequence[0], then sequence[k] → sequence[k+1].
+    osmium::object_id_type from = *sol.current_position;
+    for (std::size_t k = 0; k < sol.sequence.size(); ++k) {
+        const int arrival = register_leg(from, sol.sequence[k].node);
+        if (arrival < 0) break;
+        sol.sequence[k].estimated_arrival = arrival;
+        t    = arrival;
+        from = sol.sequence[k].node.id;
     }
 }
 
@@ -395,23 +405,45 @@ void PDPGlobalMemory::push_rerouted_path(int agent_id, float speed_mps) {
     // only; begin_leg() then uses that refreshed path to create the cursor.
 
     // The agent is heading from current_node to sequence[0].
-    osmium::object_id_type from = agent->current_node;
-    const ObjectiveNode&   to   = sol.sequence[0].node;
+    const osmium::object_id_type from = agent->current_node;
+    const ObjectiveNode&         to   = sol.sequence[0].node;
+    if (from == to.id) return;
 
-    // Refresh the dynamic cost via TD-A*.
-    ObjectivePath* path = server_memory.refresh_dynamic_cost(
-        from, to.id, to.group_id, speed_mps, congestion_map, current_time_);
-    if (!path) return;
+    // Remaining travel time of the CURRENT route, BPR-replayed from the
+    // agent's position (time units: steps — same units as TD-A* below).
+    const ObjectivePath* cur = agent->local_memory.current_path;
+    if (!cur || !cur->valid()) return;
+    const int cur_steps = path_travel_steps(*cur, from, current_time_, speed_mps);
+    if (cur_steps == std::numeric_limits<int>::max()) return;
 
-    // Only push if the dynamic cost is meaningfully better than the static path.
-    const float improvement_threshold = 1.05f; // >5% better
-    if (!path->has_dynamic_cost()) return;
-    if (agent->local_memory.current_path &&
-        agent->local_memory.current_path->cost > 0.f &&
-        path->dynamic_cost >= agent->local_memory.current_path->cost / improvement_threshold)
+    // Congestion-aware alternative.
+    TDAStarResult tda = time_dependent_astar(from, to.id, current_time_, speed_mps);
+    if (!tda.valid() || tda.nodes.size() < 2) return;
+
+    // Reroute only on a meaningful (>5%) travel-time improvement.
+    if (static_cast<float>(tda.total_time)
+        >= static_cast<float>(cur_steps) / 1.05f)
         return;
 
-    agent->push_updated_path(path);
+    // Adopt the TD-A* GEOMETRY (not just its cost): copy it into the agent's
+    // owned reroute slot so current_path can outlive the cache entry.
+    float static_dist = 0.f;
+    for (auto eid : tda.edges) {
+        auto wit = geo_box.data.ways.find(eid);
+        if (wit != geo_box.data.ways.end())
+            static_dist += wit->second.distance_meters;
+    }
+    ObjectivePath& rp = agent->local_memory.reroute_path;
+    rp.node_a       = std::min(from, to.id);
+    rp.node_b       = std::max(from, to.id);
+    rp.nodes        = std::move(tda.nodes);
+    rp.edges        = std::move(tda.edges);
+    rp.cost         = static_dist;
+    rp.dynamic_cost = static_cast<float>(tda.total_time);
+    rp.dynamic_step = current_time_;
+    rp.intermediate_objectives.clear();
+
+    agent->push_updated_path(&rp);
     commit_plan(agent_id, speed_mps);
 }
 
@@ -459,11 +491,19 @@ float PDPGlobalMemory::bpr_path_cost(
     if (!p || !p->valid()) return std::numeric_limits<float>::max();
     if (p->edges.empty()) return p->cost;          // same node / trivial hop
 
+    // Orient the replay: the cache stores one direction only, but the BPR
+    // time profile depends on the traversal direction (edges are sampled at
+    // their running entry time).
+    const bool forward =
+        p->nodes.size() < 2 || p->nodes.front() == from || p->nodes.back() != from;
+
     const auto& ways = geo_box.data.ways;
     const float spd  = (speed_mps > 0.f) ? speed_mps : 1.f;
+    const std::size_t ne = p->edges.size();
     float acc = 0.f;                                // adjusted distance-equiv (meters)
     float t   = static_cast<float>(depart_step);    // running predicted arrival time
-    for (const auto& wid : p->edges) {
+    for (std::size_t k = 0; k < ne; ++k) {
+        const osmium::object_id_type wid = forward ? p->edges[k] : p->edges[ne - 1 - k];
         auto it = ways.find(wid);
         const float d = (it != ways.end()) ? it->second.distance_meters : 0.f;
         if (d <= 0.f) continue;
@@ -472,6 +512,42 @@ float PDPGlobalMemory::bpr_path_cost(
         t   += adj / spd;                           // advance time along the path
     }
     return acc;
+}
+
+int PDPGlobalMemory::path_travel_steps(
+    const ObjectivePath& path,
+    osmium::object_id_type from,
+    int depart_step, float speed_mps
+) const {
+    constexpr int kUnreachable = std::numeric_limits<int>::max();
+    if (!path.valid() || path.nodes.size() < 2) return kUnreachable;
+
+    // Locate the start within the path, oriented so the walk begins at `from`.
+    // Oriented node i = forward ? nodes[i] : nodes[n-1-i]; oriented edge k
+    // connects oriented nodes k and k+1.
+    const auto& nodes = path.nodes;
+    const std::size_t nn = nodes.size();
+    const std::size_t ne = path.edges.size();
+    const bool forward = (nodes.front() == from) || (nodes.back() != from);
+
+    std::size_t start_edge = nn;   // sentinel = not found
+    for (std::size_t i = 0; i < nn; ++i) {
+        const std::size_t oi = forward ? i : (nn - 1 - i);
+        if (nodes[oi] == from) { start_edge = i; break; }
+    }
+    if (start_edge >= nn) return kUnreachable;   // `from` not on this path
+    if (start_edge >= ne) return 0;              // already at the far endpoint
+
+    const auto& ways = geo_box.data.ways;
+    int t = depart_step;
+    for (std::size_t k = start_edge; k < ne; ++k) {
+        const osmium::object_id_type wid =
+            forward ? path.edges[k] : path.edges[ne - 1 - k];
+        auto it = ways.find(wid);
+        const float d = (it != ways.end()) ? it->second.distance_meters : 0.f;
+        t += congestion_map.traversal_steps(wid, d, t, speed_mps);
+    }
+    return t - depart_step;
 }
 
 // ---- Simulation clock --------------------------------------------------
@@ -490,17 +566,9 @@ void PDPGlobalMemory::advance_time(int t_now) {
 // ---- Episode reset -----------------------------------------------------
 
 void PDPGlobalMemory::reset_episode() {
-    // Clear all committed congestion contributions before wiping plans.
-    const int w = std::max(1, congestion_map.params.load_per_agent);
-    for (auto& [aid, plan] : committed_plans_) {
-        for (auto& [tp, departure] : plan) {
-            for (std::size_t i = 0; i < tp.edge_ids.size(); ++i)
-                congestion_map.remove_agent(tp.edge_ids[i],
-                                            tp.abs_entry(i, departure),
-                                            tp.abs_exit (i, departure), w);
-        }
-    }
-    committed_plans_.clear();
+    // Drop the committed-plan ledger. No need to subtract the loads one by
+    // one: congestion_map.reset() below wipes every entry anyway.
+    committed_loads_.clear();
 
     tasks_.clear();
     available_tasks.clear();
@@ -525,36 +593,6 @@ void PDPGlobalMemory::reset_episode() {
 }
 
 // ---- Congestion --------------------------------------------------------
-
-static void apply_route(CongestionMap& cmap, const ObjectivePath& path,
-                         int start_time, float speed_mps,
-                         const GeoBox& geo_box, int delta) {
-    int t = start_time;
-    const int w = std::max(1, cmap.params.load_per_agent);
-    for (const auto& way_id : path.edges) {
-        auto it = geo_box.data.ways.find(way_id);
-        if (it == geo_box.data.ways.end()) continue;
-        const float dist   = it->second.distance_meters;
-        const int transit  = (speed_mps > 0.0f)
-                             ? std::max(1, static_cast<int>(std::ceil(dist / speed_mps)))
-                             : 1;
-        if (delta > 0) cmap.add_agent   (way_id, t, t + transit, w);
-        else           cmap.remove_agent(way_id, t, t + transit, w);
-        t += transit;
-    }
-}
-
-void PDPGlobalMemory::register_agent_path(
-    const ObjectivePath& path, int start_time, float speed_mps
-) {
-    apply_route(congestion_map, path, start_time, speed_mps, geo_box, +1);
-}
-
-void PDPGlobalMemory::unregister_agent_path(
-    const ObjectivePath& path, int start_time, float speed_mps
-) {
-    apply_route(congestion_map, path, start_time, speed_mps, geo_box, -1);
-}
 
 float PDPGlobalMemory::congestion_cost(
     osmium::object_id_type way_id, float base_cost, float distance_meters, int t

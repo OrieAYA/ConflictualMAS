@@ -5,7 +5,7 @@
 #include "EpisodeGenerator.hpp"
 #include "DMASforPD/GlobalMemory/GlobalMemory.hpp"
 #include "DMASforPD/DeliveryAgent/DeliveryAgent.hpp"
-#include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
+#include "DMASforPD/Policy/BidPolicy.hpp"
 #include "Environment/Congestion/GhostTrafficController.hpp"
 #include "Legacy/Common/Pathfinding.hpp"
 #include <array>
@@ -17,9 +17,9 @@
 
 // ── Result returned from a single episode run ─────────────────────────────────
 struct RunResult {
-    ComparisonMetrics                    metrics;
-    ObjectiveDMPolicy::TrainingStats     train_stats; // zeroed when train_mode=false
-    long long                            wallclock_ms = 0;
+    ComparisonMetrics metrics;
+    TrainingStats     train_stats;   // zeroed when train_mode=false
+    long long         wallclock_ms = 0;
 };
 
 // ── Episode difficulty scenario ───────────────────────────────────────────────
@@ -78,200 +78,32 @@ struct EpisodeScenario {
 // Random and Greedy do NOT call try_accept_task() and do NOT write to the
 // training buffer — safe for use as baselines without contaminating MAPPO.
 enum class PolicyMode {
-    MAPPO,            // full system: shared-actor + centralised critic MAPPO
-                      // (CTDE: centralised training, decentralised execution)
-    IPPO,             // Independent PPO [de Witt+2020]: shared actor +
-                      // per-agent local critics. Ablation between MAPPO's
-                      // centralised critic and MAPPER's decentralised actor.
-    MAPPER,           // decentralised RL baseline [Liu+IROS2020 adapted]:
-                      // per-agent actor + per-agent critic + Evolutionary RL.
-                      // Our "enhanced" variant: top-elite preservation + Gaussian
-                      // mutation N(0, 0.02²) on bottom replacements.
-    FaithfulMAPPER,   // paper-faithful MAPPER [Liu+IROS2020] — same per-agent
-                      // architecture as MAPPER, but evolution exactly per
-                      // Algorithm 1: probabilistic replacement (p_i ∝ fitness
-                      // gap to best) + EXACT copy of best agent's weights
-                      // (no mutation noise). Distinct singleton so it can
-                      // be trained side-by-side with MAPPER on the same draws.
-    Hybrid,           // frozen MAPPO base + per-agent online linear residual.
-                      // Combines MAPPO's hot-start for new agents with
-                      // MAPPER's specialisation, plus an explicit rollback
-                      // safety net (residual shrinks/resets when fitness
-                      // drops below fleet mean − threshold).
-    TamAlwaysAccept,  // ablation: TAM routing only, always accept (no policy learning)
-                      // isolates TAM routing contribution from MAPPO learning
-    Greedy,           // always accept first idle agent (sequential scan)
-    Random,           // accept with p=0.5 (random baseline)
-    InsertionGreedy,  // accept if reward / insertion_cost > threshold (cost-aware heuristic)
+    // ── Learning policies (paper §4.3.3) — TAM + DbVNS pipeline ───────────
+    MAPPO,            // shared actor + centralised critic (CTDE)
+    IPPO,             // shared actor + shared LOCAL critic [de Witt+2020]
+    MAPPER,           // per-agent actor/critic + evolutionary selection [Liu+2020]
+    FaithfulMAPPER,   // legacy alias of MAPPER (kept for old configs/CSV labels)
+    Hybrid,           // frozen MAPPO base + bounded per-agent online residual
 
-    // ── SoTA-adapted baselines (related-works comparisons) ────────────────
-    //
-    // Two CLUSTERS to keep strictly separate when reporting results:
-    //
-    //   1. LGPDP-SOTA cluster — compared against the RL policies
-    //      (MAPPO/IPPO/MAPPER/Hybrid). Five baselines, each tied to a paper:
-    //        - TokenPassing            [Ma+2017,     AAMAS]
-    //        - CongestionAware         [non-faithful proxy of Asadi+2025;
-    //                                   kept for historical results]
-    //        - FaithfulCongestionAware [Asadi+2025,  GECCO] (paper-faithful)
-    //        - TrafficFlow             [Chen+2024,   AAAI]
-    //        - PIBT                    [Okumura+2022 AI / Matsui+2025 ICAART]
-    //        - RHCR                    [Li+2021,     AAAI] (planned)
-    //
-    //   2. VRP/PDP metaheuristic cluster — comparison set for DbVNS planning,
-    //      NOT a LGPDP-SOTA baseline:
-    //        - MCA (Marginal-Cost Assignment)  [Chen+2021, ICRA]
-    //        - DoubleHorizon                   [Mitrovic-Minic+2004]
-    //        - InsertionGreedy / Greedy / Random  (in-house baselines)
-    //
-    // ── Per-baseline summary (LGPDP-SOTA cluster) ─────────────────────────
-    //
-    //   TokenPassing [Ma+2017, AAMAS]:
-    //     Original: agents take turns holding a token; token holder picks
-    //     τ* ∈ T' = {τ | no other path in token ends in s_τ or g_τ} that
-    //     minimises h(loc(a), s_τ). LGPDP adaptation: per-arrival argmin
-    //     h(loc, pickup) restricted to free agents (load==0) with all-agents
-    //     fallback when no free agent is available. TPTS swap reduces to TP
-    //     in our |T|=1 online regime (documented at the call site).
-    //
-    //   CongestionAware (in-house baseline, KEEP — no primary citation):
-    //     Pickup-leg dynamic-cost argmin: argmin_a c_pu_dyn(a, task), where
-    //     c_pu_dyn is the BPR-adjusted travel time t · (1 + α·(load/cap)^β)
-    //     on the current-node → pickup leg. Structurally this is "nearest-
-    //     vehicle dispatch with time-dependent travel time" — a classical
-    //     composite of (a) TokenPassing-style greedy argmin (Ma+2017) and
-    //     (b) BPR cost adjustment (Beckmann 1956 / LeBlanc 1975). It is NOT
-    //     paper-faithful w.r.t. Asadi+2025 (no CNN prediction, no Wandering
-    //     mode, no β_W priority strategy, no γ_mode weighting). Presented
-    //     as an in-house baseline in reports — kept because empirical
-    //     performance on this codebase has been competitive.
-    //
-    //   FaithfulCongestionAware [Asadi+2025, GECCO] (paper-faithful adapt.):
-    //     Captures the spirit of Asadi+2025 in our LGPDP routing context:
-    //       (a) Full-trip dynamic cost (c_pu + c_del) under BPR congestion —
-    //           analogue of the A*-with-congestion-cost in §3.2 of the paper.
-    //       (b) γ-mode weighting: idle agents (load==0) are preferred over
-    //           busy agents proportional to γ_idle / γ_busy — paper §3.4
-    //           weights γ_moving, γ_equals, γ_others. We collapse to two
-    //           modes (idle vs busy) because we don't have an explicit
-    //           Wandering state on the road network.
-    //       (c) β_W-style priority breaking: among equal-mode candidates,
-    //           prefer agents with fewer queued tasks (proxy for "fewer
-    //           remaining orders" β_π and "active pickup/delivery" β_W).
-    //     NOT implemented (vs paper): CNN-based congestion prediction,
-    //     explicit Wandering mode, multivariate-Gaussian congestion signal.
-    //     These are decentralised path-planning concerns; the LGPDP question
-    //     here is allocation, where the γ-weighted full-trip cost gives the
-    //     cleanest paper-faithful adaptation.
-    //
-    //   TrafficFlow [Chen+2024, AAAI]:
-    //     "Pick assignment whose planned trip is cheapest under current
-    //     traffic" — argmin c_pu_dyn + c_del_dyn. Frank-Wolfe UE guide path
-    //     and contraflow term not implemented (online lifelong LGPDP has no
-    //     batch for UE; CongestionMap is undirected). BPR cost adjustment is
-    //     the spirit-equivalent we expose.
-    //
-    //   PIBT [Okumura+2022, AI / Matsui+2025, ICAART]:
-    //     Original PIBT is a one-step path-finding rule with priority
-    //     inheritance + backtracking on a biconnected grid. Matsui+2025
-    //     extends it to dead-end aisles with swap tasks. NEITHER directly
-    //     applies to OSM road-network LGPDP (no grid, no physical vertex
-    //     collisions). Our PIBT enum branch is a CUSTOM ADAPTATION of the
-    //     priority-coordination intent: priority = load balancing, "next
-    //     move" = task allocation to the least-loaded eligible agent. The
-    //     adaptation was authored by a project contributor — do NOT modify
-    //     the existing branch without checking with them.
-    //
-    //   RHCR [Li+2021, AAAI] (planned addition):
-    //     Decompose lifelong MAPF into Windowed MAPF instances with time
-    //     horizon w and replanning period h. For LGPDP allocation: replan
-    //     in batch every h steps over the unassigned task set with horizon
-    //     w. Faithful adaptation requires a Multi-Label A* path planner for
-    //     goal-sequence routing (paper Alg. 1) which is non-trivial; will be
-    //     implemented as a separate PolicyMode::RHCR once user confirms the
-    //     scope (full faithful vs. allocation-only approximation).
-    LaCAM,            // kept in the enum for source compatibility (unused branch)
-    PIBT,
-    CongestionAware,           // historical: argmin c_pu dynamic (kept as-is)
-    FaithfulCongestionAware,   // [Asadi+2025] γ-weighted full-trip dynamic cost
-    MCA,                       // [Chen+2021] Marginal-Cost Assignment — METAHEURISTIC cluster
-    TrafficFlow,               // [Chen+2024] full-trip dynamic cost (GP-PIBT spirit)
-    TokenPassing,              // [Ma+2017]   argmin h(loc, pickup) on free agents
-    RHCR,                      // [Li+2021]   Rolling-Horizon Collision Resolution (planned)
+    // ── Policy-level baseline — same TAM + DbVNS pipeline, scoring swapped ─
+    RMCA,             // marginal-cost insertion scorer [Chen+2021], deterministic
 
-    // ── Double-Horizon Insertion [Mitrovic-Minic, Krishnamurti, Laporte 2004] ──
-    //
-    // Adapted to our capacity-constrained lifelong context:
-    //   - Short-term horizon: first H steps of the agent's planned route
-    //   - Long-term horizon : remainder of the route
-    //
-    // Cost formula for inserting task at (pos_P, pos_D) in agent's sequence:
-    //   - If both insertion legs fall in short-term horizon:
-    //         cost = route_length_increase   (= MCA's c1)
-    //   - If insertion extends into long-term horizon:
-    //         cost = (1 - α)·route_length_increase − α·local_slack_gain
-    //     where local_slack_gain = slack_time_around(pos_D) (preserves future flex)
-    //
-    // Difference vs MCA (Chen+2021):
-    //   MCA optimises pure marginal route cost (= c1 only).
-    //   DoubleHorizon trades off route cost vs preserved slack for distant insertions
-    //   — better long-term flexibility for accepting future tasks at the cost of
-    //   slightly suboptimal short-term routing.
-    DoubleHorizon,
+    // ── Ablations / sanity baselines ───────────────────────────────────────
+    TamAlwaysAccept,  // TAM routing only, every candidate bids with mu=1
+    Greedy,           // first capable agent (sequential scan)
+    Random,           // accept with p=0.5
+    InsertionGreedy,  // bid = reward*importance/insertion_cost > threshold
 
-    // ── DbVNS-PDP Lifelong Replanning ──────────────────────────────────────────
-    //
-    // Allocation : same as MCA — agent with minimum marginal insertion cost wins.
-    // Planning   : full global reoptimisation via forward DbVNS-PDP (Variable
-    //              Neighbourhood Search with pairing constraints for Pickup and
-    //              Delivery). On each task acceptance the agent replans its entire
-    //              remaining sequence (except the in-flight head which is fixed).
-    //
-    //   Constraint: pickup P_i must be visited before delivery D_i. Deliveries of
-    //   tasks already being carried (picked but not yet delivered) are immediately
-    //   available — no pickup constraint. Delivery of the in-flight pickup is also
-    //   immediately available (pickup guaranteed on arrival).
-    //
-    //   VNS neighbourhood: peel k×N/k_max tail nodes, try up to max_decomps
-    //   alternative greedy completions, accept the first improvement (best-first).
-    //   k resets to 1 on improvement; increments on plateau until k_max.
-    //
-    // This is the lifelong adaptation of the DbVNS-PDP described in our
-    // conversation: "at each task insertion, relaunch the algorithm."
-    DbVNS,
+    // ── Allocation-level baselines — REPLACE the TAM + policy entirely ─────
+    TokenPassing,     // argmin h(loc, pickup) on free agents [Ma+2017]
+    PIBT,             // least-loaded priority allocation (contributor-owned
+                      // adaptation — do not modify without coordinating)
 
-    // ── ALNS-PDP Lifelong Replanning ───────────────────────────────────────────
-    //
-    // Allocation : same as MCA — minimum marginal insertion cost wins.
-    // Planning   : Adaptive Large Neighborhood Search (Ropke & Pisinger 2006)
-    //              adapted to mono-agent GPDP without time windows. Destroy-
-    //              repair iterations with SA acceptance and adaptive roulette
-    //              over 3 destroy operators (random / worst / Shaw) and 2
-    //              repair operators (cheapest / regret-2 positional).
-    //
-    // Used ONLY by the planning-comparison test. Training and global eval keep
-    // their default planning path (MCA / DH / DbVNS).
-    ALNS,
-
-    // ── RMCA(r): Regret-based Marginal-Cost Assignment [Chen et al. 2021, ICRA]─
-    //
-    // SoTA non-learning POLICY baseline — drop-in replacement for the RL scorer
-    // (MAPPO/IPPO/...), used in Option O for a fair "learned vs heuristic"
-    // comparison. Unlike the MCA *metaheuristic* branch (full-scan inline), RMCA
-    // is wired EXACTLY like the RL policies: it goes through the TAM Format A
-    // candidate pre-pruning and is invoked per-candidate inside
-    // DeliveryAgent::try_accept_task (active_policy = kRMCA), so its candidate
-    // set, planning (DbVNS) and force-assign behaviour are byte-identical to the
-    // RL methods — only the scoring function differs.
-    //
-    // Per-candidate score = monotone-decreasing transform of the paper's
-    // marginal insertion cost (eq.13, capacity feasibility eq.9). The TAM's
-    // argmax therefore selects k1 = argmin marginal cost — the agent RMCA(r)
-    // returns. In our ONLINE single-task setting the regret-based task ORDERING
-    // (eq.16) is degenerate (|P^u| = 1), so the relative regret mc(k2)/mc(k1) is
-    // computed and LOGGED per allocation for analysis (k1/k2 = cheapest / 2nd
-    // cheapest over the eligible agents), faithful to eq.13/14/16.
-    RMCA
+    // ── Planning-level modes (planning comparison; allocation = MCA argmin) ─
+    MCA,              // cheapest insertion + anytime LNS [Chen+2021 Alg.3]
+    DoubleHorizon,    // slack-preserving insertion [Mitrovic-Minic+2004]
+    DbVNS,            // forward DbVNS-PDP global replan (the paper's planner)
+    ALNS              // destroy-repair ALNS [Ropke & Pisinger 2006]
 };
 
 class EpisodeRunner {
@@ -316,8 +148,11 @@ private:
 
     std::vector<std::unique_ptr<DeliveryAgent>> all_agents_;
 
-    std::vector<std::array<float, kGlobSz>> global_states_;
     std::mt19937                            rng_; // for Random policy mode
+
+    // Active learning policy for the current run (null for non-policy modes
+    // and for RMCA, which scores deterministically without a buffer).
+    IBidPolicy* active_policy_ = nullptr;
 
     // Optional synthetic background traffic. Constructed once, reset per
     // episode if cfg_.enable_ghost_traffic. No-op when the flag is off so

@@ -1,7 +1,7 @@
 #include "TrainingSmokeTest.hpp"
 #include "EpisodeConfig.hpp"
 #include "EpisodeRunner.hpp"
-#include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
+#include "DMASforPD/Policy/BidPolicy.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
 #include "Legacy/Common/Pathfinding.hpp"
@@ -67,7 +67,7 @@ bool run_training_smoke_test(const std::string& osm_file,
     // ── 3. Construct runner and run a TRAINING episode ────────────────────────
     Pathfinder pathfinder(geo_box);
 
-    ObjectiveDMPolicy::shared().clear_buffer();
+    bid_policy(BidPolicyKind::MAPPO).clear_buffers();
 
     std::unique_ptr<EpisodeRunner> runner;
     try {
@@ -127,8 +127,8 @@ bool run_training_smoke_test(const std::string& osm_file,
 
     // Verify buffer was cleared at the start of each eval run (should be empty
     // after the final MAPPO eval since train_epoch is not called).
-    CHECK(ObjectiveDMPolicy::shared().buffer_size() == 0 ||
-          ObjectiveDMPolicy::shared().buffer_size() > 0,  // buffer can have entries
+    CHECK(bid_policy(BidPolicyKind::MAPPO).total_buffer_size() == 0 ||
+          bid_policy(BidPolicyKind::MAPPO).total_buffer_size() > 0,  // buffer can have entries
           "buffer check");   // just verifying no crash; actual clear tested implicitly
 
     std::cout << "  [4] Eval OK — Greedy acc=" << r_greedy.metrics.accept_rate
@@ -166,7 +166,7 @@ bool run_training_smoke_test(const std::string& osm_file,
 
     std::unique_ptr<EpisodeRunner> runner_mt;
     try {
-        ObjectiveDMPolicy::shared().clear_buffer();
+        bid_policy(BidPolicyKind::MAPPO).clear_buffers();
         runner_mt = std::make_unique<EpisodeRunner>(cfg_mt, geo_box, pathfinder, 43u);
     } catch (const std::exception& e) {
         std::cout << "  [FAIL] Multi-task runner: " << e.what() << "\n";

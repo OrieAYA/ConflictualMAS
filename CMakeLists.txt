@@ -32,15 +32,15 @@ set(SOURCES
     src/Comparisons/DbVNS_vs_LKH/LKHSolver.cpp
     src/Comparisons/DbVNS_vs_LKH/IVNSSolver.cpp
     src/Comparisons/DbVNS_vs_LKH/ComparisonTest.cpp
-    src/DMASforPD/Policy/ObjectiveDMPolicy.cpp
+    src/DMASforPD/Policy/PolicyKit.cpp
+    src/DMASforPD/Policy/BidPolicy.cpp
+    src/DMASforPD/Policy/MappoPolicy.cpp
     src/DMASforPD/Policy/IPPOPolicy.cpp
     src/DMASforPD/Policy/MapperPolicy.cpp
-    src/DMASforPD/Policy/FaithfulMapperPolicy.cpp
     src/DMASforPD/Policy/HybridPolicy.cpp
     src/Tests/PlanningComparisonTest.cpp
     src/Tests/TamMcTest.cpp
     src/Tests/GeoBoxConnectivityTest.cpp
-    src/Tests/BaselinesMultiAgentTest.cpp
     src/Tests/CongestionOnlyTest.cpp
     src/Training/CityConfig.cpp
     src/Training/EpisodeConfig.cpp
@@ -52,12 +52,7 @@ set(SOURCES
     src/Training/TrainingSmokeTest.cpp
     src/SoTA/SolverRunner.cpp
     src/SoTA/PathHelper.cpp
-    src/SoTA/TokenPassing/TokenPassingSolver.cpp
-    src/SoTA/CongestionAware/CongestionAwareSolver.cpp
     src/SoTA/FaithfulCongestionAware/FaithfulCASolver.cpp
-    src/SoTA/FaithfulCongestionAwareCapacited/FaithfulCACapacitedSolver.cpp
-    src/SoTA/TrafficFlow/TrafficFlowSolver.cpp
-    src/SoTA/RHCR/RHCRSolver.cpp
     src/SoTA/HybridAdaptivePredictive/HybridAdaptivePredictiveSolver.cpp
     src/SoTA/SolverCSVLogger.cpp
     src/Legacy/Tests/LegacyTests.cpp

@@ -1,10 +1,6 @@
 #include "EpisodeRunner.hpp"
 #include "SharedEpisodeSetup.hpp"
-#include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
-#include "DMASforPD/Policy/IPPOPolicy.hpp"
-#include "DMASforPD/Policy/MapperPolicy.hpp"
-#include "DMASforPD/Policy/FaithfulMapperPolicy.hpp"
-#include "DMASforPD/Policy/HybridPolicy.hpp"
+#include "DMASforPD/Policy/BidPolicy.hpp"
 #include "DMASforPD/TaskAgent/TaskAgent.hpp"
 #include "DMASforPD/DeliveryAgent/OperableEnvironment.hpp"
 #include "Environment/GeoBox/Box.hpp"
@@ -80,7 +76,6 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
                              const SharedEpisodeSetup* setup) {
     auto t0 = std::chrono::steady_clock::now();
     arrivals_.clear();
-    global_states_.clear();
     task_accept_buf_idx_.clear();
 
     // Deterministic episode replay: when the caller passes a non-zero seed,
@@ -93,51 +88,43 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         gen_.reset_seed(episode_seed);
         rng_.seed(episode_seed);
     }
-    // Discard any eval experiences that accumulated since the last train_epoch.
-    // (Eval runs with train_mode=false skip train_epoch, so the shared buffer
-    //  accumulates stale data that must not contaminate the next training update.)
-    if (!train_mode) {
-        ObjectiveDMPolicy::shared().clear_buffer();
-        IPPOPolicy::shared().clear_buffer_all();
-        MapperPolicy::shared().clear_buffer_all();
-        FaithfulMapperPolicy::shared().clear_buffer_all();
-    }
-    // Hybrid is ALWAYS cleared at episode start (train or eval): its REINFORCE
-    // update runs at the end of every episode regardless of train_mode — that's
-    // the defining property of Hybrid (continual online adaptation), not the
-    // gradient-based offline batch training of MAPPO/IPPO/MAPPER.
-    if (policy_mode == PolicyMode::Hybrid)
-        HybridPolicy::shared().clear_buffer_all();
-
-    // Always start a fresh recent-records log for the per-agent baselines
-    // (IPPO, MAPPER, FaithfulMAPPER, Hybrid); stale offers from a previous
-    // episode must not be picked up by the refusal-penalty bracketing.
-    IPPOPolicy::shared().clear_recent_records();
-    MapperPolicy::shared().clear_recent_records();
-    FaithfulMapperPolicy::shared().clear_recent_records();
-    HybridPolicy::shared().clear_recent_records();
-
-    // Publish the active learning policy to PDPGlobalMemory so that
-    // DeliveryAgent::try_accept_task routes its calls to the right backend.
+    // Resolve the active learning policy and publish its kind to the Manager
+    // so DeliveryAgent::bid_for_task routes to the right backend. RMCA scores
+    // deterministically inside the agent (no IBidPolicy instance).
+    active_policy_ = nullptr;
     switch (policy_mode) {
         case PolicyMode::IPPO:
             memory_.active_policy = PDPGlobalMemory::PolicyKind::kIPPO;
+            active_policy_ = &bid_policy(BidPolicyKind::IPPO);
             break;
         case PolicyMode::MAPPER:
+        case PolicyMode::FaithfulMAPPER:   // legacy alias — same MAPPER policy
             memory_.active_policy = PDPGlobalMemory::PolicyKind::kMAPPER;
-            break;
-        case PolicyMode::FaithfulMAPPER:
-            memory_.active_policy = PDPGlobalMemory::PolicyKind::kFaithfulMAPPER;
+            active_policy_ = &bid_policy(BidPolicyKind::MAPPER);
             break;
         case PolicyMode::Hybrid:
             memory_.active_policy = PDPGlobalMemory::PolicyKind::kHybrid;
+            active_policy_ = &bid_policy(BidPolicyKind::Hybrid);
             break;
         case PolicyMode::RMCA:
             memory_.active_policy = PDPGlobalMemory::PolicyKind::kRMCA;
             break;
+        case PolicyMode::MAPPO:
+            memory_.active_policy = PDPGlobalMemory::PolicyKind::kMAPPO;
+            active_policy_ = &bid_policy(BidPolicyKind::MAPPO);
+            break;
         default:
             memory_.active_policy = PDPGlobalMemory::PolicyKind::kMAPPO;
             break;
+    }
+
+    // Start the episode with clean experience buffers — ALWAYS. An eval
+    // episode also records decisions (Hybrid needs them; the others record
+    // unconditionally); without this clear, those eval records would leak
+    // into the next training update.
+    if (active_policy_) {
+        active_policy_->clear_buffers();
+        active_policy_->clear_recent_records();
     }
     n_accepted_    = 0;
     n_refused_     = 0;
@@ -205,18 +192,21 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     memory_.task_agent.params.tam_params.always_accept =
         (policy_mode == PolicyMode::TamAlwaysAccept);
 
-    // Propagate the TAM multi-candidate parameters. When tam_multi_candidate
-    // is false (default) the TAM runs its legacy first-fit path unchanged.
+    // Propagate the TAM parameters (the TAM is multi-candidate only).
     {
         auto& tp = memory_.task_agent.params.tam_params;
-        tp.multi_candidate   = cfg_.tam_multi_candidate;
-        tp.mc_force_assign   = cfg_.tam_mc_force_assign;
-        tp.mc_max_candidates = cfg_.tam_mc_max_candidates;
-        tp.mc_ratio_min      = cfg_.tam_mc_ratio_min;
-        tp.mc_ratio_max      = cfg_.tam_mc_ratio_max;
-        tp.mc_ratio_scale    = cfg_.tam_mc_ratio_scale;
+        tp.force_assign   = cfg_.tam_mc_force_assign;
+        tp.max_candidates = cfg_.tam_mc_max_candidates;
+        tp.ratio_min      = cfg_.tam_mc_ratio_min;
+        tp.ratio_max      = cfg_.tam_mc_ratio_max;
+        tp.ratio_scale    = cfg_.tam_mc_ratio_scale;
     }
     retry_queue_.clear();
+
+    // Bids are sampled (exploration) only while training; evaluation uses the
+    // deterministic μ >= 0.5 threshold so measured performance is the
+    // policy's, not the sampler's.
+    memory_.exploration_enabled = train_mode;
 
     // Reset per-episode GlobalMemory state (tasks, plans, congestion, clock).
     // Preserves the A* path cache so costs computed in prior episodes reuse.
@@ -399,12 +389,12 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         // completed a delivery are Idle and can receive new work this step.
         process_arrivals(step);
 
-        // Build the global state once per step; passed into offer_task so that
-        // each MAPPO record() call gets the correctly aligned global state.
-        // (global_states_ is populated per-offer, not per-step, so that
-        //  global_states_.size() == buffer_.size() after the episode.)
+        // Build the global state once per step and publish it to the Manager:
+        // bid_for_task snapshots it into every experience recorded this step,
+        // which is what the MAPPO centralised critic trains against.
         auto cur_gs = build_global_state(step, total_steps, phase_label, lambda,
                                          city_norm, n_active).to_array();
+        std::copy(cur_gs.begin(), cur_gs.end(), memory_.cur_global_state);
 
         // ── Retry deferred tasks (TAM multi-candidate Format B only) ─────────
         // retry_queue_ is empty in legacy mode and in Format A, so this loop
@@ -1025,15 +1015,10 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     // task hurts more than failing a low-value one. This keeps the policy from
     // accepting tasks it cannot deliver, while a flat penalty would collapse
     // into "accept everything" once it falls below the refuse penalty.
-    const bool is_learning_mode =
-        (policy_mode == PolicyMode::MAPPO) ||
-        (policy_mode == PolicyMode::IPPO)  ||
-        (policy_mode == PolicyMode::MAPPER) ||
-        (policy_mode == PolicyMode::FaithfulMAPPER);
     // Hybrid receives the unfinished penalty regardless of train_mode because
-    // its REINFORCE update runs at every episode end (online adaptation).
-    const bool apply_unfinished_penalty =
-        (train_mode && is_learning_mode) || (policy_mode == PolicyMode::Hybrid);
+    // its online update runs at every episode end (continual adaptation).
+    const bool apply_unfinished_penalty = active_policy_
+        && (train_mode || active_policy_->trains_online());
     if (apply_unfinished_penalty && cfg_.unfinished_factor > 0.f) {
         for (const auto& [tid, buf_idx] : task_accept_buf_idx_) {
             PDPTask* t = memory_.get_task(tid);
@@ -1041,18 +1026,8 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
             const float val    = t->reward_original * t->importance_original;
             const bool  picked = (t->timeline.picked_step >= 0);
             const float lost_frac = picked ? (1.f - cfg_.pickup_reward_frac) : 1.f;
-            const float penalty   = -cfg_.unfinished_factor * lost_frac * val;
-            if (policy_mode == PolicyMode::MAPPO) {
-                ObjectiveDMPolicy::shared().add_to_reward(buf_idx, penalty);
-            } else if (policy_mode == PolicyMode::IPPO) {
-                IPPOPolicy::shared().add_to_reward(t->agent_id, buf_idx, penalty);
-            } else if (policy_mode == PolicyMode::MAPPER) {
-                MapperPolicy::shared().add_to_reward(t->agent_id, buf_idx, penalty);
-            } else if (policy_mode == PolicyMode::FaithfulMAPPER) {
-                FaithfulMapperPolicy::shared().add_to_reward(t->agent_id, buf_idx, penalty);
-            } else if (policy_mode == PolicyMode::Hybrid) {
-                HybridPolicy::shared().add_to_reward(t->agent_id, buf_idx, penalty);
-            }
+            active_policy_->add_to_reward(t->agent_id, buf_idx,
+                                          -cfg_.unfinished_factor * lost_frac * val);
         }
     }
 
@@ -1067,68 +1042,29 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
     // whom). MAPPO's shared buffer is not partitioned per agent → would
     // require an extra tracker; skipped for now (the shared critic still
     // learns global idle-rate signals via the global state).
-    const bool apply_idle_penalty =
-        (train_mode || (policy_mode == PolicyMode::Hybrid))
+    // Idle-agent penalty: every offer entry produced by an agent that ended
+    // the episode idle is debited — "sitting idle is wasted capacity". Now
+    // uniform across all learning policies (per-agent buffers everywhere).
+    const bool apply_idle_penalty = active_policy_
+        && (train_mode || active_policy_->trains_online())
         && cfg_.idle_penalty_w > 0.f;
-    if (apply_idle_penalty
-        && (policy_mode == PolicyMode::IPPO
-            || policy_mode == PolicyMode::MAPPER
-            || policy_mode == PolicyMode::FaithfulMAPPER
-            || policy_mode == PolicyMode::Hybrid)) {
-        // Build the set of agent ids that ended idle (no committed plan, no
-        // delivered task this episode).
-        std::vector<int> idle_aids;
+    if (apply_idle_penalty) {
         for (const auto& a : all_agents_) {
             if (!a) continue;
-            if (a->status == AgentStatus::Idle
-                && a->local_memory.tasks.empty()) {
-                idle_aids.push_back(a->agent_id);
-            }
-        }
-        if (!idle_aids.empty()) {
-            const float pen = -cfg_.idle_penalty_w;  // flat per-offer hit
-            auto apply_to_buffer_entries = [&](int aid, auto& policy) {
-                const int sz = policy.buffer_size(aid);
-                for (int i = 0; i < sz; ++i)
-                    policy.add_to_reward(aid, i, pen);
-            };
-            for (int aid : idle_aids) {
-                if (policy_mode == PolicyMode::IPPO)
-                    apply_to_buffer_entries(aid, IPPOPolicy::shared());
-                else if (policy_mode == PolicyMode::MAPPER)
-                    apply_to_buffer_entries(aid, MapperPolicy::shared());
-                else if (policy_mode == PolicyMode::FaithfulMAPPER)
-                    apply_to_buffer_entries(aid, FaithfulMapperPolicy::shared());
-                else if (policy_mode == PolicyMode::Hybrid)
-                    apply_to_buffer_entries(aid, HybridPolicy::shared());
-            }
+            if (a->status != AgentStatus::Idle || !a->local_memory.tasks.empty())
+                continue;
+            const int sz = active_policy_->buffer_size(a->agent_id);
+            for (int i = 0; i < sz; ++i)
+                active_policy_->add_to_reward(a->agent_id, i, -cfg_.idle_penalty_w);
         }
     }
 
-    // Per-episode learning update.
-    //
-    // MAPPO/IPPO/MAPPER/FaithfulMAPPER: PPO updates only when train_mode=true.
-    // Hybrid: REINFORCE update + rollback check runs at the end of EVERY
-    // episode regardless of train_mode — this is the defining property of
-    // Hybrid (continual online adaptation).
-    if (train_mode) {
-        if (policy_mode == PolicyMode::MAPPO && !global_states_.empty()) {
-            result.train_stats =
-                ObjectiveDMPolicy::shared().train_epoch(global_states_);
-        } else if (policy_mode == PolicyMode::IPPO &&
-                   IPPOPolicy::shared().total_buffer_size() > 0) {
-            result.train_stats = IPPOPolicy::shared().train_epoch();
-        } else if (policy_mode == PolicyMode::MAPPER &&
-                   MapperPolicy::shared().total_buffer_size() > 0) {
-            result.train_stats = MapperPolicy::shared().train_epoch();
-        } else if (policy_mode == PolicyMode::FaithfulMAPPER &&
-                   FaithfulMapperPolicy::shared().total_buffer_size() > 0) {
-            result.train_stats = FaithfulMapperPolicy::shared().train_epoch();
-        }
-    }
-    if (policy_mode == PolicyMode::Hybrid &&
-        HybridPolicy::shared().total_buffer_size() > 0) {
-        result.train_stats = HybridPolicy::shared().train_epoch();
+    // Per-episode learning update. Offline policies (MAPPO/IPPO/MAPPER) run
+    // their PPO update only when train_mode=true; Hybrid adapts its residual
+    // at the end of EVERY episode (trains_online).
+    if (active_policy_ && active_policy_->total_buffer_size() > 0
+        && (train_mode || active_policy_->trains_online())) {
+        result.train_stats = active_policy_->train_round();
     }
 
     auto t1 = std::chrono::steady_clock::now();
@@ -1278,32 +1214,6 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         return { -1, false };
     }
 
-    // ── LaCAM*-inspired baseline: optimal-myopic best-insertion ──────────────
-    // Real LaCAM* is grid-MAPF specific; we adapt its "always pick the globally
-    // best assignment" spirit by scanning ALL eligible agents and selecting the
-    // one whose route_cost(current → pickup → delivery) is minimum. Unlike
-    // InsertionGreedy this never short-circuits on the first acceptable bid.
-    if (policy_mode == PolicyMode::LaCAM) {
-        PDPTask* t = memory_.get_task(task_id);
-        if (!t) return { -1, false };
-        const auto* pu_del = memory_.get_or_compute_path(
-            t->pickup.id, t->delivery.id, t->delivery.group_id);
-        const float c_del = (pu_del && pu_del->valid()) ? pu_del->cost : kCostScale;
-
-        int   best_aid  = -1;
-        float best_cost = std::numeric_limits<float>::max();
-        for (int i = 0; i < n_active; ++i) {
-            DeliveryAgent& a = *all_agents_[i];
-            if (!has_cap(a)) continue;
-            const auto* to_pu = memory_.get_or_compute_path(
-                a.current_node, t->pickup.id, t->pickup.group_id);
-            const float c_pu = (to_pu && to_pu->valid()) ? to_pu->cost : kCostScale;
-            const float cost = c_pu + c_del;
-            if (cost < best_cost) { best_cost = cost; best_aid = a.agent_id; }
-        }
-        return { best_aid, false };
-    }
-
     // ── PIBT-inspired baseline: load-balanced priority allocation ────────────
     //
     // References for the original algorithm:
@@ -1347,71 +1257,6 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
             if (!has_cap(a)) continue;
             const int load = static_cast<int>(a.local_memory.tasks.size());
             if (load < min_load) { min_load = load; best_aid = a.agent_id; }
-        }
-        return { best_aid, false };
-    }
-
-    // ── CongestionAware: in-house TD-Greedy pickup dispatch baseline ──────────
-    //
-    // IN-HOUSE BASELINE — NOT TIED TO A SPECIFIC PAPER.
-    //
-    // Behaviour: for each arriving task, assign it to the agent whose path
-    // from current_node to pickup has the lowest CONGESTION-ADJUSTED travel
-    // time (BPR-style: t · (1 + α·(load/cap)^β)). Falls back to static cost
-    // when no dynamic cost is available.
-    //
-    // Structurally this is a composite of:
-    //   - "argmin h(loc, pickup)" task allocation, à la TokenPassing
-    //     [Ma+2017, AAMAS] — but without the free-agent filter.
-    //   - BPR-adjusted travel time [Beckmann 1956 / LeBlanc 1975] — the
-    //     classical congestion model in transport assignment.
-    //
-    // Equivalent in adjacent literatures:
-    //   - "Nearest-vehicle dispatch with time-dependent travel time" in the
-    //     ride-hailing / mobility-on-demand body of work.
-    //   - Decentralised greedy dispatch baseline in multi-robot task
-    //     allocation.
-    //
-    // Relation to Asadi+2025 GECCO "Congestion-Aware MAPP for Pick-up and
-    // Delivery": NOT FAITHFUL. Asadi+2025 proposes (1) decentralised A* with
-    // CNN-predicted congestion, (2) Wandering / Pickup / Delivery modes,
-    // (3) β_W priority strategy for conflict resolution, (4) γ_moving /
-    // γ_equals / γ_others mode weighting. None of those are implemented
-    // here. The paper-faithful adaptation lives under PolicyMode::
-    // FaithfulCongestionAware (separate branch below).
-    //
-    // Relation to the three Chen/Ma reference papers:
-    //   - Ma+2017 TokenPassing: very close in structure — argmin distance —
-    //     differs only by static-vs-dynamic cost and the free-agent filter.
-    //   - Chen+2024 TrafficFlow: pickup-leg-only ablation of TF (which uses
-    //     full-trip dynamic cost c_pu + c_del). Treat this branch as the
-    //     pickup-only sibling, used to read off how much TF's gain comes
-    //     from the delivery leg.
-    //   - Chen+2021 MCA: orthogonal (MCA is marginal-cost insertion, no
-    //     congestion modelling).
-    //
-    // KEPT under this name because historical results on this codebase
-    // referenced "CongestionAware" — renaming would break reproducibility.
-    // Reports should describe it as an in-house TD-Greedy baseline rather
-    // than as a paper baseline.
-    if (policy_mode == PolicyMode::CongestionAware) {
-        PDPTask* t = memory_.get_task(task_id);
-        if (!t) return { -1, false };
-
-        // ── OPTIM : ONE reverse Dijkstra from pickup replaces N×A*. See the
-        // FaithfulCongestionAware branch above for full rationale.
-        auto dist_from_pickup =
-            memory_.pathfinder.dijkstra_distances_from(t->pickup.id);
-
-        int   best_aid  = -1;
-        float best_cong = std::numeric_limits<float>::max();
-        for (int i = 0; i < n_active; ++i) {
-            DeliveryAgent& a = *all_agents_[i];
-            if (!has_cap(a)) continue;
-            float cong = kCostScale;
-            auto it = dist_from_pickup.find(a.current_node);
-            if (it != dist_from_pickup.end()) cong = it->second;
-            if (cong < best_cong) { best_cong = cong; best_aid = a.agent_id; }
         }
         return { best_aid, false };
     }
@@ -1618,368 +1463,6 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         return { best_aid, false };
     }
 
-    // ── TrafficFlow [Chen+2024, AAAI — Paper 3] ───────────────────────────────
-    //
-    // Paper "Traffic Flow Optimisation for Lifelong MAPF" §4.1 defines a
-    // two-part edge weight (c_e, 1 + p_{v2}) where:
-    //   - c_e = f_{v1,v2} × f_{v2,v1} is the CONTRAFLOW congestion
-    //     (product of directional flows on the two ends of edge e),
-    //   - p_v = ⌈(n_v − 1) / 2⌉ is per-agent VERTEX pressure with n_v the
-    //     number of agents entering v.
-    // §4.2 sorts candidate paths LEXICOGRAPHICALLY by (Σ c_e, Σ 1 + p_v):
-    // first minimise total contraflow, then total weighted edge cost.
-    //
-    // LGPDP adaptation (allocation rule, OSM road network, online lifelong):
-    //
-    // FAITHFUL CORE — what we implement (this is the F2 contraflow fix):
-    //   ✓ Directional flow f_{u,v} tracking: for every agent currently in
-    //     transit, we count the remaining directed edges of their EdgeCursor.
-    //     Each surviving edge contributes one unit to f_{nodes[k], nodes[k+1]}.
-    //   ✓ Marginal contraflow on a candidate path: for the candidate's path
-    //     (current → pickup → delivery), each directed edge (u, v) accumulates
-    //     f_{v,u} (the flow in the opposite direction). The MARGINAL c_e is
-    //     1 × f_{v,u} (the candidate adds one unit of f_{u,v}, so contraflow
-    //     increment ≈ f_{v,u}). Sum over the candidate's edges gives the
-    //     candidate's total contraflow penalty.
-    //   ✓ Lexicographic (Σ contraflow, free-flow cost) argmin: faithful to
-    //     paper §4.2's two-part ordering. The second key is the BPR-adjusted
-    //     full-trip travel time (kept from the previous implementation).
-    //
-    // What we deliberately DO NOT do vs the paper and why:
-    //
-    //   ✗ Frank-Wolfe / FOCAL user-equilibrium guide-path computation
-    //     (paper Alg. 2 FindPaths). Tasks arrive online one-at-a-time in
-    //     LGPDP; re-solving a global UE on each arrival would conflict with
-    //     DbVNS per-agent replan and is architecturally out of scope.
-    //   ✗ LNS-style guide-path refinement (paper Alg. 2 PathRefinement) —
-    //     same reason.
-    //   ✗ Vertex pressure p_v as a separate second-key term. We fold the
-    //     pressure intuition into the BPR-adjusted free-flow cost (which
-    //     captures "many agents on this edge ⇒ slower" super-linearly).
-    //     Adding an explicit p_v term is a future refinement.
-    //   ✗ Guide heuristic h_i(v) = (dp, dg) inside PIBT (paper §4.3): we are
-    //     an allocation rule, not a movement rule. The two-part cost above
-    //     IS the allocation analogue of the guide path.
-    if (policy_mode == PolicyMode::TrafficFlow) {
-        PDPTask* t = memory_.get_task(task_id);
-        if (!t) return { -1, false };
-
-        // ── Step 1: build the directional flow map from in-flight agents ─
-        // For each agent currently traversing a path, every REMAINING
-        // directed edge contributes +1 to the flow in that direction.
-        // The map's key is (from_node, to_node).
-        using DirEdge = std::pair<osmium::object_id_type, osmium::object_id_type>;
-        struct DirEdgeHash {
-            std::size_t operator()(const DirEdge& p) const noexcept {
-                const auto h1 = std::hash<osmium::object_id_type>{}(p.first);
-                const auto h2 = std::hash<osmium::object_id_type>{}(p.second);
-                return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2));
-            }
-        };
-        std::unordered_map<DirEdge, int, DirEdgeHash> flow_dir;
-        for (int i = 0; i < n_active; ++i) {
-            const DeliveryAgent& a = *all_agents_[i];
-            if (!a.edge_cursor.has_value()) continue;
-            const auto& cur = a.edge_cursor.value();
-            // Iterate remaining directed edges from cur.next_idx.
-            // Each (nodes[k], nodes[k+1]) for k = next_idx ... |nodes|-2 is
-            // a directed edge the agent still has to traverse.
-            for (int k = std::max(0, cur.next_idx);
-                 k + 1 < static_cast<int>(cur.nodes.size()); ++k) {
-                ++flow_dir[DirEdge{ cur.nodes[k], cur.nodes[k + 1] }];
-            }
-        }
-
-        // ── Step 2: lexicographic argmin (contraflow, free-flow cost) ───
-        int        best_aid       = -1;
-        long long  best_contraflow = std::numeric_limits<long long>::max();
-        float      best_free_cost  = std::numeric_limits<float>::max();
-
-        // Helper: accumulate marginal contraflow on a candidate path. For
-        // each directed edge (u, v) on the candidate, add f_{v,u} — the
-        // existing flow in the opposite direction. Marginal c_e = 1×f_{v,u}
-        // since the candidate adds 1 unit to f_{u,v}.
-        auto path_contraflow = [&](const ObjectivePath* p) -> long long {
-            if (!p || !p->valid() || p->nodes.size() < 2) return 0;
-            long long s = 0;
-            for (int k = 0; k + 1 < static_cast<int>(p->nodes.size()); ++k) {
-                DirEdge opposite{ p->nodes[k + 1], p->nodes[k] };
-                auto it = flow_dir.find(opposite);
-                if (it != flow_dir.end()) s += it->second;
-            }
-            return s;
-        };
-
-        for (int i = 0; i < n_active; ++i) {
-            DeliveryAgent& a = *all_agents_[i];
-            if (!has_cap(a)) continue;
-
-            const auto* to_pu = memory_.get_or_compute_path(
-                a.current_node, t->pickup.id, t->pickup.group_id);
-            const auto* pu_del = memory_.get_or_compute_path(
-                t->pickup.id, t->delivery.id, t->delivery.group_id);
-
-            float c_pu  = kCostScale;
-            float c_del = kCostScale;
-            if (to_pu && to_pu->valid())
-                c_pu  = to_pu->has_dynamic_cost()  ? to_pu->dynamic_cost  : to_pu->cost;
-            if (pu_del && pu_del->valid())
-                c_del = pu_del->has_dynamic_cost() ? pu_del->dynamic_cost : pu_del->cost;
-            const float free_cost = c_pu + c_del;
-
-            const long long contraflow =
-                path_contraflow(to_pu) + path_contraflow(pu_del);
-
-            // Lexicographic (contraflow, free_cost) argmin — paper §4.2.
-            if (contraflow < best_contraflow ||
-                (contraflow == best_contraflow && free_cost < best_free_cost)) {
-                best_contraflow = contraflow;
-                best_free_cost  = free_cost;
-                best_aid        = a.agent_id;
-            }
-        }
-        return { best_aid, false };
-    }
-
-    // ── FaithfulCongestionAware [Asadi, Nowé, Ghofrani — 2025, GECCO] ─────────
-    //
-    // Paper "Congestion-Aware Multi-Agent Path Planning for Pick-up and
-    // Delivery Tasks" proposes a DECENTRALISED PATH-PLANNING approach for
-    // grid-based MAPD with:
-    //   §3.2  Local path planning: modified A* with congestion cost in the
-    //         node-visit cost g(v).
-    //   §3.3  Local collision avoidance with agent modes ∈ {Pickup, Delivery,
-    //         Wandering} and priority strategies (β_φ, β_π, β_T, β_F, β_W).
-    //         Paper finds β_W (pickup/delivery > wandering/finished) and
-    //         β_π (#remaining-orders) most effective (Table 1).
-    //   §3.4  Global congestion message B(R^{H×W×C}) predicted by a CNN over
-    //         past states, weighted by γ_moving / γ_equals / γ_others
-    //         (paper finds γ_moving < γ_equals < γ_others).
-    //
-    // LGPDP adaptation (allocation rule on OSM road network, online lifelong):
-    //
-    // What we keep faithful:
-    //   ✓ Congestion-cost is part of the trip evaluation (BPR adjustment on
-    //     both legs — full-trip c_pu_dyn + c_del_dyn). This is the LGPDP
-    //     analogue of §3.2's congestion term in A*.
-    //   ✓ Mode-weighted cost (γ analogue): idle agents (load==0, the
-    //     "Wandering / no-active-task" mode equivalent) are preferred over
-    //     busy agents (load>0, the "Pickup / Delivery" mode equivalent) when
-    //     congestion is high. We weight the candidate cost by a per-agent
-    //     γ factor: busy agents get γ_busy > 1 (penalty), idle agents get
-    //     γ_idle = 1. The relative ordering matches γ_moving < γ_others
-    //     from the paper, in the sense that the agent that would CONTRIBUTE
-    //     LESS to existing flow (idle) is preferred under load.
-    //   ✓ β_W-style tie-breaking: among candidates within a tolerance of the
-    //     best mode-weighted cost, prefer agents with FEWER queued tasks
-    //     (analogue of paper's β_π — #remaining orders — and β_W — give
-    //     priority to in-progress agents over wandering ones, inverted here
-    //     because in lifelong allocation we want to LOAD the least-loaded
-    //     agent next, not the most-loaded).
-    //
-    // What we deliberately DO NOT do vs the paper and why:
-    //   ✗ CNN-based congestion prediction (paper §3.4): the paper learns a
-    //     model on a fixed grid layout to predict near-future occupation.
-    //     On OSM road networks with online task arrival the input
-    //     distribution is non-stationary across episodes/maps; we substitute
-    //     the BPR cost adjustment, which is the present-time analogue (no
-    //     forecast).
-    //   ✗ Explicit Wandering mode (paper §3.3): we have only Idle vs Busy
-    //     because lifelong allocation immediately reassigns idle agents.
-    //   ✗ Multivariate-normal spatio-temporal congestion message (paper
-    //     §3.4): same reason — replaced by edge-level BPR load summary.
-    //
-    // Hyperparameters: we collapse paper's three γ to two (γ_idle = 1.0,
-    // γ_busy = 1.5). Values chosen to match the paper's ordering relation
-    // γ_moving < γ_equals < γ_others without claiming to reproduce the
-    // tuned values from Bayesian optimisation in §4.1 (paper's tuning is
-    // grid-specific and not transferable to OSM).
-    if (policy_mode == PolicyMode::FaithfulCongestionAware) {
-        PDPTask* t = memory_.get_task(task_id);
-        if (!t) return { -1, false };
-
-        constexpr float kGammaIdle = 1.0f;   // paper γ_others / γ_moving spirit
-        constexpr float kGammaBusy = 1.5f;   // > γ_idle, ordering γ_moving < γ_others
-        constexpr float kTieTolerance = 1.05f; // β_W tie band: within 5% of best cost
-
-        // ── OPTIM : ONE reverse Dijkstra from pickup gives distances to all
-        // agents in O(V+E log V), instead of N×A* (one per agent). For
-        // over_fleet (60 agents) on Tokyo_Small this is ~9× faster; on Paris
-        // ~6× faster. Faithfulness preserved: the dist returned is the
-        // free-flow shortest-path distance, same as cached A* would yield for
-        // an uncongested edge. BPR-aware refinement (when dynamic_cost is
-        // available on previously committed paths) is preserved via the
-        // pu_del fetch below — that path is cached per task and shared
-        // across all candidate agents.
-        auto dist_from_pickup =
-            memory_.pathfinder.dijkstra_distances_from(t->pickup.id);
-
-        // The pickup→delivery leg cost is identical across candidate agents;
-        // compute it ONCE (cache hit after first call).
-        const auto* pu_del = memory_.get_or_compute_path(
-            t->pickup.id, t->delivery.id, t->delivery.group_id);
-        float c_del = kCostScale;
-        if (pu_del && pu_del->valid())
-            c_del = pu_del->has_dynamic_cost() ? pu_del->dynamic_cost : pu_del->cost;
-
-        // First pass: compute mode-weighted full-trip cost for each eligible agent.
-        struct Candidate { int agent_id; float cost; int load; };
-        std::vector<Candidate> cands;
-        cands.reserve(static_cast<size_t>(n_active));
-
-        for (int i = 0; i < n_active; ++i) {
-            DeliveryAgent& a = *all_agents_[i];
-            if (!has_cap(a)) continue;
-            float c_pu = kCostScale;
-            auto it = dist_from_pickup.find(a.current_node);
-            if (it != dist_from_pickup.end()) c_pu = it->second;
-            const int   load   = static_cast<int>(a.local_memory.tasks.size());
-            const float gamma  = (load == 0) ? kGammaIdle : kGammaBusy;
-            const float cost   = gamma * (c_pu + c_del);
-            cands.push_back({ a.agent_id, cost, load });
-        }
-        if (cands.empty()) return { -1, false };
-
-        // β_W tie-break: among candidates within kTieTolerance of the best
-        // mode-weighted cost, pick the one with the lowest queued-task count.
-        // This implements paper's preference for assignments that match the
-        // "less burdened" agent (β_π — fewer remaining orders).
-        float best_cost = std::numeric_limits<float>::max();
-        for (const auto& c : cands) if (c.cost < best_cost) best_cost = c.cost;
-        const float band = best_cost * kTieTolerance;
-
-        int   best_aid  = -1;
-        int   best_load = std::numeric_limits<int>::max();
-        float best_band_cost = std::numeric_limits<float>::max();
-        for (const auto& c : cands) {
-            if (c.cost > band) continue;
-            if (c.load < best_load ||
-                (c.load == best_load && c.cost < best_band_cost)) {
-                best_load      = c.load;
-                best_band_cost = c.cost;
-                best_aid       = c.agent_id;
-            }
-        }
-        return { best_aid, false };
-    }
-
-    // ── RHCR [Li, Tinka, Kiesel, Durham, Kumar, Koenig — 2021, AAAI] ──────────
-    //
-    // Paper "Lifelong Multi-Agent Path Finding in Large-Scale Warehouses"
-    // proposes Rolling-Horizon Collision Resolution: decompose lifelong MAPF
-    // into a sequence of Windowed MAPF instances with user-specified time
-    // horizon w and replanning period h (h ≤ w). Key elements:
-    //   §4    framework: every h steps, update goal sequence per agent, call
-    //         a Windowed MAPF solver to find paths collision-free for first w
-    //         steps; then advance h steps and repeat.
-    //   §4.1  Multi-Label A* (Alg. 1): low-level search that finds a single
-    //         agent's path through an ORDERED SEQUENCE of goal locations,
-    //         where each state is (location, time, label) and label counts
-    //         the number of goal locations already visited.
-    //   §4.2  bounded-horizon (E)CBS / CA* / PBS variants: collision detection
-    //         restricted to the first w timesteps; beyond w, agents follow
-    //         shortest paths and collisions are ignored.
-    //   §4    "ensure d ≥ h" — if an agent's remaining work is shorter than
-    //         h timesteps, RHCR fills its sequence with more goal locations.
-    //   §4.4  deadlock avoidance with potential function P(w) ≥ p.
-    //
-    // LGPDP adaptation (online lifelong, OSM road network, capacitated):
-    //
-    // What we keep faithful:
-    //   ✓ Multi-Label A* through a goal sequence (Alg. 1): each agent has
-    //     a sequence of remaining objective nodes (in-flight pickup, queued
-    //     pickups, queued deliveries). compute_marginal_cost() implements
-    //     the (q1,q2) insertion search over the full sequence — equivalent
-    //     to the Multi-Label A* of paper §4.1 for the goal sequence augmented
-    //     by the candidate task's pickup and delivery.
-    //   ✓ Bounded time horizon w: instead of resolving grid collisions over
-    //     the next w timesteps (paper §4.2), we use BPR-adjusted edge cost
-    //     over the window, which is the LGPDP analogue (no grid vertex
-    //     collisions on OSM, but edge load drives travel-time inflation).
-    //     Specifically: dynamic_cost reflects current and near-future edge
-    //     load over the CongestionMap's horizon — exactly the windowed
-    //     congestion footprint paper §4.2 wants for ECBS/PBS collision
-    //     detection, expressed as cost rather than constraints.
-    //   ✓ Capacitated: has_cap() filters candidates whose insertion would
-    //     overshoot max_capacity. Required addition vs. paper §3 (paper has
-    //     unit-capacity agents).
-    //   ✓ Lifelong online task arrival: per-arrival allocation. The paper
-    //     also explicitly designs for online arrival (Section 3, "task
-    //     assigner outside the path-planning system").
-    //
-    // What we deliberately adapt and why:
-    //   ✗ Replanning period h (paper §4): paper batches re-planning every h
-    //     steps to amortise the (E)CBS Windowed MAPF cost. In our context
-    //     per-task allocation is cheap (O(n_agents × |sequence|²) marginal
-    //     cost), and per-arrival allocation is strictly more responsive
-    //     (zero buffering delay). We therefore allocate on EVERY task
-    //     arrival rather than at h-boundary batches. The bounded horizon w
-    //     is still respected through the BPR cost adjustment, which is the
-    //     fidelity-critical aspect of RHCR.
-    //   ✗ "Ensure d ≥ h" queue padding (paper §4): unnecessary in our
-    //     setting — tasks arrive online and idle agents stay where they are
-    //     until the next arrival rather than executing dummy moves.
-    //   ✗ Multi-Label A* labels (paper §4.1): paper labels enumerate goal
-    //     sequence positions because grid MAPF cares about exact arrival
-    //     timesteps. We compute the same path total cost via
-    //     compute_marginal_cost which iterates (pickup_pos, delivery_pos)
-    //     directly — equivalent under our continuous OSM cost model where
-    //     intermediate node arrival times are not needed at allocation time.
-    //   ✗ Deadlock avoidance / potential function P(w) (paper §4.4): no
-    //     grid deadlocks possible on OSM road network (multi-agent vertex
-    //     occupation is allowed; congestion just slows movement).
-    //   ✗ Windowed (E)CBS/PBS collision detection (paper §4.2): replaced by
-    //     BPR cost adjustment as described above. We do not enumerate
-    //     collisions because they do not exist in our model.
-    //
-    // Allocation rule (concrete):
-    //   For each eligible agent a, compute the marginal insertion cost of
-    //   (pickup, delivery) into a's current sequence under windowed BPR cost.
-    //   The windowed BPR adjustment is the difference between dynamic and
-    //   static cost on the pickup-side and delivery-side legs, capturing
-    //   the same "near-future load" signal paper §4.2 extracts from windowed
-    //   collision detection.
-    //   argmin over eligible agents of (marginal + windowed_penalty).
-    if (policy_mode == PolicyMode::RHCR) {
-        PDPTask* t = memory_.get_task(task_id);
-        if (!t) return { -1, false };
-
-        int   best_aid  = -1;
-        float best_cost = std::numeric_limits<float>::max();
-        for (int i = 0; i < n_active; ++i) {
-            DeliveryAgent& a = *all_agents_[i];
-            if (!has_cap(a)) continue;
-
-            // Multi-Label A* equivalent: marginal insertion cost over the
-            // agent's full goal sequence with capacity-aware (pickup_pos,
-            // delivery_pos) search.
-            const float marginal = compute_marginal_cost(a, *t);
-            if (marginal >= std::numeric_limits<float>::max() * 0.5f) continue;
-
-            // Windowed BPR penalty: extra cost from current edge load on the
-            // current→pickup and pickup→delivery legs. This is the LGPDP
-            // analogue of the paper's "ignore collisions beyond w" rule —
-            // load beyond the CongestionMap horizon does not contribute to
-            // dynamic_cost, so the difference (dynamic - static) is naturally
-            // bounded to the windowed footprint.
-            const auto* to_pu = memory_.get_or_compute_path(
-                a.current_node, t->pickup.id, t->pickup.group_id);
-            const auto* pu_del = memory_.get_or_compute_path(
-                t->pickup.id, t->delivery.id, t->delivery.group_id);
-            float windowed_penalty = 0.f;
-            if (to_pu && to_pu->valid() && to_pu->has_dynamic_cost()) {
-                windowed_penalty += std::max(0.f, to_pu->dynamic_cost - to_pu->cost);
-            }
-            if (pu_del && pu_del->valid() && pu_del->has_dynamic_cost()) {
-                windowed_penalty += std::max(0.f, pu_del->dynamic_cost - pu_del->cost);
-            }
-
-            const float cost = marginal + windowed_penalty;
-            if (cost < best_cost) { best_cost = cost; best_aid = a.agent_id; }
-        }
-        return { best_aid, false };
-    }
-
     // ── MAPPO / TamAlwaysAccept: drive the Task Allocation Module ──────────────
     //
     // TAM algorithm (matches the paper's design):
@@ -1992,19 +1475,10 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     //   cost. If all expansions terminate without allocation, the task is recalled
     //   (importance boosted) up to max_recalls before being declared exhausted.
     //
-    // MAPPO           – shared actor + centralised critic; records go to the
-    //                   single ObjectiveDMPolicy buffer.
-    // IPPO            – shared actor + per-agent local critics; records spread
-    //                   across per-agent buffers, tracked via recent_records.
-    // MAPPER          – per-agent actor + per-agent critic + Evolutionary RL;
-    //                   records distributed across per-agent buffers.
-    // TamAlwaysAccept – TAM always accepts (params.always_accept); no buffer
-    //                   writes, no refusal penalties — pure routing ablation.
-    const int  buf_before        = ObjectiveDMPolicy::shared().buffer_size();
-    const int  ippo_before       = IPPOPolicy::shared().n_recent_records();
-    const int  mapper_before     = MapperPolicy::shared().n_recent_records();
-    const int  faithful_before   = FaithfulMapperPolicy::shared().n_recent_records();
-    const int  hybrid_before     = HybridPolicy::shared().n_recent_records();
+    // Every record() the TAM session produces lands in the active policy's
+    // per-agent buffers, logged as (agent_id, buf_idx) pairs in the
+    // recent-records bracket below. TamAlwaysAccept produces no records.
+    const int rec_before = active_policy_ ? active_policy_->n_recent_records() : 0;
 
     memory_.task_agent.on_new_task(task_id, memory_);
     auto* tam = memory_.task_agent.get_tam(task_id);
@@ -2020,18 +1494,6 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     }
     last_offer_stats_.tam_dijkstra_steps = tam_iter_count;
 
-    const int buf_after        = ObjectiveDMPolicy::shared().buffer_size();
-    const int ippo_after       = IPPOPolicy::shared().n_recent_records();
-    const int mapper_after     = MapperPolicy::shared().n_recent_records();
-    const int faithful_after   = FaithfulMapperPolicy::shared().n_recent_records();
-    const int hybrid_after     = HybridPolicy::shared().n_recent_records();
-
-    // Align global_states_ with every record() the TAM produced (MAPPO critic).
-    if (policy_mode == PolicyMode::MAPPO) {
-        for (int i = buf_before; i < buf_after; ++i)
-            global_states_.push_back(gs);
-    }
-
     PDPTask* t = memory_.get_task(task_id);
     const bool allocated = tam->is_allocated() && t && t->agent_id >= 0;
 
@@ -2039,57 +1501,34 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
         (train_mode || (policy_mode == PolicyMode::Hybrid));
 
     // ── Per-candidate buffer-index resolver ─────────────────────────────────
-    // Returns the buffer index of the i-th scored candidate (in the order the
-    // TAM scored them). Works for both legacy first-fit and MC TAM, both for
-    // the shared-buffer MAPPO path and the recent-records (agent_id, idx)
-    // path used by IPPO/MAPPER/Hybrid.
+    // The i-th scored candidate produced the (rec_before + i)-th entry of the
+    // active policy's recent-records log → (agent_id, buf_idx).
     auto resolve_buf_idx = [&](int i_scored) -> int {
-        switch (policy_mode) {
-            case PolicyMode::MAPPO:
-                return buf_before + i_scored;
-            case PolicyMode::IPPO:
-                return IPPOPolicy::shared().recent_record(ippo_before + i_scored).second;
-            case PolicyMode::MAPPER:
-                return MapperPolicy::shared().recent_record(mapper_before + i_scored).second;
-            case PolicyMode::FaithfulMAPPER:
-                return FaithfulMapperPolicy::shared().recent_record(faithful_before + i_scored).second;
-            case PolicyMode::Hybrid:
-                return HybridPolicy::shared().recent_record(hybrid_before + i_scored).second;
-            default:
-                return -1;
-        }
+        if (!active_policy_) return -1;
+        const int k = rec_before + i_scored;
+        if (k >= active_policy_->n_recent_records()) return -1;
+        return active_policy_->recent_record(k).second;
     };
 
-    // ── Apply reward to (agent_id, buf_idx) on the active policy ────────────
     auto add_reward_to = [&](int aid, int buf_idx, float delta) {
-        switch (policy_mode) {
-            case PolicyMode::MAPPO:
-                ObjectiveDMPolicy::shared().add_to_reward(buf_idx, delta);
-                break;
-            case PolicyMode::IPPO:
-                IPPOPolicy::shared().add_to_reward(aid, buf_idx, delta);
-                break;
-            case PolicyMode::MAPPER:
-                MapperPolicy::shared().add_to_reward(aid, buf_idx, delta);
-                break;
-            case PolicyMode::FaithfulMAPPER:
-                FaithfulMapperPolicy::shared().add_to_reward(aid, buf_idx, delta);
-                break;
-            case PolicyMode::Hybrid:
-                HybridPolicy::shared().add_to_reward(aid, buf_idx, delta);
-                break;
-            default:
-                break;
-        }
+        if (active_policy_) active_policy_->add_to_reward(aid, buf_idx, delta);
     };
 
-    if (cfg_.tam_multi_candidate) {
-        // ── MC TAM (Format A / B) ────────────────────────────────────────────
-        // The TAM scores K candidates in the order of mc_candidates_in_order().
-        // The winner is t->agent_id (when allocated). Apply:
-        //   - non_affected_penalty to losers (signals "your bid lost")
-        //   - record the winner's buf_idx so pickup/delivery credit fires later
-        const auto& cands = tam->mc_candidates_in_order();
+    {
+        // ── Multi-candidate TAM outcome → reward plumbing ───────────────────
+        // The TAM scored K candidates in the order of candidates_in_order().
+        // Apply:
+        //   - winner (only when it actually BID): bind its buffer entry to the
+        //     task outcome (pickup/delivery credit fires later) + congestion-
+        //     creation penalty. A FORCED winner (nobody bid, force_assign
+        //     override) gets NO binding: crediting a delivery to a recorded
+        //     "refuse" action would teach the policy that refusing pays.
+        //   - non_affected_penalty to losing BIDDERS only ("your bid lost").
+        //     Candidates that refused and lost made a consistent choice — no
+        //     penalty on them.
+        const auto& cands  = tam->candidates_in_order();
+        const auto& bids   = tam->bids_in_order();
+        const bool  forced = tam->was_forced();
         if (!cands.empty() && t) {
             // Locate winner position in scoring order.
             int win_pos = -1;
@@ -2098,6 +1537,7 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
                     if (cands[i] == t->agent_id) { win_pos = i; break; }
                 }
             }
+            if (forced) win_pos = -1;   // no outcome binding for forced winners
 
             // Capture winner's buf_idx for downstream pickup/delivery credit.
             // Also apply the congestion-creation penalty here: the winner's
@@ -2147,47 +1587,16 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
                 }
             }
 
-            // Non-affected penalty on every non-winner (losing candidate).
+            // Non-affected penalty on every losing BIDDER.
             if (shaping_active && cfg_.non_affected_penalty_w > 0.f) {
                 const float pen = -cfg_.non_affected_penalty_w * t->importance_original;
                 for (int i = 0; i < static_cast<int>(cands.size()); ++i) {
                     if (i == win_pos) continue;
+                    if (i >= static_cast<int>(bids.size()) || !bids[i]) continue;
                     const int aid = cands[i];
                     const int idx = resolve_buf_idx(i);
                     if (idx >= 0) add_reward_to(aid, idx, pen);
                 }
-            }
-        }
-    } else if (shaping_active && cfg_.refuse_penalty_w > 0.f && t) {
-        // ── Legacy TAM (first-fit) — original refusal penalty path ──────────
-        const float pen = -cfg_.refuse_penalty_w * t->importance_original;
-        if (policy_mode == PolicyMode::MAPPO) {
-            const int last_excl = allocated ? buf_after - 1 : buf_after;
-            for (int i = buf_before; i < last_excl; ++i)
-                ObjectiveDMPolicy::shared().update_reward(i, pen);
-        } else if (policy_mode == PolicyMode::IPPO) {
-            const int last_excl = allocated ? ippo_after - 1 : ippo_after;
-            for (int i = ippo_before; i < last_excl; ++i) {
-                auto [aid, buf_idx] = IPPOPolicy::shared().recent_record(i);
-                IPPOPolicy::shared().update_reward(aid, buf_idx, pen);
-            }
-        } else if (policy_mode == PolicyMode::MAPPER) {
-            const int last_excl = allocated ? mapper_after - 1 : mapper_after;
-            for (int i = mapper_before; i < last_excl; ++i) {
-                auto [aid, buf_idx] = MapperPolicy::shared().recent_record(i);
-                MapperPolicy::shared().update_reward(aid, buf_idx, pen);
-            }
-        } else if (policy_mode == PolicyMode::FaithfulMAPPER) {
-            const int last_excl = allocated ? faithful_after - 1 : faithful_after;
-            for (int i = faithful_before; i < last_excl; ++i) {
-                auto [aid, buf_idx] = FaithfulMapperPolicy::shared().recent_record(i);
-                FaithfulMapperPolicy::shared().update_reward(aid, buf_idx, pen);
-            }
-        } else if (policy_mode == PolicyMode::Hybrid) {
-            const int last_excl = allocated ? hybrid_after - 1 : hybrid_after;
-            for (int i = hybrid_before; i < last_excl; ++i) {
-                auto [aid, buf_idx] = HybridPolicy::shared().recent_record(i);
-                HybridPolicy::shared().update_reward(aid, buf_idx, pen);
             }
         }
     }
@@ -2231,34 +1640,8 @@ void EpisodeRunner::commit_accepted_task(
         }
     }
 
-    // Record the buffer index of the accept decision so the completion reward
-    // can be set at delivery. In the legacy TAM path the accept entry is the
-    // LAST record produced — shared buffer for MAPPO, per-agent otherwise.
-    //
-    // SKIPPED in TAM multi-candidate mode: there mc_finalise scores ALL K
-    // candidates and only then allocates the argmax, so buffer_size()-1 points
-    // to the last-scored candidate, NOT the winner. Recording it would
-    // misattribute the delivery reward. MC mode is eval-only (buffer discarded
-    // at episode end), so simply not recording is both correct and safe —
-    // process_arrivals just skips the credit when the index is absent.
-    if (!cfg_.tam_multi_candidate) {
-        if (policy_mode == PolicyMode::MAPPO) {
-            task_accept_buf_idx_[task_id] =
-                ObjectiveDMPolicy::shared().buffer_size() - 1;
-        } else if (policy_mode == PolicyMode::IPPO) {
-            task_accept_buf_idx_[task_id] =
-                IPPOPolicy::shared().buffer_size(winner) - 1;
-        } else if (policy_mode == PolicyMode::MAPPER) {
-            task_accept_buf_idx_[task_id] =
-                MapperPolicy::shared().buffer_size(winner) - 1;
-        } else if (policy_mode == PolicyMode::FaithfulMAPPER) {
-            task_accept_buf_idx_[task_id] =
-                FaithfulMapperPolicy::shared().buffer_size(winner) - 1;
-        } else if (policy_mode == PolicyMode::Hybrid) {
-            task_accept_buf_idx_[task_id] =
-                HybridPolicy::shared().buffer_size(winner) - 1;
-        }
-    }
+    // (The winner's buffer entry was already bound to the task in offer_task,
+    // via the TAM's candidates/bids pairing — nothing to record here.)
 
     // Start the edge-by-edge leg only if the agent was Idle. If already Active
     // (multi-task queue) the current cursor is still valid; the new objectives
@@ -2310,18 +1693,20 @@ int EpisodeRunner::schedule_next_edge(int agent_id, int current_step) {
     }
 
     // ── Congestion-aware traversal time ──────────────────────────────────
-    // The agent is slowed by the load present on this edge at the instant it
-    // ENTERS (current_step), via the BPR factor. Travel time is computed on
-    // the congestion-ADJUSTED effective distance, so jams actually delay the
-    // agent's arrival — the operational environment is no longer free-flow.
-    // adjusted is reused below for the real-impact metrics (single eval).
+    // Single authority: CongestionMap::traversal_steps — the same function
+    // that prices the committed-plan occupancy windows, so estimation and
+    // execution agree. The agent is slowed by the load present on this edge
+    // at the instant it ENTERS (current_step) via the BPR factor.
+    int steps;
     float eff_dist = dist;
     if (edge_id != 0 && dist > 0.f) {
+        steps = memory_.congestion_map.traversal_steps(
+            edge_id, dist, current_step, cfg_.speed_mps);
         eff_dist = memory_.congestion_map.adjusted_cost(
             edge_id, dist, dist, current_step);
+    } else {
+        steps = std::max(1, static_cast<int>(std::ceil(dist / cfg_.speed_mps)));
     }
-
-    int steps   = std::max(1, static_cast<int>(std::ceil(eff_dist / cfg_.speed_mps)));
     int arrival = current_step + steps;
 
     bool is_last = cur.is_last_edge();
@@ -2368,31 +1753,13 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
         // Reward shaping: deliver partial credit at pickup so the decision-time
         // experience gets a signal long before the actual delivery (which can be
         // 500-1500 steps later). Reduces credit-assignment delay drastically.
-        if (policy_mode == PolicyMode::MAPPO ||
-            policy_mode == PolicyMode::IPPO  ||
-            policy_mode == PolicyMode::MAPPER ||
-            policy_mode == PolicyMode::FaithfulMAPPER ||
-            policy_mode == PolicyMode::Hybrid) {
+        if (active_policy_) {
             auto it = task_accept_buf_idx_.find(task_id);
             if (it != task_accept_buf_idx_.end()) {
                 const float pickup_credit = cfg_.pickup_reward_frac
                     * task->reward_original * task->importance_original;
-                if (policy_mode == PolicyMode::MAPPO) {
-                    ObjectiveDMPolicy::shared().add_to_reward(
-                        it->second, pickup_credit);
-                } else if (policy_mode == PolicyMode::IPPO) {
-                    IPPOPolicy::shared().add_to_reward(
-                        task->agent_id, it->second, pickup_credit);
-                } else if (policy_mode == PolicyMode::MAPPER) {
-                    MapperPolicy::shared().add_to_reward(
-                        task->agent_id, it->second, pickup_credit);
-                } else if (policy_mode == PolicyMode::FaithfulMAPPER) {
-                    FaithfulMapperPolicy::shared().add_to_reward(
-                        task->agent_id, it->second, pickup_credit);
-                } else /* Hybrid */ {
-                    HybridPolicy::shared().add_to_reward(
-                        task->agent_id, it->second, pickup_credit);
-                }
+                active_policy_->add_to_reward(task->agent_id, it->second,
+                                              pickup_credit);
             }
         }
 
@@ -2463,18 +1830,11 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
         // game a larger reward than immediate acceptance — TAM may boost
         // reward/importance to attract bidders, but the policy must be trained
         // on the true task value.
-        if (policy_mode == PolicyMode::MAPPO ||
-            policy_mode == PolicyMode::IPPO  ||
-            policy_mode == PolicyMode::MAPPER ||
-            policy_mode == PolicyMode::FaithfulMAPPER ||
-            policy_mode == PolicyMode::Hybrid) {
+        if (active_policy_) {
             auto it = task_accept_buf_idx_.find(task_id);
             if (it != task_accept_buf_idx_.end()) {
-                // Latency-aware delivery shaping (Phase 2).
+                // Latency-aware delivery shaping (paper eq. 6):
                 // factor = 1 − λ × min(1, trip_steps / max_steps).
-                // Only applied when the flag is on AND the task was actually
-                // picked up (timeline.picked_step >= 0). Pickup credit and
-                // penalties stay untouched.
                 float shape_factor = 1.f;
                 if (cfg_.enable_latency_shaping
                     && task->timeline.picked_step >= 0
@@ -2484,29 +1844,14 @@ void EpisodeRunner::on_objective_reached(int agent_id, int task_id,
                         current_step - task->timeline.picked_step);
                     const float trip_norm = std::min(1.f,
                         trip / static_cast<float>(cfg_.latency_shaping_max_steps));
-                    shape_factor = 1.f - cfg_.latency_shaping_lambda * trip_norm;
-                    // Defensive clamp — never negative even with bad config.
-                    if (shape_factor < 0.f) shape_factor = 0.f;
+                    shape_factor = std::max(0.f,
+                        1.f - cfg_.latency_shaping_lambda * trip_norm);
                 }
                 const float delivery_credit = (1.f - cfg_.pickup_reward_frac)
                     * task->reward_original * task->importance_original
                     * shape_factor;
-                if (policy_mode == PolicyMode::MAPPO) {
-                    ObjectiveDMPolicy::shared().add_to_reward(
-                        it->second, delivery_credit);
-                } else if (policy_mode == PolicyMode::IPPO) {
-                    IPPOPolicy::shared().add_to_reward(
-                        task->agent_id, it->second, delivery_credit);
-                } else if (policy_mode == PolicyMode::MAPPER) {
-                    MapperPolicy::shared().add_to_reward(
-                        task->agent_id, it->second, delivery_credit);
-                } else if (policy_mode == PolicyMode::FaithfulMAPPER) {
-                    FaithfulMapperPolicy::shared().add_to_reward(
-                        task->agent_id, it->second, delivery_credit);
-                } else /* Hybrid */ {
-                    HybridPolicy::shared().add_to_reward(
-                        task->agent_id, it->second, delivery_credit);
-                }
+                active_policy_->add_to_reward(task->agent_id, it->second,
+                                              delivery_credit);
                 task_accept_buf_idx_.erase(it);
             }
         }

@@ -16,16 +16,19 @@
     <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\ComparisonTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\ObjectiveDMPolicy.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MappoPolicy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\IPPOPolicy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MapperPolicy.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\FaithfulMapperPolicy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\HybridPolicy.cpp">
@@ -38,9 +41,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Tests\GeoBoxConnectivityTest.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Tests\BaselinesMultiAgentTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp">
@@ -76,22 +76,7 @@
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\PathHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\TokenPassing\TokenPassingSolver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\CongestionAware\CongestionAwareSolver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\FaithfulCongestionAware\FaithfulCASolver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\FaithfulCongestionAwareCapacited\FaithfulCACapacitedSolver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\TrafficFlow\TrafficFlowSolver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\RHCR\RHCRSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\HybridAdaptivePredictive\HybridAdaptivePredictiveSolver.cpp">

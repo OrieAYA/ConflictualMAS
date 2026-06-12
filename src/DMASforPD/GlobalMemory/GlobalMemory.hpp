@@ -152,30 +152,20 @@ public:
     // in the audit (Chen+2021 §IV-D Algorithm 3).
     bool  planning_use_mca_lns = false;
 
-    // Active learning-policy dispatcher used by DeliveryAgent::try_accept_task.
-    // Set by EpisodeRunner at the start of each run() based on policy_mode:
-    //   - PolicyMode::MAPPO          → kMAPPO   (shared actor + centralised critic)
-    //   - PolicyMode::IPPO           → kIPPO    (shared actor + shared local critic,
-    //                                            de Witt+2020 paper-faithful)
-    //   - PolicyMode::MAPPER         → kMAPPER  (per-agent actor + per-agent critic +
-    //                                            enhanced Ev with Gaussian mutation)
-    //   - PolicyMode::FaithfulMAPPER → kFaithfulMAPPER (same architecture as MAPPER
-    //                                            but paper-faithful Ev: probabilistic
-    //                                            replacement + exact copy of best,
-    //                                            no mutation noise)
-    //   - PolicyMode::Hybrid         → kHybrid  (MAPPO base + per-agent residual)
-    //   - PolicyMode::RMCA           → kRMCA    (Chen+2021 RMCA(r): non-learning
-    //                                            marginal-cost insertion scorer;
-    //                                            no buffer, no Bernoulli sampling)
-    // try_accept_task routes the feature vector to the corresponding policy
-    // singleton (ObjectiveDMPolicy / IPPOPolicy / MapperPolicy / FaithfulMapperPolicy /
-    // HybridPolicy) and records the experience into the right buffer. kRMCA
-    // short-circuits before any buffer write: it returns a deterministic score
-    // (transform of the eq.13 marginal cost) so the TAM argmax picks k1. Other
-    // modes (Greedy, Random, ...) bypass try_accept_task entirely so the kind is ignored.
+    // Active objective-policy dispatcher used by DeliveryAgent::bid_for_task:
+    //   kMAPPO / kIPPO / kMAPPER / kHybrid → the corresponding IBidPolicy
+    //   kRMCA → non-learning marginal-cost scorer (Chen+2021), deterministic,
+    //           no buffer write.
+    // Modes that never consult a policy (Greedy, Random, ...) bypass
+    // bid_for_task entirely, so the kind is ignored for them.
     enum class PolicyKind { kMAPPO = 0, kIPPO = 1, kMAPPER = 2,
-                            kHybrid = 3, kFaithfulMAPPER = 4, kRMCA = 5 };
+                            kHybrid = 3, kRMCA = 4 };
     PolicyKind active_policy = PolicyKind::kMAPPO;
+
+    // System-state snapshot (kGlobSz = 20 floats) refreshed once per step by
+    // the episode runner. bid_for_task forwards it into each recorded
+    // experience so the MAPPO critic sees the state the decision was made in.
+    float cur_global_state[20] = {};
 
     // ── Spatial heatmap : task density + congestion per cell ───────────────
     // Initialised once at construction (via geo_box bbox), reset between
@@ -276,10 +266,18 @@ public:
     // cost (meters) in the SAME units as ObjectivePath::cost, so it is a
     // drop-in replacement for the static matrix entry. Single forward pass,
     // O(#edges), reads the load profile as-is (no fixed-point). Returns
-    // FLT_MAX when the path is invalid. Used by forward DbVNS to make the
-    // decomposition tree the operable environment (not the static matrix).
+    // FLT_MAX when the path is invalid. The walk is ORIENTED: edges are
+    // replayed in the from→to direction regardless of the cached direction.
     float bpr_path_cost(osmium::object_id_type from, osmium::object_id_type to,
                         int group_id, int depart_step, float speed_mps);
+
+    // Same BPR replay but in TIME units (steps), walking `path` oriented so
+    // the traversal starts at `from`. Used to compare the remaining travel
+    // time of the current route against a TD-A* alternative in the SAME
+    // units (push_rerouted_path). Returns INT_MAX if `from` is not on the path.
+    int path_travel_steps(const ObjectivePath& path,
+                          osmium::object_id_type from,
+                          int depart_step, float speed_mps) const;
 
     // ---- Simulation clock -----------------------------------------------
 
@@ -297,10 +295,13 @@ public:
 
     // ---- Congestion (delegates to congestion_map) -----------------------
 
-    void  register_agent_path  (const ObjectivePath& path, int start_time, float speed_mps);
-    void  unregister_agent_path(const ObjectivePath& path, int start_time, float speed_mps);
     float congestion_cost(osmium::object_id_type way_id,
                           float base_cost, float distance_meters, int t) const;
+
+    // Exploration switch for the bid policies: when true (training), the
+    // bid decision is SAMPLED from Bernoulli(μ); when false (evaluation),
+    // it is the deterministic threshold μ >= 0.5. Set by the episode runner.
+    bool exploration_enabled = false;
 
 private:
     int current_time_ = 0;
@@ -314,9 +315,17 @@ private:
     // Delivery agent registry.
     std::unordered_map<int, DeliveryAgent*> delivery_agents_;
 
-    // Per-agent committed timed paths: list of (path, departure_step) pairs.
-    // Used to undo congestion contributions when the plan changes.
-    std::unordered_map<int, std::vector<std::pair<TimedPath, int>>> committed_plans_;
+    // Exact ledger of the load increments actually applied for each agent's
+    // committed plan. Bounds are clamped to the CongestionMap window at ADD
+    // time so removal is perfectly symmetric — removing un-clamped windows
+    // after the clock advanced would subtract load that was never added
+    // (corrupting other agents' / ghosts' contributions).
+    struct LoadWindow {
+        osmium::object_id_type way;
+        int t_lo, t_hi;
+        int weight;
+    };
+    std::unordered_map<int, std::vector<LoadWindow>> committed_loads_;
 
     // Remove a task pointer from whichever category list currently holds it.
     static void remove_from_lists(PDPTask* task,

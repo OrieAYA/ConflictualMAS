@@ -2,7 +2,7 @@
 #define TRAINING_EPISODE_CONFIG_HPP
 
 #include "CityConfig.hpp"
-#include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"   // kGlobSz = 20
+#include "DMASforPD/Policy/PolicyKit.hpp"   // kGlobSz = 20
 #include <osmium/osm/types.hpp>
 #include <array>
 #include <string>
@@ -244,32 +244,26 @@ struct EpisodeConfig {
     // per 10 km of routing cost". This filters genuinely unprofitable tasks.
     float insertion_greedy_threshold = 1e-4f;
 
-    // ── TAM multi-candidate mode (opt-in, recoverable) ─────────────────────
+    // ── TAM multi-candidate parameters (paper Algorithm 1) ─────────────────
     //
-    // When tam_multi_candidate is false (default) the TAM behaves EXACTLY as
-    // before: dual-Dijkstra, first agent scoring >= 0.5 wins (first-fit),
-    // legacy recall on exhaustion. Setting it false restores the current
-    // architecture byte-for-byte — nothing else is needed for recovery.
+    // The TAM is a K-candidate auction:
+    //   1. Dual incremental Dijkstra expands from pickup and delivery until
+    //      the first valid candidate is found at x = max(pickup_cost,
+    //      delivery_cost), fixing the budget at x * ratio(x), with
+    //      ratio(x) = min + (max-min)/(1 + x/scale) (meters).
+    //   2. Expansion stops at K candidates, budget, or graph exhaustion.
+    //   3. Every candidate bids (policy score μ + accept/refuse). Winner =
+    //      argmax μ among bidders.
+    //   4. tam_mc_force_assign = true  (Format A) → if nobody bids, the
+    //      argmax-μ agent is force-assigned (flagged FORCED — no task-outcome
+    //      credit binds to that buffer entry).
+    //      tam_mc_force_assign = false (Format B) → the task is DEFERRED and
+    //      re-offered after tam_mc_recall_time_frac × total_steps, until
+    //      tam_mc_reject_time_frac × total_steps → rejected.
     //
-    // When true, the TAM switches to a K-candidate auction:
-    //   1. Dijkstra expands until the first valid candidate is found at
-    //      x = max(pickup_cost, delivery_cost).
-    //   2. Expansion continues until budget = x * ratio(x), or until
-    //      tam_mc_max_candidates candidates are collected, or both searches
-    //      exhaust. ratio(x) decreases from tam_mc_ratio_max (near x=0) to
-    //      tam_mc_ratio_min (x→∞):  ratio(x) = min + (max-min)/(1 + x/scale).
-    //   3. All candidates are scored via the policy (try_accept_task — same
-    //      call path as legacy). The argmax wins.
-    //   4. tam_mc_force_assign = true  → always allocate to the argmax.
-    //      tam_mc_force_assign = false → if all scores < 0.5, the TAM marks
-    //      the task DEFERRED. EpisodeRunner re-offers it after
-    //      tam_mc_recall_time_frac × total_steps, unless the episode is
-    //      already past tam_mc_reject_time_frac × total_steps → reject.
-    //
-    // Candidate = agent reachable from BOTH searches with a valid plan order
-    // (pickup before delivery), OR an idle agent with no assigned task
-    // (the "exception" — single-side discovery is enough).
-    bool  tam_multi_candidate     = false;
+    // Candidate = agent reachable from at least one search side with a valid
+    // plan order (pickup before delivery), or an idle agent discovered at
+    // its standing position.
     bool  tam_mc_force_assign     = true;    // Format A (true) vs Format B (false)
     int   tam_mc_max_candidates   = 5;
     float tam_mc_ratio_min        = 1.4f;

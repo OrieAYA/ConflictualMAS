@@ -6,7 +6,11 @@
 #include <cmath>
 
 struct CongestionParams {
-    int   horizon            = 100;     // max future steps retained
+    // Predictive lookahead (steps). Planned movements are registered up to
+    // t_now + horizon; BPR queries beyond it see free flow. Must cover the
+    // typical plan length, otherwise time-aware planning degenerates to
+    // static cost past the horizon.
+    int   horizon            = 1800;
     float bpr_alpha          = 0.15f;   // BPR function α
     float bpr_beta           = 4.0f;    // BPR function β
     float capacity_per_meter = 0.05f;   // agent slots per meter of edge length
@@ -64,6 +68,22 @@ public:
                         float base_cost,
                         float distance_meters,
                         int t) const;
+
+    // Single authority for the time an agent needs to traverse `way_id` when
+    // entering it at step t_enter: ceil(BPR-adjusted distance / speed), >= 1.
+    // Planning (estimation), plan commitment (occupancy windows) and movement
+    // execution must all go through this so the three views never diverge.
+    int traversal_steps(osmium::object_id_type way_id,
+                        float distance_meters,
+                        int   t_enter,
+                        float speed_mps) const;
+
+    // Currently registrable time window [window_lo, window_hi]. Loads outside
+    // it are silently dropped by add/remove — callers that need symmetric
+    // add/remove bookkeeping must clamp to this window at ADD time and store
+    // the clamped bounds for later removal.
+    int window_lo() const { return t_now_; }
+    int window_hi() const { return t_now_ + params.horizon; }
 
     // Advance current step to t_now and purge all steps older than t_now.
     void advance(int t_now);

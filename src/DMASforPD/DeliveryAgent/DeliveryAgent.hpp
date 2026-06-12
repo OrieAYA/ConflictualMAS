@@ -77,6 +77,11 @@ struct DeliveryLocalMemory {
     int                             current_time = 0;
     OperableEnvironment             operable_env;
     std::vector<LocalSolutionAgent> local_agents;
+
+    // Agent-owned storage for a congestion reroute. current_path points here
+    // when the Manager pushes a TD-A* alternative (the path cache only stores
+    // static shortest paths; rerouted geometry needs a stable owner).
+    ObjectivePath                   reroute_path;
 };
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -125,7 +130,22 @@ public:
 
     void  receive_task        (PDPTask& task, PDPGlobalMemory& memory);
     void  remove_completed_task(int task_id);
-    float try_accept_task     (const TaskOffer& offer, PDPGlobalMemory& memory);
+
+    // Result of asking this agent to evaluate a task offer.
+    //   mu  — the policy's action score ∈ [0,1] (paper: "promising-ness").
+    //   bid — the agent's sampled/deterministic accept decision. The TAM
+    //         allocates to the argmax-μ agent AMONG BIDDERS; if nobody bids
+    //         it force-assigns the argmax-μ agent and flags the allocation
+    //         as forced (the runner then does NOT credit task outcomes to
+    //         that buffer entry — the assignment was the system's override,
+    //         not the policy's action).
+    struct BidResult { float mu = 0.f; bool bid = false; };
+
+    // Build the 12-d feature vector, query the active policy, sample the bid
+    // (Bernoulli(μ) when memory.exploration_enabled, μ>=0.5 otherwise) and
+    // record the experience into the active policy's buffer. RMCA mode
+    // returns a deterministic score with bid=true and records nothing.
+    BidResult bid_for_task    (const TaskOffer& offer, PDPGlobalMemory& memory);
 
     // Compute a bid score for InsertionGreedy baseline (no buffer recording).
     // Returns (reward * importance) / max(insertion_cost, ε). Higher = better task.

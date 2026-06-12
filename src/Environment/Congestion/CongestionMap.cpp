@@ -78,6 +78,18 @@ float CongestionMap::adjusted_cost(
     return base_cost * (1.0f + params.bpr_alpha * power);
 }
 
+int CongestionMap::traversal_steps(
+    osmium::object_id_type way_id,
+    float distance_meters,
+    int   t_enter,
+    float speed_mps
+) const {
+    if (distance_meters <= 0.f) return 1;
+    const float spd = (speed_mps > 0.f) ? speed_mps : 1.f;
+    const float eff = adjusted_cost(way_id, distance_meters, distance_meters, t_enter);
+    return std::max(1, static_cast<int>(std::ceil(eff / spd)));
+}
+
 void CongestionMap::advance(int t_now) {
     if (t_now <= t_now_) return;
 

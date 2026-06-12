@@ -1,11 +1,7 @@
 #include "DeliveryAgent.hpp"
 #include "DMASforPD/GlobalMemory/GlobalMemory.hpp"
 #include "DMASforPD/TaskAgent/TaskAllocationModule.hpp"
-#include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
-#include "DMASforPD/Policy/IPPOPolicy.hpp"
-#include "DMASforPD/Policy/MapperPolicy.hpp"
-#include "DMASforPD/Policy/FaithfulMapperPolicy.hpp"
-#include "DMASforPD/Policy/HybridPolicy.hpp"
+#include "DMASforPD/Policy/BidPolicy.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -844,21 +840,22 @@ static float rmca_marginal_insertion_cost(const DeliveryAgent& a,
     return best_delta;
 }
 
-float DeliveryAgent::try_accept_task(const TaskOffer& offer, PDPGlobalMemory& memory) {
+DeliveryAgent::BidResult DeliveryAgent::bid_for_task(
+    const TaskOffer& offer, PDPGlobalMemory& memory)
+{
     PDPTask* task = memory.get_task(offer.task_id);
-    if (!task) return 0.f;
+    if (!task) return {0.f, false};
 
     // ── RMCA(r) baseline [Chen et al. 2021] — non-learning scorer ─────────────
     // Replaces the RL forward pass with the paper's marginal-cost insertion
     // (eq.13, capacity eq.9). The score is a monotone-DECREASING transform of
     // the marginal cost, so the TAM's argmax selects k1 = argmin marginal cost
     // (the agent RMCA returns). No experience is recorded (RMCA has no training
-    // buffer) and the score is deterministic (no Bernoulli sampling). The
-    // relative regret (eq.16) is logged by the EpisodeRunner from the
-    // pre-allocation marginal costs of every eligible agent.
+    // buffer) and the score is deterministic. bid=true always: RMCA has no
+    // refusal concept, the argmax fully decides.
     if (memory.active_policy == PDPGlobalMemory::PolicyKind::kRMCA) {
         const float mc = rmca_marginal_insertion_cost(*this, *task, memory);
-        return 1.0f / (1.0f + std::max(0.f, mc) / kCostScale);
+        return { 1.0f / (1.0f + std::max(0.f, mc) / kCostScale), true };
     }
 
     // ── Estimate insertion cost: current_node → pickup → delivery (upper bound) ──
@@ -989,62 +986,38 @@ float DeliveryAgent::try_accept_task(const TaskOffer& offer, PDPGlobalMemory& me
         }
     }
 
-    // ── Stochastic action sampling ─────────────────────────────────────────────
-    // PPO requires the recorded action to be sampled from π(a|s). Bernoulli(μ)
-    // naturally generates both action=1 and action=0 around any μ ∈ (0,1),
-    // letting the gradient learn the accept/refuse trade-off.
-    //
-    // Dispatch to the active learning policy:
-    //   - kMAPPO          → ObjectiveDMPolicy (shared actor, centralised critic)
-    //   - kIPPO           → IPPOPolicy (shared actor, shared local critic — paper-faithful)
-    //   - kMAPPER         → MapperPolicy (per-agent + enhanced Ev with mutation)
-    //   - kFaithfulMAPPER → FaithfulMapperPolicy (per-agent + paper-faithful Ev: copy, no mutation)
-    //   - kHybrid         → HybridPolicy (MAPPO base + per-agent residual)
-    // The TAM is policy-agnostic; it just compares the returned score to 0.5.
+    // ── Score + bid ─────────────────────────────────────────────────────────
+    // μ is the policy's action score (paper: the agent's self-assessed
+    // promising-ness). The TAM ranks candidates by μ; the BID is the agent's
+    // own accept/refuse action — sampled from Bernoulli(μ) during training
+    // (PPO requires the recorded action to be drawn from π(a|s)), and the
+    // deterministic threshold μ >= 0.5 during evaluation.
     static thread_local std::mt19937 rng{std::random_device{}()};
-    float mu;
-    switch (memory.active_policy) {
-        case PDPGlobalMemory::PolicyKind::kIPPO:
-            mu = IPPOPolicy::shared().score(f);
-            break;
-        case PDPGlobalMemory::PolicyKind::kMAPPER:
-            mu = MapperPolicy::shared().score(agent_id, f);
-            break;
-        case PDPGlobalMemory::PolicyKind::kFaithfulMAPPER:
-            mu = FaithfulMapperPolicy::shared().score(agent_id, f);
-            break;
-        case PDPGlobalMemory::PolicyKind::kHybrid:
-            mu = HybridPolicy::shared().score(agent_id, f);
-            break;
-        case PDPGlobalMemory::PolicyKind::kMAPPO:
-        default:
-            mu = ObjectiveDMPolicy::shared().score(f);
-            break;
-    }
-    std::bernoulli_distribution dist(std::clamp(mu, 0.001f, 0.999f));
-    float action = dist(rng) ? 1.f : 0.f;
 
-    // Reward is 0 at decision time; EpisodeRunner::on_objective_reached calls
-    // update_reward() with the actual task value when the task is delivered.
+    BidPolicyKind kind;
     switch (memory.active_policy) {
-        case PDPGlobalMemory::PolicyKind::kIPPO:
-            IPPOPolicy::shared().record(agent_id, f, action, 0.f);
-            break;
-        case PDPGlobalMemory::PolicyKind::kMAPPER:
-            MapperPolicy::shared().record(agent_id, f, action, 0.f);
-            break;
-        case PDPGlobalMemory::PolicyKind::kFaithfulMAPPER:
-            FaithfulMapperPolicy::shared().record(agent_id, f, action, 0.f);
-            break;
-        case PDPGlobalMemory::PolicyKind::kHybrid:
-            HybridPolicy::shared().record(agent_id, f, action, 0.f);
-            break;
+        case PDPGlobalMemory::PolicyKind::kIPPO:   kind = BidPolicyKind::IPPO;   break;
+        case PDPGlobalMemory::PolicyKind::kMAPPER: kind = BidPolicyKind::MAPPER; break;
+        case PDPGlobalMemory::PolicyKind::kHybrid: kind = BidPolicyKind::Hybrid; break;
         case PDPGlobalMemory::PolicyKind::kMAPPO:
-        default:
-            ObjectiveDMPolicy::shared().record(f, action, 0.f, agent_id);
-            break;
+        default:                                   kind = BidPolicyKind::MAPPO;  break;
     }
-    return action;  // 0 or 1 — TAM still uses >= 0.5 threshold which works.
+    IBidPolicy& pol = bid_policy(kind);
+
+    const float mu = pol.score(agent_id, f);
+    bool bid;
+    if (memory.exploration_enabled) {
+        std::bernoulli_distribution dist(std::clamp(mu, 0.001f, 0.999f));
+        bid = dist(rng);
+    } else {
+        bid = (mu >= 0.5f);
+    }
+
+    // Reward is 0 at decision time; the runner adds pickup/delivery credit
+    // (or penalties) onto this entry as the task outcome unfolds.
+    pol.record(agent_id, f, memory.cur_global_state, bid ? 1.f : 0.f);
+
+    return { mu, bid };
 }
 
 float DeliveryAgent::compute_bid(const TaskOffer& offer, PDPGlobalMemory& memory) {
@@ -1077,13 +1050,25 @@ bool DeliveryAgent::begin_leg(const ObjectivePath* path, int task_id, bool is_pi
         return false;
     }
 
-    edge_cursor = EdgeCursor{
-        path->nodes,   // all nodes including start and objective
-        path->edges,   // way IDs between consecutive nodes
-        0,             // agent is at nodes[0] = current_node
-        task_id,
-        is_pickup
-    };
+    // ORIENT the cached path: the cache stores each (a,b) pair once, in the
+    // direction it was first computed. A leg traversing it the other way must
+    // load the node/edge sequences REVERSED — otherwise the cursor walks from
+    // the far end of the path (the agent "teleports" across the leg and ends
+    // where it started while the system credits the objective).
+    const bool forward = (path->nodes.front() == current_node)
+                      || (path->nodes.back()  != current_node);
+    EdgeCursor cur;
+    if (forward) {
+        cur.nodes = path->nodes;
+        cur.edges = path->edges;
+    } else {
+        cur.nodes.assign(path->nodes.rbegin(), path->nodes.rend());
+        cur.edges.assign(path->edges.rbegin(), path->edges.rend());
+    }
+    cur.next_idx  = 0;             // agent is at nodes[0] = current_node
+    cur.task_id   = task_id;
+    cur.is_pickup = is_pickup;
+    edge_cursor = std::move(cur);
     return true;
 }
 
@@ -1106,19 +1091,24 @@ void DeliveryAgent::push_updated_path(const ObjectivePath* new_path) {
     // Rebuild the cursor from the agent's current position within the new path.
     local_memory.current_path = new_path;
     if (!new_path || !new_path->valid() || new_path->nodes.size() < 2) return;
+    if (!edge_cursor) return;   // at a leg boundary begin_leg() will pick it up
 
-    // Find the agent's current node in the new path to resume from there.
-    const auto& ns = new_path->nodes;
+    // Orient the new path so the walk starts toward the objective, then
+    // resume from the agent's current node within it.
+    const bool forward = (new_path->nodes.front() == current_node)
+                      || (new_path->nodes.back()  != current_node);
+    if (forward) {
+        edge_cursor->nodes = new_path->nodes;
+        edge_cursor->edges = new_path->edges;
+    } else {
+        edge_cursor->nodes.assign(new_path->nodes.rbegin(), new_path->nodes.rend());
+        edge_cursor->edges.assign(new_path->edges.rbegin(), new_path->edges.rend());
+    }
     int resume = 0;
-    for (int i = 0; i < static_cast<int>(ns.size()); ++i) {
-        if (ns[i] == current_node) { resume = i; break; }
+    for (int i = 0; i < static_cast<int>(edge_cursor->nodes.size()); ++i) {
+        if (edge_cursor->nodes[i] == current_node) { resume = i; break; }
     }
-
-    if (edge_cursor) {
-        edge_cursor->nodes    = new_path->nodes;
-        edge_cursor->edges    = new_path->edges;
-        edge_cursor->next_idx = resume;
-    }
+    edge_cursor->next_idx = resume;
 }
 
 // ---- Legacy path helpers (kept for TAM / planning compatibility) ---------

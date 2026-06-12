@@ -1,7 +1,7 @@
 #include "TamMcTest.hpp"
 #include "Training/EpisodeConfig.hpp"
 #include "Training/EpisodeRunner.hpp"
-#include "DMASforPD/Policy/ObjectiveDMPolicy.hpp"
+#include "DMASforPD/Policy/BidPolicy.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
 #include "Legacy/Common/Pathfinding.hpp"
@@ -24,7 +24,7 @@ static float mean_accept_rate(EpisodeRunner& runner, int n_episodes)
 {
     float sum = 0.f;
     for (int i = 0; i < n_episodes; ++i) {
-        ObjectiveDMPolicy::shared().clear_buffer();
+        bid_policy(BidPolicyKind::MAPPO).clear_buffers();
         RunResult r = runner.run(0, 1, {}, static_cast<uint32_t>(42 + i));
         sum += r.metrics.accept_rate;
     }
@@ -75,7 +75,6 @@ bool run_tam_mc_test(const std::string& osm_file,
         { 150, 5.f, 3, 4, 0.0f, 2 },
         { 150, 6.f, 4, 5, 1.0f, 3 },
     };
-    cfg.tam_multi_candidate = true;
     cfg.tam_mc_max_candidates   = 5;
     cfg.tam_mc_ratio_min        = 1.4f;
     cfg.tam_mc_ratio_max        = 3.0f;
@@ -186,7 +185,6 @@ bool run_tam_mc_test(const std::string& osm_file,
     // ── 7. Legacy TAM (mc=false) + TamAlwaysAccept — reference ───────────────
     {
         EpisodeConfig cfgL = cfg;
-        cfgL.tam_multi_candidate = false;
         std::unique_ptr<EpisodeRunner> runner;
         try {
             runner = std::make_unique<EpisodeRunner>(cfgL, geo_box, pathfinder, 42u);
