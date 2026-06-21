@@ -1,9 +1,9 @@
-#include "CongestionOnlyTest.hpp"
-#include "Training/CityConfig.hpp"
+#include "Tests/CongestionOnlyTest.hpp"
+#include "TrainingEvaluation/StructuresParam/CityConfig.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
-#include "Environment/Congestion/CongestionMap.hpp"
-#include "Environment/Congestion/GhostTrafficController.hpp"
+#include "Environment/Simulation/CongestionMap.hpp"
+#include "Environment/Simulation/GhostTrafficController.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>

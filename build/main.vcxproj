@@ -87,7 +87,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\ConflictualMAS\src\Training;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /external:I "C:/libs/vcpkg/installed/x64-windows/include" /external:I "C:/libs/vcpkg/installed/x64-windows/include/harfbuzz" /external:I "C:/libs/vcpkg/installed/x64-windows/debug/../include" /external:I "C:/libs/vcpkg/installed/x64-windows/debug/../include/webp" /bigobj</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -114,10 +114,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;NOMINMAX;BOOST_IOSTREAMS_NO_LIB;BOOST_IOSTREAMS_DYN_LINK;BOOST_RANDOM_NO_LIB;BOOST_RANDOM_DYN_LINK;MAPNIK_THREADSAFE;BOOST_REGEX_HAS_ICU;BIGINT;MAPNIK_MEMORY_MAPPED_FILE;HAVE_PNG;HAVE_JPEG;HAVE_TIFF;HAVE_WEBP;MAPNIK_USE_PROJ;MAPNIK_PROJ_VERSION=90701;GRID_RENDERER;SVG_RENDERER;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\ConflictualMAS\src\Training;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\ConflictualMAS\src\Training;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -156,7 +156,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\ConflictualMAS\src\Training;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /external:I "C:/libs/vcpkg/installed/x64-windows/include" /external:I "C:/libs/vcpkg/installed/x64-windows/include/harfbuzz" /external:I "C:/libs/vcpkg/installed/x64-windows/debug/../include" /external:I "C:/libs/vcpkg/installed/x64-windows/debug/../include/webp" /bigobj</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -184,10 +184,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;NOMINMAX;BOOST_IOSTREAMS_NO_LIB;BOOST_IOSTREAMS_DYN_LINK;BOOST_RANDOM_NO_LIB;BOOST_RANDOM_DYN_LINK;MAPNIK_THREADSAFE;BOOST_REGEX_HAS_ICU;BIGINT;MAPNIK_MEMORY_MAPPED_FILE;HAVE_PNG;HAVE_JPEG;HAVE_TIFF;HAVE_WEBP;MAPNIK_USE_PROJ;MAPNIK_PROJ_VERSION=90701;GRID_RENDERER;SVG_RENDERER;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\ConflictualMAS\src\Training;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\ConflictualMAS\src\Training;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -226,7 +226,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\ConflictualMAS\src\Training;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /external:I "C:/libs/vcpkg/installed/x64-windows/include" /external:I "C:/libs/vcpkg/installed/x64-windows/include/harfbuzz" /external:I "C:/libs/vcpkg/installed/x64-windows/debug/../include" /external:I "C:/libs/vcpkg/installed/x64-windows/debug/../include/webp" /bigobj</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -254,10 +254,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;NOMINMAX;BOOST_IOSTREAMS_NO_LIB;BOOST_IOSTREAMS_DYN_LINK;BOOST_RANDOM_NO_LIB;BOOST_RANDOM_DYN_LINK;MAPNIK_THREADSAFE;BOOST_REGEX_HAS_ICU;BIGINT;MAPNIK_MEMORY_MAPPED_FILE;HAVE_PNG;HAVE_JPEG;HAVE_TIFF;HAVE_WEBP;MAPNIK_USE_PROJ;MAPNIK_PROJ_VERSION=90701;GRID_RENDERER;SVG_RENDERER;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\ConflictualMAS\src\Training;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\ConflictualMAS\src\Training;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -296,7 +296,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\ConflictualMAS\src\Training;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /external:I "C:/libs/vcpkg/installed/x64-windows/include" /external:I "C:/libs/vcpkg/installed/x64-windows/include/harfbuzz" /external:I "C:/libs/vcpkg/installed/x64-windows/debug/../include" /external:I "C:/libs/vcpkg/installed/x64-windows/debug/../include/webp" /bigobj</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -323,10 +323,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;NOMINMAX;BOOST_IOSTREAMS_NO_LIB;BOOST_IOSTREAMS_DYN_LINK;BOOST_RANDOM_NO_LIB;BOOST_RANDOM_DYN_LINK;MAPNIK_THREADSAFE;BOOST_REGEX_HAS_ICU;BIGINT;MAPNIK_MEMORY_MAPPED_FILE;HAVE_PNG;HAVE_JPEG;HAVE_TIFF;HAVE_WEBP;MAPNIK_USE_PROJ;MAPNIK_PROJ_VERSION=90701;GRID_RENDERER;SVG_RENDERER;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\ConflictualMAS\src\Training;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\ConflictualMAS\src\Training;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ConflictualMAS\src;C:\libs\vcpkg\installed\x64-windows\include;C:\libs\vcpkg\installed\x64-windows\include\harfbuzz;C:\libs\vcpkg\installed\x64-windows\debug\..\include;C:\libs\vcpkg\installed\x64-windows\debug\..\include\webp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -421,61 +421,63 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="C:\ConflictualMAS\src\main.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\utility.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\LKHSolver.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\IVNSSolver.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\ComparisonTest.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Agents\Manager.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Agents\TaskAgent.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Algorithms\TDAStar.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MappoPolicy.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\IPPOPolicy.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MapperPolicy.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\HybridPolicy.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Tests\TamMcTest.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Tests\GeoBoxConnectivityTest.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Training\CityConfig.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeConfig.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeGenerator.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeRunner.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Training\SharedEpisodeSetup.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Training\TrainingLogger.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Training\MultiCityTrainer.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Training\TrainingSmokeTest.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\SolverRunner.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\PathHelper.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\FaithfulCongestionAware\FaithfulCASolver.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\HybridAdaptivePredictive\HybridAdaptivePredictiveSolver.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\SolverCSVLogger.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Tests\LegacyTests.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Tests\PDPTests.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\AmazonDataset\AmazonTest.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\Agent.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\Hybrid.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\IPPO.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MAPPERInspired.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MAPPO.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Structures\TimePaths.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\GeoBox\Box.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\GeoBox\GeoBoxManager.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Render\MapRenderer.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Common\Pathfinding.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Structure\Episode.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\Agent.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Common\Memory.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Common\Pathfinding.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\ACO.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Environment\OverpassAPI\OverpassAPI.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Environment\Congestion\CongestionMap.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\Environment\Congestion\GhostTrafficController.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\GlobalMemory\ObjectiveCache.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\GlobalMemory\GlobalMemory.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Utility\AgentSolution.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\DeliveryAgent\DeliveryAgent.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\DeliveryAgent\OperableEnvironment.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\DeliveryAgent\LocalSolutionAgent.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\TaskAgent\TaskAgent.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Utility\TimedPath.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\TaskAgent\TaskAllocationModule.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\Planning\ALNS.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\Planning\MCA.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\ScoringLike\RMCA.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\SolverFramework.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\Standalone\HAPC.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\TaskAgentLike\TP.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\EndToEndTests.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\GeoBoxConnectivityTest.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\LegacyTests.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\MechanicsTests.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\ModuleTests.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\PDPTests.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\StructureTests.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\TamMcTest.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\TrainingSmokeTest.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\ScenarioConfig.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\main.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\utility.cpp" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

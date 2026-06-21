@@ -1,4 +1,4 @@
-#include "GeoBoxConnectivityTest.hpp"
+#include "Tests/GeoBoxConnectivityTest.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
 #include <iostream>

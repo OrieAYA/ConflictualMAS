@@ -27,68 +27,69 @@ find_package(Mapnik CONFIG REQUIRED)
 include_directories(SYSTEM ${PROTOZERO_INCLUDE_DIR})
 
 set(SOURCES
-    src/main.cpp
-    src/utility.cpp
-    src/Comparisons/DbVNS_vs_LKH/LKHSolver.cpp
-    src/Comparisons/DbVNS_vs_LKH/IVNSSolver.cpp
-    src/Comparisons/DbVNS_vs_LKH/ComparisonTest.cpp
-    src/DMASforPD/Policy/PolicyKit.cpp
+    src/DMASforPD/Agents/DeliveryAgent.cpp
+    src/DMASforPD/Agents/Manager.cpp
+    src/DMASforPD/Agents/TaskAgent.cpp
+    src/DMASforPD/Algorithms/DbVNS.cpp
+    src/DMASforPD/Algorithms/TAM.cpp
+    src/DMASforPD/Algorithms/TDAStar.cpp
     src/DMASforPD/Policy/BidPolicy.cpp
-    src/DMASforPD/Policy/MappoPolicy.cpp
-    src/DMASforPD/Policy/IPPOPolicy.cpp
-    src/DMASforPD/Policy/MapperPolicy.cpp
-    src/DMASforPD/Policy/HybridPolicy.cpp
-    src/Tests/PlanningComparisonTest.cpp
-    src/Tests/TamMcTest.cpp
-    src/Tests/GeoBoxConnectivityTest.cpp
-    src/Tests/CongestionOnlyTest.cpp
-    src/Training/CityConfig.cpp
-    src/Training/EpisodeConfig.cpp
-    src/Training/EpisodeGenerator.cpp
-    src/Training/EpisodeRunner.cpp
-    src/Training/SharedEpisodeSetup.cpp
-    src/Training/TrainingLogger.cpp
-    src/Training/MultiCityTrainer.cpp
-    src/Training/TrainingSmokeTest.cpp
-    src/SoTA/SolverRunner.cpp
-    src/SoTA/PathHelper.cpp
-    src/SoTA/FaithfulCongestionAware/FaithfulCASolver.cpp
-    src/SoTA/HybridAdaptivePredictive/HybridAdaptivePredictiveSolver.cpp
-    src/SoTA/SolverCSVLogger.cpp
-    src/Legacy/Tests/LegacyTests.cpp
-    src/DMASforPD/Tests/PDPTests.cpp
-    src/AmazonDataset/AmazonTest.cpp
-    src/Legacy/Agent/Agent.cpp
-    src/Legacy/Agent/MetaAgent.cpp
-    src/Legacy/Agent/GlobalSolutionConstructor.cpp
+    src/DMASforPD/Policy/Hybrid.cpp
+    src/DMASforPD/Policy/IPPO.cpp
+    src/DMASforPD/Policy/MAPPERInspired.cpp
+    src/DMASforPD/Policy/MAPPO.cpp
+    src/DMASforPD/Policy/PolicyKit.cpp
+    src/DMASforPD/Structures/AgentSolution.cpp
+    src/DMASforPD/Structures/ObjectiveCache.cpp
+    src/DMASforPD/Structures/OperableEnvironment.cpp
+    src/DMASforPD/Structures/TimePaths.cpp
     src/Environment/GeoBox/Box.cpp
     src/Environment/GeoBox/GeoBoxManager.cpp
     src/Environment/Render/MapRenderer.cpp
-    src/Legacy/Common/Pathfinding.cpp
+    src/Environment/Simulation/CongestionMap.cpp
+    src/Environment/Simulation/GhostTrafficController.cpp
+    src/Environment/Structure/Episode.cpp
+    src/Environment/Structure/EpisodeManager.cpp
+    src/Legacy/Agent/Agent.cpp
+    src/Legacy/Agent/GlobalSolutionConstructor.cpp
+    src/Legacy/Agent/MetaAgent.cpp
     src/Legacy/Common/Memory.cpp
+    src/Legacy/Common/Pathfinding.cpp
     src/Legacy/MHProcs/ACO.cpp
     src/Legacy/MHProcs/GRASP.cpp
-    src/Legacy/MHProcs/VNS.cpp
     src/Legacy/MHProcs/PSO.cpp
-    src/Environment/OverpassAPI/OverpassAPI.cpp
-    src/Environment/Congestion/CongestionMap.cpp
-    src/Environment/Congestion/GhostTrafficController.cpp
-    src/DMASforPD/GlobalMemory/ObjectiveCache.cpp
-    src/DMASforPD/GlobalMemory/GlobalMemory.cpp
-    src/DMASforPD/Utility/AgentSolution.cpp
-    src/DMASforPD/DeliveryAgent/DeliveryAgent.cpp
-    src/DMASforPD/DeliveryAgent/OperableEnvironment.cpp
-    src/DMASforPD/DeliveryAgent/LocalSolutionAgent.cpp
-    src/DMASforPD/TaskAgent/TaskAgent.cpp
-    src/DMASforPD/Utility/TimedPath.cpp
-    src/DMASforPD/TaskAgent/TaskAllocationModule.cpp
+    src/Legacy/MHProcs/VNS.cpp
+    src/SoTA/Planning/ALNS.cpp
+    src/SoTA/Planning/MCA.cpp
+    src/SoTA/ScoringLike/RMCA.cpp
+    src/SoTA/SolverFramework.cpp
+    src/SoTA/Standalone/CA.cpp
+    src/SoTA/Standalone/HAPC.cpp
+    src/SoTA/TaskAgentLike/TP.cpp
+    src/Tests/CongestionOnlyTest.cpp
+    src/Tests/EndToEndTests.cpp
+    src/Tests/GeoBoxConnectivityTest.cpp
+    src/Tests/LegacyTests.cpp
+    src/Tests/MechanicsTests.cpp
+    src/Tests/ModuleTests.cpp
+    src/Tests/PDPTests.cpp
+    src/Tests/PlanningComparisonTest.cpp
+    src/Tests/StructureTests.cpp
+    src/Tests/TamMcTest.cpp
+    src/Tests/TrainingSmokeTest.cpp
+    src/TrainingEvaluation/Run/Runner.cpp
+    src/TrainingEvaluation/Run/Trainer.cpp
+    src/TrainingEvaluation/StructuresParam/CityConfig.cpp
+    src/TrainingEvaluation/StructuresParam/EpisodeConfig.cpp
+    src/TrainingEvaluation/StructuresParam/ScenarioConfig.cpp
+    src/main.cpp
+    src/utility.cpp
 )
 
 add_executable(main ${SOURCES})
 
 target_include_directories(main PRIVATE
     ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/Training
 )
 
 target_link_libraries(main PRIVATE

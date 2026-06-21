@@ -1,106 +1,52 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="C:\ConflictualMAS\src\main.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\utility.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Agents\Manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\LKHSolver.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Agents\TaskAgent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\IVNSSolver.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Comparisons\DbVNS_vs_LKH\ComparisonTest.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Algorithms\TDAStar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MappoPolicy.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\Hybrid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\IPPOPolicy.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\IPPO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MapperPolicy.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MAPPERInspired.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\HybridPolicy.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MAPPO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Tests\TamMcTest.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Tests\GeoBoxConnectivityTest.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Training\CityConfig.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeConfig.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeGenerator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Training\EpisodeRunner.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Training\SharedEpisodeSetup.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Training\TrainingLogger.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Training\MultiCityTrainer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Training\TrainingSmokeTest.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\SolverRunner.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\PathHelper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\FaithfulCongestionAware\FaithfulCASolver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\HybridAdaptivePredictive\HybridAdaptivePredictiveSolver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\SolverCSVLogger.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Tests\LegacyTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Tests\PDPTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\AmazonDataset\AmazonTest.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\Agent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Structures\TimePaths.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Environment\GeoBox\Box.cpp">
@@ -112,10 +58,31 @@
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Render\MapRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Common\Pathfinding.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Structure\Episode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\Agent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Common\Memory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\Common\Pathfinding.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\ACO.cpp">
@@ -124,46 +91,85 @@
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Environment\OverpassAPI\OverpassAPI.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Environment\Congestion\CongestionMap.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\Planning\ALNS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\Environment\Congestion\GhostTrafficController.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\Planning\MCA.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\GlobalMemory\ObjectiveCache.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\ScoringLike\RMCA.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\GlobalMemory\GlobalMemory.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\SolverFramework.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Utility\AgentSolution.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\DeliveryAgent\DeliveryAgent.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\Standalone\HAPC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\DeliveryAgent\OperableEnvironment.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\SoTA\TaskAgentLike\TP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\DeliveryAgent\LocalSolutionAgent.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\TaskAgent\TaskAgent.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\EndToEndTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Utility\TimedPath.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\GeoBoxConnectivityTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\TaskAgent\TaskAllocationModule.cpp">
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\LegacyTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\MechanicsTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\ModuleTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\PDPTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\StructureTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\TamMcTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\TrainingSmokeTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\ScenarioConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

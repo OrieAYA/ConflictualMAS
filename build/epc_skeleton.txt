@@ -1,0 +1,204 @@
+#ifndef TRAINING_EPISODE_CONFIG_HPP
+#define TRAINING_EPISODE_CONFIG_HPP
+#include "TrainingEvaluation/StructuresParam/CityConfig.hpp"
+#include "DMASforPD/Policy/PolicyKit.hpp"
+#include <osmium/osm/types.hpp>
+#include <array>
+#include <string>
+#include <vector>
+struct DensityPhase {
+int   steps;
+float tasks_per_agent;
+int   n_agents_start;
+int   n_agents_end;
+float label;
+int   n_hot_zones = -1;
+};
+struct EpisodeConfig {
+const CityConfig* city = nullptr;
+float speed_mps = 5.0f;
+std::vector<DensityPhase> phases = {
+{ 1000, 100.f,  8, 10, 0.0f,  4 },
+{ 1500, 200.f, 10, 13, 0.5f,  6 },
+{ 1100, 250.f, 13, 15, 1.0f,  8 },
+};
+float cluster_prob     = 0.35f;
+int   n_hot_zones      = 6;
+float hot_zone_radius  = 600.f;
+float same_origin_prob = 0.0f;
+float min_task_dist_m  = 300.f;
+float max_task_dist_m  = 8000.f;
+int max_tasks_per_agent = 3;
+float agent_pool_multiplier = 1.5f;
+bool enable_heterogeneous_capacity = false;
+int  hetero_capacity_min           = 3;
+int  hetero_capacity_max           = 7;
+float refuse_penalty_w   = 0.15f;
+float unfinished_factor  = 0.7f;
+float non_affected_penalty_w = 0.03f;
+float congestion_creation_w  = 0.15f;
+float idle_penalty_w         = 0.05f;
+float pickup_reward_frac = 0.25f;
+bool  enable_latency_shaping  = false;
+float latency_shaping_lambda  = 0.4f;
+int   latency_shaping_max_steps = 1500;
+bool  enable_task_value_heterogeneity = false;
+float task_value_mul_min = 0.5f;
+float task_value_mul_max = 2.0f;
+float task_imp_min       = 0.3f;
+float task_imp_max       = 3.0f;
+bool use_double_horizon_planning = false;
+bool use_dbvns_planning          = false;
+float insertion_greedy_threshold = 1e-4f;
+bool  tam_mc_force_assign     = true;
+int   tam_mc_max_candidates   = 5;
+float tam_mc_ratio_min        = 1.4f;
+float tam_mc_ratio_max        = 3.0f;
+float tam_mc_ratio_scale      = 2000.f;
+float tam_mc_recall_time_frac = 0.20f;
+float tam_mc_reject_time_frac = 0.70f;
+bool                   use_depot   = false;
+osmium::object_id_type depot_node  = 0;
+bool  enable_ghost_traffic = false;
+int   ghost_n_max          = 40;
+int   ghost_window_steps   = 5;
+float ghost_hot_way_frac   = 0.30f;
+int  ghost_hot_way_count    = 0;
+bool ghost_n_max_user_set   = false;
+float ghost_density_per_hot_way = 0.0f;
+int  ghost_load_per_unit       = 4;
+int  fleet_load_per_agent      = 1;
+int  fleet_size_divisor        = 1;
+bool collect_metrics    = true;
+int  time_window_steps  = 200;
+int  total_steps() const {
+int s = 0; for (const auto& p : phases) s += p.steps; return s;
+}
+int  max_agents()  const {
+int m = 0;
+for (const auto& p : phases)
+m = std::max(m, std::max(p.n_agents_start, p.n_agents_end));
+return m;
+}
+};
+struct GlobalState {
+float time_ratio     = 0.f;
+float n_agents_ratio = 0.f;
+float avail_ratio    = 0.f;
+float alloc_ratio    = 0.f;
+float done_ratio     = 0.f;
+float avg_load       = 0.f;
+float max_load       = 0.f;
+float arrival_rate   = 0.f;
+float throughput     = 0.f;
+float avg_latency    = 0.f;
+float accept_rate    = 0.f;
+float avg_efficiency = 0.f;
+float city_id_norm   = 0.f;
+float density_phase  = 0.f;
+float cluster_ratio  = 0.f;
+float congestion     = 0.f;
+float pad[4] = {};
+static_assert(kGlobSz == 20, "GlobalState size must match kGlobSz in ObjectiveDMPolicy");
+void to_array(float* dst) const {
+dst[ 0]=time_ratio;    dst[ 1]=n_agents_ratio;
+dst[ 2]=avail_ratio;   dst[ 3]=alloc_ratio;
+dst[ 4]=done_ratio;    dst[ 5]=avg_load;
+dst[ 6]=max_load;      dst[ 7]=arrival_rate;
+dst[ 8]=throughput;    dst[ 9]=avg_latency;
+dst[10]=accept_rate;   dst[11]=avg_efficiency;
+dst[12]=city_id_norm;  dst[13]=density_phase;
+dst[14]=cluster_ratio; dst[15]=congestion;
+dst[16]=pad[0];        dst[17]=pad[1];
+dst[18]=pad[2];        dst[19]=pad[3];
+}
+std::array<float, kGlobSz> to_array() const {
+std::array<float, kGlobSz> a{};
+to_array(a.data());
+return a;
+}
+};
+struct ComparisonMetrics {
+std::string city;
+std::string method;
+int         episode = 0;
+int   total_steps   = 0;
+int   n_agents_min  = 0;
+int   n_agents_max  = 0;
+bool  has_depot     = false;
+int   road_nodes    = 0;
+int   road_ways     = 0;
+float area_km2      = 0.f;
+float avg_t_ratio   = 0.f;
+float best_t_ratio  = 0.f;
+int   pdp_violations= 0;
+int   tasks_appeared   = 0;
+int   tasks_completed  = 0;
+float throughput_rate  = 0.f;
+float latency_mean     = 0.f;
+float latency_per_agent= 0.f;
+float agent_utilisation= 0.f;
+float refuse_rate      = 0.f;
+float mean_congestion          = 0.f;
+float mean_trip_steps          = 0.f;
+float mean_wait_steps          = 0.f;
+float mean_road_pd_m           = 0.f;
+float delivery_route_efficiency= 0.f;
+float bbox_area_km2          = 0.f;
+float convex_hull_area_km2   = 0.f;
+float mean_pd_distance_m     = 0.f;
+float mean_nn_pickup_m       = 0.f;
+float compute_time_per_task_ms     = 0.f;
+float compute_time_per_decision_us = 0.f;
+int   pairing_violations_runtime  = 0;
+int   capacity_violations_runtime = 0;
+float accept_rate      = 0.f;
+float reward_mean      = 0.f;
+float actor_loss       = 0.f;
+float critic_loss      = 0.f;
+int   buffer_size      = 0;
+float       completion_per_accepted     = 0.f;
+float       unfinished_accept_rate      = 0.f;
+float       mean_congestion_at_decision = 0.f;
+float       n_ghost_active_mean         = 0.f;
+std::string congestion_profile_label;
+float agent_completed_gini    = 0.f;
+float agent_completed_std     = 0.f;
+float mean_imp_accepted       = 0.f;
+float mean_imp_refused        = 0.f;
+float accept_rate_high_cong   = 0.f;
+float accept_rate_low_cong    = 0.f;
+float mean_extra_steps_per_task = 0.f;
+int   peak_congestion         = 0;
+float mean_overlap_edges      = 0.f;
+float congestion_variance     = 0.f;
+float route_congestion_exposure = 0.f;
+int   max_agent_completed     = 0;
+int   min_agent_completed     = 0;
+float total_fleet_distance_m  = 0.f;
+float value_throughput_rate = 0.f;
+float mean_completion_value = 0.f;
+float value_loss_to_refusal = 0.f;
+float mean_bpr_along_route          = 1.f;
+float time_lost_to_congestion_steps = 0.f;
+int   n_traversals_in_jam           = 0;
+float marginal_cost_ratio_vs_oracle = 1.f;
+float rmca_relative_regret  = 0.f;
+float rmca_marginal_cost_k1 = 0.f;
+float rmca_marginal_cost_k2 = 0.f;
+float mean_allocation_time_us = 0.f;
+float mean_tam_dijkstra_steps = 0.f;
+float path_compute_time_ms    = 0.f;
+float mean_pure_alloc_time_ms = 0.f;
+float mean_agents_offered_per_task    = 0.f;
+float mean_recall_rounds_per_task     = 0.f;
+float mean_candidates_scored_per_task = 0.f;
+void on_task_completed(int latency_steps, float t_ratio);
+void on_task_refused();
+void on_offer(bool accepted, float reward);
+void finalise(int mean_active_agents, int steps_run);
+private:
+int n_completed_acc_ = 0;
+int n_offered_acc_   = 0;
+};
+#endif

@@ -1,27 +1,24 @@
-#include "Legacy/Tests/LegacyTests.hpp"
-#include "DMASforPD/Tests/PDPTests.hpp"
-#include "AmazonDataset/AmazonTest.hpp"
-#include "Comparisons/DbVNS_vs_LKH/ComparisonTest.hpp"
-#include "Training/MultiCityTrainer.hpp"
-#include "Training/CityConfig.hpp"
-#include "Training/TrainingConfig.hpp"
-#include "Training/SharedEpisodeSetup.hpp"
-#include "Training/TrainingSmokeTest.hpp"
-#include "Tests/PlanningComparisonTest.hpp"
-#include "Tests/TamMcTest.hpp"
-#include "Tests/GeoBoxConnectivityTest.hpp"
-#include "Tests/CongestionOnlyTest.hpp"
+﻿#include "Tests/LegacyTests.hpp"
+#include "Tests/PDPTests.hpp"
+#include "TrainingEvaluation/Run/Trainer.hpp"
+#include "TrainingEvaluation/StructuresParam/CityConfig.hpp"
+#include "TrainingEvaluation/General/TrainingConfig.hpp"
+#include "Environment/Structure/EpisodeManager.hpp"
+#include "Tests/StructureTests.hpp"          // A
+#include "Tests/MechanicsTests.hpp"          // B
+#include "Tests/ModuleTests.hpp"             // C
+#include "Tests/EndToEndTests.hpp"           // D
+#include "Tests/CongestionOnlyTest.hpp"      // G — diagnostic
+#include "Tests/PlanningComparisonTest.hpp"  // P — diagnostic
 
-// System-level SoTA baselines (paper: CA = Asadi+2025, HAPC = Cortés+2009).
-#include "SoTA/SolverRunner.hpp"
-#include "SoTA/SolverCSVLogger.hpp"
-#include "SoTA/FaithfulCongestionAware/FaithfulCASolver.hpp"
-#include "SoTA/HybridAdaptivePredictive/HybridAdaptivePredictiveSolver.hpp"
-
+#include "SoTA/SolverFramework.hpp"
+#include "SoTA/Standalone/CA.hpp"
+#include "SoTA/Standalone/HAPC.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include "Legacy/Common/Pathfinding.hpp"
 
+#include <cctype>
 #include <chrono>
 #include <exception>
 #include <filesystem>
@@ -52,17 +49,9 @@ static const std::string kOsmRoot   = "C:\\ConflictualMAS\\src\\maps";
 static const std::string kCacheRoot = "C:\\ConflictualMAS\\data\\cache";
 static const std::string kOutputDir = "C:\\ConflictualMAS\\results";
 
-// Evaluation scenarios — paper Table 4. Profiles: Wave = sin bell,
-// RampUpDown = "pulse" quarters, ShockBurst = spike, BuildingUp = climbing.
-static std::vector<EpisodeScenario> paper_eval_scenarios() {
-    return {
-        EpisodeScenario{ 1.0f,  1.0f, "wave",           CongestionProfile::Wave       },
-        EpisodeScenario{ 1.0f,  1.0f, "pulse",          CongestionProfile::RampUpDown },
-        EpisodeScenario{ 1.5f,  0.8f, "stress_shock",   CongestionProfile::ShockBurst },
-        EpisodeScenario{ 2.0f,  0.6f, "stress_buildup", CongestionProfile::BuildingUp },
-        EpisodeScenario{ 0.5f, 10.0f, "over_fleet",     CongestionProfile::Wave       },
-    };
-}
+// 9 scenarios = 3 task levels × 3 congestion levels (make_scenario_grid()).
+// Edit the level tables in EpisodeRunner.cpp to retune. Training and eval
+// share the same grid.
 
 // Environment knobs shared by training (T) and evaluation (Y) so there is no
 // train/eval distribution shift — paper §5.5.1: DbVNS planning, proportional
@@ -108,71 +97,68 @@ static int run_main()
 {
     const std::string osm_file   = "C:\\ConflictualMAS\\src\\maps\\Tokyo.osm.pbf";
     const std::string cache_dir  = "C:\\ConflictualMAS\\src\\geobox_cache_folder";
-    const std::string amazon_dir = "C:\\ConflictualMAS\\src\\AmazonDataset\\~\\.rc-cli\\data";
 
-    std::cout << "\n=== ConflictualMAS ===\n\n";
-    std::cout << "[Legacy]\n";
-    std::cout << "  G  Global Solution Constructor\n";
-    std::cout << "  V  VNS Orienteering\n";
-    std::cout << "  PSO  PSO MTTDS\n";
-    std::cout << "  E  Create GeoBox\n";
-    std::cout << "  I  Initialize POI (Flickr)\n";
-    std::cout << "  R  Render map\n\n";
-    std::cout << "[DMASforPD]\n";
-    std::cout << "  D  PDP System test\n";
-    std::cout << "  C  Create PDP GeoBox\n\n";
-    std::cout << "[Amazon Last Mile]\n";
-    std::cout << "  A  DbVNS on Amazon routes (13 routes)\n";
-    std::cout << "  B  DbVNS vs LKH benchmark (side-by-side)\n\n";
-    std::cout << "[Tests]\n";
-    std::cout << "  S  Training smoke test (small bbox, fast)\n";
-    std::cout << "  K  GeoBox connectivity check (all caches)\n";
-    std::cout << "  J  TAM multi-candidate correctness test\n";
-    std::cout << "  Z  Congestion-only test (ghost traffic impact)\n\n";
-    std::cout << "[Paper protocol]\n";
-    std::cout << "  T  Train MAPPO + IPPO + MAPPER (3 Small cities, 50 rounds)\n";
-    std::cout << "  Y  Evaluate — 4 comparison levels (RL+RMCA / TP / CA+HAPC)\n";
-    std::cout << "  P  Planning comparison (DbVNS vs ALNS vs DoubleHorizon)\n\n";
-    std::cout << "Choice: ";
-
+    std::cout << "\n=== ConflictualMAS ===\n\n"
+                 "  1  Legacy      (orienteering / GeoBox / render / PDP utils)\n"
+                 "  2  Tests       (submenu: A structure B mechanics C modules D e2e E all)\n"
+                 "  3  Training    (MAPPO + IPPO + MAPPER, paper protocol)\n"
+                 "  4  Evaluation  (RL + RMCA + TP + CA + HAPC)\n\n"
+                 "Choice: ";
     std::string rep;
     std::cin >> rep;
 
-    // ── Legacy / PDP / Amazon (unchanged pipelines) ────────────────────────
-    if      (rep == "G" || rep == "g") legacy_run_global(cache_dir);
-    else if (rep == "V" || rep == "v") legacy_run_vns(cache_dir);
-    else if (rep == "PSO" || rep == "pso") legacy_run_pso(cache_dir);
-    else if (rep == "E" || rep == "e") legacy_create_geobox(osm_file, cache_dir);
-    else if (rep == "I" || rep == "i") legacy_init_poi(cache_dir);
-    else if (rep == "R" || rep == "r") legacy_render(cache_dir);
-    else if (rep == "D" || rep == "d") test_pdp_system(cache_dir);
-    else if (rep == "C" || rep == "c") pdp_create_geobox(osm_file, cache_dir);
-    else if (rep == "A" || rep == "a") test_amazon_routes(amazon_dir);
-    else if (rep == "B" || rep == "b") test_comparison(amazon_dir);
+    // ── 1. Legacy submenu ───────────────────────────────────────────────────
+    if (rep == "1" || rep == "legacy" || rep == "L" || rep == "l") {
+        std::cout << "\n[Legacy]  G Global  V VNS  PSO  E CreateGeoBox  I InitPOI"
+                     "  R Render  D PDPtest  C PDPGeoBox\nChoice: ";
+        std::string sub; std::cin >> sub;
+        if      (sub == "G" || sub == "g")     legacy_run_global(cache_dir);
+        else if (sub == "V" || sub == "v")     legacy_run_vns(cache_dir);
+        else if (sub == "PSO" || sub == "pso") legacy_run_pso(cache_dir);
+        else if (sub == "E" || sub == "e")     legacy_create_geobox(osm_file, cache_dir);
+        else if (sub == "I" || sub == "i")     legacy_init_poi(cache_dir);
+        else if (sub == "R" || sub == "r")     legacy_render(cache_dir);
+        else if (sub == "D" || sub == "d")     test_pdp_system(cache_dir);
+        else if (sub == "C" || sub == "c")     pdp_create_geobox(osm_file, cache_dir);
+        else std::cout << "Unknown legacy option.\n";
+    }
 
-    // ── Tests ──────────────────────────────────────────────────────────────
-    else if (rep == "S" || rep == "s") {
-        run_training_smoke_test(osm_file, cache_dir);
-    }
-    else if (rep == "K" || rep == "k") {
-        std::vector<std::string> caches = { cache_dir + "/smoke_test.json" };
-        for (const auto& entry : std::filesystem::directory_iterator(kCacheRoot))
-            if (entry.path().extension() == ".json")
-                caches.push_back(entry.path().string());
-        run_geobox_connectivity_test(caches, "all caches");
-    }
-    else if (rep == "J" || rep == "j") {
-        run_tam_mc_test(osm_file, cache_dir);
-    }
-    else if (rep == "Z" || rep == "z") {
-        run_congestion_only_test(kOsmRoot, kCacheRoot);
+    // ── 2. Test batteries (hand-picked from a submenu) ───────────────────────
+    //   A Structure  B Mechanics  C Modules  D EndToEnd  E All
+    //   G CongestionDiag  P PlanningCompare  (heavier diagnostics)
+    else if (rep == "2" || rep == "test" || rep == "tests") {
+        std::cout << "\n[Tests]  A Structure  B Mechanics  C Modules  D EndToEnd  E All"
+                     "   |   G CongestionDiag  P PlanningCompare\nChoice: ";
+        std::string sub; std::cin >> sub;
+        const char c = sub.empty() ? ' ' : static_cast<char>(std::toupper(sub[0]));
+
+        auto run_all = [&]() {
+            bool ok = true;
+            ok &= run_structure_tests (osm_file, cache_dir);
+            ok &= run_mechanics_tests (osm_file, cache_dir);
+            ok &= run_module_tests    (osm_file, cache_dir);
+            ok &= run_end_to_end_tests(osm_file, cache_dir);
+            std::cout << (ok ? "\n=== ALL BATTERIES PASS ===\n"
+                             : "\n=== SOME BATTERIES FAILED ===\n");
+        };
+
+        switch (c) {
+            case 'A': run_structure_tests (osm_file, cache_dir); break;
+            case 'B': run_mechanics_tests (osm_file, cache_dir); break;
+            case 'C': run_module_tests    (osm_file, cache_dir); break;
+            case 'D': run_end_to_end_tests(osm_file, cache_dir); break;
+            case 'E': run_all();                                 break;
+            case 'G': run_congestion_only_test(kOsmRoot, kCacheRoot); break;
+            case 'P': run_planning_comparison_test(42u, 25, kOsmRoot, kCacheRoot, kOutputDir); break;
+            default:  std::cout << "Unknown test option.\n";
+        }
     }
 
     // ── T — Training (paper §5.5.1) ────────────────────────────────────────
     // 50 rounds × 3 Small cities × {MAPPO, IPPO, MAPPER}, single seed 42,
     // 3-regime scenario sampler, checkpoints every 10 rounds. Evaluation is
     // a separate run (option Y) on the saved checkpoints.
-    else if (rep == "T" || rep == "t") {
+    else if (rep == "3" || rep == "train" || rep == "training") {
         CityRegistry::set_osm_root(kOsmRoot);
 
         TrainingConfig cfg;
@@ -218,7 +204,7 @@ static int run_main()
     //
     //   Cities: 3 train Smalls + 2 held-out Smalls (NewYork, Paris).
     //   Scenarios: paper Table 4. Episodes: 2 per (city, scenario).
-    else if (rep == "Y" || rep == "y") {
+    else if (rep == "4" || rep == "eval" || rep == "evaluation") {
         std::cout << "Seed (42/43/44): ";
         int seed = 42;
         std::cin >> seed;
@@ -230,7 +216,7 @@ static int run_main()
         cfg.output_dir      = kOutputDir + "\\paper_eval";
         cfg.n_seeds         = 1;
         cfg.start_seed      = seed;
-        cfg.n_eval_episodes = 2;
+        cfg.n_eval_episodes = 1;     // 1 episode per (method, city, scenario)
         cfg.verbose         = true;
 
         cfg.eval_only            = true;
@@ -252,7 +238,7 @@ static int run_main()
             PolicyMode::TokenPassing,
             PolicyMode::TamAlwaysAccept,
         };
-        cfg.eval_scenarios = paper_eval_scenarios();
+        cfg.eval_scenarios = make_scenario_grid();   // 9 task×congestion combos
 
         apply_paper_environment(cfg.episode_cfg);
         cfg.episode_cfg.agent_pool_multiplier = 10.0f;   // over_fleet head-room
@@ -368,18 +354,6 @@ static int run_main()
                   << "  Join keys  : (city, scenario, episode)\n";
     }
 
-    // ── P — Planning-level comparison (paper §6.2) ─────────────────────────
-    // Single-agent lifelong PDP: DbVNS vs ALNS vs DoubleHorizon (+MCA-LNS),
-    // identical allocation (MCA argmin), identical task draws.
-    else if (rep == "P" || rep == "p") {
-        run_planning_comparison_test(
-            /*base_seed=*/42,
-            /*max_tasks=*/0,
-            kOsmRoot, kCacheRoot,
-            kOutputDir + "\\planning_comparison",
-            /*n_seeds=*/100,
-            /*detail_every=*/10);
-    }
 
     else {
         std::cout << "Unknown option.\n";

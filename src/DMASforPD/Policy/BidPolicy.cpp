@@ -1,8 +1,8 @@
 #include "BidPolicy.hpp"
-#include "MappoPolicy.hpp"
-#include "IPPOPolicy.hpp"
-#include "MapperPolicy.hpp"
-#include "HybridPolicy.hpp"
+#include "DMASforPD/Policy/MAPPO.hpp"
+#include "DMASforPD/Policy/IPPO.hpp"
+#include "DMASforPD/Policy/MAPPERInspired.hpp"
+#include "DMASforPD/Policy/Hybrid.hpp"
 #include <algorithm>
 
 // ── Shared experience plumbing ───────────────────────────────────────────────

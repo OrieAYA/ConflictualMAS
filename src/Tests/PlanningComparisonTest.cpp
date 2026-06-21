@@ -1,16 +1,15 @@
-#include "PlanningComparisonTest.hpp"
+#include "Tests/PlanningComparisonTest.hpp"
 
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
 #include "Legacy/Common/Pathfinding.hpp"
-#include "Training/EpisodeConfig.hpp"
-#include "Training/EpisodeRunner.hpp"
-#include "Training/CityConfig.hpp"
-#include "DMASforPD/GlobalMemory/GlobalMemory.hpp"
-#include "DMASforPD/DeliveryAgent/DeliveryAgent.hpp"
-#include "DMASforPD/Utility/AgentSolution.hpp"
-#include "DMASforPD/Utility/PDPTask.hpp"
-
+#include "TrainingEvaluation/StructuresParam/EpisodeConfig.hpp"
+#include "TrainingEvaluation/Run/Runner.hpp"
+#include "TrainingEvaluation/StructuresParam/CityConfig.hpp"
+#include "DMASforPD/Agents/Manager.hpp"
+#include "DMASforPD/Agents/DeliveryAgent.hpp"
+#include "DMASforPD/Structures/AgentSolution.hpp"
+#include "DMASforPD/Structures/PDPTask.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
