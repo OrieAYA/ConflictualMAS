@@ -3,27 +3,32 @@
 #include "Tests/TamMcTest.hpp"
 #include "Environment/Simulation/CongestionMap.hpp"
 #include "TrainingEvaluation/StructuresParam/EpisodeConfig.hpp"
+#include "TrainingEvaluation/StructuresParam/ScenarioConfig.hpp"
 #include "TrainingEvaluation/Run/Runner.hpp"
 #include "DMASforPD/Agents/Manager.hpp"
 #include "DMASforPD/Structures/ObjectiveNode.hpp"
 #include "DMASforPD/Policy/BidPolicy.hpp"
+#include "SoTA/SolverFramework.hpp"
+#include "SoTA/Standalone/CA.hpp"
+#include "SoTA/Standalone/HAPC.hpp"
 #include "Legacy/Common/Pathfinding.hpp"
 #include <cmath>
 #include <exception>
 #include <iostream>
 
-// Light config: enough tasks to exercise allocation/planning, small enough to
-// keep the whole battery fast even with the heavier DbVNS planner.
+// Feasible config: short trips + enough steps so every reasonable planner/policy
+// actually DELIVERS tasks within the horizon (lets us assert completion, not
+// just "it ran").
 static EpisodeConfig module_config() {
     EpisodeConfig cfg;
-    cfg.speed_mps           = 10.f;
+    cfg.speed_mps           = 15.f;
     cfg.min_task_dist_m     = 50.f;
-    cfg.max_task_dist_m     = 800.f;
+    cfg.max_task_dist_m     = 500.f;
     cfg.cluster_prob        = 0.3f;
     cfg.n_hot_zones         = 2;
     cfg.hot_zone_radius     = 400.f;
     cfg.max_tasks_per_agent = 3;
-    cfg.phases = { { 200, 8.f, 2, 3, 0.0f, 2 } };
+    cfg.phases = { { 400, 20.f, 3, 4, 0.0f, 2 } };
     return cfg;
 }
 
@@ -70,7 +75,7 @@ bool run_module_tests(const std::string& osm_file, const std::string& cache_dir)
         CHECK(cm.edge_capacity(1000.f) == 50.f, "capacity = 0.05 * length");
         const osmium::object_id_type w = 9;
         cm.add_agent(w, 0, 5, 3);
-        const float lo = cm.adjusted_cost(w, 100.f, 200.f, 2);   // some load
+        const float lo = cm.adjusted_cost(w, 100.f, 200.f, 2);
         cm.add_agent(w, 0, 5, 3);
         const float hi = cm.adjusted_cost(w, 100.f, 200.f, 2);
         CHECK(hi > lo && lo >= 100.f, "BPR factor not monotone / below free flow");
@@ -81,14 +86,18 @@ bool run_module_tests(const std::string& osm_file, const std::string& cache_dir)
     CHECK(run_tam_mc_test(osm_file, cache_dir), "TAM multi-candidate test failed");
     std::cout << "  [3] TAM OK\n";
 
-    // ── Shared episode runner helper for modes [4][5][6] ──────────────────────
-    auto run_mode = [&](const char* label, PolicyMode m, bool train) -> bool {
+    // ── Episode-runner mode check. Verifies the mode RUNS and, crucially, that
+    //    the simulation it produced is VALID: pickup-before-delivery on every
+    //    served task (pairing_violations_runtime) and capacity never exceeded
+    //    (capacity_violations_runtime). require_delivery asks the mode to also
+    //    actually complete ≥ 1 task (used for the non-RL modes that should).
+    auto run_mode = [&](const char* label, PolicyMode m, bool require_delivery) -> bool {
         EpisodeConfig cfg = module_config();
         bid_policy(BidPolicyKind::MAPPO).clear_buffers();
         RunResult r;
         try {
             EpisodeRunner runner(cfg, gb, pf, 42u);
-            runner.train_mode  = train;
+            runner.train_mode  = false;
             runner.policy_mode = m;
             r = runner.run(0, 1);
         } catch (const std::exception& e) {
@@ -96,29 +105,103 @@ bool run_module_tests(const std::string& osm_file, const std::string& cache_dir)
             return false;
         }
         bid_policy(BidPolicyKind::MAPPO).clear_buffers();
-        const bool ok = in01(r.metrics.accept_rate)
-                     && in01(r.metrics.throughput_rate)
-                     && r.metrics.pdp_violations == 0;
-        if (!ok) std::cout << "  [FAIL] " << label << ": invalid metrics / PDP violation\n";
+        const auto& mx = r.metrics;
+        bool ok = true;
+        if (!in01(mx.accept_rate) || !in01(mx.throughput_rate)) {
+            std::cout << "  [FAIL] " << label << ": metrics out of [0,1]\n"; ok = false;
+        }
+        if (mx.pairing_violations_runtime != 0) {
+            std::cout << "  [FAIL] " << label << ": " << mx.pairing_violations_runtime
+                      << " pairing (P-before-D) violations\n"; ok = false;
+        }
+        if (mx.capacity_violations_runtime != 0) {
+            std::cout << "  [FAIL] " << label << ": " << mx.capacity_violations_runtime
+                      << " capacity violations\n"; ok = false;
+        }
+        if (require_delivery && mx.tasks_completed <= 0) {
+            std::cout << "  [FAIL] " << label << ": delivered 0 tasks on a feasible config\n";
+            ok = false;
+        }
         return ok;
     };
 
-    // ── [4] Planning — DbVNS / MCA / DoubleHorizon ────────────────────────────
-    CHECK(run_mode("DbVNS",        PolicyMode::DbVNS,        false), "DbVNS planning failed");
-    CHECK(run_mode("MCA",          PolicyMode::MCA,          false), "MCA planning failed");
-    CHECK(run_mode("DoubleHorizon",PolicyMode::DoubleHorizon,false), "DoubleHorizon planning failed");
-    std::cout << "  [4] Planning OK — DbVNS / MCA / DoubleHorizon (0 violations)\n";
+    // ── [4] Planning — DbVNS / MCA / DoubleHorizon (must route + deliver) ─────
+    CHECK(run_mode("DbVNS",         PolicyMode::DbVNS,         true), "DbVNS planning failed");
+    CHECK(run_mode("MCA",           PolicyMode::MCA,           true), "MCA planning failed");
+    CHECK(run_mode("DoubleHorizon", PolicyMode::DoubleHorizon, true), "DoubleHorizon planning failed");
+    std::cout << "  [4] Planning OK — DbVNS / MCA / DoubleHorizon (valid routes + delivery)\n";
 
-    // ── [5] Scoring — RMCA ────────────────────────────────────────────────────
-    CHECK(run_mode("RMCA", PolicyMode::RMCA, false), "RMCA scoring failed");
+    // ── [5] Scoring — RMCA (deterministic marginal-cost scorer) ───────────────
+    CHECK(run_mode("RMCA", PolicyMode::RMCA, true), "RMCA scoring failed");
     std::cout << "  [5] Scoring OK — RMCA\n";
 
-    // ── [6] Policies — MAPPO / IPPO / MAPPER / Hybrid (eval) ──────────────────
+    // ── [6] Policies — MAPPO / IPPO / MAPPER / Hybrid (untrained → valid only) ─
     CHECK(run_mode("MAPPO",  PolicyMode::MAPPO,  false), "MAPPO policy failed");
     CHECK(run_mode("IPPO",   PolicyMode::IPPO,   false), "IPPO policy failed");
     CHECK(run_mode("MAPPER", PolicyMode::MAPPER, false), "MAPPER policy failed");
     CHECK(run_mode("Hybrid", PolicyMode::Hybrid, false), "Hybrid policy failed");
-    std::cout << "  [6] Policies OK — MAPPO / IPPO / MAPPER / Hybrid\n";
+    std::cout << "  [6] Policies OK — MAPPO / IPPO / MAPPER / Hybrid (valid sims)\n";
+
+    // ── [7] Determinism — same (mode, episode_seed) ⇒ identical metrics ───────
+    {
+        EpisodeConfig cfg = module_config();
+        auto run_seeded = [&]() {
+            bid_policy(BidPolicyKind::MAPPO).clear_buffers();
+            EpisodeRunner runner(cfg, gb, pf, 1u);
+            runner.train_mode = false;
+            runner.policy_mode = PolicyMode::TamAlwaysAccept;
+            RunResult r = runner.run(0, 1, /*scenario*/{}, /*episode_seed*/777u);
+            bid_policy(BidPolicyKind::MAPPO).clear_buffers();
+            return r.metrics;
+        };
+        const auto a = run_seeded();
+        const auto b = run_seeded();
+        CHECK(a.tasks_appeared == b.tasks_appeared
+           && a.tasks_completed == b.tasks_completed
+           && std::fabs(a.throughput_rate - b.throughput_rate) < 1e-6f,
+              "same (mode, episode_seed) gave different metrics (non-deterministic)");
+        std::cout << "  [7] Determinism OK — replay identical (appeared=" << a.tasks_appeared
+                  << " completed=" << a.tasks_completed << ")\n";
+    }
+
+    // ── [8] SoTA standalone solvers — full SolverRunner pipeline (CA, HAPC) ────
+    {
+        EpisodeConfig cfg = module_config();
+        auto run_solver = [&](const char* label, ISolver& s) -> bool {
+            SolverRunner runner(cfg, gb, pf, /*scenario*/{}, /*seed*/55u);
+            SolverMetrics m;
+            try { m = runner.run(s); }
+            catch (const std::exception& e) {
+                std::cout << "  [FAIL] " << label << ": " << e.what() << "\n"; return false;
+            }
+            bool ok = m.tasks_appeared > 0
+                   && in01(m.throughput_rate)
+                   && m.capacity_violations == 0
+                   && m.pairing_violations == 0;
+            if (!ok)
+                std::cout << "  [FAIL] " << label << ": appeared=" << m.tasks_appeared
+                          << " thr=" << m.throughput_rate << " capV=" << m.capacity_violations
+                          << " pairV=" << m.pairing_violations << "\n";
+            return ok;
+        };
+        { FaithfulCASolver               s; CHECK(run_solver("CA",   s), "CA solver failed"); }
+        { HybridAdaptivePredictiveSolver s; CHECK(run_solver("HAPC", s), "HAPC solver failed"); }
+        std::cout << "  [8] SoTA solvers OK — CA + HAPC (valid SolverRunner pipeline)\n";
+    }
+
+    // ── [9] Scenario grid — 9 deterministic task×congestion combos ────────────
+    {
+        const auto g1 = make_scenario_grid();
+        const auto g2 = make_scenario_grid();
+        CHECK(g1.size() == 9, "scenario grid must be 3 task × 3 congestion = 9");
+        bool same = g1.size() == g2.size();
+        for (size_t i = 0; same && i < g1.size(); ++i)
+            same = g1[i].density_mult == g2[i].density_mult
+                && g1[i].agents_mult  == g2[i].agents_mult
+                && g1[i].congestion_profile == g2[i].congestion_profile;
+        CHECK(same, "scenario grid is not deterministic");
+        std::cout << "  [9] Scenario grid OK — 9 deterministic combos\n";
+    }
 
     std::cout << "=== C PASS ===\n";
     return true;

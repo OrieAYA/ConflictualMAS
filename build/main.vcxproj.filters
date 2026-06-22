@@ -64,6 +64,12 @@
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Structure\Episode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -146,6 +152,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Tests\TamMcTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\TemporalChainListTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Tests\TrainingSmokeTest.cpp">

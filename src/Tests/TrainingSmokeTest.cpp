@@ -125,11 +125,9 @@ bool run_training_smoke_test(const std::string& osm_file,
     }
     CHECK(in01(r_eval.metrics.accept_rate),    "MAPPO eval accept_rate out of [0,1]");
 
-    // Verify buffer was cleared at the start of each eval run (should be empty
-    // after the final MAPPO eval since train_epoch is not called).
-    CHECK(bid_policy(BidPolicyKind::MAPPO).total_buffer_size() == 0 ||
-          bid_policy(BidPolicyKind::MAPPO).total_buffer_size() > 0,  // buffer can have entries
-          "buffer check");   // just verifying no crash; actual clear tested implicitly
+    // The training run must have produced PPO experiences (the buffer/credit
+    // path is alive) — otherwise the actor/critic losses above are meaningless.
+    CHECK(r_train.train_stats.n_exp > 0, "training collected no experiences");
 
     std::cout << "  [4] Eval OK — Greedy acc=" << r_greedy.metrics.accept_rate
               << ", MAPPO acc=" << r_eval.metrics.accept_rate << "\n";

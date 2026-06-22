@@ -1,6 +1,7 @@
 #include "Tests/StructureTests.hpp"
 #include "Tests/TestSupport.hpp"
 #include "Tests/GeoBoxConnectivityTest.hpp"
+#include "Tests/TemporalChainListTest.hpp"
 #include "DMASforPD/Agents/Manager.hpp"
 #include "Legacy/Common/Pathfinding.hpp"
 #include <algorithm>
@@ -70,6 +71,29 @@ bool run_structure_tests(const std::string& osm_file, const std::string& cache_d
         return false;
     }
     std::cout << "  [5] PDPGlobalMemory construction OK\n";
+
+    // ── [6] Pathfinder routing primitive (Dijkstra over the real graph) ───────
+    // On a fully-connected graph (verified in [4]) a Dijkstra from any node must
+    // reach essentially every node with finite, non-negative distances.
+    {
+        Pathfinder pf(gb);
+        const osmium::object_id_type src = d.nodes.begin()->first;
+        const auto dist = pf.dijkstra_distances_from(src);
+        CHECK(!dist.empty(), "Dijkstra returned no distances");
+        auto its = dist.find(src);
+        CHECK(its != dist.end() && its->second == 0.f, "source distance must be 0");
+        int negative = 0;
+        for (const auto& [nid, dd] : dist) { (void)nid; if (!(dd >= 0.f)) ++negative; }
+        CHECK(negative == 0, "Dijkstra produced negative/NaN distances");
+        // Connectivity ([4]) ⇒ reachability of the whole component.
+        CHECK(dist.size() * 2 >= d.nodes.size(), "Dijkstra reached too few nodes");
+        std::cout << "  [6] Pathfinder OK — reached " << dist.size() << "/"
+                  << d.nodes.size() << " nodes, all distances finite ≥ 0\n";
+    }
+
+    // ── [7]+[8] Temporal chained list (event-stream layer on nodes/edges) ─────
+    CHECK(run_temporal_chain_tests(),     "temporal chained list unit tests failed");
+    CHECK(run_temporal_graph_test(gb),    "temporal graph attachment test failed");
 
     std::cout << "=== A PASS ===\n";
     return true;

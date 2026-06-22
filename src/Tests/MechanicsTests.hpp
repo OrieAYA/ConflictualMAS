@@ -11,6 +11,8 @@
 //   2. Lifelong task creation at dispersed arrival steps (EpisodeGenerator).
 //   3. Time progression (event stream), agent movement node→node along edges,
 //      and task completion (pickup THEN delivery, then off the active lists).
+//   4. Ghost congestion measurably raises network load at the system level
+//      (same seed, ghosts off vs on) — the end-to-end congestion loop.
 //
 // Returns true (PASS) / false (FAIL).
 bool run_mechanics_tests(const std::string& osm_file, const std::string& cache_dir);

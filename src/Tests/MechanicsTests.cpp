@@ -143,6 +143,38 @@ bool run_mechanics_tests(const std::string& osm_file, const std::string& cache_d
                   << " finished_list=" << mem.count_finished() << "\n";
     }
 
+    // ── [4] Ghost congestion measurably raises network load (system-level) ────
+    // Same episode_seed ⇒ identical tasks/agents; the only difference is the
+    // injected ghost traffic. Closes the loop the BPR unit check in [1] opens:
+    // ghosts → higher edge load → the cost model the agents actually pay.
+    {
+        Pathfinder pf(gb);
+        EpisodeConfig off = mechanics_config();           // no ghosts (default)
+        EpisodeConfig on  = mechanics_config();
+        on.enable_ghost_traffic = true;
+        on.ghost_n_max          = 120;
+        on.ghost_n_max_user_set = true;                   // keep this density as-is
+        on.ghost_window_steps   = 8;
+        on.ghost_hot_way_count  = 15;                     // concentrate → real pileups
+        on.ghost_load_per_unit  = 4;
+
+        auto cong_of = [&](const EpisodeConfig& cfg) -> float {
+            bid_policy(BidPolicyKind::MAPPO).clear_buffers();
+            EpisodeRunner runner(cfg, gb, pf, 5u);
+            runner.train_mode  = false;
+            runner.policy_mode = PolicyMode::TamAlwaysAccept;
+            const float c = runner.run(0, 1, {}, /*episode_seed*/2024u).metrics.mean_congestion;
+            bid_policy(BidPolicyKind::MAPPO).clear_buffers();
+            return c;
+        };
+        const float c_off = cong_of(off);
+        const float c_on  = cong_of(on);
+        CHECK(isfin(c_off) && isfin(c_on), "congestion metric not finite");
+        CHECK(c_on > c_off, "ghost traffic did not raise network congestion");
+        std::cout << "  [4] Congestion impact OK — mean load " << c_off
+                  << " (off) -> " << c_on << " (ghost on)\n";
+    }
+
     std::cout << "=== B PASS ===\n";
     return true;
 }

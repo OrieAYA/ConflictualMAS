@@ -48,6 +48,8 @@ set(SOURCES
     src/Environment/Render/MapRenderer.cpp
     src/Environment/Simulation/CongestionMap.cpp
     src/Environment/Simulation/GhostTrafficController.cpp
+    src/Environment/Simulation/TemporalChainList.cpp
+    src/Environment/Simulation/TemporalGraph.cpp
     src/Environment/Structure/Episode.cpp
     src/Environment/Structure/EpisodeManager.cpp
     src/Legacy/Agent/Agent.cpp
@@ -76,6 +78,7 @@ set(SOURCES
     src/Tests/PlanningComparisonTest.cpp
     src/Tests/StructureTests.cpp
     src/Tests/TamMcTest.cpp
+    src/Tests/TemporalChainListTest.cpp
     src/Tests/TrainingSmokeTest.cpp
     src/TrainingEvaluation/Run/Runner.cpp
     src/TrainingEvaluation/Run/Trainer.cpp
