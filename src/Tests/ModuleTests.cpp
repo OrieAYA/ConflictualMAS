@@ -11,10 +11,13 @@
 #include "SoTA/SolverFramework.hpp"
 #include "SoTA/Standalone/CA.hpp"
 #include "SoTA/Standalone/HAPC.hpp"
+#include "DMASforPD/Algorithms/TDAStar.hpp"
 #include "Legacy/Common/Pathfinding.hpp"
 #include <cmath>
 #include <exception>
 #include <iostream>
+#include <queue>
+#include <unordered_set>
 
 // Feasible config: short trips + enough steps so every reasonable planner/policy
 // actually DELIVERS tasks within the horizon (lets us assert completion, not
@@ -201,6 +204,46 @@ bool run_module_tests(const std::string& osm_file, const std::string& cache_dir)
                 && g1[i].congestion_profile == g2[i].congestion_profile;
         CHECK(same, "scenario grid is not deterministic");
         std::cout << "  [9] Scenario grid OK — 9 deterministic combos\n";
+    }
+
+    // ── [10] TD-A* is time-dependent: jamming the path slows it or reroutes ───
+    {
+        // Pick A and a node ~12 hops away (bounded path, reroute possible).
+        std::vector<osmium::object_id_type> ids;
+        ids.reserve(gb.data.nodes.size());
+        for (const auto& [id, p] : gb.data.nodes) { (void)p; ids.push_back(id); }
+        const osmium::object_id_type A = ids.front();
+        osmium::object_id_type B = A;
+        {
+            std::unordered_set<osmium::object_id_type> seen{ A };
+            std::queue<std::pair<osmium::object_id_type,int>> q; q.push({ A, 0 });
+            while (!q.empty()) {
+                auto [n, dep] = q.front(); q.pop(); B = n;
+                if (dep >= 12) break;
+                auto nit = gb.data.nodes.find(n);
+                if (nit == gb.data.nodes.end()) continue;
+                for (auto wid : nit->second.incident_ways) {
+                    auto wit = gb.data.ways.find(wid);
+                    if (wit == gb.data.ways.end()) continue;
+                    for (auto nb : { wit->second.node1_id, wit->second.node2_id })
+                        if (!seen.count(nb)) { seen.insert(nb); q.push({ nb, dep + 1 }); }
+                }
+            }
+        }
+        CHECK(B != A, "could not find a distinct target node");
+
+        CongestionMap empty;
+        const TDAStarResult freep = td_astar(gb, A, B, 0, 10.f, empty);
+        CHECK(freep.valid(), "TD-A* found no free-flow path");
+
+        CongestionMap jam;                                    // jam the whole free path
+        for (auto e : freep.edges) jam.add_agent(e, 0, 5000, 50);
+        const TDAStarResult jammed = td_astar(gb, A, B, 0, 10.f, jam);
+        CHECK(jammed.valid(), "TD-A* found no path under congestion");
+        CHECK(jammed.total_time > freep.total_time || jammed.edges != freep.edges,
+              "TD-A* ignored time-dependent congestion (same path, same time)");
+        std::cout << "  [10] TD-A* OK — time " << freep.total_time << " -> " << jammed.total_time
+                  << (jammed.edges != freep.edges ? " (rerouted)" : "") << "\n";
     }
 
     std::cout << "=== C PASS ===\n";

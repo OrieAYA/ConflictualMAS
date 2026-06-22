@@ -15,6 +15,7 @@
 //   7. Determinism   — same (mode, episode_seed) ⇒ identical metrics.
 //   8. SoTA solvers  — CA + HAPC run the full SolverRunner pipeline.
 //   9. Scenario grid — make_scenario_grid() = 9 deterministic combos.
+//  10. TD-A*        — time-dependent routing: jamming the path slows/reroutes.
 //
 // Every episode-driven check also asserts pickup-before-delivery and capacity
 // are never violated at runtime. Returns true (PASS) / false (FAIL).

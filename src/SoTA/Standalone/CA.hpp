@@ -47,8 +47,8 @@
 //   §3.4 Global congestion message:
 //     ✗ Paper's CNN-based prediction is replaced by the BPR-adjusted edge
 //       cost computed from the SHARED CongestionMap. The CongestionMap's
-//       sparse temporal load (load_(e,t)) over the configured horizon is
-//       the LGPDP analogue of paper's prediction window.
+//       time-dependent edge load over the configured horizon is the LGPDP
+//       analogue of the paper's prediction window.
 //     ✗ Multivariate-normal spatio-temporal smoothing — same reason.
 //
 // WHAT IS DELIBERATELY NOT IMPLEMENTED VS THE PAPER:

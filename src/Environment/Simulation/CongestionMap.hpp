@@ -2,6 +2,7 @@
 #define CONGESTION_MAP_HPP
 
 #include "../GeoBox/Box.hpp"
+#include "Environment/Simulation/TemporalChainList.hpp"
 #include <unordered_map>
 #include <cmath>
 
@@ -23,15 +24,15 @@ struct CongestionParams {
     int   load_per_agent     = 1;
 };
 
-// Sparse temporal edge-load map.
+// Time-dependent edge-load model.
 //
-// Time is a discrete integer step t in {0, 1, ..., n}.
-// For each edge e and step t, load_(e, t) counts the number of agents
-// currently scheduled to occupy that edge at step t.
-//
-// Only steps in [t_now, t_now + horizon] are retained; older ones are
-// purged on advance(). The structure is sparse: edges with zero load are
-// not stored.
+// Each edge keeps a TemporalChainList of the occupancy intervals
+// [t_enter, t_exit] currently registered on it; the load at a step t is the sum
+// of the weights of the intervals covering t (TemporalChainList::load_at). This
+// replaces the old per-step materialisation (one hash entry per (edge, step)):
+// the in-window load values are identical, but add/remove are O(1 interval)
+// instead of O(duration), and there is nothing to "fill in" between t_enter and
+// t_exit.
 //
 // Cost model (BPR):
 //   adjusted_cost = base_cost * (1 + α * (load / capacity)^β)
@@ -46,18 +47,14 @@ public:
     float edge_capacity(float distance_meters) const;
 
     // Register / unregister an agent occupying edge `way_id` during [t_enter, t_exit].
-    // Steps outside [t_now, t_now + horizon] are silently ignored.
     // `weight` lets a single registration count for >1 unit of load — used to
-    // simulate K real agents with one bookkeeping entry (K× fewer hash ops at
-    // the price of quantised load resolution; BPR is polynomial degree β so
-    // small K has negligible numerical impact).
+    // simulate K real agents with one entry. remove_* must be called with the
+    // SAME (t_enter, t_exit, weight) the matching add_* used.
     void add_agent   (osmium::object_id_type way_id, int t_enter, int t_exit, int weight = 1);
     void remove_agent(osmium::object_id_type way_id, int t_enter, int t_exit, int weight = 1);
 
-    // Ghost-load API — for synthetic background traffic injected by
-    // GhostTrafficController (Option M). Conceptually identical to add_agent /
-    // remove_agent, but kept under a separate name so future code can audit
-    // real-agent vs ghost-agent contributions if needed.
+    // Ghost-load API — synthetic background traffic (GhostTrafficController).
+    // Identical mechanics to add_agent/remove_agent, separate name for auditing.
     void add_ghost_load   (osmium::object_id_type way_id, int t_enter, int t_exit, int weight = 1);
     void remove_ghost_load(osmium::object_id_type way_id, int t_enter, int t_exit, int weight = 1);
 
@@ -78,47 +75,32 @@ public:
                         float speed_mps,
                         int   self_weight = 0) const;
 
-    // Currently registrable time window [window_lo, window_hi]. Loads outside
-    // it are silently dropped by add/remove — callers that need symmetric
-    // add/remove bookkeeping must clamp to this window at ADD time and store
-    // the clamped bounds for later removal.
+    // Currently registrable time window [window_lo, window_hi].
     int window_lo() const { return t_now_; }
     int window_hi() const { return t_now_ + params.horizon; }
 
-    // Advance current step to t_now and purge all steps older than t_now.
+    // Advance current step to t_now and purge every fully-past interval.
     void advance(int t_now);
 
-    // Hard reset: clear all load entries and set t_now back to 0.
-    // Call at the start of each new episode so steps 0..N are accepted again.
+    // Hard reset: drop all intervals and set t_now back to 0 (new episode).
     void reset();
 
-    // Mean agent load at the current step across all tracked edges.
-    // Returns 0 if no edge currently has any load. Used by EpisodeRunner to
-    // populate GlobalState::congestion so the centralised critic sees a real
-    // congestion signal (was a 0-padding placeholder before).
+    // Mean / peak / conflict-count of agent load at the current step.
     float mean_load_now() const;
+    int   peak_load_now() const;
 
-    // Maximum load on any single edge at the current step.
-    // Useful to detect peak congestion (vs the mean).
-    int peak_load_now() const;
-
-    // Combined mean + peak in a SINGLE pass over load_ — avoids the 2× cost
-    // of calling mean_load_now() and peak_load_now() back-to-back from per-
-    // step instrumentation (3600 calls/episode × N_edges iteration each).
     struct LoadSample { float mean; int peak; };
     LoadSample load_sample_now() const;
 
-    // Number of edges with load >= threshold at the current step.
-    // n_edges_load_ge(2) counts overlap incidents (≥2 entities sharing an
-    // edge in the same step). Used to quantify network conflict density.
+    // Number of edges with load >= threshold at the current step (conflict density).
     int n_edges_load_ge(int threshold) const;
 
 private:
-    std::unordered_map<osmium::object_id_type,
-        std::unordered_map<int, int>> load_;   // way_id → {step_t → agent_count}
+    std::unordered_map<osmium::object_id_type, TemporalChainList> chains_;  // edge → occupancy intervals
     int t_now_ = 0;
 
-    void update_load(osmium::object_id_type way_id, int t_start, int t_end, int delta);
+    const TemporalChainList* chain(osmium::object_id_type way_id) const;
+    TemporalChainList&       chain_mut(osmium::object_id_type way_id);
 };
 
 #endif // CONGESTION_MAP_HPP

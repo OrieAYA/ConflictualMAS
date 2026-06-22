@@ -23,7 +23,7 @@ void TemporalChainList::unlink_and_decrement(TemporalNode* node) {
     const float b = node->time_begin(), e = node->time_end;
     for (TemporalNode* x = start_->next; x != end_; x = x->next)
         if (x != node && overlaps(x->time_begin(), x->time_end, b, e))
-            --x->present_agent;
+            x->present_agent -= node->weight;
     node->before->next = node->next;
     node->next->before = node->before;
     delete node;
@@ -35,13 +35,14 @@ void TemporalChainList::purge_expired(float t_now) {
         unlink_and_decrement(start_->next);
 }
 
-TemporalNode* TemporalChainList::insert(float time_end, float time_spend) {
+TemporalNode* TemporalChainList::insert(float time_end, float time_spend, int weight) {
     purge_expired(last_time_);
 
     TemporalNode* n = new TemporalNode();
     n->time_end      = time_end;
     n->time_spend    = time_spend;
-    n->present_agent = 1;                      // the inserting agent
+    n->weight        = weight;
+    n->present_agent = weight;                 // the inserting agent(s)
 
     // Place in ascending time_end order (predecessors finish first).
     TemporalNode* cur = start_->next;
@@ -55,8 +56,8 @@ TemporalNode* TemporalChainList::insert(float time_end, float time_spend) {
     const float nb = n->time_begin(), ne = n->time_end;
     for (TemporalNode* x = start_->next; x != end_; x = x->next)
         if (x != n && overlaps(x->time_begin(), x->time_end, nb, ne)) {
-            ++x->present_agent;
-            ++n->present_agent;
+            x->present_agent += n->weight;
+            n->present_agent += x->weight;
         }
     return n;
 }
@@ -64,6 +65,23 @@ TemporalNode* TemporalChainList::insert(float time_end, float time_spend) {
 void TemporalChainList::remove(TemporalNode* node) {
     purge_expired(last_time_);
     unlink_and_decrement(node);
+}
+
+bool TemporalChainList::remove_interval(float time_end, float time_spend, int weight) {
+    purge_expired(last_time_);
+    for (TemporalNode* x = start_->next; x != end_; x = x->next)
+        if (x->time_end == time_end && x->time_spend == time_spend && x->weight == weight) {
+            unlink_and_decrement(x);
+            return true;
+        }
+    return false;
+}
+
+int TemporalChainList::load_at(float t) const {
+    int load = 0;
+    for (TemporalNode* x = start_->next; x != end_; x = x->next)
+        if (x->time_begin() <= t && t <= x->time_end) load += x->weight;
+    return load;
 }
 
 TemporalNode* TemporalChainList::find(float t) {

@@ -41,6 +41,7 @@ struct TemporalNode {
 
     std::set<int> objective_id;        // task ids active in this interval (nodes)
     int           present_agent = 0;   // concurrent agent count over this interval
+    int           weight        = 1;   // this segment's own occupancy weight (load_per_agent)
 
     float time_begin() const { return time_end - time_spend; }
     bool  is_sentinel() const { return before == nullptr || next == nullptr; }
@@ -62,16 +63,25 @@ public:
     TemporalNode* start() const { return start_; }
     TemporalNode* end()   const { return end_; }
 
-    // Insert an occupancy [time_end - time_spend, time_end] (one agent). Returns
-    // the new segment so the caller can fill objective_id / incident_elements.
-    TemporalNode* insert(float time_end, float time_spend);
+    // Insert an occupancy [time_end - time_spend, time_end] carrying `weight`
+    // agents (1 by default). Returns the new segment so the caller can fill
+    // objective_id / incident_elements.
+    TemporalNode* insert(float time_end, float time_spend, int weight = 1);
 
     // Remove a segment previously returned by insert(). No-op on sentinels.
     void remove(TemporalNode* node);
 
+    // Remove the first segment matching (time_end, time_spend, weight) exactly —
+    // used to undo a registration addressed by value. Returns true if removed.
+    bool remove_interval(float time_end, float time_spend, int weight = 1);
+
     // First segment with time_end >= t (the one covering / following t), or the
     // end sentinel if none. Advances t* to t and purges what is now expired.
     TemporalNode* find(float t);
+
+    // Exact occupancy at time t: sum of weights of all segments covering t
+    // (inclusive [begin, end]). This is the congestion load used by the BPR.
+    int load_at(float t) const;
 
     // Drop every segment that ends strictly before t_now (a prefix of the list,
     // since segments are time_end-ordered). The start sentinel is never dropped.

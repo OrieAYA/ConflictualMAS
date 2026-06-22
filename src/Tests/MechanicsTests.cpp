@@ -175,6 +175,24 @@ bool run_mechanics_tests(const std::string& osm_file, const std::string& cache_d
                   << " (off) -> " << c_on << " (ghost on)\n";
     }
 
+    // ── [5] BPR is TIME-dependent: a windowed load only costs inside the window ─
+    // The defining dynamic property — the cost of an edge depends on WHEN it is
+    // traversed, not just how loaded it is overall.
+    {
+        CongestionMap cm;
+        const osmium::object_id_type w = 7;
+        const float dist = 100.f, base = 100.f;
+        cm.add_agent(w, 100, 200, 8);                   // load 8 only during [100,200]
+        const float before = cm.adjusted_cost(w, base, dist, 50);
+        const float during = cm.adjusted_cost(w, base, dist, 150);
+        const float after  = cm.adjusted_cost(w, base, dist, 250);
+        CHECK(approx(before, base) && approx(after, base),
+              "cost must be free-flow outside the load's time window");
+        CHECK(during > base, "cost must rise inside the load window (time-dependence)");
+        std::cout << "  [5] BPR time-dependence OK — cost " << before << "/" << during
+                  << "/" << after << " (before/in/after window)\n";
+    }
+
     std::cout << "=== B PASS ===\n";
     return true;
 }

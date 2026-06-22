@@ -336,10 +336,10 @@ TimedPath make_timed_path(const ObjectivePath& path,
 void PDPGlobalMemory::unregister_committed_plan(int agent_id) {
     auto it = committed_loads_.find(agent_id);
     if (it == committed_loads_.end()) return;
-    // Exact removal of what was added. Steps already purged by advance()
-    // (t < t_now) are skipped inside update_load, which is harmless: their
-    // contribution no longer exists. Steps were clamped to the registration
-    // window at add time, so nothing here can exceed the current window.
+    // Exact removal of what was added: the ledger holds the (way, t_lo, t_hi,
+    // weight) registered at commit time, so each remove_interval matches its
+    // add. Intervals already purged by advance() (fully past) are simply not
+    // found — harmless, their contribution no longer exists.
     for (const LoadWindow& lw : it->second)
         congestion_map.remove_agent(lw.way, lw.t_lo, lw.t_hi, lw.weight);
     committed_loads_.erase(it);
@@ -576,9 +576,9 @@ void PDPGlobalMemory::reset_episode() {
     finished_tasks.clear();
     node_to_task_id_.clear();
 
-    // Reset the congestion map: clears load_ and resets t_now_ to 0.
-    // Without this, CongestionMap::update_load filters all new-episode steps
-    // (t < t_now_) so no congestion is ever tracked after the first episode.
+    // Reset the congestion map: drops all occupancy intervals and t_now_ to 0.
+    // Without this, the new episode's early steps (t < t_now_ from the previous
+    // episode) would be treated as past and purged, tracking no congestion.
     congestion_map.reset();
 
     // Reset clock to 0 so advance_time() accepts the new episode's steps.
