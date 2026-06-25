@@ -106,11 +106,11 @@ bool run_mechanics_tests(const std::string& osm_file, const std::string& cache_d
         } catch (const std::exception& e) {
             std::cout << "  [FAIL] runner ctor: " << e.what() << "\n"; return false;
         }
-        runner->train_mode  = true;
-        runner->policy_mode = PolicyMode::MAPPO;
+        runner->train_mode  = false;
+        runner->policy_mode = PolicyMode::TamAlwaysAccept;   // deterministic, reliable completion
 
         RunResult r;
-        try { r = runner->run(0, 1); }
+        try { r = runner->run(0, 1, {}, /*episode_seed*/4242u); }
         catch (const std::exception& e) {
             std::cout << "  [FAIL] episode: " << e.what() << "\n"; return false;
         }

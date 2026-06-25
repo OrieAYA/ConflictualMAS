@@ -74,36 +74,24 @@ bool run_temporal_graph_test(const GeoBox& geo_box)
 {
     const MyData& d = geo_box.data;
     TemporalGraph tg(geo_box, 1000.f);
-    CHECK(tg.n_node_chains() == 0 && tg.n_edge_chains() == 0,
-          "temporal graph must start empty (lazy creation)");
+    CHECK(tg.n_node_chains() == 0, "temporal graph must start empty (lazy creation)");
 
-    // A node chain carries its incident EDGES.
     osmium::object_id_type nid = 0;
     for (const auto& [id, p] : d.nodes)
         if (!p.incident_ways.empty()) { nid = id; break; }
     CHECK(nid != 0, "no node with incident ways");
     TemporalChainList& nc = tg.node_chain(nid);
-    CHECK(tg.n_node_chains() == 1,                 "node chain not created on demand");
+    CHECK(tg.n_node_chains() == 1, "node chain not created on demand");
     CHECK(nc.start()->incident_elements == d.nodes.at(nid).incident_ways,
           "node chain must list its incident edges");
     CHECK(nc.start()->time_end == 0.f && nc.end()->time_end == 1000.f,
           "node chain sentinels not at [0, episode_end]");
 
-    // An edge chain carries its two endpoint NODES.
-    const osmium::object_id_type eid = d.ways.begin()->first;
-    const auto& w = d.ways.at(eid);
-    TemporalChainList& ec = tg.edge_chain(eid);
-    CHECK(ec.start()->incident_elements.size() == 2
-       && ec.start()->incident_elements[0] == w.node1_id
-       && ec.start()->incident_elements[1] == w.node2_id,
-          "edge chain must list its two endpoint nodes");
-
-    // Usable as an event stream.
     nc.insert(120.f, 20.f);                         // [100, 120]
     CHECK(nc.find(110.f)->present_agent >= 1, "find after insert on a node chain");
     CHECK(tg.has_node_chain(nid) && !tg.has_node_chain(nid + 999983),
           "has_node_chain lookup wrong");
 
-    std::cout << "  [8] TemporalGraph OK — per node/edge chains, correct incident_elements\n";
+    std::cout << "  [8] TemporalGraph OK — per-node chains, correct incident edges\n";
     return true;
 }

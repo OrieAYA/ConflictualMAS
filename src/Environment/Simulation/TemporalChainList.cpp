@@ -35,18 +35,20 @@ void TemporalChainList::purge_expired(float t_now) {
         unlink_and_decrement(start_->next);
 }
 
-TemporalNode* TemporalChainList::insert(float time_end, float time_spend, int weight) {
+TemporalNode* TemporalChainList::insert(float time_end, float time_spend, int weight, int agent_id) {
     purge_expired(last_time_);
 
     TemporalNode* n = new TemporalNode();
     n->time_end      = time_end;
     n->time_spend    = time_spend;
     n->weight        = weight;
+    n->agent_id      = agent_id;
     n->present_agent = weight;                 // the inserting agent(s)
 
-    // Place in ascending time_end order (predecessors finish first).
+    // Ascending time_end order; at equal time the new segment goes just BEFORE
+    // the existing one (spec: <=).
     TemporalNode* cur = start_->next;
-    while (cur != end_ && cur->time_end <= time_end) cur = cur->next;
+    while (cur != end_ && cur->time_end < time_end) cur = cur->next;
     n->next        = cur;
     n->before      = cur->before;
     cur->before->next = n;

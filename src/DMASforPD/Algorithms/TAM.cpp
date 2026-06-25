@@ -29,21 +29,7 @@ TaskAllocationModule::idle_agent_positions(PDPGlobalMemory& memory) const {
     return positions;
 }
 
-// pickup_node before delivery_node in the agent's plan sequence.
-static bool orientation_ok(const AgentSolution* sol,
-                           osmium::object_id_type pickup_node,
-                           osmium::object_id_type delivery_node) {
-    if (!sol) return false;
-    int pp = -1, dp = -1;
-    for (int i = 0; i < static_cast<int>(sol->sequence.size()); ++i) {
-        const auto nid = sol->sequence[i].node.id;
-        if (nid == pickup_node   && pp < 0) pp = i;
-        if (nid == delivery_node && dp < 0) dp = i;
-    }
-    return pp >= 0 && dp >= 0 && pp < dp;
-}
-
-void TaskAllocationModule::collect_candidates(PDPGlobalMemory& memory) {
+void TaskAllocationModule::collect_candidates() {
     candidates_.clear();
 
     std::vector<std::pair<float, int>> scored;
@@ -51,10 +37,9 @@ void TaskAllocationModule::collect_candidates(PDPGlobalMemory& memory) {
     for (const auto& [aid, e] : matrix_) {
         float cost;
         if (e.idle_from_pickup) {
-            cost = std::max(0.f, e.pickup_cost);          // idle: pickup side only
-        } else if (e.pickup_node && e.delivery_node &&
-                   orientation_ok(memory.get_solution(aid),
-                                  e.pickup_node, e.delivery_node)) {
+            cost = std::max(0.f, e.pickup_cost);          // available capacity, by position
+        } else if (e.pickup_seq >= 0 && e.delivery_seq >= 0 && e.pickup_seq < e.delivery_seq) {
+            // pickup reference earlier than delivery reference in the agent's plan
             cost = std::max(0.f, e.pickup_cost) + std::max(0.f, e.delivery_cost);
         } else {
             continue;                                     // not a valid candidate
@@ -163,14 +148,40 @@ bool TaskAllocationModule::step(PDPGlobalMemory& memory, float speed_mps) {
     if (!search_reset_done_) {
         memory.server_memory.reset_agent_search(task_.pickup.id,   pickup_group_id_);
         memory.server_memory.reset_agent_search(task_.delivery.id, delivery_group_id_);
+        // discover_step never returns the source node, so an available-capacity
+        // agent standing on the pickup itself would be missed — capture it here.
+        for (const auto& [aid, agent] : memory.all_delivery_agents()) {
+            if (!agent || !agent->is_at_node() || agent->current_node != task_.pickup.id) continue;
+            const int cap = agent->max_capacity > 0 ? agent->max_capacity : params_.max_tasks_per_agent;
+            if (static_cast<int>(agent->local_memory.tasks.size()) < cap) {
+                matrix_[aid].pickup_cost      = 0.f;
+                matrix_[aid].idle_from_pickup = true;
+            }
+        }
         search_reset_done_ = true;
     }
 
     // Idle standing positions only qualify from the pickup side.
     auto record_side = [&](const DiscoveryStep& d, bool is_pickup) {
+        // Keep the EARLIEST reached objective on the pickup side and the LATEST
+        // on the delivery side (within the agent's plan sequence).
         auto set_busy = [&](int aid, float cost, osmium::object_id_type node) {
-            if (is_pickup) { matrix_[aid].pickup_cost = cost;  matrix_[aid].pickup_node   = node; }
-            else           { matrix_[aid].delivery_cost = cost; matrix_[aid].delivery_node = node; }
+            const AgentSolution* sol = memory.get_solution(aid);
+            if (!sol) return;
+            int idx = -1;
+            for (int i = 0; i < static_cast<int>(sol->sequence.size()); ++i)
+                if (sol->sequence[i].node.id == node) { idx = i; break; }
+            if (idx < 0) return;
+            AgentEntry& e = matrix_[aid];
+            if (is_pickup) {
+                if (e.pickup_node == 0 || idx < e.pickup_seq) {
+                    e.pickup_cost = cost; e.pickup_node = node; e.pickup_seq = idx;
+                }
+            } else {
+                if (e.delivery_node == 0 || idx > e.delivery_seq) {
+                    e.delivery_cost = cost; e.delivery_node = node; e.delivery_seq = idx;
+                }
+            }
         };
         if (d.type == DiscoveryStep::Type::Path && d.path) {
             const osmium::object_id_type tgt =
@@ -199,7 +210,7 @@ bool TaskAllocationModule::step(PDPGlobalMemory& memory, float speed_mps) {
         {}, max_search_cost_);
     record_side(ds, /*is_pickup=*/false);
 
-    collect_candidates(memory);
+    collect_candidates();
 
     // First candidate found → fix the adaptive expansion budget at x*ratio(x)
     // where x = max(pickup_cost, delivery_cost) of that candidate.

@@ -470,6 +470,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\Tests\ModuleTests.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Tests\PDPTests.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\RegressionTests.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Tests\StructureTests.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Tests\TamMcTest.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Tests\TemporalChainListTest.cpp" />

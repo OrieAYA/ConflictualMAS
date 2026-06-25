@@ -42,6 +42,7 @@ struct TemporalNode {
     std::set<int> objective_id;        // task ids active in this interval (nodes)
     int           present_agent = 0;   // concurrent agent count over this interval
     int           weight        = 1;   // this segment's own occupancy weight (load_per_agent)
+    int           agent_id      = -1;  // owning agent (-1 = ghost / untagged)
 
     float time_begin() const { return time_end - time_spend; }
     bool  is_sentinel() const { return before == nullptr || next == nullptr; }
@@ -64,9 +65,9 @@ public:
     TemporalNode* end()   const { return end_; }
 
     // Insert an occupancy [time_end - time_spend, time_end] carrying `weight`
-    // agents (1 by default). Returns the new segment so the caller can fill
-    // objective_id / incident_elements.
-    TemporalNode* insert(float time_end, float time_spend, int weight = 1);
+    // agents, optionally tagged with the owning agent_id. Returns the new
+    // segment so the caller can fill objective_id / incident_elements.
+    TemporalNode* insert(float time_end, float time_spend, int weight = 1, int agent_id = -1);
 
     // Remove a segment previously returned by insert(). No-op on sentinels.
     void remove(TemporalNode* node);

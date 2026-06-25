@@ -6,6 +6,8 @@
 #include "TrainingEvaluation/StructuresParam/ScenarioConfig.hpp"
 #include "TrainingEvaluation/Run/Runner.hpp"
 #include "DMASforPD/Agents/Manager.hpp"
+#include "DMASforPD/Agents/DeliveryAgent.hpp"
+#include "DMASforPD/Algorithms/TAM.hpp"
 #include "DMASforPD/Structures/ObjectiveNode.hpp"
 #include "DMASforPD/Policy/BidPolicy.hpp"
 #include "SoTA/SolverFramework.hpp"
@@ -13,6 +15,7 @@
 #include "SoTA/Standalone/HAPC.hpp"
 #include "DMASforPD/Algorithms/TDAStar.hpp"
 #include "Legacy/Common/Pathfinding.hpp"
+#include <algorithm>
 #include <cmath>
 #include <exception>
 #include <iostream>
@@ -244,6 +247,60 @@ bool run_module_tests(const std::string& osm_file, const std::string& cache_dir)
               "TD-A* ignored time-dependent congestion (same path, same time)");
         std::cout << "  [10] TD-A* OK — time " << freep.total_time << " -> " << jammed.total_time
                   << (jammed.edges != freep.edges ? " (rerouted)" : "") << "\n";
+    }
+
+    // ── [11] TAM retrieves the candidate agents for a task's objective nodes ──
+    // Static (distance) candidate discovery: the agent standing on the pickup
+    // must be retrieved, the task allocated, and memory updated with the winner.
+    // Also checks the node-event invariant: the current objective sits in the
+    // node's chain at t* (the first segment, not the start sentinel).
+    {
+        PDPGlobalMemory mem(gb, pf);
+        mem.total_steps = 2000;
+
+        std::vector<osmium::object_id_type> ids;
+        for (const auto& [id, p] : gb.data.nodes) { (void)p; ids.push_back(id); if (ids.size() >= 3) break; }
+        CHECK(ids.size() >= 3, "need 3 nodes for the TAM scenario");
+
+        // One step away from `n` along an incident edge, avoiding `avoid`.
+        auto step_from = [&](osmium::object_id_type n, osmium::object_id_type avoid) {
+            for (auto wid : gb.data.nodes.at(n).incident_ways) {
+                const auto& w = gb.data.ways.at(wid);
+                const auto nb = (w.node1_id == n) ? w.node2_id : w.node1_id;
+                if (nb != avoid) return nb;
+            }
+            return n;
+        };
+        const auto pickup = ids[1], delivery = ids[2];
+        const auto posNear = step_from(pickup, delivery);   // 1 hop from the pickup
+
+        DeliveryAgent a0(0, pickup);     // standing ON the pickup (source-node case)
+        DeliveryAgent a1(1, posNear);    // one hop from the pickup
+        a0.max_capacity = 3; a1.max_capacity = 3;
+        mem.register_delivery_agent(a0);
+        mem.register_delivery_agent(a1);
+
+        const int t = mem.add_task({ pickup, 1 }, { delivery, 2 });
+        CHECK(mem.node_events.node_chain(pickup).find(0.f)->objective_id.count(t) == 1,
+              "current objective not present in the pickup node chain at t*");
+
+        TaskAllocationModule::Params p;
+        p.always_accept = true;          // deterministic: every candidate bids μ=1
+        TaskAllocationModule tam(*mem.get_task(t), p);
+        int guard = 0;
+        while (!tam.step(mem, 10.f) && ++guard < 100000) {}
+
+        const auto& cands = tam.candidates_in_order();
+        CHECK(!cands.empty(), "TAM retrieved no candidate for the objective nodes");
+        for (int c : cands) CHECK(c == 0 || c == 1, "TAM returned an unregistered agent");
+        CHECK(std::find(cands.begin(), cands.end(), 0) != cands.end(),
+              "the agent standing on the pickup was not retrieved as a candidate");
+        CHECK(tam.is_allocated(), "TAM did not allocate the task");
+        CHECK(tam.winner_agent() == 0 || tam.winner_agent() == 1, "winner is not a registered agent");
+        CHECK(mem.get_task(t)->agent_id == tam.winner_agent(), "memory not updated with the TAM winner");
+
+        std::cout << "  [11] TAM retrieval OK — " << cands.size()
+                  << " candidate(s), winner=" << tam.winner_agent() << "\n";
     }
 
     std::cout << "=== C PASS ===\n";

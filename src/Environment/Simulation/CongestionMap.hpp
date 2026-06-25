@@ -50,7 +50,7 @@ public:
     // `weight` lets a single registration count for >1 unit of load — used to
     // simulate K real agents with one entry. remove_* must be called with the
     // SAME (t_enter, t_exit, weight) the matching add_* used.
-    void add_agent   (osmium::object_id_type way_id, int t_enter, int t_exit, int weight = 1);
+    void add_agent   (osmium::object_id_type way_id, int t_enter, int t_exit, int weight = 1, int agent_id = -1);
     void remove_agent(osmium::object_id_type way_id, int t_enter, int t_exit, int weight = 1);
 
     // Ghost-load API — synthetic background traffic (GhostTrafficController).

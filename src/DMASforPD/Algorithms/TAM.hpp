@@ -103,6 +103,10 @@ private:
         float delivery_cost = kNoContact;
         osmium::object_id_type pickup_node   = 0;   // agent node reached per side
         osmium::object_id_type delivery_node = 0;
+        // Reference plan-sequence indices: pickup side keeps the EARLIEST reached
+        // objective, delivery side the LATEST (multi-point orientation).
+        int  pickup_seq   = -1;
+        int  delivery_seq = -1;
         bool idle_from_pickup = false;
     };
 
@@ -144,7 +148,7 @@ private:
     // Rebuild candidates_ from matrix_ (valid = idle-from-pickup, or busy with
     // pickup node before delivery node in plan), sorted by ascending cost,
     // capped at max_candidates.
-    void collect_candidates(PDPGlobalMemory& memory);
+    void collect_candidates();
 
     // Ask every candidate to bid, pick the winner, allocate / defer.
     bool finalise(PDPGlobalMemory& memory, float speed_mps);

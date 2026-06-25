@@ -148,6 +148,9 @@
     <ClCompile Include="C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Tests\RegressionTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Tests\StructureTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

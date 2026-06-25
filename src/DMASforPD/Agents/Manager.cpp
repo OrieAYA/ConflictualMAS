@@ -13,7 +13,7 @@ PDPGlobalMemory::PDPGlobalMemory(GeoBox& box, Pathfinder& pf,
                                  const CongestionParams& cparams,
                                  const TaskAgentParams& taparams)
     : geo_box(box), pathfinder(pf), server_memory(box, pf),
-      congestion_map(cparams), task_agent(0, taparams) {
+      congestion_map(cparams), node_events(box, 1e30f), task_agent(0, taparams) {
     server_memory.initialize_from_geobox();
     region_grid.init(box);
 }
@@ -185,6 +185,13 @@ int PDPGlobalMemory::add_task(const ObjectiveNode& pickup, const ObjectiveNode& 
     available_tasks.push_back(ptr);
     node_to_task_id_[pickup.id]   = id;
     node_to_task_id_[delivery.id] = id;
+
+    // Node temporal layer: the task is present at its pickup/delivery from
+    // creation to end of episode.
+    const float t_end  = total_steps > 0 ? static_cast<float>(total_steps) : 1e9f;
+    const float span   = t_end - static_cast<float>(current_time_);
+    for (osmium::object_id_type nid : { pickup.id, delivery.id })
+        node_events.node_chain(nid).insert(t_end, span)->objective_id.insert(id);
     return id;
 }
 
@@ -370,7 +377,7 @@ void PDPGlobalMemory::register_committed_plan(int agent_id, float speed_mps) {
             const int e_lo = std::max(lo, tp.abs_entry(i, t));
             const int e_hi = std::min(hi, tp.abs_exit (i, t));
             if (e_lo > e_hi) continue;          // outside the registrable window
-            congestion_map.add_agent(tp.edge_ids[i], e_lo, e_hi, w);
+            congestion_map.add_agent(tp.edge_ids[i], e_lo, e_hi, w, agent_id);
             ledger.push_back({tp.edge_ids[i], e_lo, e_hi, w});
         }
         return t + tp.total_steps;
@@ -580,6 +587,7 @@ void PDPGlobalMemory::reset_episode() {
     // Without this, the new episode's early steps (t < t_now_ from the previous
     // episode) would be treated as past and purged, tracking no congestion.
     congestion_map.reset();
+    node_events.reset();
 
     // Reset clock to 0 so advance_time() accepts the new episode's steps.
     current_time_ = 0;

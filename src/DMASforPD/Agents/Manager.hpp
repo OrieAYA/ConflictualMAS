@@ -3,6 +3,7 @@
 
 #include "DMASforPD/Structures/ObjectiveCache.hpp"
 #include "Environment/Simulation/CongestionMap.hpp"
+#include "Environment/Simulation/TemporalGraph.hpp"
 #include "DMASforPD/Structures/PDPTask.hpp"
 #include "DMASforPD/Structures/TimePaths.hpp"
 #include "DMASforPD/Agents/TaskAgent.hpp"
@@ -81,7 +82,8 @@ public:
     GeoBox&         geo_box;
     Pathfinder&     pathfinder;
     PDPServerMemory server_memory;
-    CongestionMap   congestion_map;
+    CongestionMap   congestion_map;   // edge temporal layer (occupancy / BPR)
+    TemporalGraph   node_events;      // node temporal layer (task/objective events)
     TaskAgent       task_agent;
 
     // ---- Task lists (non-owning pointers into tasks_) -------------------

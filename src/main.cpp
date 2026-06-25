@@ -8,6 +8,7 @@
 #include "Tests/MechanicsTests.hpp"          // B
 #include "Tests/ModuleTests.hpp"             // C
 #include "Tests/EndToEndTests.hpp"           // D
+#include "Tests/RegressionTests.hpp"         // R
 #include "Tests/CongestionOnlyTest.hpp"      // G — diagnostic
 #include "Tests/PlanningComparisonTest.hpp"  // P — diagnostic
 
@@ -127,7 +128,7 @@ static int run_main()
     //   A Structure  B Mechanics  C Modules  D EndToEnd  E All
     //   G CongestionDiag  P PlanningCompare  (heavier diagnostics)
     else if (rep == "2" || rep == "test" || rep == "tests") {
-        std::cout << "\n[Tests]  A Structure  B Mechanics  C Modules  D EndToEnd  E All"
+        std::cout << "\n[Tests]  A Structure  B Mechanics  C Modules  D EndToEnd  R Regression  E All"
                      "   |   G CongestionDiag  P PlanningCompare\nChoice: ";
         std::string sub; std::cin >> sub;
         const char c = sub.empty() ? ' ' : static_cast<char>(std::toupper(sub[0]));
@@ -138,6 +139,7 @@ static int run_main()
             ok &= run_mechanics_tests (osm_file, cache_dir);
             ok &= run_module_tests    (osm_file, cache_dir);
             ok &= run_end_to_end_tests(osm_file, cache_dir);
+            ok &= run_regression_tests(osm_file, cache_dir);
             std::cout << (ok ? "\n=== ALL BATTERIES PASS ===\n"
                              : "\n=== SOME BATTERIES FAILED ===\n");
         };
@@ -147,6 +149,7 @@ static int run_main()
             case 'B': run_mechanics_tests (osm_file, cache_dir); break;
             case 'C': run_module_tests    (osm_file, cache_dir); break;
             case 'D': run_end_to_end_tests(osm_file, cache_dir); break;
+            case 'R': run_regression_tests(osm_file, cache_dir); break;
             case 'E': run_all();                                 break;
             case 'G': run_congestion_only_test(kOsmRoot, kCacheRoot); break;
             case 'P': run_planning_comparison_test(42u, 25, kOsmRoot, kCacheRoot, kOutputDir); break;

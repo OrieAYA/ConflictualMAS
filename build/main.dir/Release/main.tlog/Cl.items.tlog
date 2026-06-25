@@ -47,6 +47,7 @@ C:\ConflictualMAS\src\Tests\MechanicsTests.cpp;C:\ConflictualMAS\build\main.dir\
 C:\ConflictualMAS\src\Tests\ModuleTests.cpp;C:\ConflictualMAS\build\main.dir\Release\ModuleTests.obj
 C:\ConflictualMAS\src\Tests\PDPTests.cpp;C:\ConflictualMAS\build\main.dir\Release\PDPTests.obj
 C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp;C:\ConflictualMAS\build\main.dir\Release\PlanningComparisonTest.obj
+C:\ConflictualMAS\src\Tests\RegressionTests.cpp;C:\ConflictualMAS\build\main.dir\Release\RegressionTests.obj
 C:\ConflictualMAS\src\Tests\StructureTests.cpp;C:\ConflictualMAS\build\main.dir\Release\StructureTests.obj
 C:\ConflictualMAS\src\Tests\TamMcTest.cpp;C:\ConflictualMAS\build\main.dir\Release\TamMcTest.obj
 C:\ConflictualMAS\src\Tests\TemporalChainListTest.cpp;C:\ConflictualMAS\build\main.dir\Release\TemporalChainListTest.obj

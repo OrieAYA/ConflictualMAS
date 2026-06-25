@@ -12,6 +12,8 @@
 //      is a method effect, not an environment confound.
 //   3. Refresh between methods: task IDs / memory restart fresh per episode,
 //      while the generated map (GeoBox) is left untouched across methods.
+//   4. Single-agent replan (direct assignment): in-flight objective preserved,
+//      plan/footprint corrected, env structure (node events + edge load) updated.
 //
 // Returns true (PASS) / false (FAIL).
 bool run_end_to_end_tests(const std::string& osm_file, const std::string& cache_dir);

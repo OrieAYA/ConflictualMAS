@@ -76,6 +76,7 @@ set(SOURCES
     src/Tests/ModuleTests.cpp
     src/Tests/PDPTests.cpp
     src/Tests/PlanningComparisonTest.cpp
+    src/Tests/RegressionTests.cpp
     src/Tests/StructureTests.cpp
     src/Tests/TamMcTest.cpp
     src/Tests/TemporalChainListTest.cpp

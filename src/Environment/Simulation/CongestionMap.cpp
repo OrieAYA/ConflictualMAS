@@ -21,11 +21,11 @@ TemporalChainList& CongestionMap::chain_mut(osmium::object_id_type way_id) {
 // ── Occupancy registration (intervals; no clamping → add/remove symmetric) ──
 
 void CongestionMap::add_agent(
-    osmium::object_id_type way_id, int t_enter, int t_exit, int weight
+    osmium::object_id_type way_id, int t_enter, int t_exit, int weight, int agent_id
 ) {
     if (weight <= 0 || t_exit < t_enter || t_exit < t_now_) return;
     chain_mut(way_id).insert(static_cast<float>(t_exit),
-                             static_cast<float>(t_exit - t_enter), weight);
+                             static_cast<float>(t_exit - t_enter), weight, agent_id);
 }
 
 void CongestionMap::remove_agent(

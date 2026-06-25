@@ -16,6 +16,8 @@
 //   8. SoTA solvers  — CA + HAPC run the full SolverRunner pipeline.
 //   9. Scenario grid — make_scenario_grid() = 9 deterministic combos.
 //  10. TD-A*        — time-dependent routing: jamming the path slows/reroutes.
+//  11. TAM retrieval — candidate agents found for a task's objective nodes;
+//      node-event invariant (current objective in the node chain at t*).
 //
 // Every episode-driven check also asserts pickup-before-delivery and capacity
 // are never violated at runtime. Returns true (PASS) / false (FAIL).
