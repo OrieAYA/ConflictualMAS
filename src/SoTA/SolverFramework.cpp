@@ -1,15 +1,16 @@
 #include "SoTA/SolverFramework.hpp"
+#include "Environment/GeoBox/GraphSearch.hpp"
 
 // ===== PathHelper.cpp =====
 #include <cmath>
 
-PathHelper::PathHelper(Pathfinder& pf) : pf_(pf) {
+PathHelper::PathHelper(const GeoBox& gb) : gb_(gb) {
     invalid_.valid = false;
 }
 
 float PathHelper::heuristic(osmium::object_id_type from,
                              osmium::object_id_type to) const {
-    return const_cast<Pathfinder&>(pf_).heuristic(from, to);
+    return graph_search::haversine_between(gb_, from, to);
 }
 
 const SimplePath& PathHelper::get(osmium::object_id_type from,
@@ -27,8 +28,9 @@ const SimplePath& PathHelper::get(osmium::object_id_type from,
     auto it = cache_.find(key);
     if (it != cache_.end()) return it->second;
 
-    // Call A* on the shared Pathfinder.
-    std::vector<osmium::object_id_type> edge_seq = pf_.A_Star_Search(from, to);
+    // Static A* over the shared GeoBox.
+    std::vector<osmium::object_id_type> edge_seq =
+        graph_search::shortest_path_edges(gb_, from, to);
 
     SimplePath p;
     if (edge_seq.empty()) {
@@ -45,7 +47,7 @@ const SimplePath& PathHelper::get(osmium::object_id_type from,
     p.nodes.push_back(from);
 
     osmium::object_id_type current = from;
-    const auto& ways = pf_.geo_box.data.ways;
+    const auto& ways = gb_.data.ways;
     float total = 0.f;
 
     for (auto eid : edge_seq) {
@@ -234,7 +236,6 @@ osmium::object_id_type SolverContext::sample_valid_node(std::mt19937& rng) const
 
 SolverRunner::SolverRunner(const EpisodeConfig& cfg,
                            GeoBox&              geo_box,
-                           Pathfinder&          pathfinder,
                            EpisodeScenario      scenario,
                            uint32_t             episode_seed)
     : cfg_(cfg),
@@ -244,7 +245,6 @@ SolverRunner::SolverRunner(const EpisodeConfig& cfg,
 {
     // Initial context wiring; task_stream is populated by prepare_episode().
     ctx_.geo_box        = &geo_box;
-    ctx_.pathfinder     = &pathfinder;
     ctx_.congestion_map = &congestion_map_;
     ctx_.episode_config = &cfg_;
     ctx_.episode_seed   = episode_seed_;
@@ -272,54 +272,12 @@ void SolverRunner::prepare_episode() {
     // the SAME task stream (fair comparison guarantee).
     gen_.reset_seed(episode_seed_);
 
-    // Apply scenario scaling — density_mult multiplies the lambda of each
-    // phase; agents_mult scales the active agent count. We mutate a LOCAL
-    // copy of the config (gen_ holds a const ref to cfg_, but generate()
-    // reads phase data freshly). For now we apply the scaling by rebuilding
-    // the task stream and scaling timestamps would be invasive; instead we
-    // generate at lambda × density_mult by transparently multiplying the
-    // number of tasks accepted from generator output. This is a placeholder
-    // for the Phase-1 generator integration; if you need scenario_mult
-    // support, extend EpisodeGenerator to accept a scale factor.
-    ctx_.task_stream = gen_.generate();
-
-    // Apply density_mult: drop or duplicate tasks proportionally. Simple
-    // deterministic stride: keep ceil(N × density_mult) tasks via random
-    // sampling (with replacement when >1.0).
-    if (scenario_.density_mult != 1.0f && !ctx_.task_stream.empty()) {
-        std::mt19937 rng(episode_seed_ ^ 0xA17EFEEDu);
-        std::vector<ScheduledTask> scaled;
-        const int target = std::max<int>(
-            1, static_cast<int>(std::round(ctx_.task_stream.size() *
-                                            scenario_.density_mult)));
-        if (scenario_.density_mult <= 1.0f) {
-            // Subsample — keep tasks with probability density_mult.
-            std::shuffle(ctx_.task_stream.begin(), ctx_.task_stream.end(), rng);
-            ctx_.task_stream.resize(static_cast<size_t>(target));
-            std::sort(ctx_.task_stream.begin(), ctx_.task_stream.end(),
-                      [](const ScheduledTask& a, const ScheduledTask& b) {
-                          return a.arrival_step < b.arrival_step;
-                      });
-        } else {
-            // Supersample by uniform draws (duplicates pickup/delivery pairs
-            // at fresh random arrival steps within the same range).
-            scaled.reserve(static_cast<size_t>(target));
-            const int max_step = ctx_.task_stream.back().arrival_step + 1;
-            std::uniform_int_distribution<size_t> pick(
-                0, ctx_.task_stream.size() - 1);
-            std::uniform_int_distribution<int> step_pick(0, std::max(1, max_step - 1));
-            for (int i = 0; i < target; ++i) {
-                ScheduledTask t = ctx_.task_stream[pick(rng)];
-                t.arrival_step = step_pick(rng);
-                scaled.push_back(t);
-            }
-            std::sort(scaled.begin(), scaled.end(),
-                      [](const ScheduledTask& a, const ScheduledTask& b) {
-                          return a.arrival_step < b.arrival_step;
-                      });
-            ctx_.task_stream = std::move(scaled);
-        }
-    }
+    // Generate the full task stream from the scenario's task profile (single
+    // timing argument), then apply the scenario density via the canonical
+    // sub/supersample shared with EpisodeRunner / SharedEpisodeSetup.
+    ctx_.task_stream = gen_.generate(scenario_.task_profile);
+    apply_density_mult(ctx_.task_stream, scenario_.density_mult,
+                       episode_seed_ ^ 0xA17EFEEDu);
 
     // Fleet sizing — pull the maximum requested agent count from the phase
     // table, then apply scenario.agents_mult.
@@ -385,14 +343,15 @@ SolverMetrics SolverRunner::run(ISolver& solver,
 
     if (ghost_) {
         GhostTrafficController::Config gconf;
-        gconf.n_max              = cfg_.ghost_n_max;
-        gconf.total_steps        = ctx_.total_steps;
-        gconf.window_steps       = cfg_.ghost_window_steps;
-        gconf.hot_way_fraction   = cfg_.ghost_hot_way_frac;
-        gconf.hot_way_count      = cfg_.ghost_hot_way_count;
-        gconf.density_per_hot_way = cfg_.ghost_density_per_hot_way;
-        gconf.load_per_ghost     = std::max(1, cfg_.ghost_load_per_unit);
-        gconf.profile            = scenario_.congestion_profile;
+        gconf.total_steps      = ctx_.total_steps;
+        gconf.window_steps     = cfg_.ghost_window_steps;
+        gconf.hot_way_fraction = cfg_.ghost_hot_way_frac;
+        gconf.hot_way_count    = cfg_.ghost_hot_way_count;
+        gconf.profile          = scenario_.congestion_profile;
+        // Ghost event count — SAME resolution as EpisodeRunner for fairness.
+        gconf.n_events = cfg_.ghost_n_events_user_set
+            ? cfg_.ghost_n_events
+            : event_tuning::derived_ghost_count(cfg_.env_scale, cfg_.ratio_mult);
         const uint32_t gseed = setup ? setup->ghost_seed
                                       : (episode_seed_ ^ 0xBADCAFEEu);
         ghost_->reset(*ctx_.geo_box, congestion_map_, gconf, gseed);
@@ -424,7 +383,7 @@ SolverMetrics SolverRunner::run(ISolver& solver,
     m.solver_name      = solver.name();
     m.total_steps      = ctx_.total_steps;
     m.n_active_agents  = ctx_.n_active_agents;
-    m.scenario_label   = scenario_.label ? scenario_.label : "";
+    m.scenario_label   = scenario_.label;
     // city_label and episode are set by the caller (main option S) before
     // logging — the runner doesn't know the city by name.
 

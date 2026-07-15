@@ -78,10 +78,8 @@ std::vector<PhaseInfo> EpisodeGenerator::build_phase_table() const {
     std::vector<PhaseInfo> table;
     int step = 0;
     for (const auto& p : cfg_.phases) {
-        float avg_agents = (p.n_agents_start + p.n_agents_end) * 0.5f;
-        float lam = (p.steps > 0) ? p.tasks_per_agent * avg_agents / p.steps : 0.f;
         int nz = (p.n_hot_zones >= 0) ? p.n_hot_zones : cfg_.n_hot_zones;
-        table.push_back({ step, step + p.steps, lam,
+        table.push_back({ step, step + p.steps,
                           p.n_agents_start, p.n_agents_end, p.label, nz });
         step += p.steps;
     }
@@ -89,7 +87,7 @@ std::vector<PhaseInfo> EpisodeGenerator::build_phase_table() const {
 }
 
 // ── Episode generation ────────────────────────────────────────────────────────
-std::vector<ScheduledTask> EpisodeGenerator::generate() {
+std::vector<ScheduledTask> EpisodeGenerator::generate(TemporalProfile profile) {
     last_delivery_ = 0;
     auto phases = build_phase_table();
     std::vector<ScheduledTask> stream;
@@ -128,60 +126,115 @@ std::vector<ScheduledTask> EpisodeGenerator::generate() {
     // accept decisions. A logical pickup-then-delivery task must be doable.
     constexpr float kFeasibilityMargin = 2.2f;
 
-    for (const auto& ph : phases) {
+    if (total_episode_steps <= 0) return stream;
+
+    // ── Event count = round(100 · SCE · RM); fd only shapes WHEN they occur ─
+    const int n_events = event_tuning::derived_task_count(cfg_.env_scale,
+                                                          cfg_.ratio_mult);
+
+    // ── Arrival steps: density ∝ profile(t/T) (inverse-CDF sampling) ───────
+    std::vector<float> weights(static_cast<size_t>(total_episode_steps), 0.f);
+    double weight_sum = 0.0;
+    for (int s = 0; s < total_episode_steps; ++s) {
+        const float f = std::max(0.f, temporal_profile_value(
+            profile, (static_cast<float>(s) + 0.5f) / total_episode_steps));
+        weights[s]  = f;
+        weight_sum += f;
+    }
+    if (weight_sum <= 0.0)                       // degenerate profile → uniform
+        std::fill(weights.begin(), weights.end(), 1.f);
+
+    std::discrete_distribution<int> step_dist(weights.begin(), weights.end());
+    std::vector<int> arrival_steps(static_cast<size_t>(n_events));
+    for (int i = 0; i < n_events; ++i) arrival_steps[i] = step_dist(rng_);
+    std::sort(arrival_steps.begin(), arrival_steps.end());
+
+    // ── Per-task draws (walk arrivals in order; hot zones follow phases) ───
+    size_t phase_idx = 0;
+    resample_hot_zones(phases.empty() ? cfg_.n_hot_zones
+                                      : phases.front().n_hot_zones);
+    stream.reserve(arrival_steps.size());
+    for (int step : arrival_steps) {
         // Resample hot zones at each phase boundary so spatial clusters
         // shift with demand (commercial morning peak → residential evening).
-        resample_hot_zones(ph.n_hot_zones);
-
-        // Poisson arrival: allows lambda > 1.0 (multiple tasks per step).
-        std::poisson_distribution<int> poisson(ph.lambda);
-
-        for (int step = ph.step_begin; step < ph.step_end; ++step) {
-            const int steps_remaining = total_episode_steps - step;
-            int n_arrive = (ph.lambda > 0.f) ? poisson(rng_) : 0;
-            for (int k = 0; k < n_arrive; ++k) {
-                bool clustered = (!hot_zones_.empty()) && (unit(rng_) < cfg_.cluster_prob);
-
-                auto pu  = sample_pickup(clustered);
-                auto del = sample_delivery(pu, clustered);
-                if (pu == 0 || del == 0 || pu == del) continue;
-
-                // Feasibility filter: drop tasks that cannot logically finish
-                // before the episode ends. Computes the lower-bound delivery
-                // time from the great-circle distance and rejects when even
-                // the most generous margin overshoots the remaining horizon.
-                const float dist_m       = haversine_m(pu, del);
-                const float min_steps    = dist_m / speed;
-                const float needed_steps = min_steps * kFeasibilityMargin;
-                if (needed_steps > static_cast<float>(steps_remaining)) {
-                    // Try one fallback: resample a closer delivery once. If
-                    // still infeasible, drop the task entirely (rather than
-                    // ship an impossible pickup-then-delivery).
-                    auto alt = sample_delivery(pu, false);
-                    if (alt == 0 || alt == pu) continue;
-                    const float alt_dist = haversine_m(pu, alt);
-                    if ((alt_dist / speed) * kFeasibilityMargin >
-                        static_cast<float>(steps_remaining)) continue;
-                    del = alt;
-                }
-
-                ScheduledTask t;
-                t.arrival_step     = step;
-                t.pickup_node_id   = pu;
-                t.delivery_node_id = del;
-                // When task-value heterogeneity is enabled, multiply the
-                // distance-based reward by a per-task random factor so the
-                // policy faces a real "value vs effort" tradeoff. Otherwise
-                // val_mul_dist is identity (1.0 always) — legacy behaviour.
-                t.reward           = estimate_reward(pu, del) * val_mul_dist(rng_);
-                t.importance       = imp_dist(rng_);
-                t.is_clustered     = clustered;
-                stream.push_back(t);
-                last_delivery_ = del;
-            }
+        while (phase_idx + 1 < phases.size() && step >= phases[phase_idx].step_end) {
+            ++phase_idx;
+            resample_hot_zones(phases[phase_idx].n_hot_zones);
         }
+
+        const int steps_remaining = total_episode_steps - step;
+        bool clustered = (!hot_zones_.empty()) && (unit(rng_) < cfg_.cluster_prob);
+
+        auto pu  = sample_pickup(clustered);
+        auto del = sample_delivery(pu, clustered);
+        if (pu == 0 || del == 0 || pu == del) continue;
+
+        // Feasibility filter: drop tasks that cannot logically finish
+        // before the episode ends. Computes the lower-bound delivery
+        // time from the great-circle distance and rejects when even
+        // the most generous margin overshoots the remaining horizon.
+        const float dist_m       = haversine_m(pu, del);
+        const float min_steps    = dist_m / speed;
+        const float needed_steps = min_steps * kFeasibilityMargin;
+        if (needed_steps > static_cast<float>(steps_remaining)) {
+            // Try one fallback: resample a closer delivery once. If
+            // still infeasible, drop the task entirely (rather than
+            // ship an impossible pickup-then-delivery).
+            auto alt = sample_delivery(pu, false);
+            if (alt == 0 || alt == pu) continue;
+            const float alt_dist = haversine_m(pu, alt);
+            if ((alt_dist / speed) * kFeasibilityMargin >
+                static_cast<float>(steps_remaining)) continue;
+            del = alt;
+        }
+
+        ScheduledTask t;
+        t.arrival_step     = step;
+        t.pickup_node_id   = pu;
+        t.delivery_node_id = del;
+        // When task-value heterogeneity is enabled, multiply the
+        // distance-based reward by a per-task random factor so the
+        // policy faces a real "value vs effort" tradeoff. Otherwise
+        // val_mul_dist is identity (1.0 always) — legacy behaviour.
+        t.reward           = estimate_reward(pu, del) * val_mul_dist(rng_);
+        t.importance       = imp_dist(rng_);
+        t.is_clustered     = clustered;
+        stream.push_back(t);
+        last_delivery_ = del;
     }
     return stream;
+}
+
+// ── Scenario density scaling (canonical sub/supersample) ─────────────────────
+void apply_density_mult(std::vector<ScheduledTask>& stream,
+                        float density_mult, uint32_t seed)
+{
+    if (density_mult == 1.0f || stream.empty()) return;
+
+    std::mt19937 rng(seed);
+    const int target = std::max<int>(
+        1, static_cast<int>(std::round(stream.size() * density_mult)));
+    auto by_arrival = [](const ScheduledTask& a, const ScheduledTask& b) {
+        return a.arrival_step < b.arrival_step;
+    };
+    if (density_mult <= 1.0f) {
+        std::shuffle(stream.begin(), stream.end(), rng);
+        stream.resize(static_cast<size_t>(target));
+        std::sort(stream.begin(), stream.end(), by_arrival);
+    } else {
+        std::vector<ScheduledTask> scaled;
+        scaled.reserve(static_cast<size_t>(target));
+        const int max_step = stream.back().arrival_step + 1;
+        std::uniform_int_distribution<size_t> pick(0, stream.size() - 1);
+        std::uniform_int_distribution<int>    step_pick(0, std::max(1, max_step - 1));
+        for (int i = 0; i < target; ++i) {
+            ScheduledTask t = stream[pick(rng)];
+            t.arrival_step = step_pick(rng);
+            scaled.push_back(t);
+        }
+        std::sort(scaled.begin(), scaled.end(), by_arrival);
+        stream = std::move(scaled);
+    }
 }
 
 // ── Node sampling ─────────────────────────────────────────────────────────────
@@ -280,5 +333,6 @@ float EpisodeGenerator::estimate_reward(osmium::object_id_type pickup,
     float dist = haversine_m(pickup, delivery);
     // Reward proportional to task distance: longer task → higher reward.
     // Normalised so that a 2-km task gives reward ≈ 1.0.
-    return std::clamp(dist / 2000.f, 0.1f, 5.0f);
+    return std::clamp(dist / 2000.f, event_tuning::kTaskRewardClampMin,
+                      event_tuning::kTaskRewardClampMax);
 }

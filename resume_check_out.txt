@@ -1,0 +1,80 @@
+
+=== ConflictualMAS ===
+
+  1  Legacy      (orienteering / GeoBox / render / PDP utils)
+  2  Tests       (submenu: A structure B mechanics C modules D e2e E all)
+  3  Training    (MAPPO + IPPO + MAPPER, paper protocol)
+  4  Evaluation  (RL + RMCA + TP + CA + HAPC)
+
+Choice: Grid training: 6 cities ÁE3 seeds ÁE27 scenarios = 486 episodes / policy (162 per seed).
+  [Load] Tokyo_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Tokyo_Small.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 59297
+  Ways: 70715
+  Objective groups: 0
+  [Load] Tokyo_Medium <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Tokyo_Medium.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 111390
+  Ways: 134018
+  Objective groups: 0
+  [Load] LosAngeles_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/LosAngeles_Small.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 48040
+  Ways: 59333
+  Objective groups: 0
+  [Load] LosAngeles_Medium <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/LosAngeles_Medium.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 85788
+  Ways: 105341
+  Objective groups: 0
+  [Load] Paris_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Paris_Small.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 91435
+  Ways: 113848
+  Objective groups: 0
+  [Load] Paris_Medium <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Paris_Medium.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 168495
+  Ways: 209656
+  Objective groups: 0
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+
+════ seed 1/3 (rng=42)  Ecomplete, skipped ════
+
+════ seed 2/3 (rng=43) ════
+  Resume: 67/162 episodes done  Econtinuing at episode 68.
+  ── scenario 1/27  task_normal/cong_normal/agents_low  (AM=0.7, 6 cities ÁE3 policies) ──
+  ── scenario 2/27  task_normal/cong_normal/agents_mid  (AM=1, 6 cities ÁE3 policies) ──
+  ── scenario 3/27  task_normal/cong_normal/agents_high  (AM=2.5, 6 cities ÁE3 policies) ──
+  ── scenario 4/27  task_normal/cong_shock/agents_low  (AM=0.7, 6 cities ÁE3 policies) ──
+  ── scenario 5/27  task_normal/cong_shock/agents_mid  (AM=1, 6 cities ÁE3 policies) ──
+  ── scenario 6/27  task_normal/cong_shock/agents_high  (AM=2.5, 6 cities ÁE3 policies) ──
+  ── scenario 7/27  task_normal/cong_wave/agents_low  (AM=0.7, 6 cities ÁE3 policies) ──
+  ── scenario 8/27  task_normal/cong_wave/agents_mid  (AM=1, 6 cities ÁE3 policies) ──
+  ── scenario 9/27  task_normal/cong_wave/agents_high  (AM=2.5, 6 cities ÁE3 policies) ──
+  ── scenario 10/27  task_shock/cong_normal/agents_low  (AM=0.7, 6 cities ÁE3 policies) ──
+  ── scenario 11/27  task_shock/cong_normal/agents_mid  (AM=1, 6 cities ÁE3 policies) ──
+  ── scenario 12/27  task_shock/cong_normal/agents_high  (AM=2.5, 6 cities ÁE3 policies) ──

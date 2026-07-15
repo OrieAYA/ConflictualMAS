@@ -75,7 +75,6 @@ struct SolverMetrics {
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/Simulation/CongestionMap.hpp"
 #include "Environment/Simulation/GhostTrafficController.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
 #include "TrainingEvaluation/StructuresParam/EpisodeConfig.hpp"
 #include "Environment/Structure/Episode.hpp"
 #include <cstdint>
@@ -93,7 +92,6 @@ struct SolverMetrics {
 struct SolverContext {
     // ── World (read-only references) ────────────────────────────────────────
     const GeoBox*    geo_box    = nullptr;   // road graph (owned by caller)
-    Pathfinder*      pathfinder = nullptr;   // shared A*/Dijkstra (caller-owned)
 
     // ── Mutable shared state ────────────────────────────────────────────────
     // Solvers WRITE to congestion_map (registering their agents' paths) so the
@@ -393,9 +391,9 @@ public:
 #include <unordered_map>
 #include <utility>
 
-// Shared A* path cache for SoTA solvers. Wraps Pathfinder::A_Star_Search into a
-// (nodes, edges, cost) triple cached per (from, to). Safe because A* paths
-// depend only on the shared GeoBox, not on any solver. No cost adjustment /
+// Shared A* path cache for SoTA solvers. Wraps graph_search::shortest_path_edges
+// into a (nodes, edges, cost) triple cached per (from, to). Safe because static
+// paths depend only on the shared GeoBox, not on any solver. No cost adjustment /
 // congestion-aware / guide-path logic — that lives inside each solver.
 struct SimplePath {
     std::vector<osmium::object_id_type> nodes;     // nodes[0] = from, nodes.back() = to
@@ -406,7 +404,7 @@ struct SimplePath {
 
 class PathHelper {
 public:
-    explicit PathHelper(Pathfinder& pf);
+    explicit PathHelper(const GeoBox& gb);
 
     // Get (or compute and cache) the shortest path from `from` to `to`.
     // Returns a const reference into the cache; valid for the lifetime of
@@ -425,7 +423,7 @@ public:
                     osmium::object_id_type to) const;
 
 private:
-    Pathfinder& pf_;
+    const GeoBox& gb_;
 
     using Key = std::pair<osmium::object_id_type, osmium::object_id_type>;
     struct KeyHash {
@@ -535,7 +533,6 @@ class SolverRunner {
 public:
     SolverRunner(const EpisodeConfig& cfg,
                  GeoBox&              geo_box,
-                 Pathfinder&          pathfinder,
                  EpisodeScenario      scenario      = {},
                  uint32_t             episode_seed  = 42);
 

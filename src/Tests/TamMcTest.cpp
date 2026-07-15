@@ -4,7 +4,6 @@
 #include "DMASforPD/Policy/BidPolicy.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
 #include <iostream>
 #include <numeric>
 #include <cmath>
@@ -75,9 +74,10 @@ bool run_tam_mc_test(const std::string& osm_file,
     cfg.n_hot_zones     = 3;
     cfg.hot_zone_radius = 400.f;
     cfg.phases = {
-        { 150, 5.f, 3, 4, 0.0f, 2 },
-        { 150, 6.f, 4, 5, 1.0f, 3 },
+        { 150, 3, 4, 0.0f, 2 },
+        { 150, 4, 5, 1.0f, 3 },
     };
+    cfg.env_scale = 0.45f;   // ~45 tasks, matches prior volume
     cfg.tam_mc_max_candidates   = 5;
     cfg.tam_mc_ratio_min        = 1.4f;
     cfg.tam_mc_ratio_max        = 3.0f;
@@ -85,7 +85,6 @@ bool run_tam_mc_test(const std::string& osm_file,
     cfg.tam_mc_recall_time_frac = 0.20f;
     cfg.tam_mc_reject_time_frac = 0.70f;
 
-    Pathfinder pathfinder(geo_box);
 
     // ── 3. Format A + TamAlwaysAccept — KEY correctness check ─────────────────
     // force_assign=true + score=1.0 → every candidate wins immediately.
@@ -97,7 +96,7 @@ bool run_tam_mc_test(const std::string& osm_file,
         cfgA.tam_mc_force_assign = true;
         std::unique_ptr<EpisodeRunner> runner;
         try {
-            runner = std::make_unique<EpisodeRunner>(cfgA, geo_box, pathfinder, 42u);
+            runner = std::make_unique<EpisodeRunner>(cfgA, geo_box, 42u);
         } catch (const std::exception& e) {
             std::cout << "  [FAIL] Format A runner: " << e.what() << "\n";
             return false;
@@ -122,7 +121,7 @@ bool run_tam_mc_test(const std::string& osm_file,
         cfgB.tam_mc_force_assign = false;
         std::unique_ptr<EpisodeRunner> runner;
         try {
-            runner = std::make_unique<EpisodeRunner>(cfgB, geo_box, pathfinder, 42u);
+            runner = std::make_unique<EpisodeRunner>(cfgB, geo_box, 42u);
         } catch (const std::exception& e) {
             std::cout << "  [FAIL] Format B runner: " << e.what() << "\n";
             return false;
@@ -146,7 +145,7 @@ bool run_tam_mc_test(const std::string& osm_file,
         cfgM.tam_mc_force_assign = true;
         std::unique_ptr<EpisodeRunner> runner;
         try {
-            runner = std::make_unique<EpisodeRunner>(cfgM, geo_box, pathfinder, 42u);
+            runner = std::make_unique<EpisodeRunner>(cfgM, geo_box, 42u);
         } catch (const std::exception& e) {
             std::cout << "  [FAIL] Format A MAPPO runner: " << e.what() << "\n";
             return false;
@@ -171,7 +170,7 @@ bool run_tam_mc_test(const std::string& osm_file,
         cfgBM.tam_mc_force_assign = false;
         std::unique_ptr<EpisodeRunner> runner;
         try {
-            runner = std::make_unique<EpisodeRunner>(cfgBM, geo_box, pathfinder, 42u);
+            runner = std::make_unique<EpisodeRunner>(cfgBM, geo_box, 42u);
         } catch (const std::exception& e) {
             std::cout << "  [FAIL] Format B MAPPO runner: " << e.what() << "\n";
             return false;
@@ -190,7 +189,7 @@ bool run_tam_mc_test(const std::string& osm_file,
         EpisodeConfig cfgL = cfg;
         std::unique_ptr<EpisodeRunner> runner;
         try {
-            runner = std::make_unique<EpisodeRunner>(cfgL, geo_box, pathfinder, 42u);
+            runner = std::make_unique<EpisodeRunner>(cfgL, geo_box, 42u);
         } catch (const std::exception& e) {
             std::cout << "  [FAIL] Legacy runner: " << e.what() << "\n";
             return false;

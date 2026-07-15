@@ -2,6 +2,7 @@
 #include "DMASforPD/Agents/DeliveryAgent.hpp"
 #include "DMASforPD/Agents/Manager.hpp"
 #include "DMASforPD/Policy/PolicyKit.hpp"   // kCostScale
+#include "Environment/GeoBox/GraphSearch.hpp"
 #include <limits>
 
 int tp_allocate(PDPGlobalMemory& memory,
@@ -15,7 +16,8 @@ int tp_allocate(PDPGlobalMemory& memory,
         if (agents[i]->local_memory.tasks.empty()) { any_free = true; break; }
 
     // One reverse Dijkstra from pickup gives h(loc, pickup) for every agent.
-    auto dist_from_pickup = memory.pathfinder.dijkstra_distances_from(t->pickup.id);
+    auto dist_from_pickup =
+        graph_search::dijkstra_distances(memory.geo_box, t->pickup.id);
 
     int   best_aid = -1;
     float best_h   = std::numeric_limits<float>::max();

@@ -248,8 +248,8 @@ const ObjectivePath* ObjectiveGroupCache::discover_next_path(
 
 // ---- PDPServerMemory ---------------------------------------------------
 
-PDPServerMemory::PDPServerMemory(GeoBox& box, Pathfinder& pf)
-    : geo_box(box), pathfinder(pf) {}
+PDPServerMemory::PDPServerMemory(GeoBox& box)
+    : geo_box(box) {}
 
 void PDPServerMemory::initialize_from_geobox() {
     group_caches_.clear();
@@ -340,6 +340,10 @@ void PDPServerMemory::reset_objectives(int group_id) {
     auto it = group_caches_.find(group_id);
     if (it == group_caches_.end()) return;
     it->second.episode_reset();
+}
+
+void PDPServerMemory::clear_paths() {
+    for (auto& [gid, cache] : group_caches_) cache.clear_paths();
 }
 
 void PDPServerMemory::add_objective_node(osmium::object_id_type node_id, int group_id) {

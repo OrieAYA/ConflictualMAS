@@ -1,7 +1,7 @@
 #include "SoTA/Standalone/CA.hpp"
 #include "Environment/Simulation/CongestionMap.hpp"
 #include "Environment/GeoBox/Box.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
+#include "Environment/GeoBox/GraphSearch.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -100,7 +100,7 @@ FaithfulCASolver::bpr_a_star(osmium::object_id_type from,
                               osmium::object_id_type to,
                               int start_step) const {
     BPRPath result;
-    if (!ctx_ || !ctx_->geo_box || !ctx_->pathfinder) return result;
+    if (!ctx_ || !ctx_->geo_box) return result;
     if (from == 0 || to == 0) return result;
     if (from == to) {
         result.valid = true;
@@ -117,12 +117,9 @@ FaithfulCASolver::bpr_a_star(osmium::object_id_type from,
     if (end_it == nodes.end()) return result;
 
     auto h_to_goal = [&](osmium::object_id_type n) -> float {
-        // Admissible time heuristic: euclidean / speed (or pathfinder.heuristic
-        // in metres). Pathfinder::heuristic is not const; const_cast is
-        // safe here because heuristic() only reads geo_box node coordinates.
-        const float h_m = const_cast<Pathfinder*>(ctx_->pathfinder)
-                              ->heuristic(n, to);
-        return h_m / speed;
+        // Admissible time heuristic: great-circle distance / speed — a strict
+        // lower bound on travel time under zero congestion (BPR factor >= 1).
+        return graph_search::haversine_between(*ctx_->geo_box, n, to) / speed;
     };
 
     struct OpenEntry {

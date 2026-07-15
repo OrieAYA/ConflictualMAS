@@ -1,0 +1,41 @@
+
+=== ConflictualMAS ===
+
+  1  Legacy      (orienteering / GeoBox / render / PDP utils)
+  2  Tests       (submenu: A structure B mechanics C modules D e2e E all)
+  3  Training    (MAPPO + IPPO + MAPPER, paper protocol)
+  4  Evaluation  (RL + RMCA + TP + CA + HAPC)
+
+Choice: Grid training: 2 cities ÁE1 seeds ÁE27 scenarios = 54 episodes / policy (54 per seed).
+  [Load] Tokyo_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Tokyo_Small.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 59297
+  Ways: 70715
+  Objective groups: 0
+  [Load] Tokyo_Medium <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Tokyo_Medium.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 111390
+  Ways: 134018
+  Objective groups: 0
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+
+════ seed 1/1 (rng=42) ════
+  ── scenario 1/27  task_normal/cong_normal/agents_low  (AM=0.7, 2 cities ÁE3 policies) ──
+  [ep 1/54 s42 Tokyo_Small task_normal/cong_normal/agents_low IPPO]  thr=0.659091 done=58/88 acc=1 cong=x3.09199 lat=900.672 agents=7 | aloss=-0.000150181 closs=4.06837 n=319  21244ms
+  [ep 1/54 s42 Tokyo_Small task_normal/cong_normal/agents_low MAPPER]  thr=0.829545 done=73/88 acc=1 cong=x3.09062 lat=709.397 agents=7 | aloss=-0.00257789 closs=0.519157 n=306  19036ms
+  [ep 1/54 s42 Tokyo_Small task_normal/cong_normal/agents_low MAPPO]  thr=0.909091 done=80/88 acc=1 cong=x3.08672 lat=708.662 agents=7 | aloss=-0.000654869 closs=1.74862 n=316  17632ms
+  [ep 2/54 s42 Tokyo_Medium task_normal/cong_normal/agents_low IPPO]  thr=0.621118 done=100/161 acc=1 cong=x3.08478 lat=1106.55 agents=14 | aloss=-8.68507e-05 closs=0.860287 n=605  124277ms
+  [ep 2/54 s42 Tokyo_Medium task_normal/cong_normal/agents_low MAPPER]  thr=0.726708 done=117/161 acc=1 cong=x3.08068 lat=955.53 agents=14 | aloss=-0.0026342 closs=0.381296 n=612  110910ms
+  [ep 2/54 s42 Tokyo_Medium task_normal/cong_normal/agents_low MAPPO]  thr=0.863354 done=139/161 acc=1 cong=x3.07876 lat=859.777 agents=14 | aloss=-0.0015939 closs=0.83086 n=570  102098ms
+  ── scenario 2/27  task_normal/cong_normal/agents_mid  (AM=1, 2 cities ÁE3 policies) ──
+  [ep 3/54 s42 Tokyo_Small task_normal/cong_normal/agents_mid IPPO]  thr=0.894118 done=76/85 acc=1 cong=x3.07806 lat=594.158 agents=10 | aloss=-0.000174078 closs=0.131963 n=293  29047ms
+  [ep 3/54 s42 Tokyo_Small task_normal/cong_normal/agents_mid MAPPER]  thr=0.847059 done=72/85 acc=1 cong=x3.0738 lat=678.653 agents=10 | aloss=-0.00170795 closs=0.19394 n=295  28811ms
+  [ep 3/54 s42 Tokyo_Small task_normal/cong_normal/agents_mid MAPPO]  thr=0.894118 done=76/85 acc=1 cong=x3.07599 lat=556.211 agents=10 | aloss=-0.00279785 closs=0.304719 n=284  22595ms
+  [ep 4/54 s42 Tokyo_Medium task_normal/cong_normal/agents_mid IPPO]  thr=0.842767 done=134/159 acc=1 cong=x3.07681 lat=929.94 agents=20 | aloss=-0.000173151 closs=0.281408 n=614  142118ms

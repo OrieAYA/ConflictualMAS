@@ -12,7 +12,7 @@
 //   3. Incidence symmetry: way endpoints ⇔ node.incident_ways (both ways).
 //   4. Full connectivity (single connected component).
 //   5. PDPGlobalMemory construction (RegionStatsGrid + congestion map).
-//   6. Pathfinder routing primitive (Dijkstra reaches the whole component).
+//   6. Routing primitive (Dijkstra reaches the whole component).
 //   7. Temporal chained list (event-stream segments: order/overlap/find/expiry).
 //   8. Temporal graph (one chain per node/edge with correct incident_elements).
 //

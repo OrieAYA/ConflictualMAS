@@ -1,5 +1,6 @@
 #include "SoTA/Standalone/HAPC.hpp"
 #include "Environment/Simulation/CongestionMap.hpp"
+#include "Environment/GeoBox/GraphSearch.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -100,7 +101,7 @@ HybridAdaptivePredictiveSolver::ZonePairForecast::top_h(
 HybridAdaptivePredictiveSolver::SharedDistanceCache&
 HybridAdaptivePredictiveSolver::shared_cache()
 {
-    // Process-scoped singleton. One slot — when the city (= Pathfinder*+GeoBox*)
+    // Process-scoped singleton. One slot — when the city (= GeoBox*)
     // changes we wipe and re-populate. Memory stays bounded by the size of one
     // city's seen-pairs set (typically < 1 MB on Small cities, ~50 MB on full
     // Paris/NewYork after a full sweep).
@@ -123,7 +124,7 @@ void HybridAdaptivePredictiveSolver::init(const SolverContext& ctx) {
     ctx_   = &ctx;
 
     // ── Persistent cache check: keep distances + PathHelper across episodes
-    // IF the city (= Pathfinder + GeoBox) is the same as the prior init().
+    // IF the city (= GeoBox) is the same as the prior init().
     // On a city change we wipe the (from,to)→dist map, the prewarmed-sources
     // set, AND rebuild the PathHelper for the new city — all three must stay
     // in lockstep so neither cache returns stale data from a different graph.
@@ -136,15 +137,13 @@ void HybridAdaptivePredictiveSolver::init(const SolverContext& ctx) {
         // covers the stack-frame reuse case where successive cities' GeoBox
         // locals end up at the same address.
         const bool city_changed =
-            (sc.pf != ctx.pathfinder) ||
-            (sc.gb != ctx.geo_box)     ||
+            (sc.gb != ctx.geo_box) ||
             (sc.gb_node_count != cur_node_count);
         if (city_changed || !sph) {
-            sc.pf = ctx.pathfinder;
             sc.gb = ctx.geo_box;
             sc.gb_node_count = cur_node_count;
             sc.dijkstra_from.clear();
-            sph = std::make_unique<PathHelper>(*ctx.pathfinder);
+            sph = std::make_unique<PathHelper>(*ctx.geo_box);
         }
         paths_ = sph.get();  // non-owning view for this instance
     }
@@ -252,14 +251,14 @@ void HybridAdaptivePredictiveSolver::prewarm_from_node(
     if (src == 0) return;
     auto& sc = shared_cache();
     if (sc.dijkstra_from.count(src)) return;  // already done this city
-    if (!ctx_ || !ctx_->pathfinder) return;
+    if (!ctx_ || !ctx_->geo_box) return;
 
     // Single-source Dijkstra over the road graph. Result is d(src, X) for
     // every reachable X. Stored in dijkstra_from[src] (one inner map per
     // source) — vastly cheaper to look up than a flat (from,to)→dist map
     // because each per-source map is much smaller (~10k entries on Small,
     // ~200k on Paris) and fits in CPU cache.
-    auto dists = ctx_->pathfinder->dijkstra_distances_from(src);
+    auto dists = graph_search::dijkstra_distances(*ctx_->geo_box, src);
     auto& dist_map = sc.dijkstra_from[src];
     dist_map.reserve(dists.size());
     for (const auto& [node, dist] : dists) {

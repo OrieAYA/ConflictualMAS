@@ -4,7 +4,6 @@
 #include "DMASforPD/Policy/BidPolicy.hpp"
 #include "SoTA/ScoringLike/RMCA.hpp"
 #include "SoTA/Planning/ALNS.hpp"
-#include "SoTA/Planning/MCA.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -46,8 +45,23 @@ void DeliveryAgent::disconnect(PDPGlobalMemory& memory) {
     memory.unregister_delivery_agent(agent_id);
 }
 
+int DeliveryAgent::planned_peak_onboard() const {
+    int onboard = 0, max_onboard = 0;
+    for (const auto& sn : solution.sequence) {
+        bool is_pickup = false;
+        for (const PDPTask* t : local_memory.tasks) {
+            if (t && t->pickup.id == sn.node.id) { is_pickup = true; break; }
+        }
+        onboard += is_pickup ? 1 : -1;
+        if (onboard < 0) onboard = 0;
+        if (onboard > max_onboard) max_onboard = onboard;
+    }
+    return max_onboard;
+}
+
 void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
     add_task_to_memory(task);
+    ++n_tasks_ever_assigned;
 
     // ── Capacity-aware insertion (DbVNS-PDP spirit, extended for LGPDP) ───────
     //
@@ -479,10 +493,6 @@ void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
             }
         }
     }
-    // For legacy compatibility (logs / debug printing if any): keep best_delta name.
-    const float best_delta = best_score;
-    (void)best_delta;
-
     // ── Apply the chosen insertion. (n, n) is always admissible (FIFO append
     // at the tail with carry = 1), so best_pP >= 0 holds in practice; the
     // explicit fallback covers any pathological no-path case.
@@ -504,9 +514,6 @@ void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
         seq.clear();
         for (const auto& node : snapshot) solution.push_back(node);
     }
-
-    // MCA anytime-LNS post-improvement (SoTA baseline) — see SoTA/Planning/MCA.
-    mca_lns_improve(*this, task, memory);
 
     status = AgentStatus::Active;
 
@@ -587,24 +594,12 @@ DeliveryAgent::BidResult DeliveryAgent::bid_for_task(
 
     // AGENT STATE (3)
     f.queue_duration = std::clamp(route_cost / kQueueScale, 0.f, 1.f);
-    // load_at_insertion : walk the planned sequence, tally pickups (+1) and
-    // deliveries (-1), track the PEAK onboard load along the route, then add
-    // 1 for this new task. More informative than "current task count" because
-    // it captures the maximum simultaneous load if we accept.
-    {
-        int onboard = 0, max_onboard = 0;
-        for (const auto& sn : solution.sequence) {
-            bool is_pickup = false;
-            for (const PDPTask* t : local_memory.tasks) {
-                if (t && t->pickup.id == sn.node.id) { is_pickup = true; break; }
-            }
-            onboard += is_pickup ? 1 : -1;
-            if (onboard < 0) onboard = 0;
-            if (onboard > max_onboard) max_onboard = onboard;
-        }
-        f.load_at_insertion = std::clamp(
-            static_cast<float>(max_onboard + 1) / kMaxLoad, 0.f, 1.f);
-    }
+    // load_at_insertion : peak onboard load along the planned route
+    // (planned_peak_onboard), plus 1 for this new task. More informative than
+    // "current task count" because it captures the maximum simultaneous load
+    // if we accept.
+    f.load_at_insertion = std::clamp(
+        static_cast<float>(planned_peak_onboard() + 1) / kMaxLoad, 0.f, 1.f);
     f.efficiency_loss = (route_cost < 1.f)
         ? 0.f
         : std::clamp(insertion_cost / (route_cost + insertion_cost + eps), 0.f, 1.f);

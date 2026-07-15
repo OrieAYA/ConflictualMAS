@@ -93,8 +93,9 @@ fournit les **prédictions** de congestion (il ne subit pas le poids ; il
 l'estime).
 
 Membres publics :
-- `geo_box&` (`:81`), `pathfinder&` (`:82`), `server_memory` (path caches, `83`),
-  `congestion_map` (`84`), `task_agent` (`85`)
+- `geo_box&`, `server_memory` (path caches), `congestion_map`, `task_agent`
+  (les recherches statiques libres — A*, Dijkstra, haversine — vivent dans
+  `Environment/GeoBox/GraphSearch.hpp`, namespace `graph_search`)
 - listes de tâches `available/allocated/finished : vector<PDPTask*>` (`89-91`)
 - `cur_global_state[20]` (`168`, état système publié par l'EpisodeRunner),
   `active_policy` (`163`), `region_grid` (`174`, heatmap densité×congestion)
@@ -121,10 +122,18 @@ estimé à l'instant d'arrivée prédit sur chaque arête.
 **Reset** (`reset_episode`, `GlobalMemory.cpp`) : vide `tasks_`, listes,
 `node_to_task_id_`, `committed_loads_`, appelle `congestion_map.reset()`, remet
 `current_time_=0`, `region_grid.reset_episode()`. La **géométrie statique** de
-`paths_` est conservée (donnée routière déterministe, indépendante de la
-méthode) ; seuls `dynamic_cost`/`dynamic_step` sont invalidés
-(`ObjectiveGroupCache::episode_reset`). Rejouer un même scénario sur une autre
-méthode ne superpose donc aucun effet.
+`paths_` est conservée **entre replays du même épisode** (même `ep_seed` :
+les 3 policies d'un point de grille partagent le cache) ; seuls
+`dynamic_cost`/`dynamic_step` sont invalidés (`ObjectiveGroupCache::
+episode_reset`). Quand le contenu d'épisode change (`ep_seed` différent),
+`prepare_run` purge tout le cache (`PDPServerMemory::clear_paths`) — sans
+cette borne il croît sans limite sur une grille (~24 Go observés, 2 crashs
+mémoire). Bornes complémentaires : les états Dijkstra incrémentaux d'une
+tâche sont libérés dès la destruction de son TAM (`offer_task`,
+RunnerAllocation.cpp) ; le trainer appelle `release_episode_memory()` après
+chaque point de grille (les runners inactifs ne retiennent rien) ; la ligne
+de log d'épisode affiche `mem=` (commit du process, Mo). Rejouer un même scénario sur une autre méthode ne superpose donc
+aucun effet.
 
 ---
 
@@ -157,6 +166,12 @@ Logique (`step`, `TaskAllocationModule.cpp:147`) :
    **argmax μ parmi les bidders** ; égalité de μ → coût d'insertion le plus
    faible (candidats triés croissant). Personne ne bid → `force_assign`
    (argmax μ global, marqué `forced_`) ou `deferred_`.
+5. Zéro candidat après épuisement des deux Dijkstra → tâche abandonnée,
+   comptée `n_no_candidate` (échec capacité/topologie, **≠ refus de policy**).
+   Métriques : `accept_rate = accepté/(accepté+refusé)` ≡ 1.0 en Format A ;
+   `tasks_appeared = accepté + refusé + no_candidate` (throughput inchangé).
+   Les features du GlobalState gardent `no_candidate` dans leur dénominateur
+   (parité avec les checkpoints entraînés).
 
 ### 3.2 Delivery agent — `src/DMASforPD/DeliveryAgent/DeliveryAgent.hpp`
 
@@ -233,20 +248,79 @@ décentralise tout + sélection évolutionnaire
 
 ---
 
-## 5. Scénarios — `make_scenario_grid` (`EpisodeRunner.cpp`)
+## 5. Scénarios, training et évaluation
 
-3 niveaux de tâche × 3 niveaux de congestion = **9 combinaisons déterministes**
-(tables éditables en un point) :
-- Tâche : easy `(density 0.7, agents ×1.2)` / normal `(1.0, ×1.0)` /
-  hard `(1.8, ×0.7)`.
-- Congestion : easy `(Flat, 1/way)` / normal `(Wave, 2)` / hard `(ShockBurst, 4)`.
+### 5.1 Grille de scénarios — `make_scenario_grid` (`ScenarioConfig.cpp`)
 
-`EpisodeScenario` (`EpisodeRunner.hpp`) porte `density_mult`, `agents_mult`,
-`congestion_profile`, `ghost_density_per_hot_way` (>0 surcharge l'`EpisodeConfig`).
-**Training** : le trainer parcourt la grille en boucle déterministe sur les
-slots (round, ville) (`MultiCityTrainer.cpp`). **Éval** : méthode × ville × 9
-scénarios, **1 épisode** chacun. Paramétrable depuis `main`
-(`cfg.eval_scenarios` / `cfg.train_scenarios`).
+3 profils temporels de tâche (`Uniform`/`ShockPick`/`Wave`) × 3 profils de
+congestion (mêmes formes) × 3 régimes de flotte (AM = 0.7/1.0/2.5) =
+**27 combinaisons déterministes** (tables éditables en un point :
+`paper_task_regimes` / `paper_congestion_regimes` / `paper_fleet_regimes`).
+`EpisodeScenario` (`ScenarioConfig.hpp`) porte `task_profile`,
+`congestion_profile`, `agents_mult` ; les quantités d'événements sont fixées
+par `event_tuning` (tasks = round(100·SCE·RM), ghosts = round(25000·SCE·RM),
+flotte = round(10·SCE·AM)).
+
+### 5.2 Training — `MultiCityTrainer::train_grid` (`Trainer.cpp`)
+
+Grille : 6 villes (3 villes × 2 tailles) × 3 seeds × 27 scénarios =
+**486 épisodes / policy** (162 par seed). Par seed, chaque policy (MAPPO,
+IPPO, MAPPER) est **ré-initialisée** puis apprend sur les 162 épisodes de la
+seed : un point de grille = **un épisode généré une seule fois**
+(`build_shared_episode_setup` : stream de tâches, positions de départ,
+capacités hétérogènes, seed ghost) **rejoué par les 3 policies** — comparaison
+équitable et pas de régénération. Progression (annealing lr/entropy et poids
+de shaping §9) indexée sur l'épisode dans la seed. Checkpoints
+`{out}/{mappo,ippo,mapper}/{policy,ippo,mapper}_seed{seed}.bin` **réécrits
+après chaque épisode** (perte max = 1 épisode) ; CSV `episodes_train.csv`
+flushé au même rythme, `summary.csv` par seed.
+
+**Reprise après crash** (`cfg.resume`, ON par défaut ; smoke : OFF) :
+`completed_grid_points` relit `episodes_train.csv` (un point est complet si
+toutes les policies sélectionnées l'ont loggé — flush par point) et **purge
+du fichier les lignes des points incomplets** (crash en cours d'écriture) :
+le CSV final reste un dataset unique et propre. Seeds complètes sautées ; seed partielle : `reinit` puis
+`load` des checkpoints `_seed{seed}.bin`, skip des `done` premiers points
+(les ep_seeds sont des fonctions pures de (seed, ci, sc) → contenu identique),
+CSV rouvert en **append**. Perdus à la reprise : moments Adam (non persistés)
+et compteur d'évolution MAPPER — impact borné à un point de grille. La
+reprise suppose une grille inchangée (mêmes villes/scénarios/modes) ; le
+`summary.csv` d'une seed reprise ne couvre que la portion post-reprise.
+
+### 5.3 Évaluation — `MultiCityTrainer::evaluate` (`Trainer.cpp`) + Phase B
+
+`evaluate` charge les checkpoints par seed (`policy_path` /
+`ippo_policy_path` / `mapper_policy_path` — un mode RL demandé sans chemin =
+abort) puis lance `run_eval`, **épisode-majeur** : pour chaque slot (ville,
+scénario, épisode), un seed déterministe → **un** `SharedEpisodeSetup`
+construit une seule fois (l'état initial), rejoué par chaque mode de
+`eval_modes` (`prepare_run` restaure l'état initial et vide les buffers de
+la méthode précédente), puis par les solveurs standalone **CA + HAPC**
+(`SolverRunner` frais sur le même setup) — environnements byte-identiques,
+jointure CSV sur (city, scenario, episode). Les caches de chemins du slot
+sont partagés entre méthodes (données statiques déterministes) et libérés en
+fin de slot (`release_episode_memory`). Sorties : `episodes_seed{seed}.csv`
+(modes) + `sota_standalone/sota_seed{seed}.csv` (CA/HAPC). Hybrid se
+construit à l'évaluation : base = actor MAPPO chargé, résiduels en ligne.
+Les anciennes phases stress/généralisation et le flag
+`use_shared_episode_setup` ont été supprimés (protocole = sweep RM,
+15 villes, toutes en phase unique).
+
+**Protocole option 4 (main) — sweep de charge parallélisable** : villes
+Small/Medium des 5 familles (SCE 1/2 ; les Larges SCE 3 existent au registre
+mais sont hors protocole), grille des 27 scénarios, 6 modes pipeline (MAPPO,
+IPPO, MAPPER, Hybrid, RMCA, TokenPassing — TamAlwaysAccept retiré :
+redondant en Format A, conservé dans le code pour les tests) + CA/HAPC
+standalone. Au lancement, saisie du **groupe de villes** (1 = Tokyo+Kyoto,
+2 = LosAngeles+NewYork, 3 = Paris, 0 = toutes) et de la **plage RM** — un
+terminal par groupe = 3 process parallèles sans conflit. RM avance de 0,5 ;
+`seed = 42 + (RM−1)/0,5` (fonction de RM → un niveau produit les mêmes
+épisodes quel que soit le découpage) ; `ratio_mult = RM` (tasks =
+100·SCE·RM, ghosts = 25000·SCE·RM, flotte inchangée). Checkpoints
+d'entraînement **fixes** (`kEvalPolicySeed`). Sorties :
+`results/paper_eval/pol{P}_rm{RM}_g{groupe}/{episodes_seed{seed}.csv,
+sota_standalone/sota_seed{seed}.csv}` — schémas identiques entre groupes,
+consolidation par concaténation.
 
 ---
 
@@ -255,7 +329,10 @@ scénarios, **1 épisode** chacun. Paramétrable depuis `main`
 - **RMCA** (policy) : remplace le scoring RL dans le pipeline TAM+DbVNS.
 - **Token Passing** (allocation) : remplace **TAM + policy** par argmin
   `h(loc, pickup)` sur agents libres (Ma+2017), branche dédiée dans
-  `offer_task` (`EpisodeRunner.cpp:1340`).
+  `offer_task` (`RunnerAllocation.cpp`).
+- **ALNS / Double-Horizon** (planning, Table 8 de l'article) : allocation =
+  argmin du coût marginal d'insertion, planner sélectionné via les flags
+  `planning_use_*` (`prepare_run`). DbVNS est le planner du framework.
 - **CA** (`FaithfulCASolver`) et **HAPC** (`HybridAdaptivePredictiveSolver`) :
   pipelines complets autonomes via `SolverRunner` (`SoTA/`), fidèles à l'article
   (CA : A* BPR + γ-mode + tie-break β_W ; HAPC : dispatch prédictif 2-pas,
@@ -266,6 +343,11 @@ scénarios, **1 épisode** chacun. Paramétrable depuis `main`
 
 ## 7. Workflow runtime (un épisode — `EpisodeRunner::run`)
 
+Implémentation découpée en trois fichiers (`src/TrainingEvaluation/Run/`) :
+`Runner.cpp` (cycle de vie : prepare, boucle, récompenses de fin),
+`RunnerAllocation.cpp` (protocole d'offre + coûts d'insertion),
+`RunnerMovement.cpp` (mouvement arête par arête + arrivées).
+
 1. **Reset** : `reset_episode` + reset des agents + clear des buffers policy ;
    publication policy active / stratégie planning / speed.
 2. Boucle `step = 0..T` :
@@ -274,7 +356,7 @@ scénarios, **1 épisode** chacun. Paramétrable depuis `main`
    - `build_global_state` → `memory_.cur_global_state`
    - **Arrivées** : `add_task` (crée le `PDPTask`, l'inscrit dans `available_` +
      `node_to_task_id_`) puis `offer_task` :
-     - baselines (Greedy/Random/InsertionGreedy/PIBT/TP/MCA/DbVNS/ALNS) :
+     - baselines (Greedy/Random/InsertionGreedy/TP/DbVNS/ALNS/DH) :
        sélection directe, sans buffer RL ;
      - RL/RMCA/TamAlwaysAccept : `on_new_task` crée le task agent, TAM `step()`
        jusqu'à allouer/épuiser ; chaque bid enregistre une expérience.
@@ -301,7 +383,7 @@ Idle.
 Un agent entrant sur une arête à `t` met le temps BPR évalué sur les `n`
 **autres** présents, pas `n+1` : il n'est affecté ni par son propre poids ni par
 ceux qui entrent après. Implémentation : `schedule_next_edge`
-(`EpisodeRunner.cpp:1690`) appelle `traversal_steps(..., self_w)` avec
+(`RunnerMovement.cpp`) appelle `traversal_steps(..., self_w)` avec
 `self_w = load_per_agent` ; le `commit_plan` précède toujours le
 `schedule_next_edge` pour que la charge propre soit présente dans `load_` au
 moment de la soustraction. Les requêtes de **planning/prédiction** passent
@@ -315,6 +397,5 @@ moment de la soustraction. Les requêtes de **planning/prédiction** passent
   l'agent libre le plus proche). Version Ma+2017 stricte = pool de tâches non
   allouées (`available_tasks`) + chaque agent libre (ordre fixe) tire
   `argmin_τ h(loc, s_τ)` ; déplace l'allocation de `offer_task` vers la boucle.
-- Découpage éventuel d'`EpisodeRunner` (simulation / métriques).
 - Self-exclusion du poids propre dans le mouvement interne des solveurs
   autonomes (CA/HAPC) pour cohérence totale.

@@ -45,6 +45,7 @@ set(SOURCES
     src/DMASforPD/Structures/TimePaths.cpp
     src/Environment/GeoBox/Box.cpp
     src/Environment/GeoBox/GeoBoxManager.cpp
+    src/Environment/GeoBox/GraphSearch.cpp
     src/Environment/Render/MapRenderer.cpp
     src/Environment/Simulation/CongestionMap.cpp
     src/Environment/Simulation/GhostTrafficController.cpp
@@ -52,6 +53,7 @@ set(SOURCES
     src/Environment/Simulation/TemporalGraph.cpp
     src/Environment/Structure/Episode.cpp
     src/Environment/Structure/EpisodeManager.cpp
+    src/Environment/Structure/EventStream.cpp
     src/Legacy/Agent/Agent.cpp
     src/Legacy/Agent/GlobalSolutionConstructor.cpp
     src/Legacy/Agent/MetaAgent.cpp
@@ -62,7 +64,6 @@ set(SOURCES
     src/Legacy/MHProcs/PSO.cpp
     src/Legacy/MHProcs/VNS.cpp
     src/SoTA/Planning/ALNS.cpp
-    src/SoTA/Planning/MCA.cpp
     src/SoTA/ScoringLike/RMCA.cpp
     src/SoTA/SolverFramework.cpp
     src/SoTA/Standalone/CA.cpp
@@ -81,10 +82,12 @@ set(SOURCES
     src/Tests/TamMcTest.cpp
     src/Tests/TemporalChainListTest.cpp
     src/Tests/TrainingSmokeTest.cpp
+    src/TrainingEvaluation/Run/Metrics.cpp
     src/TrainingEvaluation/Run/Runner.cpp
+    src/TrainingEvaluation/Run/RunnerAllocation.cpp
+    src/TrainingEvaluation/Run/RunnerMovement.cpp
     src/TrainingEvaluation/Run/Trainer.cpp
     src/TrainingEvaluation/StructuresParam/CityConfig.cpp
-    src/TrainingEvaluation/StructuresParam/EpisodeConfig.cpp
     src/TrainingEvaluation/StructuresParam/ScenarioConfig.cpp
     src/main.cpp
     src/utility.cpp

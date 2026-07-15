@@ -42,6 +42,20 @@ public:
     int total_buffer_size() const;
     void clear_buffers();
 
+    // μ recorded at decision time for one buffer entry, recovered from
+    // log π(a|s): a = 1 → exp(lp), a = 0 → 1 − exp(lp). −1 = invalid handle.
+    // Used by the §5 idle-penalty μ band (reward shaping v2).
+    float entry_mu(int agent_id, int buf_idx) const;
+
+    // Largest |reward| across all buffered entries (sanity-check probe for
+    // the reward-shaping bound test).
+    float max_abs_reward() const;
+
+    // Discount factor of the underlying PPO learner (potential-based shaping
+    // §10 must use the SAME γ as the GAE). All paper variants keep the
+    // PPOParams default.
+    virtual float ppo_gamma() const { return PPOParams{}.gamma; }
+
     // ── Recent-records log ──────────────────────────────────────────────────
     // Every record() appends (agent_id, buf_idx). The runner brackets a TAM
     // session with n_recent_records() before/after to pair the TAM's i-th

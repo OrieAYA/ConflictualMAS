@@ -16,6 +16,7 @@ C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.cpp;C:\Conflictua
 C:\ConflictualMAS\src\DMASforPD\Structures\TimePaths.cpp;C:\ConflictualMAS\build\main.dir\Release\TimePaths.obj
 C:\ConflictualMAS\src\Environment\GeoBox\Box.cpp;C:\ConflictualMAS\build\main.dir\Release\Box.obj
 C:\ConflictualMAS\src\Environment\GeoBox\GeoBoxManager.cpp;C:\ConflictualMAS\build\main.dir\Release\GeoBoxManager.obj
+C:\ConflictualMAS\src\Environment\GeoBox\GraphSearch.cpp;C:\ConflictualMAS\build\main.dir\Release\GraphSearch.obj
 C:\ConflictualMAS\src\Environment\Render\MapRenderer.cpp;C:\ConflictualMAS\build\main.dir\Release\MapRenderer.obj
 C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.cpp;C:\ConflictualMAS\build\main.dir\Release\CongestionMap.obj
 C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.cpp;C:\ConflictualMAS\build\main.dir\Release\GhostTrafficController.obj
@@ -23,6 +24,7 @@ C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.cpp;C:\Conflictua
 C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.cpp;C:\ConflictualMAS\build\main.dir\Release\TemporalGraph.obj
 C:\ConflictualMAS\src\Environment\Structure\Episode.cpp;C:\ConflictualMAS\build\main.dir\Release\Episode.obj
 C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.cpp;C:\ConflictualMAS\build\main.dir\Release\EpisodeManager.obj
+C:\ConflictualMAS\src\Environment\Structure\EventStream.cpp;C:\ConflictualMAS\build\main.dir\Release\EventStream.obj
 C:\ConflictualMAS\src\Legacy\Agent\Agent.cpp;C:\ConflictualMAS\build\main.dir\Release\Agent.obj
 C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp;C:\ConflictualMAS\build\main.dir\Release\GlobalSolutionConstructor.obj
 C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.cpp;C:\ConflictualMAS\build\main.dir\Release\MetaAgent.obj
@@ -33,7 +35,6 @@ C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp;C:\ConflictualMAS\build\main.dir\
 C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp;C:\ConflictualMAS\build\main.dir\Release\PSO.obj
 C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp;C:\ConflictualMAS\build\main.dir\Release\VNS.obj
 C:\ConflictualMAS\src\SoTA\Planning\ALNS.cpp;C:\ConflictualMAS\build\main.dir\Release\ALNS.obj
-C:\ConflictualMAS\src\SoTA\Planning\MCA.cpp;C:\ConflictualMAS\build\main.dir\Release\MCA.obj
 C:\ConflictualMAS\src\SoTA\ScoringLike\RMCA.cpp;C:\ConflictualMAS\build\main.dir\Release\RMCA.obj
 C:\ConflictualMAS\src\SoTA\SolverFramework.cpp;C:\ConflictualMAS\build\main.dir\Release\SolverFramework.obj
 C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp;C:\ConflictualMAS\build\main.dir\Release\CA.obj
@@ -52,10 +53,12 @@ C:\ConflictualMAS\src\Tests\StructureTests.cpp;C:\ConflictualMAS\build\main.dir\
 C:\ConflictualMAS\src\Tests\TamMcTest.cpp;C:\ConflictualMAS\build\main.dir\Release\TamMcTest.obj
 C:\ConflictualMAS\src\Tests\TemporalChainListTest.cpp;C:\ConflictualMAS\build\main.dir\Release\TemporalChainListTest.obj
 C:\ConflictualMAS\src\Tests\TrainingSmokeTest.cpp;C:\ConflictualMAS\build\main.dir\Release\TrainingSmokeTest.obj
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.cpp;C:\ConflictualMAS\build\main.dir\Release\Metrics.obj
 C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.cpp;C:\ConflictualMAS\build\main.dir\Release\Runner.obj
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerAllocation.cpp;C:\ConflictualMAS\build\main.dir\Release\RunnerAllocation.obj
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerMovement.cpp;C:\ConflictualMAS\build\main.dir\Release\RunnerMovement.obj
 C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp;C:\ConflictualMAS\build\main.dir\Release\Trainer.obj
 C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.cpp;C:\ConflictualMAS\build\main.dir\Release\CityConfig.obj
-C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.cpp;C:\ConflictualMAS\build\main.dir\Release\EpisodeConfig.obj
 C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\ScenarioConfig.cpp;C:\ConflictualMAS\build\main.dir\Release\ScenarioConfig.obj
 C:\ConflictualMAS\src\main.cpp;C:\ConflictualMAS\build\main.dir\Release\main.obj
 C:\ConflictualMAS\src\utility.cpp;C:\ConflictualMAS\build\main.dir\Release\utility.obj

@@ -2,18 +2,19 @@
 #define TRAINING_EPISODE_CONFIG_HPP
 
 #include "TrainingEvaluation/StructuresParam/CityConfig.hpp"
-#include "DMASforPD/Policy/PolicyKit.hpp"   // kGlobSz = 20
+#include "Environment/Structure/EventStream.hpp"   // event_tuning constants
+#include "DMASforPD/Policy/PolicyKit.hpp"          // kGlobSz = 20
 #include <osmium/osm/types.hpp>
 #include <array>
 #include <string>
 #include <vector>
 
-// One segment of the episode timeline. Task arrival is Poisson with
-//   lambda = tasks_per_agent * avg(n_agents_start, n_agents_end) / steps
-// (lambda > 1 is legal). Fleet size ramps linearly start→end across the phase.
+// One segment of the episode timeline: fleet size ramps linearly start→end
+// across the phase. Task TIMING is no longer phase-driven — it follows the
+// scenario's temporal profile (EpisodeGenerator::generate(profile)); phases
+// keep the fleet ramp, the density label and the hot-zone count.
 struct DensityPhase {
     int   steps;              // duration in simulation steps
-    float tasks_per_agent;    // expected tasks per agent in this phase
     int   n_agents_start;     // fleet size at phase start
     int   n_agents_end;       // fleet size at phase end (linear ramp)
     float label;              // [0,1] fed to GlobalState.density_phase
@@ -28,12 +29,19 @@ struct EpisodeConfig {
 
     float speed_mps = 5.0f;          // agent speed (m/step); 5 m/s ≈ 18 km/h
 
-    // Phase schedule (in order). Default: Amazon-scale 3-phase day (3600 steps),
-    // lambda ≈ 0.90 / 1.53 / 3.18 tasks/step.
+    // SCE — environment size scalar (Small/Medium/Large = 1/2/5) and RM — ratio
+    // multiplier (1 in training; incremented per seed in evaluation). Together
+    // they fix the event counts: tasks = round(100·SCE·RM), ghosts =
+    // round(10000·SCE·RM); fleet = round(10·SCE·AM) with AM the fleet regime.
+    float env_scale  = 1.f;   // SCE
+    float ratio_mult = 1.f;   // RM
+
+    // Phase schedule (in order). Default: 3-phase day (3600 steps) with a
+    // linearly growing fleet. Task timing follows the scenario profile.
     std::vector<DensityPhase> phases = {
-        { 1000, 100.f,  8, 10, 0.0f,  4 },
-        { 1500, 200.f, 10, 13, 0.5f,  6 },
-        { 1100, 250.f, 13, 15, 1.0f,  8 },
+        { 1000,  8, 10, 0.0f,  4 },
+        { 1500, 10, 13, 0.5f,  6 },
+        { 1100, 13, 15, 1.0f,  8 },
     };
 
     // ── Spatial task pattern ───────────────────────────────────────────────
@@ -90,6 +98,24 @@ struct EpisodeConfig {
     float task_imp_min       = 0.3f;
     float task_imp_max       = 3.0f;
 
+    // ── Reward shaping v2 (paper Table 2 revision) — per-term ablation flags ─
+    // ALL default OFF: with a flag off, the legacy term above is the exact
+    // fallback. enable_all_reward_shaping() (RewardShaping.hpp) turns the
+    // whole revision on (used by apply_paper_environment for T/Y runs).
+    bool rs_congestion_route      = false; // §1 winner pays real BPR surcharge of its route
+    bool rs_loser_mu              = false; // §2 loser penalty × its own bid score μ
+    bool rs_pickup_latency        = false; // §3 pickup credit × φ(t_pickup − t_accept)
+    bool rs_unfinished_cost_ratio = false; // §4 unfinished × clip(c_ins/c̄_ins)
+    bool rs_idle_refine           = false; // §5 μ-band entries + never-assigned agents only
+    bool rs_normalization         = false; // §8 static λ_x scale division
+    bool rs_weight_annealing      = false; // §9 linear anneal to 0 of w_naff + w_idle only
+
+    int   rs_e_anneal = 450;   // §9 annealing horizon (episodes; = 50-round protocol)
+    float rs_unfinished_clip_lo = 0.5f;  // §4 clip bounds on c_ins/c̄_ins
+    float rs_unfinished_clip_hi = 2.0f;
+    float rs_mu_idle_lo = 0.3f;          // §5 μ band actually debited
+    float rs_mu_idle_hi = 0.7f;
+
     // ── Planning strategy (mutually exclusive; dbvns wins if both set) ──────
     // default → cheapest insertion | use_dh → Double-Horizon (slack-preserving) |
     // use_dbvns → forward DbVNS-PDP global replan. Mirrored to
@@ -118,29 +144,25 @@ struct EpisodeConfig {
     osmium::object_id_type depot_node  = 0;
 
     // ── Dynamic background (ghost) congestion ──────────────────────────────
-    // GhostTrafficController injects synthetic loads into congestion_map per the
-    // scenario profile; hot ways are sampled at episode start. OFF = no ghosts.
-    // ghost_n_max is per-city-adaptive (see customize_episode_for_city).
+    // The FULL ghost event stream (round(10000·SCE·RM) events) is generated and
+    // injected on the congestion chains at episode start
+    // (GhostTrafficController::reset). Each ghost occupies one hot edge over
+    // [t, t+window] with a load drawn in [kGhostLoadMin, kGhostLoadMax], its
+    // appearance step distributed per the congestion profile. OFF = no ghosts.
     bool  enable_ghost_traffic = false;
-    int   ghost_n_max          = 40;       // peak simultaneous ghost loads
-    int   ghost_window_steps   = 5;        // duration each ghost occupies a way
-    float ghost_hot_way_frac   = 0.30f;    // fraction of ways used as "hot" pool
+    int   ghost_window_steps   = 250;      // x: duration a ghost occupies a way
+    // φh — hot-way pool fraction (default: event_tuning::kHotWayFraction).
+    float ghost_hot_way_frac   = event_tuning::kHotWayFraction;
 
-    // hot_way_count > 0 sets the absolute hot-way pool (overrides frac) to make
-    // ghosts pile up and create real BPR; n_max_user_set keeps a same-density
-    // regime across cities (no per-tier override of ghost_n_max).
-    int  ghost_hot_way_count    = 0;
-    bool ghost_n_max_user_set   = false;
+    // Test escape hatches: hot_way_count > 0 sets an absolute hot-way pool
+    // (overrides φh); ghost_n_events_user_set uses ghost_n_events verbatim
+    // instead of the round(10000·SCE·RM) derivation.
+    int  ghost_hot_way_count     = 0;
+    int  ghost_n_events          = 0;      // absolute ghost-event count (user-set only)
+    bool ghost_n_events_user_set = false;
 
-    // > 0: derive ghost_n_max = ceil(density × hot_way_count) at episode start so
-    // the per-edge BPR profile is identical across cities (supersedes n_max). 0 = off.
-    float ghost_density_per_hot_way = 0.0f;
-
-    // Compute-amortisation: count each ghost / agent as K load units to reach the
-    // same congestion with fewer hash ops / fewer real agents (BPR β=4 → <1% error).
-    int  ghost_load_per_unit       = 4;
-    int  fleet_load_per_agent      = 1;
-    int  fleet_size_divisor        = 1;   // > 0: divide phase n_agents by this
+    // Congestion realism: count each real agent as K load units on its edges.
+    int  fleet_load_per_agent    = 1;
 
     // ── Metrics ────────────────────────────────────────────────────────────
     bool collect_metrics    = true;
@@ -176,7 +198,7 @@ struct GlobalState {
     // Performance (4)
     float throughput     = 0.f; // done / tasks_created
     float avg_latency    = 0.f; // mean_completion / time_window_steps
-    float accept_rate    = 0.f; // accepted / (accepted + refused)
+    float accept_rate    = 0.f; // accepted / offered (incl. no-candidate)
     float avg_efficiency = 0.f; // mean agent route quality ∈ [0,1]
 
     // Context (4)
@@ -208,135 +230,6 @@ struct GlobalState {
         to_array(a.data());
         return a;
     }
-};
-
-// ════════════════════════════════════════════════════════════════════════════
-// Comparison metrics — one record per episode × method.
-// Axes: environment, VRP (planning), MAPD (throughput/latency), RL policy,
-// plus selectivity / congestion-impact / TAM-efficiency diagnostics.
-// ════════════════════════════════════════════════════════════════════════════
-struct ComparisonMetrics {
-    // Identity
-    std::string city;
-    std::string method;      // "DMAS-DbVNS" | "IVNS" | "LKH" | "MAPPO" | …
-    int         episode = 0;
-
-    // ── Environment descriptors ────────────────────────────────────────────
-    int   total_steps   = 0;
-    int   n_agents_min  = 0;
-    int   n_agents_max  = 0;
-    bool  has_depot     = false;
-    int   road_nodes    = 0;    // |V| of the road graph
-    int   road_ways     = 0;    // |E|
-    float area_km2      = 0.f;
-
-    // ── VRP — min distance/time, P strictly before D ───────────────────────
-    float avg_t_ratio   = 0.f;  // mean(algo_cost / oracle_cost), lower = better
-    float best_t_ratio  = 0.f;
-    int   pdp_violations= 0;    // must remain 0
-
-    // ── MAPD — throughput ──────────────────────────────────────────────────
-    int   tasks_appeared   = 0;
-    int   tasks_completed  = 0;
-    float throughput_rate  = 0.f;   // completed / appeared
-
-    // ── MAPD — latency / utilisation ───────────────────────────────────────
-    float latency_mean     = 0.f;   // mean steps appearance → completion
-    float latency_per_agent= 0.f;   // latency_mean / mean_active_agents
-    float agent_utilisation= 0.f;   // mean fraction of steps with active work
-    float refuse_rate      = 0.f;   // tasks_refused / tasks_appeared
-
-    // ── Network congestion & travel efficiency ─────────────────────────────
-    float mean_congestion          = 0.f;  // mean edge load over all steps
-    float mean_trip_steps          = 0.f;  // mean pickup→delivery travel time (steps)
-    float mean_wait_steps          = 0.f;  // mean appearance → pickup arrival (response delay)
-    float mean_road_pd_m           = 0.f;  // mean A* road distance pickup→delivery (m)
-    float delivery_route_efficiency= 0.f;  // road_pd / (trip_steps × speed) ∈ (0,1]
-
-    // ── Spatial complexity over served tasks ───────────────────────────────
-    float bbox_area_km2          = 0.f;  // bbox of served endpoints
-    float convex_hull_area_km2   = 0.f;  // convex-hull area
-    float mean_pd_distance_m     = 0.f;  // mean direct P→D distance
-    float mean_nn_pickup_m       = 0.f;  // mean nearest-neighbour pickup distance
-
-    // ── Temporal complexity (derived) ──────────────────────────────────────
-    float compute_time_per_task_ms     = 0.f;  // wallclock / tasks_appeared
-    float compute_time_per_decision_us = 0.f;  // wallclock×1000 / (tasks × n_agents)
-
-    // ── Validity counters (should stay 0) ──────────────────────────────────
-    int   pairing_violations_runtime  = 0;   // picked ≥ delivered, etc.
-    int   capacity_violations_runtime = 0;   // peak load > max_tasks_per_agent
-
-    // ── RL policy ──────────────────────────────────────────────────────────
-    float accept_rate      = 0.f;
-    float reward_mean      = 0.f;
-    float actor_loss       = 0.f;
-    float critic_loss      = 0.f;
-    int   buffer_size      = 0;
-
-    // ── Selectivity quality (delivery quality, not just count) ─────────────
-    float       completion_per_accepted     = 0.f;  // completed / accepted
-    float       unfinished_accept_rate      = 0.f;  // (accepted-completed) / accepted
-    float       mean_congestion_at_decision = 0.f;  // mean_load_now at decision steps
-    float       n_ghost_active_mean         = 0.f;  // mean active ghost loads
-    std::string congestion_profile_label;            // scenario profile name
-
-    // ── Multi-axis diagnostics (load balance, selectivity, context) ────────
-    float agent_completed_gini    = 0.f;  // Gini on per-agent deliveries
-    float agent_completed_std     = 0.f;  // CoV of per-agent deliveries
-    float mean_imp_accepted       = 0.f;  // mean importance on accepted offers
-    float mean_imp_refused        = 0.f;  // mean importance on refused offers
-    float accept_rate_high_cong   = 0.f;  // accept rate when load ≥ 1.0
-    float accept_rate_low_cong    = 0.f;  // accept rate when load < 1.0
-    float mean_extra_steps_per_task = 0.f; // trip_steps − ideal_steps (detour)
-
-    // ── Network-level congestion impact (policy-attributable) ──────────────
-    int   peak_congestion         = 0;    // max load_now on any edge
-    float mean_overlap_edges      = 0.f;  // mean #edges with load ≥ 2 / step
-    float congestion_variance     = 0.f;  // std of mean_load_now across steps
-    float route_congestion_exposure = 0.f; // mean load on edges agents traverse
-    int   max_agent_completed     = 0;
-    int   min_agent_completed     = 0;
-    float total_fleet_distance_m  = 0.f;  // Σ road P→D over completed tasks
-
-    // ── Selection intelligence (value, not just count) ─────────────────────
-    float value_throughput_rate = 0.f;  // Σvalue(delivered) / Σvalue(appeared)
-    float mean_completion_value = 0.f;  // Σvalue(delivered) / N_delivered
-    float value_loss_to_refusal = 0.f;  // Σvalue(refused)
-
-    // ── Real impact on edge traversal times (ghost load → BPR → slowdown) ──
-    float mean_bpr_along_route          = 1.f;  // mean dynamic/static over traversals
-    float time_lost_to_congestion_steps = 0.f; // Σ (dynamic-static)/speed
-    int   n_traversals_in_jam           = 0;    // traversals entered at load ≥ 5
-
-    // ── Allocation optimality vs MCA oracle ────────────────────────────────
-    float marginal_cost_ratio_vs_oracle = 1.f;  // chosen / min-over-eligible cost
-
-    // ── RMCA(r) regret [Chen+2021]; populated only for PolicyMode::RMCA ─────
-    float rmca_relative_regret  = 0.f;  // mc(k2)/mc(k1)
-    float rmca_marginal_cost_k1 = 0.f;  // cheapest insertion cost (m)
-    float rmca_marginal_cost_k2 = 0.f;  // 2nd-cheapest insertion cost (m)
-
-    // ── Per-allocation cost breakdown ──────────────────────────────────────
-    float mean_allocation_time_us = 0.f;  // wallclock per offer_task()
-    float mean_tam_dijkstra_steps = 0.f;  // mean TAM step() iterations / task
-    float path_compute_time_ms    = 0.f;  // total get_or_compute_path time
-    float mean_pure_alloc_time_ms = 0.f;  // per-offer TAM+policy time (− path)
-
-    // ── TAM efficiency ("minimize comm overhead"); TAM modes only ──────────
-    float mean_agents_offered_per_task    = 0.f;  // distinct agents asked
-    float mean_recall_rounds_per_task     = 0.f;  // recall rounds before allocation
-    float mean_candidates_scored_per_task = 0.f;  // candidate-set size (MC mode)
-
-    // ── Accumulation helpers (called by episode runner) ────────────────────
-    void on_task_completed(int latency_steps, float t_ratio);
-    void on_task_refused();
-    void on_offer(bool accepted, float reward);
-    void finalise(int mean_active_agents, int steps_run);
-
-private:
-    int n_completed_acc_ = 0;  // running count for incremental mean
-    int n_offered_acc_   = 0;
 };
 
 #endif // TRAINING_EPISODE_CONFIG_HPP

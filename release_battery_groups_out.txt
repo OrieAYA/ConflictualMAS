@@ -1,0 +1,182 @@
+
+=== ConflictualMAS ===
+
+  1  Legacy      (orienteering / GeoBox / render / PDP utils)
+  2  Tests       (submenu: A structure B mechanics C modules D e2e E all)
+  3  Training    (MAPPO + IPPO + MAPPER, paper protocol)
+  4  Evaluation  (RL + RMCA + TP + CA + HAPC)
+
+Choice: 
+[Tests]  A Structure  B Mechanics  C Modules  D EndToEnd  R Regression  E All   |   G CongestionDiag  P PlanningCompare
+Choice: 
+=== A. Structure & Construction ===
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+  [1] Env created  E33179 nodes, 39877 ways
+  [2] Edge integrity OK  E0 dangling / 0 zero-length / 0 self-loop
+  [3] Incidence symmetry OK
+
+=== GeoBox Connectivity  Esmoke_test ===
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+  [OK]   smoke_test.json  nodes=33179  ways=39877  fully connected
+=== PASS  Etous les caches sont connexes ===
+
+  [4] Connectivity OK
+[PDPServerMemory] Initialized 0 group caches
+  [5] PDPGlobalMemory construction OK
+  [6] Dijkstra OK  Ereached 33179/33179 nodes, all distances finite ≥ 0
+  [7] TemporalChainList OK  Esentinels / order / overlap / remove / find / expiry
+  [8] TemporalGraph OK  Eper-node chains, correct incident edges
+=== A PASS ===
+
+=== B. Mechanics & Simulation ===
+  [1] Congestion/BPR OK  Ef(5)=115 f(10)=340 steps 7->23
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+  [2] Lifelong tasks OK  E68 tasks, arrivals in [15,347] of 400 steps
+[PDPServerMemory] Initialized 0 group caches
+  [3] Time/movement/completion OK  Eappeared=69 completed=5 finished_list=5
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+  [4] Congestion impact OK  Emean load 1.00949 (off) -> 2.31479 (ghost on)
+  [5] BPR time-dependence OK  Ecost 100/198.304/100 (before/in/after window)
+=== B PASS ===
+
+=== C. Modules ===
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+[PDPServerMemory] Initialized 0 group caches
+  [1] GlobalMemory OK  Elifecycle + id refresh (0,1 ↁEreset ↁE0)
+  [2] BPR OK  Ecap floor + monotone factor
+
+=== TAM Multi-Candidate Test ===
+  [1] GeoBox <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+  [1] OK  E33179 nodes
+[PDPServerMemory] Initialized 0 group caches
+  [3] Format A + TamAlwaysAccept  accept_rate=1  OK
+[PDPServerMemory] Initialized 0 group caches
+  [4] Format B + TamAlwaysAccept  accept_rate=1  OK
+[PDPServerMemory] Initialized 0 group caches
+  [5] Format A + MAPPO (untrained)  accept_rate=1  OK
+[PDPServerMemory] Initialized 0 group caches
+  [6] Format B + MAPPO (untrained) accept_rate=0.782407  (deferral expected  Eno-crash check only)
+[PDPServerMemory] Initialized 0 group caches
+  [7] Legacy TAM + TamAlwaysAccept  accept_rate=1  (reference  Enot checked)
+=== PASS ===
+
+  [3] TAM OK
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+  [4] Planning OK  EDbVNS / ALNS / DoubleHorizon (valid routes + delivery)
+[PDPServerMemory] Initialized 0 group caches
+  [5] Scoring OK  ERMCA
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+  [6] Policies OK  EMAPPO / IPPO / MAPPER / Hybrid (valid sims)
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+  [7] Determinism OK  Ereplay identical (appeared=53 completed=3)
+  [8] SoTA solvers OK  ECA + HAPC (valid SolverRunner pipeline)
+  [9] Scenario grid OK  E27 deterministic combos
+  [10] TD-A* OK  Etime 16 -> 26 (rerouted)
+[PDPServerMemory] Initialized 0 group caches
+  [11] TAM retrieval OK  E2 candidate(s), winner=0
+=== C PASS ===
+
+=== D. End-to-end & integration ===
+
+=== Training Smoke Test ===
+  [1] GeoBox <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+  [1] OK  E33179 nodes, 39877 ways
+  [2] Config OK  E200 steps, 4 agents max
+[PDPServerMemory] Initialized 0 group caches
+  [3] Runner constructed OK
+  [3] Training episode OK  E1 tasks, acc=1, aloss=-0.0088959, closs=0.244642, 34ms
+  [4] Eval OK  EGreedy acc=1, MAPPO acc=1
+  [5] Episode reset OK  E2nd train acc=1
+[PDPServerMemory] Initialized 0 group caches
+  [6] Multi-task OK  Emax_tasks=5, acc=1, thr=0.0634921, tasks=63, reset acc=1
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+  [7] Reward shaping v2 OK  Eeval max|r|=0 (bound 2.0), train n_exp=148, losses finite, credit identity holds
+=== PASS ===
+
+  [1] Functional training OK
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+  [2] Homogeneity OK  E18 identical tasks across MAPPO vs RMCA (seed 12345)
+  [3] Refresh OK  Emap stable (33179 nodes / 39877 ways), task IDs refreshed per episode
+[PDPServerMemory] Initialized 0 group caches
+  [4] Replan OK  Ein-flight preserved, footprint corrected, env structure updated
+=== D PASS ===
+
+=== R. Regression (golden values) ===
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+  [1] Structure OK  E33179 nodes / 39877 ways
+  [2] Scenario grid OK  E27 combos
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+  [3] RL TAA  observed  Eappeared=36 completed=3 thr=0.0833333 cong=1.005
+  [3] RL TAA  OK  Eappeared=36 completed=3 thr=0.0833333
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+  [3] RL RMCA observed  Eappeared=36 completed=5 thr=0.138889 cong=1.005
+  [3] RL RMCA OK  Eappeared=36 completed=5 thr=0.138889
+  [4] SoTA CA   observed  Eappeared=36 completed=2 thr=0.0555556
+  [4] SoTA CA   OK  Eappeared=36 completed=2
+  [4] SoTA HAPC observed  Eappeared=36 completed=1 thr=0.0277778
+  [4] SoTA HAPC OK  Eappeared=36 completed=1
+=== R PASS ===
+
+=== ALL BATTERIES PASS ===

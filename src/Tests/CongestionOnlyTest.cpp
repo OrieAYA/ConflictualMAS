@@ -14,21 +14,6 @@
 
 namespace {
 
-// Mirror customize_episode_for_city's ghost_n_max tiering. Kept local to avoid
-// pulling MultiCityTrainer just for one helper.
-int ghost_n_max_for(const CityConfig& cc) {
-    const double a = cc.area_km2;
-    if (a < 70.0)  return 20;
-    if (a < 300.0) return 40;
-    return 80;
-}
-
-struct ScenarioSpec {
-    const char*       label;
-    CongestionProfile profile;
-    int               n_max_override; // -1 = use per-city, else override (over_fleet)
-};
-
 // Snapshot of CongestionMap state at one sampling step.
 struct Sample {
     int   step;
@@ -42,7 +27,7 @@ struct Sample {
 
 struct ScenarioRun {
     std::string scenario;
-    int         n_max;
+    int         n_events;
     int         n_hot_ways;
     int         peak_load_episode;
     int         peak_step;
@@ -53,8 +38,14 @@ struct ScenarioRun {
     int         max_overlap_episode;
     long long   ms;
     // BPR cost factor at peak load on a typical 100m road (cap = 5).
-    // factor = 1 + 0.15 x (peak/5)^4. Reported as percentage cost increase.
     float       bpr_factor_typical;
+    // Proportional (network-wide) congestion, averaged over the episode:
+    //   net_bpr  = mean over ALL ways of BPR(load, length)  → whole-network slowdown
+    //   jam_bpr  = mean over CONGESTED ways of BPR          → severity where it bites
+    //   cong_pct = share of ways with load >= 1             → spatial extent
+    float       net_bpr;
+    float       jam_bpr;
+    float       cong_pct;
 };
 
 float bpr_factor(int load, float distance_m, const CongestionParams& p) {
@@ -64,41 +55,37 @@ float bpr_factor(int load, float distance_m, const CongestionParams& p) {
 }
 
 ScenarioRun simulate_scenario(const GeoBox& geo_box,
-                              const ScenarioSpec& spec,
-                              int /*n_max_city*/,
-                              int total_steps)
+                              const std::string& label,
+                              TemporalProfile profile,
+                              int   n_events,
+                              float hot_frac,
+                              int   window,
+                              int   total_steps)
 {
     ScenarioRun out{};
-    out.scenario = spec.label;
-    // n_max is now derived from density × hot_count INSIDE the controller's
-    // reset(). We pass 100 as a placeholder; the controller will overwrite
-    // it from the density formula. Read back after reset for reporting.
-    out.n_max    = (spec.n_max_override > 0) ? spec.n_max_override : 100;
+    out.scenario = label;
+    out.n_events = n_events;
 
     CongestionMap cmap;   // default params (BPR α=0.15, β=4, cap=0.05/m)
     GhostTrafficController ghost;
 
     GhostTrafficController::Config gcfg;
-    gcfg.n_max               = 100;    // ignored (density supersedes)
-    gcfg.total_steps         = total_steps;
-    gcfg.window_steps        = 8;
-    // Per-city PROPORTIONAL ghost setup — matches Option Y/Q strong-eval.
-    // 10% hot ways per city → uniform agent route coverage across scales.
-    // density 2.0 → n_max derived per city, preserves per-edge BPR profile.
-    gcfg.hot_way_count       = 0;      // disable absolute count
-    gcfg.hot_way_fraction    = 0.05f;  // 5% — matches Y/Q proportional config
-    gcfg.density_per_hot_way = 1.4f;   // ↓ from 2.0 (Option O reduction, −30%)
-    gcfg.profile             = spec.profile;
+    gcfg.n_events         = out.n_events;
+    gcfg.total_steps      = total_steps;
+    gcfg.window_steps     = window;
+    gcfg.hot_way_count    = 0;
+    gcfg.hot_way_fraction = hot_frac;
+    gcfg.profile          = profile;
 
     // Same seed across scenarios so the same hot-way SAMPLES are reused -- the
-    // only difference scenario-to-scenario is the temporal target_count shape.
+    // only difference scenario-to-scenario is the temporal fd(x) shape.
     ghost.reset(geo_box, cmap, gcfg, 4242u);
     out.n_hot_ways = ghost.n_hot_ways();
-    out.n_max      = ghost.n_max();   // read back density-derived value
+    out.n_events   = ghost.n_events();
 
     const auto t0 = std::chrono::steady_clock::now();
     // Sample every 50 steps to keep output bounded.
-    constexpr int kSampleStride = 50;
+    constexpr int kSampleStride = 300;   // ~12 samples: cheap network-wide BPR scan
     std::vector<Sample> samples;
     samples.reserve(total_steps / kSampleStride + 1);
 
@@ -107,6 +94,8 @@ ScenarioRun simulate_scenario(const GeoBox& geo_box,
     out.max_overlap_episode = 0;
     double mean_acc = 0.0;
     int    n_acc    = 0;
+    double net_bpr_acc = 0.0, jam_bpr_acc = 0.0, cong_pct_acc = 0.0;
+    const double n_ways = std::max<size_t>(1, geo_box.data.ways.size());
 
     for (int step = 0; step < total_steps; ++step) {
         cmap.advance(step);
@@ -132,11 +121,27 @@ ScenarioRun simulate_scenario(const GeoBox& geo_box,
             if (s.n_overlap > out.max_overlap_episode)
                 out.max_overlap_episode = s.n_overlap;
             mean_acc += s.mean_load;
+
+            // Proportional BPR over the whole network at this step.
+            double bpr_sum = 0.0; int cong = 0;
+            for (const auto& [wid, way] : geo_box.data.ways) {
+                const int L = cmap.get_load(wid, step);
+                if (L <= 0) continue;
+                bpr_sum += bpr_factor(L, way.distance_meters, cmap.params);
+                ++cong;
+            }
+            // Free ways contribute BPR = 1 each to the network mean.
+            net_bpr_acc  += (bpr_sum + (n_ways - cong)) / n_ways;
+            jam_bpr_acc  += (cong > 0) ? (bpr_sum / cong) : 1.0;
+            cong_pct_acc += static_cast<double>(cong) / n_ways;
             ++n_acc;
         }
     }
     out.mean_load_episode  = (n_acc > 0) ? static_cast<float>(mean_acc / n_acc) : 0.f;
     out.bpr_factor_typical = bpr_factor(out.peak_load_episode, 100.f, cmap.params);
+    out.net_bpr  = (n_acc > 0) ? static_cast<float>(net_bpr_acc  / n_acc) : 1.f;
+    out.jam_bpr  = (n_acc > 0) ? static_cast<float>(jam_bpr_acc  / n_acc) : 1.f;
+    out.cong_pct = (n_acc > 0) ? static_cast<float>(cong_pct_acc / n_acc) * 100.f : 0.f;
 
     const auto t1 = std::chrono::steady_clock::now();
     out.ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
@@ -148,15 +153,14 @@ void print_header() {
               << std::left
               << std::setw(16) << "scenario"
               << std::right
-              << std::setw(7)  << "n_max"
+              << std::setw(9)  << "n_ev"
               << std::setw(9)  << "hot_w"
               << std::setw(7)  << "peak"
-              << std::setw(11) << "peak_step"
-              << std::setw(10) << "mean"
-              << std::setw(10) << "overlap"
+              << std::setw(10) << "netBPR"
+              << std::setw(10) << "jamBPR"
+              << std::setw(9)  << "cong%"
               << std::setw(8)  << "jam"
-              << std::setw(8)  << "heavy"
-              << std::setw(12) << "BPR@peak"
+              << std::setw(11) << "BPR@peak"
               << std::setw(8)  << "ms"
               << "\n";
 }
@@ -166,15 +170,14 @@ void print_row(const ScenarioRun& r) {
               << std::left
               << std::setw(16) << r.scenario
               << std::right
-              << std::setw(7)  << r.n_max
+              << std::setw(9)  << r.n_events
               << std::setw(9)  << r.n_hot_ways
               << std::setw(7)  << r.peak_load_episode
-              << std::setw(11) << r.peak_step
-              << std::setw(10) << std::fixed << std::setprecision(4) << r.mean_load_episode
-              << std::setw(10) << r.n_overlap_at_peak
-              << std::setw(8)  << r.n_jam_at_peak
-              << std::setw(8)  << r.n_heavy_at_peak
-              << "    x" << std::fixed << std::setprecision(3) << r.bpr_factor_typical
+              << "   x" << std::fixed << std::setprecision(3) << std::setw(6) << r.net_bpr
+              << "   x" << std::setw(6) << r.jam_bpr
+              << std::setw(8) << std::setprecision(2) << r.cong_pct << "%"
+              << std::setw(8) << r.n_jam_at_peak
+              << "     x" << std::setprecision(3) << r.bpr_factor_typical
               << std::setw(8)  << r.ms
               << "\n";
 }
@@ -184,91 +187,64 @@ void print_row(const ScenarioRun& r) {
 bool run_congestion_only_test(const std::string& osm_root,
                               const std::string& cache_root)
 {
-    std::cout << "\n=== Congestion-only Test (no agents, ghost traffic only) ===\n";
+    std::cout << "\n=== Congestion calibration sweep (count x window, phi_h = 0.40 fixed) ===\n"
+              << "Goal: pick (n_events, window) giving proportional BPR at feasible cost.\n"
+              << std::flush;
 
     CityRegistry::set_osm_root(osm_root);
 
-    // 6 cities = Option Y eval scope (train + held-out, London dropped).
-    const std::vector<std::string> city_names = {
-        "Tokyo_Small", "Kyoto_Small", "LosAngeles_Small",
-        "Tokyo_Large", "Paris", "NewYork"
-    };
+    // Small (SCE 1) + Medium (SCE 2) after the 2×-area rebuild. Per city the
+    // ghost count = base · SCE, so we test the production formula directly:
+    // consistent netBPR across sizes means count scales with the graph.
+    const std::vector<std::string> cities = { "Tokyo_Small", "Tokyo_Medium" };
+    constexpr float kPhiH       = event_tuning::kHotWayFraction;   // 0.40 (fixed)
+    constexpr int   kTotalSteps = 3600;
+    const std::vector<int> bases   = { 15000, 25000, 35000 };  // ghost base (× SCE)
+    const int              window  = 250;
 
-    // Mirror Option Y's eval_scenarios shape (over_fleet uses the same profile
-    // as normal_wave for congestion -- the difference is at fleet level, which
-    // this test does not exercise -- so we still report it as a check).
-    const std::vector<ScenarioSpec> scenarios = {
-        {"normal_wave",    CongestionProfile::Wave,        -1},
-        {"normal_ramp",    CongestionProfile::RampUpDown,  -1},
-        {"stress_shock",   CongestionProfile::ShockBurst,  -1},
-        {"stress_buildup", CongestionProfile::BuildingUp,  -1},
-        {"over_fleet",     CongestionProfile::Wave,        -1},
-    };
+    auto sce_of = [](double area) { return area < 40.0 ? 1.f : (area < 90.0 ? 2.f : 5.f); };
 
-    constexpr int kTotalSteps = 3600;
-
-    long long total_ms = 0;
-    int       total_runs = 0;
-
-    // Aggregate worst-case across cities for the final analysis section.
-    int   global_max_peak_load = 0;
-    int   global_max_jam       = 0;
-    float global_min_bpr       = 1.f;
-    float global_max_bpr       = 1.f;
-
-    for (const auto& name : city_names) {
+    for (const auto& name : cities) {
         const CityConfig* cc = nullptr;
         for (const auto& c : CityRegistry::all())
             if (c.name == name) { cc = &c; break; }
-        if (!cc) {
-            std::cout << "  [skip] " << name << " - not in CityRegistry\n";
-            continue;
-        }
+        if (!cc) { std::cout << "  [skip] " << name << " not in registry\n" << std::flush; continue; }
 
         const std::string cache_path = cache_root + "/" + name + ".json";
-        if (!GeoBoxManager::cache_exists(cache_path)) {
-            std::cout << "  [skip] " << name << " -- cache not found at " << cache_path << "\n";
-            continue;
+        GeoBox gb;
+        if (GeoBoxManager::cache_exists(cache_path)) {
+            gb = GeoBoxManager::load_geobox(cache_path);
+        } else {
+            std::cout << "  [build] " << name << " from OSM (" << cc->osm_path << ")...\n" << std::flush;
+            gb = create_geo_box(cc->osm_path, cc->bbox.min_lon, cc->bbox.min_lat,
+                                 cc->bbox.max_lon, cc->bbox.max_lat);
+            if (gb.is_valid) GeoBoxManager::save_geobox(gb, cache_path);
         }
-        GeoBox gb = GeoBoxManager::load_geobox(cache_path);
-        if (!gb.is_valid || gb.data.nodes.empty() || gb.data.ways.empty()) {
-            std::cout << "  [skip] " << name << " -- invalid GeoBox\n";
-            continue;
+        if (!gb.is_valid || gb.data.ways.empty()) {
+            std::cout << "  [skip] " << name << " invalid GeoBox\n" << std::flush; continue;
         }
-
-        const int n_max_city = ghost_n_max_for(*cc);
-        std::cout << "\n[" << name << "  area=" << cc->area_km2
-                  << " km2  nodes=" << gb.data.nodes.size()
+        const float sce = sce_of(cc->area_km2);
+        std::cout << "\n[" << name << "  area=" << cc->area_km2 << " SCE=" << sce
                   << "  ways=" << gb.data.ways.size()
-                  << "  n_max=" << n_max_city << "]\n";
+                  << "  phi_h=" << std::fixed << std::setprecision(2) << kPhiH
+                  << "  (~" << static_cast<int>(gb.data.ways.size() * kPhiH)
+                  << " hot)  window=" << window << "]\n" << std::flush;
         print_header();
-
-        for (const auto& sc : scenarios) {
-            ScenarioRun r = simulate_scenario(gb, sc, n_max_city, kTotalSteps);
+        for (int base : bases) {
+            const int n = static_cast<int>(base * sce);
+            ScenarioRun r = simulate_scenario(
+                gb, "base" + std::to_string(base / 1000) + "k", TemporalProfile::Wave,
+                n, kPhiH, window, kTotalSteps);
             print_row(r);
-            total_ms += r.ms;
-            ++total_runs;
-            if (r.peak_load_episode > global_max_peak_load)
-                global_max_peak_load = r.peak_load_episode;
-            if (r.n_jam_at_peak > global_max_jam) global_max_jam = r.n_jam_at_peak;
-            if (r.bpr_factor_typical > global_max_bpr) global_max_bpr = r.bpr_factor_typical;
-            if (r.bpr_factor_typical < global_min_bpr) global_min_bpr = r.bpr_factor_typical;
+            std::cout << std::flush;
         }
     }
 
-    std::cout << "\n=== Summary across " << total_runs << " (city x scenario) runs ===\n";
-    std::cout << "  Global peak load on any single edge   : " << global_max_peak_load << "\n";
-    std::cout << "  Worst single-step jam (edges ≥5 load) : " << global_max_jam << "\n";
-    std::cout << "  BPR factor range at peak (100m way)   : x" << std::fixed
-              << std::setprecision(3) << global_min_bpr << "  ->  x"
-              << global_max_bpr << "\n";
-    std::cout << "  Wallclock for all " << total_runs
-              << " ghost simulations            : " << total_ms << " ms\n";
-    std::cout << "\n  Interpretation:\n";
-    std::cout << "    BPRx1.000-x1.010   -> congestion is cosmetic, no real cost impact\n";
-    std::cout << "    BPRx1.010-x1.100   -> mild slowdown, marginal differentiation\n";
-    std::cout << "    BPRx1.100-x2.000   -> meaningful slowdown, baselines should differentiate\n";
-    std::cout << "    BPRx2.000+         -> strong jam, dynamic-cost baselines should clearly win\n";
-    std::cout << "\n=== DONE ===\n\n";
+    std::cout << "\n=== Reading the sweep ===\n"
+              << "  n_ev   = base · SCE (the production ghost count for RM=1).\n"
+              << "  netBPR = whole-network mean BPR over time (proportional slowdown).\n"
+              << "  Consistent netBPR across Small/Medium at the SAME base = SCE scaling works.\n"
+              << "  Pick the base whose netBPR sits in x1.5-2.0 → kCongBaseQtt.\n"
+              << "\n=== DONE ===\n\n" << std::flush;
     return true;
 }

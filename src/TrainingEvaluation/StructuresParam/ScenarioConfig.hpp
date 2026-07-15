@@ -1,23 +1,44 @@
 #ifndef SCENARIO_CONFIG_HPP
 #define SCENARIO_CONFIG_HPP
 
-#include "Environment/Simulation/GhostTrafficController.hpp"   // CongestionProfile
+#include "Environment/Structure/EventStream.hpp"
+#include <string>
 #include <vector>
 
-// One scenario = a task regime (density / fleet multipliers) combined with a
-// congestion regime (ghost profile + intensity). ghost_density_per_hot_way > 0
-// overrides EpisodeConfig's value so congestion is a per-scenario axis.
+// One episode combination. Task and congestion each pick a temporal profile
+// fd(x); the fleet picks an agent multiplier AM (fleet = round(10·SCE·AM)).
+// Event counts are fixed by SCE·RM (EpisodeConfig), NOT by the scenario.
+// density_mult stays for the standalone planning comparison test only.
 struct EpisodeScenario {
-    float             density_mult              = 1.0f;
-    float             agents_mult               = 1.0f;
-    const char*       label                     = "normal";
-    CongestionProfile congestion_profile        = CongestionProfile::Flat;
-    float             ghost_density_per_hot_way = 0.f;
+    float           agents_mult        = 1.0f;   // AM
+    std::string     label              = "normal";
+    TemporalProfile task_profile       = TemporalProfile::Uniform;
+    TemporalProfile congestion_profile = TemporalProfile::Uniform;
+    float           density_mult       = 1.0f;   // planning test only (no-op = 1)
 };
 
-// 3 task levels × 3 congestion levels = 9 deterministic scenarios. Training and
-// evaluation both walk this grid deterministically (no random sampling). Edit
-// the two level tables in ScenarioConfig.cpp to retune difficulty.
+struct TaskRegime {
+    TemporalProfile profile;
+    std::string     name;
+};
+struct CongestionRegime {
+    TemporalProfile profile;
+    std::string     name;
+};
+struct FleetRegime {
+    float       agents_mult;   // AM
+    std::string name;
+};
+
+std::vector<EpisodeScenario> build_scenarios(
+    const std::vector<TaskRegime>&       tasks,
+    const std::vector<CongestionRegime>& congestions,
+    const std::vector<FleetRegime>&      fleets);
+
+std::vector<TaskRegime>       paper_task_regimes();
+std::vector<CongestionRegime> paper_congestion_regimes();
+std::vector<FleetRegime>      paper_fleet_regimes();
+
 std::vector<EpisodeScenario> make_scenario_grid();
 
 #endif // SCENARIO_CONFIG_HPP

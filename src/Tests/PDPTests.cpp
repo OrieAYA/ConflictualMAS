@@ -1,7 +1,7 @@
 #include "PDPTests.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
+#include "Environment/GeoBox/GraphSearch.hpp"
 #include "DMASforPD/Agents/Manager.hpp"
 #include "DMASforPD/Structures/ObjectiveCache.hpp"
 #include "DMASforPD/Agents/DeliveryAgent.hpp"
@@ -45,8 +45,7 @@ void test_pdp_system(const std::string& cache_dir)
               << "  Groups: " << geo_box.data.objective_groups.size() << "\n";
 
     // ---- Init system ------------------------------------------------------
-    Pathfinder pathfinder(geo_box);
-    PDPGlobalMemory memory(geo_box, pathfinder);
+    PDPGlobalMemory memory(geo_box);
 
     // ---- Collect objective nodes ------------------------------------------
     const auto& groups = geo_box.data.objective_groups;
@@ -121,7 +120,7 @@ void test_pdp_system(const std::string& cache_dir)
                 from, step.node.id, step.node.group_id);
             if (p && p->valid())
                 for (auto way_id : p->edges)
-                    pathfinder.update_way_group(way_id, color);
+                    graph_search::set_way_group(geo_box, way_id, color);
             from = step.node.id;
         }
         ++color;

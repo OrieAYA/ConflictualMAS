@@ -2,6 +2,7 @@
 #define ENVIRONMENT_EPISODE_HPP
 
 #include "TrainingEvaluation/StructuresParam/EpisodeConfig.hpp"
+#include "Environment/Structure/EventStream.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include <osmium/osm/types.hpp>
 #include <random>
@@ -19,10 +20,11 @@ struct ScheduledTask {
 };
 
 // ── Phase schedule with step boundaries ──────────────────────────────────────
+// Phases drive the FLEET ramp, the phase label (GlobalState feature) and the
+// hot-zone count — task timing is profile-driven (see generate()).
 struct PhaseInfo {
     int   step_begin;       // inclusive
     int   step_end;         // exclusive
-    float lambda;           // Poisson rate (tasks/step); may be > 1.0
     int   n_agents_start;
     int   n_agents_end;
     float label;
@@ -52,18 +54,21 @@ struct PhaseInfo {
 //               matching real-world demand clustering: commercial districts, hubs).
 //
 // Arrival process:
-//   Each step, the number of arriving tasks is drawn from Poisson(lambda).
-//   Lambda is computed automatically as tasks_per_agent * avg_agents / steps,
-//   which can exceed 1.0 under high density (Amazon-scale: 250 tasks/agent).
+//   The event COUNT is fixed upstream: event_tuning::derived_task_count(
+//   cfg.env_scale) — the α · QttMult · RatioMult quantity of the paper formula
+//   F(x) = TimeFunc(x) · QttMult · RatioMult. The generation function itself
+//   takes only the TimeFunc: arrival steps are sampled with density
+//   ∝ temporal_profile_value(profile, t/T).
 class EpisodeGenerator {
 public:
     explicit EpisodeGenerator(const EpisodeConfig& cfg,
                               const GeoBox&        geo_box,
                               uint32_t             seed = 42);
 
-    // Generate the full task stream for one episode (sorted by arrival_step).
-    // Each call re-samples hot zones → different spatial pattern per episode.
-    std::vector<ScheduledTask> generate();
+    // Generate the full task stream for one episode (sorted by arrival_step)
+    // from the given temporal-variation profile — the single argument shared
+    // with congestion generation. Each call re-samples hot zones.
+    std::vector<ScheduledTask> generate(TemporalProfile profile);
 
     // Build phase boundary table from EpisodeConfig.
     std::vector<PhaseInfo> build_phase_table() const;
@@ -131,5 +136,12 @@ private:
     float estimate_reward(osmium::object_id_type pickup,
                           osmium::object_id_type delivery) const;
 };
+
+// Scale a pre-generated stream by the scenario's density multiplier using the
+// canonical deterministic subsample (< 1) / supersample (> 1). Shared by
+// SharedEpisodeSetup (cross-method eval) and EpisodeRunner (training path) so
+// both apply the SAME semantics. No-op when density_mult == 1 or stream empty.
+void apply_density_mult(std::vector<ScheduledTask>& stream,
+                        float density_mult, uint32_t seed);
 
 #endif // ENVIRONMENT_EPISODE_HPP

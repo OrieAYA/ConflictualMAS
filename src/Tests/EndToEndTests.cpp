@@ -9,7 +9,6 @@
 #include "DMASforPD/Structures/PDPTask.hpp"
 #include "DMASforPD/Structures/ObjectiveNode.hpp"
 #include "DMASforPD/Policy/BidPolicy.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
 #include <exception>
 #include <iostream>
 #include <utility>
@@ -26,7 +25,8 @@ static EpisodeConfig e2e_config() {
     cfg.n_hot_zones         = 2;
     cfg.hot_zone_radius     = 400.f;
     cfg.max_tasks_per_agent = 4;
-    cfg.phases = { { 300, 12.f, 2, 3, 0.0f, 2 } };
+    cfg.phases    = { { 300, 2, 3, 0.0f, 2 } };
+    cfg.env_scale = 0.3f;   // ~30 tasks, matches prior volume
     return cfg;
 }
 
@@ -43,7 +43,6 @@ bool run_end_to_end_tests(const std::string& osm_file, const std::string& cache_
     CHECK(gb.is_valid, "GeoBox not valid");
     const size_t n_nodes = gb.data.nodes.size();
     const size_t n_ways  = gb.data.ways.size();
-    Pathfinder pf(gb);
 
     const EpisodeConfig  cfg = e2e_config();
     const EpisodeScenario sc{};            // single fixed scenario
@@ -55,7 +54,7 @@ bool run_end_to_end_tests(const std::string& osm_file, const std::string& cache_
         TaskSig sig;
         bid_policy(BidPolicyKind::MAPPO).clear_buffers();
         try {
-            EpisodeRunner runner(cfg, gb, pf, /*ctor seed*/999u);
+            EpisodeRunner runner(cfg, gb, /*ctor seed*/999u);
             runner.train_mode  = false;
             runner.policy_mode = m;
             runner.run(0, 1, sc, ep_seed);
@@ -92,7 +91,7 @@ bool run_end_to_end_tests(const std::string& osm_file, const std::string& cache_
     // in-flight objective is preserved, the plan/footprint are corrected, and
     // the env structure (node events + edge occupancy) reflects the change.
     {
-        PDPGlobalMemory mem(gb, pf);
+        PDPGlobalMemory mem(gb);
         mem.total_steps        = 2000;
         mem.planning_use_dbvns = true;
 

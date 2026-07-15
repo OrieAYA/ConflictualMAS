@@ -8,10 +8,11 @@
 // ── Batch planning comparison test ─────────────────────────────────────────
 //
 // Runs N_SEEDS independent lifelong episodes across multiple small-map cities,
-// each with a randomised density × agents scenario. For every seed both
-// insertion strategies are evaluated:
-//   - MCA           (cheapest insertion — paper c1)
-//   - DoubleHorizon (Mitrovic-Minic+2004 c3 adapted, paper-faithful)
+// each with a randomised density × agents scenario. Every seed evaluates the
+// paper's single-agent planning line-up (Table 8):
+//   - DbVNS         (the paper's planner, lifelong replan)
+//   - ALNS          (Ropke & Pisinger 2006)
+//   - DoubleHorizon (Mitrovic-Minic+2004 c3 adapted)
 //
 // Outputs:
 //   - planning_summary.csv   : one row per (seed, city, scenario, mode) with

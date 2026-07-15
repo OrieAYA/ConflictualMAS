@@ -1,0 +1,33 @@
+
+=== ConflictualMAS ===
+
+  1  Legacy      (orienteering / GeoBox / render / PDP utils)
+  2  Tests       (submenu: A structure B mechanics C modules D e2e E all)
+  3  Training    (MAPPO + IPPO + MAPPER, paper protocol)
+  4  Evaluation  (RL + RMCA + TP + CA + HAPC)
+
+Choice: Grid training: 2 cities ÁE1 seeds ÁE27 scenarios = 54 episodes / policy (54 per seed).
+  [Load] Tokyo_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Tokyo_Small.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 59297
+  Ways: 70715
+  Objective groups: 0
+  [Load] Tokyo_Medium <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Tokyo_Medium.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 111390
+  Ways: 134018
+  Objective groups: 0
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+
+════ seed 1/1 (rng=42) ════
+  ── scenario 1/27  task_normal/cong_normal/agents_low  (AM=0.7, 2 cities ÁE3 policies) ──
+  [ep 1/54 s42 Tokyo_Small task_normal/cong_normal/agents_low IPPO]  thr=0.704545 done=62/88 acc=1 cong=x3.09313 lat=995 agents=7 | aloss=-0.00010086 closs=3.88754 n=325  19655ms
+  [ep 1/54 s42 Tokyo_Small task_normal/cong_normal/agents_low MAPPER]  thr=0.863636 done=76/88 acc=1 cong=x3.08999 lat=683.211 agents=7 | aloss=-0.00319657 closs=0.570683 n=319  19320ms
+  [ep 1/54 s42 Tokyo_Small task_normal/cong_normal/agents_low MAPPO]  thr=0.897727 done=79/88 acc=1 cong=x3.0851 lat=799.19 agents=7 | aloss=-0.000565108 closs=2.01284 n=315  20304ms

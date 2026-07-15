@@ -3,54 +3,54 @@
 
 #include "../GeoBox/Box.hpp"
 #include "Environment/Simulation/CongestionMap.hpp"
+#include "Environment/Structure/EventStream.hpp"   // TemporalProfile + event_tuning
 #include <random>
 #include <vector>
 
-// Temporal shape of the injected background traffic: target_count(t) =
-// n_max · f_profile(t / total_steps).
-//   Flat — constant low · RampUpDown — rise/relax/rebuild/peak · ShockBurst —
-//   calm then spike then tail · BuildingUp — linear 0→100% · Wave — sine bell.
-enum class CongestionProfile { Flat, RampUpDown, ShockBurst, BuildingUp, Wave };
-
-const char* congestion_profile_label(CongestionProfile p);
-
-// One congestion-injection event: `load` ghost agents occupy `edge` over
-// [step, until]. This is what a congestion profile returns.
+// One congestion event of the episode stream: a ghost occupying `edge` with an
+// integer load over [step, until]. The pair (appearance at `step`, removal at
+// `until`) is encoded as one interval — exactly what the per-edge temporal
+// chain (CongestionMap / TemporalChainList) stores.
 struct CongestionEvent {
-    int                    step;
+    int                    step;    // ghost appears (load added to the chain)
     osmium::object_id_type edge;
-    int                    until;
-    int                    load;
+    int                    until;   // ghost expires (same load removed)
+    int                    load;    // integer weight ∈ [kGhostLoadMin, kGhostLoadMax]
 };
 
-// Congestion profile: from a seed it pre-generates (reset) the full sequence of
-// ghost-injection events over the episode, then materialises them ONLINE in
-// step(t) — an event is registered on the CongestionMap only once its time is
-// reached, so agents cannot see future congestion. Ghosts live only on a sampled
-// subset of "hot ways" so real agents can always route around them.
+// Congestion-event generator. At episode start (reset) it samples the hot-way
+// pool, pre-generates the FULL sequence of n_events ghost events for the episode
+// — each appearance step drawn with density ∝ profile(t/T), the same time
+// function the task generator takes — and injects every event into the
+// CongestionMap right away (the event stream is complete from step 0; nothing
+// is generated online). step() only maintains the live-ghost window for
+// instrumentation.
 class GhostTrafficController {
 public:
     struct Config {
-        int   n_max          = 40;      // peak simultaneous ghost loads
-        int   total_steps    = 3600;
-        int   window_steps   = 5;       // a ghost occupies a way for this long
-        float hot_way_fraction = 0.30f; // fraction of ways used as hot pool
-        int   hot_way_count    = 0;     // > 0 overrides the fraction (absolute)
-        float density_per_hot_way = 0.0f; // > 0 derives n_max = ceil(density·n_hot)
-        int   load_per_ghost      = 1;  // load units per ghost entry
-        CongestionProfile profile = CongestionProfile::Flat;
+        // Total ghost EVENT count. Resolved by the caller — either an explicit
+        // override (tests) or event_tuning::derived_ghost_count(SCE, RM).
+        int   n_events     = 0;
+        int   total_steps  = 3600;
+        int   window_steps = 5;       // x: a ghost occupies its way for this long
+        // φh — fraction of ways eligible as hot pool (event_tuning constant).
+        float hot_way_fraction = event_tuning::kHotWayFraction;
+        int   hot_way_count    = 0;   // > 0 overrides the fraction (absolute)
+        TemporalProfile profile = TemporalProfile::Flat;
     };
 
     GhostTrafficController() = default;
 
-    // Episode start: sample hot ways, pre-generate the event sequence.
+    // Episode start: sample hot ways, pre-generate the full event sequence
+    // from `profile`, and register EVERY event on the CongestionMap.
     void reset(const GeoBox& geo_box, CongestionMap& cmap,
                Config cfg, uint32_t seed);
 
-    // Materialise every event due at `t` onto the CongestionMap (online).
+    // Advance the live-ghost window (instrumentation only — the loads were
+    // already injected at reset()).
     void step(int current_step);
 
-    // Stop materialising / drop the live tracking (e.g. ghost-off episode).
+    // Drop the event stream / live tracking (e.g. ghost-off episode).
     void purge();
 
     const std::vector<CongestionEvent>& events() const { return events_; }
@@ -58,22 +58,20 @@ public:
     int   n_active_now() const { return static_cast<int>(active_until_.size()); }
     float mean_active()  const { return mean_active_; }
     int   n_hot_ways()   const { return static_cast<int>(hot_ways_.size()); }
-    int   n_max()        const { return cfg_.n_max; }
-    CongestionProfile profile() const { return cfg_.profile; }
+    int   n_events()     const { return cfg_.n_events; }
+    TemporalProfile profile() const { return cfg_.profile; }
 
 private:
     Config         cfg_;
-    CongestionMap* cmap_ = nullptr;
     std::mt19937   rng_;
 
     std::vector<osmium::object_id_type> hot_ways_;
-    std::vector<CongestionEvent>        events_;       // pre-generated sequence
+    std::vector<CongestionEvent>        events_;       // full pre-generated stream
     std::size_t                         event_idx_ = 0;
     std::vector<int>                    active_until_; // until-times of live ghosts
     float                               mean_active_ = 0.f;
 
-    int  target_count(int step) const;
-    void generate_events();   // fills events_ + mean_active_ from the profile
+    void generate_events(TemporalProfile profile);   // fills events_ + mean_active_
 };
 
 #endif // GHOST_TRAFFIC_CONTROLLER_HPP

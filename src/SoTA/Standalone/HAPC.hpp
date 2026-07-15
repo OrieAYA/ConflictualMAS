@@ -243,7 +243,7 @@ private:
     // PathHelper is now process-scoped (one instance per city) via the static
     // shared_path_helper() singleton. paths_ is a non-owning view that the
     // current HAPC instance uses. Lifetime is tied to the static singleton,
-    // which is reset only when the city (Pathfinder/GeoBox pair) changes.
+    // which is reset only when the city (GeoBox) changes.
     PathHelper*                paths_ = nullptr;
     // Static accessor — owns the per-city PathHelper. Returns a unique_ptr
     // reference so init() can replace it when the city changes.
@@ -252,21 +252,20 @@ private:
     // ── Persistent cross-episode distance cache (city-scoped) ───────────────
     // Mirrors the PDPGlobalMemory / ObjectiveCache pattern from the main DMAS
     // pipeline: shortest-path road distance is a property of the GRAPH alone,
-    // not of any solver/episode. By keying a static cache on (Pathfinder*,
-    // GeoBox*) we let every HAPC episode of the SAME city reuse all distances
-    // computed by prior episodes — cold-cache cost is paid ONCE per city, not
-    // once per (episode × city) combo. The cache is wiped on init() when a
-    // different (Pathfinder*, GeoBox*) pair is detected (= city changed).
+    // not of any solver/episode. By keying a static cache on the GeoBox* we
+    // let every HAPC episode of the SAME city reuse all distances computed by
+    // prior episodes — cold-cache cost is paid ONCE per city, not once per
+    // (episode × city) combo. The cache is wiped on init() when a different
+    // GeoBox* is detected (= city changed).
     //
     // Lookup priority in seg_cost:
     //   1. shared_cache_->data[(from, to)]                — O(1) hit
-    //   2. PathHelper::get(...) → A* via Pathfinder       — cold path, then
+    //   2. PathHelper::get(...) → static A*               — cold path, then
     //      store into shared_cache_ so subsequent queries are O(1).
     struct SharedDistanceCache {
-        const Pathfinder* pf = nullptr;
         const GeoBox*     gb = nullptr;
         // Content guard against stack-frame reuse: main.cpp's city for-loop
-        // destroys/recreates GeoBox+Pathfinder as locals — addresses can be
+        // destroys/recreates the GeoBox as a local — addresses can be
         // reused. Comparing node count + first sentinel detects this case.
         size_t            gb_node_count = 0;
         // Per-source Dijkstra results (replaces the prior flat (from,to)→dist

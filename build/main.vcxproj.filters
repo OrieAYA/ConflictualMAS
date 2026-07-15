@@ -55,6 +55,9 @@
     <ClCompile Include="C:\ConflictualMAS\src\Environment\GeoBox\GeoBoxManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\GeoBox\GraphSearch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Render\MapRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -74,6 +77,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Structure\EventStream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\Agent.cpp">
@@ -104,9 +110,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\Planning\ALNS.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\Planning\MCA.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\ScoringLike\RMCA.cpp">
@@ -163,16 +166,22 @@
     <ClCompile Include="C:\ConflictualMAS\src\Tests\TrainingSmokeTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerAllocation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerMovement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\ScenarioConfig.cpp">

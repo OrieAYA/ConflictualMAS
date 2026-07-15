@@ -80,7 +80,6 @@ struct RegionStatsGrid {
 class PDPGlobalMemory {
 public:
     GeoBox&         geo_box;
-    Pathfinder&     pathfinder;
     PDPServerMemory server_memory;
     CongestionMap   congestion_map;   // edge temporal layer (occupancy / BPR)
     TemporalGraph   node_events;      // node temporal layer (task/objective events)
@@ -106,53 +105,20 @@ public:
     int   total_steps = 3600;
 
     // ── Planning strategy used by DeliveryAgent::receive_task() ─────────────
-    // false (default) → Cheapest insertion: pick (pos_P, pos_D) minimising
-    //                    route-length delta f_p + f_d. Classical Solomon-style.
-    // true  → Double-Horizon insertion [Mitrovic-Minic et al. 2004]:
-    //          cost = (1-α_p)·f_p + α_p·g_p + (1-α_d)·f_d + α_d·g_d
-    //          where g_p = (n−pos_P)·f_p (slack-decrease proxy at subsequent
-    //          locations) and α ∈ {0 short-term, 0.25 long-term} based on the
-    //          estimated arrival time of the new pickup / delivery vs current.
-    //
-    // EpisodeRunner copies this from cfg.use_double_horizon_planning at the
-    // start of each run(). Capacity + pickup-before-delivery invariants are
-    // preserved by construction in both branches.
+    // At most one flag is set per run (EpisodeRunner::prepare_run dispatch);
+    // all flags off = cheapest insertion (Solomon-style (pos_P, pos_D) argmin).
+    // Capacity + pickup-before-delivery invariants hold in every branch.
+
+    // Double-Horizon insertion [Mitrovic-Minic et al. 2004]: insertion cost
+    // weighted by slack preservation for long-horizon positions.
     bool  planning_use_double_horizon = false;
 
-    // When true → DbVNS replanning: on every task acceptance the agent discards
-    // its current insertion order (except the in-flight head) and reoptimises
-    // the full remaining sequence via forward DbVNS-PDP.
-    // Mutually exclusive with planning_use_double_horizon; EpisodeRunner sets at
-    // most one of the two flags per run.
+    // DbVNS replanning (the paper's planner): on every acceptance the agent
+    // reoptimises its full remaining sequence (in-flight head preserved).
     bool  planning_use_dbvns = false;
 
-    // ── ALNS-PDP lifelong replanning (Ropke & Pisinger 2006 adapted) ─────────
-    // Set ONLY by the planning-comparison test (PolicyMode::ALNS). Never
-    // activated by training or global eval paths — those keep MCA/DH/DbVNS.
+    // ALNS-PDP lifelong replanning [Ropke & Pisinger 2006].
     bool  planning_use_alns  = false;
-
-    // ── MCA + anytime LNS improvement (Chen et al. 2021, ICRA — Algorithm 3) ─
-    // Set ONLY by the planning-comparison test (PolicyMode::MCA). When true,
-    // DeliveryAgent::receive_task runs an extra LNS-style improvement loop
-    // AFTER the cheapest-insertion of the new task:
-    //
-    //   while iter < budget:                       (paper Alg 3, line 1)
-    //     A', P^u ← destroyTasks(A, n_destroy)    (line 2: random removal)
-    //     A'      ← RMCA(r) re-insertion          (line 3: regret-r repair)
-    //     if cost(A') ≤ cost(A): A ← A'           (lines 4-6)
-    //
-    // Mutually exclusive with planning_use_alns / planning_use_dbvns /
-    // planning_use_double_horizon. The in-flight head seq[0] is preserved
-    // (paper-faithful: only non-picked tasks can be re-assigned in lifelong
-    // PDP — re-pickup of an already-picked task is undefined).
-    //
-    // Fidelity vs paper: paper does cross-agent reassignment in the LNS loop.
-    // In our online lifelong setting `receive_task` operates on ONE agent's
-    // sequence at a time, so the LNS is local to that agent. This still
-    // recovers the paper's main benefit (positional regret improvement after
-    // cheapest insertion) and is the published correction to MCA discussed
-    // in the audit (Chen+2021 §IV-D Algorithm 3).
-    bool  planning_use_mca_lns = false;
 
     // Active objective-policy dispatcher used by DeliveryAgent::bid_for_task:
     //   kMAPPO / kIPPO / kMAPPER / kHybrid → the corresponding IBidPolicy
@@ -176,9 +142,9 @@ public:
     RegionStatsGrid region_grid;
 
     PDPGlobalMemory() = delete;
-    PDPGlobalMemory(GeoBox& box, Pathfinder& pf,
-                    const CongestionParams& cparams  = {},
-                    const TaskAgentParams&  taparams = {});
+    explicit PDPGlobalMemory(GeoBox& box,
+                             const CongestionParams& cparams  = {},
+                             const TaskAgentParams&  taparams = {});
 
     PDPGlobalMemory(const PDPGlobalMemory&)            = delete;
     PDPGlobalMemory& operator=(const PDPGlobalMemory&) = delete;
@@ -214,7 +180,8 @@ public:
 
     void           register_delivery_agent  (DeliveryAgent& agent);
     void           unregister_delivery_agent(int agent_id);
-    DeliveryAgent* get_delivery_agent       (int agent_id);
+    DeliveryAgent*       get_delivery_agent (int agent_id);
+    const DeliveryAgent* get_delivery_agent (int agent_id) const;
     DeliveryAgent* get_agent_for_task       (int task_id);
 
     const std::unordered_map<int, DeliveryAgent*>& all_delivery_agents() const;
@@ -270,8 +237,11 @@ public:
     // O(#edges), reads the load profile as-is (no fixed-point). Returns
     // FLT_MAX when the path is invalid. The walk is ORIENTED: edges are
     // replayed in the from→to direction regardless of the cached direction.
+    // self_weight > 0 excludes the caller's own committed load from every
+    // edge read (an agent evaluating its own route sees n others, not n+1).
     float bpr_path_cost(osmium::object_id_type from, osmium::object_id_type to,
-                        int group_id, int depart_step, float speed_mps);
+                        int group_id, int depart_step, float speed_mps,
+                        int self_weight = 0);
 
     // Same BPR replay but in TIME units (steps), walking `path` oriented so
     // the traversal starts at `from`. Used to compare the remaining travel

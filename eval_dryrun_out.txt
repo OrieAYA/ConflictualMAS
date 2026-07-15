@@ -1,0 +1,209 @@
+
+=== ConflictualMAS ===
+
+  1  Legacy      (orienteering / GeoBox / render / PDP utils)
+  2  Tests       (submenu: A structure B mechanics C modules D e2e E all)
+  3  Training    (MAPPO + IPPO + MAPPER, paper protocol)
+  4  Evaluation  (RL + RMCA + TP + CA + HAPC)
+
+Choice: 
+???????? Niveau de charge RM=1 (seed=42, policy seed 42) ????????
+Loading 15 cities from C:\ConflictualMAS\data\cache
+  [Load] Tokyo_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Tokyo_Small.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 59297
+  Ways: 70715
+  Objective groups: 0
+  [Load] Tokyo_Medium <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Tokyo_Medium.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 111390
+  Ways: 134018
+  Objective groups: 0
+  [Load] Tokyo_Large <- OSM (C:\ConflictualMAS\src\maps/Tokyo.osm.pbf)
+Creating GeoBox from: C:\ConflictualMAS\src\maps/Tokyo.osm.pbf
+BBox: (139.643, 35.619) to (139.777, 35.731)
+Processing complete:
+  Nodes found: 273011
+  Ways found: 331793
+Largest component: 269806 nodes, 328832 ways
+=== Sauvegarde de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Tokyo_Large.json
+GeoBox sauvegardée avec succès!
+  Nodes: 269806
+  Ways: 328832
+  Objective groups: 0
+  [Load] Kyoto_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Kyoto_Small.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 32718
+  Ways: 39677
+  Objective groups: 0
+  [Load] Kyoto_Medium <- OSM (C:\ConflictualMAS\src\maps/Kyoto.osm.pbf)
+Creating GeoBox from: C:\ConflictualMAS\src\maps/Kyoto.osm.pbf
+BBox: (135.73, 34.982) to (135.8, 35.038)
+Processing complete:
+  Nodes found: 63797
+  Ways found: 76744
+Largest component: 61767 nodes, 74851 ways
+=== Sauvegarde de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Kyoto_Medium.json
+GeoBox sauvegardée avec succès!
+  Nodes: 61767
+  Ways: 74851
+  Objective groups: 0
+  [Load] Kyoto_Large <- OSM (C:\ConflictualMAS\src\maps/Kyoto.osm.pbf)
+Creating GeoBox from: C:\ConflictualMAS\src\maps/Kyoto.osm.pbf
+BBox: (135.709, 34.965) to (135.821, 35.055)
+Processing complete:
+  Nodes found: 131535
+  Ways found: 156795
+Largest component: 128559 nodes, 153986 ways
+=== Sauvegarde de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Kyoto_Large.json
+GeoBox sauvegardée avec succès!
+  Nodes: 128559
+  Ways: 153986
+  Objective groups: 0
+  [Load] LosAngeles_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/LosAngeles_Small.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 48040
+  Ways: 59333
+  Objective groups: 0
+  [Load] LosAngeles_Medium <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/LosAngeles_Medium.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 85788
+  Ways: 105341
+  Objective groups: 0
+  [Load] LosAngeles_Large <- OSM (C:\ConflictualMAS\src\maps/LosAngeles.osm.pbf)
+Creating GeoBox from: C:\ConflictualMAS\src\maps/LosAngeles.osm.pbf
+BBox: (-118.317, 34.005) to (-118.183, 34.095)
+Processing complete:
+  Nodes found: 176102
+  Ways found: 214383
+Largest component: 175147 nodes, 213582 ways
+=== Sauvegarde de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/LosAngeles_Large.json
+GeoBox sauvegardée avec succès!
+  Nodes: 175147
+  Ways: 213582
+  Objective groups: 0
+  [Load] NewYork_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/NewYork_Small.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 57376
+  Ways: 74866
+  Objective groups: 0
+  [Load] NewYork_Medium <- OSM (C:\ConflictualMAS\src\maps/NewYork.osm.pbf)
+Creating GeoBox from: C:\ConflictualMAS\src\maps/NewYork.osm.pbf
+BBox: (-74.022, 40.7) to (-73.938, 40.77)
+Processing complete:
+  Nodes found: 105783
+  Ways found: 134938
+Largest component: 104431 nodes, 133841 ways
+=== Sauvegarde de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/NewYork_Medium.json
+GeoBox sauvegardée avec succès!
+  Nodes: 104431
+  Ways: 133841
+  Objective groups: 0
+  [Load] NewYork_Large <- OSM (C:\ConflictualMAS\src\maps/NewYork.osm.pbf)
+Creating GeoBox from: C:\ConflictualMAS\src\maps/NewYork.osm.pbf
+BBox: (-74.047, 40.679) to (-73.913, 40.791)
+Processing complete:
+  Nodes found: 190704
+  Ways found: 244581
+Largest component: 184053 nodes, 237980 ways
+=== Sauvegarde de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/NewYork_Large.json
+GeoBox sauvegardée avec succès!
+  Nodes: 184053
+  Ways: 237980
+  Objective groups: 0
+  [Load] Paris_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Paris_Small.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 91435
+  Ways: 113848
+  Objective groups: 0
+  [Load] Paris_Medium <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Paris_Medium.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 168495
+  Ways: 209656
+  Objective groups: 0
+  [Load] Paris_Large <- OSM (C:\ConflictualMAS\src\maps/Paris.osm.pbf)
+Creating GeoBox from: C:\ConflictualMAS\src\maps/Paris.osm.pbf
+BBox: (2.283, 48.799) to (2.417, 48.911)
+Processing complete:
+  Nodes found: 356070
+  Ways found: 433774
+Largest component: 348617 nodes, 427609 ways
+=== Sauvegarde de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Paris_Large.json
+GeoBox sauvegardée avec succès!
+  Nodes: 348617
+  Ways: 427609
+  Objective groups: 0
+All cities loaded.
+
+══════════════════════════════════════
+ Seed 0  (rng=42)
+══════════════════════════════════════
+[Policy] Loaded MAPPO    from C:\ConflictualMAS\results\mappo\policy_seed42.bin
+[Policy] Loaded IPPO     from C:\ConflictualMAS\results\ippo\ippo_seed42.bin
+[Policy] Loaded MAPPER   from C:\ConflictualMAS\results\mapper\mapper_seed42.bin
+[Policy] Hybrid base set from MAPPO actor (75 agent slots)
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+  -- Eval --
+    [eval_task_normal/cong_normal/agents_low Tokyo_Small task_normal/cong_normal/agents_low MAPPO ep1/1]  thr=0.847059 done=72/85 cong=x3.05784 lat=896.667  28016ms
+    [eval_task_normal/cong_normal/agents_low Tokyo_Small task_normal/cong_normal/agents_low IPPO ep1/1]  thr=0.905882 done=77/85 cong=x3.05419 lat=673.61  21862ms
+    [eval_task_normal/cong_normal/agents_low Tokyo_Small task_normal/cong_normal/agents_low MAPPER ep1/1]  thr=0.905882 done=77/85 cong=x3.05646 lat=579.844  21829ms
+    [eval_task_normal/cong_normal/agents_low Tokyo_Small task_normal/cong_normal/agents_low Hybrid ep1/1]  thr=0.929412 done=79/85 cong=x3.05737 lat=525.785  18773ms
+    [eval_task_normal/cong_normal/agents_low Tokyo_Small task_normal/cong_normal/agents_low RMCA ep1/1]  thr=0.917647 done=78/85 cong=x3.05731 lat=559.718  14893ms
+    [eval_task_normal/cong_normal/agents_low Tokyo_Small task_normal/cong_normal/agents_low TokenPassing ep1/1]  thr=0.4 done=34/85 cong=x3.06433 lat=950.735  70994ms
+    [eval_task_normal/cong_normal/agents_low Tokyo_Small task_normal/cong_normal/agents_low TamAlwaysAccept ep1/1]  thr=0.929412 done=79/85 cong=x3.05774 lat=541.734  14643ms
+    [eval_task_normal/cong_normal/agents_low Tokyo_Small task_normal/cong_normal/agents_low FaithfulCongestionAware ep1/1]  thr=0.529412 lat=962.267  29474ms
+    [eval_task_normal/cong_normal/agents_low Tokyo_Small task_normal/cong_normal/agents_low HybridAdaptivePredictive ep1/1]  thr=0.470588 lat=1335.15  45986ms
+    [eval_task_normal/cong_normal/agents_mid Tokyo_Small task_normal/cong_normal/agents_mid MAPPO ep1/1]  thr=0.897727 done=79/88 cong=x3.08238 lat=582.532  31464ms
+    [eval_task_normal/cong_normal/agents_mid Tokyo_Small task_normal/cong_normal/agents_mid IPPO ep1/1]  thr=0.875 done=77/88 cong=x3.07915 lat=607.844  39765ms
+    [eval_task_normal/cong_normal/agents_mid Tokyo_Small task_normal/cong_normal/agents_mid MAPPER ep1/1]  thr=0.806818 done=71/88 cong=x3.07891 lat=611.394  32577ms
+    [eval_task_normal/cong_normal/agents_mid Tokyo_Small task_normal/cong_normal/agents_mid Hybrid ep1/1]  thr=0.875 done=77/88 cong=x3.08041 lat=553.039  19515ms
+    [eval_task_normal/cong_normal/agents_mid Tokyo_Small task_normal/cong_normal/agents_mid RMCA ep1/1]  thr=0.852273 done=75/88 cong=x3.08086 lat=549  20041ms
+    [eval_task_normal/cong_normal/agents_mid Tokyo_Small task_normal/cong_normal/agents_mid TokenPassing ep1/1]  thr=0.488636 done=43/88 cong=x3.08563 lat=989.256  81585ms
+    [eval_task_normal/cong_normal/agents_mid Tokyo_Small task_normal/cong_normal/agents_mid TamAlwaysAccept ep1/1]  thr=0.875 done=77/88 cong=x3.08005 lat=577  18611ms
+    [eval_task_normal/cong_normal/agents_mid Tokyo_Small task_normal/cong_normal/agents_mid FaithfulCongestionAware ep1/1]  thr=0.579545 lat=886.314  31364ms
+    [eval_task_normal/cong_normal/agents_mid To

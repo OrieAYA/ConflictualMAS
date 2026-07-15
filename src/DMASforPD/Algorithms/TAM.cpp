@@ -125,6 +125,18 @@ bool TaskAllocationModule::finalise(PDPGlobalMemory& memory, float speed_mps) {
 void TaskAllocationModule::allocate_to(int agent_id, PDPGlobalMemory& memory,
                                        float speed_mps) {
     memory.assign_task(task_.task_id, agent_id);
+    // Record the winner's static insertion cost on the task (what the policy
+    // saw at bid time) — feeds the §4 unfinished-penalty cost ratio.
+    if (PDPTask* tp = memory.get_task(task_.task_id)) {
+        auto it = matrix_.find(agent_id);
+        if (it != matrix_.end()) {
+            const AgentEntry& e = it->second;
+            float c = (e.pickup_cost >= 0.f) ? e.pickup_cost : 0.f;
+            if (!e.idle_from_pickup && e.delivery_cost >= 0.f)
+                c += e.delivery_cost;
+            tp->c_ins_at_accept = c;
+        }
+    }
     if (DeliveryAgent* agent = memory.get_delivery_agent(agent_id))
         agent->receive_task(task_, memory);
     memory.commit_plan(agent_id, speed_mps);

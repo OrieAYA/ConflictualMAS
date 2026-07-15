@@ -54,6 +54,10 @@ struct PDPTask {
     float         reward_original     = 1.0f;
     float         importance_original = 1.0f;
 
+    // Static insertion cost (m) of the WINNING candidate when the TAM
+    // assigned this task (§4 unfinished-penalty ratio). −1 = never assigned.
+    float         c_ins_at_accept     = -1.0f;
+
     TaskTimeline  timeline;
 
     // ---- Status predicates -----------------------------------------------

@@ -93,7 +93,7 @@ struct EpisodeRecord {
     float time_lost_to_congestion_steps = 0.f;
     int   n_traversals_in_jam           = 0;
 
-    // Allocation optimality vs MCA full-scan oracle
+    // Allocation optimality vs full-scan cheapest-insertion oracle
     float marginal_cost_ratio_vs_oracle = 1.f;
 
     // RMCA(r) regret diagnostics [Chen et al. 2021] (RMCA mode only, else 0)
@@ -127,7 +127,12 @@ struct EpisodeRecord {
 // write_summary() appends a cross-seed mean ± std row.
 class TrainingLogger {
 public:
+    // Per-seed CSV: episodes_seed{seed}.csv (evaluation runs).
     TrainingLogger(const std::string& output_dir, int seed);
+    // Named CSV: episodes_{tag}.csv (the single-file grid training run).
+    // append=true continues an existing file (resume) instead of truncating.
+    TrainingLogger(const std::string& output_dir, const std::string& filename_tag,
+                   bool append = false);
     ~TrainingLogger();
 
     void push(const EpisodeRecord& r);
@@ -160,26 +165,24 @@ EpisodeRecord make_record(const RunResult& result,
 
 #include "TrainingEvaluation/StructuresParam/CityConfig.hpp"
 #include "Environment/GeoBox/Box.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
 #include <memory>
 
 // ════════════════════════════════════════════════════════════════════════════
 // CityAssets — heap-stable resources for one city
 // ════════════════════════════════════════════════════════════════════════════
 //
-// Pathfinder holds GeoBox by reference and EpisodeRunner holds const
-// EpisodeConfig& → CityAssets must never move/copy after construction
-// (allocate as unique_ptr). ep_cfg is the stable referent for the runner.
+// EpisodeRunner holds const EpisodeConfig& → CityAssets must never move/copy
+// after construction (allocate as unique_ptr). ep_cfg is the stable referent
+// for the runner.
 struct CityAssets {
     const CityConfig* config = nullptr;
     int               index  = 0;
     EpisodeConfig     ep_cfg;       // stable referent for EpisodeRunner
     GeoBox            geo_box;
-    Pathfinder        pathfinder;   // holds GeoBox& geo_box above
 
     CityAssets(const CityConfig* cc, int idx, EpisodeConfig ep, GeoBox&& gb)
         : config(cc), index(idx), ep_cfg(std::move(ep)),
-          geo_box(std::move(gb)), pathfinder(geo_box) {}
+          geo_box(std::move(gb)) {}
 
     CityAssets(const CityAssets&)            = delete;
     CityAssets& operator=(const CityAssets&) = delete;
@@ -191,21 +194,27 @@ struct CityAssets {
 // MultiCityTrainer
 // ════════════════════════════════════════════════════════════════════════════
 //
-// Full protocol: load all city graphs once; per seed → re-init MAPPO weights
-// (optionally load a checkpoint), round-robin train over the train cities for
-// n_rounds, periodic + final eval on all cities × policy modes, log each episode
-// to per-seed CSV + cross-seed summary, save the checkpoint. One EpisodeRunner
-// is kept per city across a seed so its A* path cache warms up; city graphs are
-// shared across seeds, runners (and caches) recreated per seed.
+// City graphs are loaded once and shared; one EpisodeRunner is kept per city
+// so its A* path cache warms up across episodes.
+class SolverCSVLogger;
+
 class MultiCityTrainer {
 public:
-    void train(const TrainingConfig& cfg);
+    // Evaluation protocol: per seed, load the per-seed checkpoints
+    // (policy_path / ippo_policy_path / mapper_policy_path) then run the
+    // episode-major sweep (run_eval). No training happens here.
+    void evaluate(const TrainingConfig& cfg);
 
-    // Public helper exposing the per-city EpisodeConfig customisation used
-    // internally by train() (phases sized to area_km2, task distance range,
-    // ghost_n_max tier, max_tasks_per_agent). Option O's Phase B calls this
-    // so the SoTA standalone solvers face the EXACT same episode shape as
-    // the RL policies in Phase A.
+    // Paper training protocol. Per seed, each policy is re-initialised and
+    // walks the grid cities (train_city_filter) × scenarios; a grid point is
+    // ONE generated episode (SharedEpisodeSetup) replayed by every active
+    // policy. Checkpoints ({out}/{mappo,ippo,mapper}/*_seed{seed}.bin) are
+    // rewritten after every episode, so a crash loses at most one episode.
+    void train_grid(const TrainingConfig& cfg);
+
+    // Public helper exposing the per-city EpisodeConfig customisation: size
+    // scalar SCE (env_scale), constant-fleet phases, task distance range and
+    // hot zones.
     static void customize_episode_for_city(EpisodeConfig& ep,
                                             const CityConfig& cc);
 
@@ -214,27 +223,15 @@ private:
                                                   EpisodeConfig ep,
                                                   const std::string& cache_root);
 
+    // Episode-major sweep: one SharedEpisodeSetup per (city, scenario,
+    // episode) slot, replayed by every eval mode then by the standalone SoTA
+    // solvers (CA, HAPC) when `sota` is non-null.
     static int run_eval(const TrainingConfig& cfg,
                         const std::vector<std::unique_ptr<CityAssets>>& assets,
                         std::vector<std::unique_ptr<EpisodeRunner>>& runners,
                         int global_ep, int seed,
-                        TrainingLogger& logger);
-
-    static int run_generalize_eval(const TrainingConfig& cfg,
-                                   const std::vector<std::unique_ptr<CityAssets>>& gen_assets,
-                                   std::vector<std::unique_ptr<EpisodeRunner>>& gen_runners,
-                                   int global_ep, int seed,
-                                   TrainingLogger& logger);
-
-    // Stress evaluation: forced over-saturation scenario (density 2.0, agents 0.6×).
-    // The system cannot deliver all tasks → tests whether the learned policy
-    // refuses intelligently or collapses (always-accept agents waste capacity
-    // on undeliverables, smart policies reserve capacity for feasible tasks).
-    static int run_stress_eval(const TrainingConfig& cfg,
-                               const std::vector<std::unique_ptr<CityAssets>>& assets,
-                               std::vector<std::unique_ptr<EpisodeRunner>>& runners,
-                               int global_ep, int seed,
-                               TrainingLogger& logger);
+                        TrainingLogger& logger,
+                        SolverCSVLogger* sota);
 };
 
 #endif // MULTI_CITY_TRAINER_HPP

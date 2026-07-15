@@ -15,12 +15,12 @@ struct CongestionParams {
     float bpr_alpha          = 0.15f;   // BPR function α
     float bpr_beta           = 4.0f;    // BPR function β
     float capacity_per_meter = 0.05f;   // agent slots per meter of edge length
-    // Load amplification per REAL agent's path edge. Symmetric to
-    // GhostTrafficController::Config::load_per_ghost: setting K>1 lets each
+    // Load amplification per REAL agent's path edge: setting K>1 lets each
     // real agent register K load units per edge, so a fleet of N agents
     // produces the congestion footprint of N×K agents. Use to shrink the fleet
     // (faster A*/Dijkstra, fewer policy decisions) while preserving the
-    // congestion intensity of a larger fleet.
+    // congestion intensity of a larger fleet. (Ghosts carry their own integer
+    // weight drawn in [kGhostLoadMin, kGhostLoadMax] — see EventStream.hpp.)
     int   load_per_agent     = 1;
 };
 

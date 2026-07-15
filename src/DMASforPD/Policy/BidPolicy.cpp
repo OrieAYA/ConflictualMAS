@@ -33,6 +33,24 @@ void IBidPolicy::add_to_reward(int agent_id, int buf_idx, float delta) {
     it->second[buf_idx].reward += delta;
 }
 
+float IBidPolicy::entry_mu(int agent_id, int buf_idx) const {
+    auto it = buffers_.find(agent_id);
+    if (it == buffers_.end()) return -1.f;
+    if (buf_idx < 0 || buf_idx >= static_cast<int>(it->second.size())) return -1.f;
+    const Experience& e = it->second[buf_idx];
+    const float p = std::exp(e.log_prob);           // π(a|s) at decision time
+    return std::clamp((e.action > 0.5f) ? p : 1.f - p, 0.f, 1.f);
+}
+
+float IBidPolicy::max_abs_reward() const {
+    float m = 0.f;
+    for (const auto& [aid, b] : buffers_) {
+        (void)aid;
+        for (const Experience& e : b) m = std::max(m, std::fabs(e.reward));
+    }
+    return m;
+}
+
 int IBidPolicy::buffer_size(int agent_id) const {
     auto it = buffers_.find(agent_id);
     return it == buffers_.end() ? 0 : static_cast<int>(it->second.size());

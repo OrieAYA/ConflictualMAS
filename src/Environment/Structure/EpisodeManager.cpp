@@ -70,46 +70,14 @@ SharedEpisodeSetup build_shared_episode_setup(
     setup.scenario = scenario;
 
     // ── 1. Task stream ─────────────────────────────────────────────────────
-    // Generator is deterministic given ep_seed. We then apply density_mult by
-    // subsample/supersample using a derived RNG (0xA17EFEEDu mask, same as the
-    // legacy SolverRunner used) — that way the stream is the canonical one for
-    // any solver/policy.
+    // Generator is deterministic given ep_seed; the scenario's task profile is
+    // the single timing argument. density_mult is applied via the canonical
+    // sub/supersample (0xA17EFEEDu mask) shared with the training path.
     {
         EpisodeGenerator gen(cfg, geo_box, ep_seed);
-        setup.task_stream = gen.generate();
-
-        if (scenario.density_mult != 1.0f && !setup.task_stream.empty()) {
-            std::mt19937 rng(ep_seed ^ 0xA17EFEEDu);
-            const int target = std::max<int>(
-                1, static_cast<int>(std::round(setup.task_stream.size() *
-                                                scenario.density_mult)));
-            if (scenario.density_mult <= 1.0f) {
-                std::shuffle(setup.task_stream.begin(), setup.task_stream.end(), rng);
-                setup.task_stream.resize(static_cast<size_t>(target));
-                std::sort(setup.task_stream.begin(), setup.task_stream.end(),
-                          [](const ScheduledTask& a, const ScheduledTask& b) {
-                              return a.arrival_step < b.arrival_step;
-                          });
-            } else {
-                std::vector<ScheduledTask> scaled;
-                scaled.reserve(static_cast<size_t>(target));
-                const int max_step = setup.task_stream.back().arrival_step + 1;
-                std::uniform_int_distribution<size_t> pick(
-                    0, setup.task_stream.size() - 1);
-                std::uniform_int_distribution<int> step_pick(
-                    0, std::max(1, max_step - 1));
-                for (int i = 0; i < target; ++i) {
-                    ScheduledTask t = setup.task_stream[pick(rng)];
-                    t.arrival_step = step_pick(rng);
-                    scaled.push_back(t);
-                }
-                std::sort(scaled.begin(), scaled.end(),
-                          [](const ScheduledTask& a, const ScheduledTask& b) {
-                              return a.arrival_step < b.arrival_step;
-                          });
-                setup.task_stream = std::move(scaled);
-            }
-        }
+        setup.task_stream = gen.generate(scenario.task_profile);
+        apply_density_mult(setup.task_stream, scenario.density_mult,
+                           ep_seed ^ 0xA17EFEEDu);
     }
 
     // ── 2. Fleet sizing (peak agents × agents_mult) ────────────────────────

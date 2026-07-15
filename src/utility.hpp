@@ -2,8 +2,8 @@
 #define UTILITY_HPP
 
 #include "Environment/GeoBox/Box.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
 #include <string>
+#include <vector>
 
 // Fonction de test original (pas de paramètres)
 int test();
@@ -33,7 +33,7 @@ void complete_workflow(const std::string& osm_file,
 
 void validate_data_integrity(const GeoBox& geo_box);
 
-bool verif_pathfinding(Pathfinder& PfSystem,
+bool verif_pathfinding(GeoBox& geo_box,
     const std::vector<osmium::object_id_type>& objective_nodes,
     int path_group);
 

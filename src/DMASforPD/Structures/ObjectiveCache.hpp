@@ -3,7 +3,7 @@
 
 #include "DMASforPD/Structures/ObjectiveNode.hpp"
 #include "Environment/Simulation/CongestionMap.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
+#include "Environment/GeoBox/Box.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -104,6 +104,13 @@ public:
         search_states_.erase(from);
     }
 
+    // Drop every memoised path + search state (memory bound between episodes).
+    void clear_paths() {
+        paths_.clear();
+        search_states_.clear();
+        obj_pair_count_ = 0;
+    }
+
 private:
     std::unordered_map<PathKey, ObjectivePath, ObjPairHash> paths_;
     std::unordered_set<osmium::object_id_type>              objective_ids_;
@@ -135,12 +142,11 @@ private:
 
 class PDPServerMemory {
 public:
-    GeoBox&     geo_box;
-    Pathfinder& pathfinder;
-    float       length_constraint = 0.0f;
+    GeoBox& geo_box;
+    float   length_constraint = 0.0f;
 
     PDPServerMemory() = delete;
-    PDPServerMemory(GeoBox& box, Pathfinder& pf);
+    explicit PDPServerMemory(GeoBox& box);
 
     // ── Path-compute timing instrumentation ─────────────────────────────────
     // Accumulates the total wallclock time (in microseconds for precision)
@@ -148,7 +154,7 @@ public:
     // EpisodeRunner; read at finalize() to derive (a) per-episode path-compute
     // cost in ms, and (b) pure-allocation time by subtracting in-offer path
     // time from total offer_task time. Static because path cache is global
-    // per (Pathfinder, GeoBox); the simulation is single-threaded so a plain
+    // per GeoBox; the simulation is single-threaded so a plain
     // static counter is sufficient.
     static long long path_compute_time_us();
     static void      reset_path_compute_time();
@@ -199,6 +205,11 @@ public:
     // Clear all objective registrations for a group (between episodes).
     // Preserves paths_ so A* results computed in prior episodes are reused.
     void reset_objectives(int group_id);
+
+    // Drop every memoised path in every group. Called when the episode
+    // CONTENT changes (new ep_seed) — replays of the same episode keep the
+    // cache; keeping it across different episodes grows without bound.
+    void clear_paths();
 
     // Reset the Dijkstra search state for one starting node (TAM agent search).
     // Ensures each new task allocation starts from a clean state so agents that

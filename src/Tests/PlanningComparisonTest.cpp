@@ -2,7 +2,6 @@
 
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
 #include "TrainingEvaluation/StructuresParam/EpisodeConfig.hpp"
 #include "TrainingEvaluation/Run/Runner.hpp"
 #include "TrainingEvaluation/StructuresParam/CityConfig.hpp"
@@ -97,7 +96,6 @@ struct ComparisonResult {
 struct CityHandle {
     const CityConfig* config = nullptr;
     GeoBox            geobox;
-    std::unique_ptr<Pathfinder> pathfinder;
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -129,15 +127,16 @@ static EpisodeConfig make_test_episode_config(const CityConfig& cc, int max_task
     // Capacity is set far above any regime's max_tasks (high=30, peak ≈75 with
     // density_mult up to 2.5) so capacity-aware insertion in receive_task() can
     // never refuse a task — every offered task IS assigned to the lone agent.
-    // This isolates the planner: MCA/DH/DbVNS/ALNS each plan over the SAME set
+    // This isolates the planner: DH/DbVNS/ALNS each plan over the SAME set
     // of accepted tasks, with no allocation skew from capacity overflow.
     ep.max_tasks_per_agent = 200;
-    const float per_phase = static_cast<float>(max_tasks) / 3.f;
     ep.phases = {
-        { 1200, per_phase, 1, 1, 0.0f, 2 },
-        { 1200, per_phase, 1, 1, 0.5f, 3 },
-        { 1200, per_phase, 1, 1, 1.0f, 3 },
+        { 1200, 1, 1, 0.0f, 2 },
+        { 1200, 1, 1, 0.5f, 3 },
+        { 1200, 1, 1, 1.0f, 3 },
     };
+    // Regime task volume via the α-quantity formula: n ≈ α · env_scale.
+    ep.env_scale = static_cast<float>(max_tasks) / event_tuning::kTaskBaseQtt;
     return ep;
 }
 
@@ -171,7 +170,7 @@ static EpisodeScenario sample_scenario(std::mt19937& rng,
     EpisodeScenario s;
     s.density_mult = ud(rng);
     s.agents_mult  = 1.0f;   // mono-agent: never scale fleet size
-    s.label        = reg.label.c_str();
+    s.label        = reg.label;
     return s;
 }
 
@@ -234,7 +233,6 @@ static std::unique_ptr<CityHandle> load_city(const CityConfig* cc,
         }
     }
     if (!h->geobox.is_valid) return nullptr;
-    h->pathfinder = std::make_unique<Pathfinder>(h->geobox);
     return h;
 }
 
@@ -876,13 +874,8 @@ int run_planning_comparison_test(uint32_t base_seed,
     }
     write_summary_header(summary);
 
+    // Paper Table 8 line-up: DbVNS vs ALNS vs Double-Horizon.
     const std::vector<std::pair<PolicyMode, std::string>> modes = {
-        // RMCA(r) = cheapest insertion (eq. 12) + anytime LNS Algorithm 3
-        // (destroy-3-random + greedy cheapest repair, 30 iters), local to each
-        // agent's queue. Paper-faithful for single-agent regret since regret
-        // collapses to cheapest-first in mono-route. See DeliveryAgent.cpp
-        // for the LNS body and EpisodeRunner.cpp MCA branch comment.
-        { PolicyMode::MCA,           "RMCA_Chen2021_LNS" },
         { PolicyMode::DoubleHorizon, "DoubleHorizon_MitrovicMinic" },
         { PolicyMode::DbVNS,         "DbVNS_lifelong_replan" },
         { PolicyMode::ALNS,          "ALNS_RopkePisinger" },
@@ -913,7 +906,7 @@ int run_planning_comparison_test(uint32_t base_seed,
                   << "\n";
 
         for (const auto& [mode, name] : modes) {
-            EpisodeRunner runner(ep, H.geobox, *H.pathfinder, seed);
+            EpisodeRunner runner(ep, H.geobox, seed);
             ComparisonResult cr = run_one(runner, H.geobox, mode, name, sc);
             cr.seed            = seed;
             cr.city            = H.config->name;

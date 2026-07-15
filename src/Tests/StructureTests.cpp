@@ -3,7 +3,7 @@
 #include "Tests/GeoBoxConnectivityTest.hpp"
 #include "Tests/TemporalChainListTest.hpp"
 #include "DMASforPD/Agents/Manager.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
+#include "Environment/GeoBox/GraphSearch.hpp"
 #include <algorithm>
 #include <exception>
 #include <iostream>
@@ -62,8 +62,7 @@ bool run_structure_tests(const std::string& osm_file, const std::string& cache_d
 
     // ── [5] PDPGlobalMemory construction (grid from bbox + congestion map) ────
     try {
-        Pathfinder pf(gb);
-        PDPGlobalMemory mem(gb, pf);
+        PDPGlobalMemory mem(gb);
         CHECK(mem.count_total() == 0, "fresh memory should hold no task");
         mem.congestion_map.reset();   // bbox-derived congestion state usable
     } catch (const std::exception& e) {
@@ -72,13 +71,12 @@ bool run_structure_tests(const std::string& osm_file, const std::string& cache_d
     }
     std::cout << "  [5] PDPGlobalMemory construction OK\n";
 
-    // ── [6] Pathfinder routing primitive (Dijkstra over the real graph) ───────
+    // ── [6] Routing primitive (Dijkstra over the real graph) ──────────────────
     // On a fully-connected graph (verified in [4]) a Dijkstra from any node must
     // reach essentially every node with finite, non-negative distances.
     {
-        Pathfinder pf(gb);
         const osmium::object_id_type src = d.nodes.begin()->first;
-        const auto dist = pf.dijkstra_distances_from(src);
+        const auto dist = graph_search::dijkstra_distances(gb, src);
         CHECK(!dist.empty(), "Dijkstra returned no distances");
         auto its = dist.find(src);
         CHECK(its != dist.end() && its->second == 0.f, "source distance must be 0");
@@ -87,7 +85,7 @@ bool run_structure_tests(const std::string& osm_file, const std::string& cache_d
         CHECK(negative == 0, "Dijkstra produced negative/NaN distances");
         // Connectivity ([4]) ⇒ reachability of the whole component.
         CHECK(dist.size() * 2 >= d.nodes.size(), "Dijkstra reached too few nodes");
-        std::cout << "  [6] Pathfinder OK — reached " << dist.size() << "/"
+        std::cout << "  [6] Dijkstra OK — reached " << dist.size() << "/"
                   << d.nodes.size() << " nodes, all distances finite ≥ 0\n";
     }
 

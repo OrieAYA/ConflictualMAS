@@ -3,7 +3,6 @@
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/Render/MapRenderer.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
 #include "utility.hpp"
 
 int test() {
@@ -330,7 +329,7 @@ void validate_data_integrity(const GeoBox& geo_box) {
     }
 }
 
-bool verif_pathfinding(Pathfinder& PfSystem,
+bool verif_pathfinding(GeoBox& geo_box,
     const std::vector<osmium::object_id_type>& objective_nodes,
     int path_group){
 
@@ -359,8 +358,8 @@ bool verif_pathfinding(Pathfinder& PfSystem,
                 }  
             }
 
-            for(const auto& in_way : PfSystem.geo_box.data.nodes[act_node].incident_ways){
-                auto& act_way = PfSystem.geo_box.data.ways[in_way];
+            for(const auto& in_way : geo_box.data.nodes[act_node].incident_ways){
+                auto& act_way = geo_box.data.ways[in_way];
                 if(act_way.has_group(path_group)){
                     if(act_node == act_way.node1_id){
                         file.push_back(act_way.node2_id);
@@ -390,7 +389,7 @@ bool verif_pathfinding(Pathfinder& PfSystem,
         }
 
         if(!next_check.empty()){
-            verif_pathfinding(PfSystem, next_check, path_group);
+            verif_pathfinding(geo_box, next_check, path_group);
         }
 
         return false;

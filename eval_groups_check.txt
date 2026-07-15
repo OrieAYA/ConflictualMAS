@@ -1,0 +1,27 @@
+
+=== ConflictualMAS ===
+
+  1  Legacy      (orienteering / GeoBox / render / PDP utils)
+  2  Tests       (submenu: A structure B mechanics C modules D e2e E all)
+  3  Training    (MAPPO + IPPO + MAPPER, paper protocol)
+  4  Evaluation  (RL + RMCA + TP + CA + HAPC)
+
+Choice: Groupe de villes (1=Tokyo+Kyoto  2=LosAngeles+NewYork  3=Paris  0=toutes) : RM min max (ex: 1.0 2.0) : 
+???????? Niveau de charge RM=1.0 (seed=42, groupe 3, policy seed 42) ????????
+Loading 2 cities from C:\ConflictualMAS\data\cache
+  [Load] Paris_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Paris_Small.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 91435
+  Ways: 113848
+  Objective groups: 0
+  [Load] Paris_Medium <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Paris_Medium.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 168495
+  Ways: 209656
+  Objective groups: 0

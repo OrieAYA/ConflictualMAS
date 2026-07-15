@@ -439,6 +439,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Structures\TimePaths.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\GeoBox\Box.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\GeoBox\GeoBoxManager.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\GeoBox\GraphSearch.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Render\MapRenderer.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.cpp" />
@@ -446,6 +447,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Structure\Episode.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Structure\EventStream.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\Agent.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.cpp" />
@@ -456,7 +458,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\Planning\ALNS.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\SoTA\Planning\MCA.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\ScoringLike\RMCA.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\SolverFramework.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp" />
@@ -475,10 +476,12 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\Tests\TamMcTest.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Tests\TemporalChainListTest.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Tests\TrainingSmokeTest.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerAllocation.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerMovement.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.cpp" />
-    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\ScenarioConfig.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\main.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\utility.cpp" />

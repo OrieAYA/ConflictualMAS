@@ -12,15 +12,12 @@
 #include "Tests/CongestionOnlyTest.hpp"      // G — diagnostic
 #include "Tests/PlanningComparisonTest.hpp"  // P — diagnostic
 
-#include "SoTA/SolverFramework.hpp"
-#include "SoTA/Standalone/CA.hpp"
-#include "SoTA/Standalone/HAPC.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
 #include "Environment/GeoBox/Box.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
 
 #include <cctype>
 #include <chrono>
+#include <cmath>
 #include <exception>
 #include <filesystem>
 #include <iostream>
@@ -50,25 +47,21 @@ static const std::string kOsmRoot   = "C:\\ConflictualMAS\\src\\maps";
 static const std::string kCacheRoot = "C:\\ConflictualMAS\\data\\cache";
 static const std::string kOutputDir = "C:\\ConflictualMAS\\results";
 
-// 9 scenarios = 3 task levels × 3 congestion levels (make_scenario_grid()).
-// Edit the level tables in EpisodeRunner.cpp to retune. Training and eval
-// share the same grid.
+// Scenario grid = task × congestion × fleet regimes (ScenarioConfig.cpp,
+// paper_* tables). Training and evaluation share the same grid.
 
-// Environment knobs shared by training (T) and evaluation (Y) so there is no
-// train/eval distribution shift — paper §5.5.1: DbVNS planning, proportional
-// ghost congestion (5% hot ways, density 2/way), heterogeneous capacity [3,7],
-// latency shaping + task value heterogeneity, TAM K=5 force-assign,
-// fleet ÷2 with load_per_agent=2.
+// Environment knobs shared by training and evaluation so there is no
+// train/eval distribution shift: DbVNS planning, ghost congestion driven by
+// the EventStream tuning constants (φh = kHotWayFraction, volume = β-quantity
+// formula), heterogeneous capacity [3,7], latency shaping + task value
+// heterogeneity, TAM K=5 force-assign, fleet ÷2 with load_per_agent=2.
 static void apply_paper_environment(EpisodeConfig& ep) {
     ep.use_dbvns_planning            = true;
 
     ep.enable_ghost_traffic          = true;
     ep.ghost_hot_way_count           = 0;
-    ep.ghost_hot_way_frac            = 0.05f;
-    ep.ghost_density_per_hot_way     = 2.0f;
-    ep.ghost_window_steps            = 8;
-    ep.ghost_n_max                   = 100;     // superseded by density scaling
-    ep.ghost_n_max_user_set          = false;
+    ep.ghost_hot_way_frac            = event_tuning::kHotWayFraction;   // φh
+    ep.ghost_window_steps            = 250;  // long residence → fewer events for same congestion
 
     ep.enable_heterogeneous_capacity = true;
     ep.hetero_capacity_min           = 3;
@@ -90,8 +83,12 @@ static void apply_paper_environment(EpisodeConfig& ep) {
     ep.tam_mc_ratio_max      = 3.0f;
     ep.tam_mc_ratio_scale    = 2000.f;
 
-    ep.fleet_size_divisor    = 2;
-    ep.fleet_load_per_agent  = 2;
+    // Agent pool ≥ max fleet: fleet = round(10·SCE·AM), AM up to 2.5.
+    ep.agent_pool_multiplier = 3.0f;
+
+    // Reward shaping v2 (paper Table 2 revision) — full package ON for the
+    // paper T/Y runs; ablations flip individual rs_* flags back off.
+    enable_all_reward_shaping(ep);
 }
 
 static int run_main()
@@ -157,80 +154,138 @@ static int run_main()
         }
     }
 
-    // ── T — Training (paper §5.5.1) ────────────────────────────────────────
-    // 50 rounds × 3 Small cities × {MAPPO, IPPO, MAPPER}, single seed 42,
-    // 3-regime scenario sampler, checkpoints every 10 rounds. Evaluation is
-    // a separate run (option Y) on the saved checkpoints.
+    // ── 3 — Training: 6 cities × 3 seeds × 27 scenarios = 486 ep / policy,
+    //    one independent policy per (type, seed); checkpoints
+    //    results/{mappo,ippo,mapper}/*_seed{seed}.bin rewritten every episode.
     else if (rep == "3" || rep == "train" || rep == "training") {
         CityRegistry::set_osm_root(kOsmRoot);
 
         TrainingConfig cfg;
         cfg.cache_root  = kCacheRoot;
         cfg.output_dir  = kOutputDir;
-        cfg.n_rounds    = 50;
-        cfg.n_seeds     = 1;
         cfg.start_seed  = 42;
+        cfg.n_seeds     = 3;
         cfg.save_policy = true;
         cfg.verbose     = true;
-
-        cfg.train_only            = true;
-        cfg.enable_generalization = false;
-        cfg.disable_slack_regime  = true;
-        cfg.checkpoint_every_rounds = 10;
+        cfg.log_every   = 1;
 
         cfg.train_city_filter = {
-            "Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"
+            "Tokyo_Small",      "Tokyo_Medium",
+            "LosAngeles_Small", "LosAngeles_Medium",
+            "Paris_Small",      "Paris_Medium",
         };
         cfg.train_modes = {
             PolicyMode::MAPPO, PolicyMode::IPPO, PolicyMode::MAPPER
         };
-        cfg.load_policy = false;     // fresh init per seed
+        cfg.train_scenarios = build_scenarios(paper_task_regimes(),
+                                              paper_congestion_regimes(),
+                                              paper_fleet_regimes());
 
         apply_paper_environment(cfg.episode_cfg);
 
         MultiCityTrainer trainer;
-        trainer.train(cfg);
+        trainer.train_grid(cfg);
     }
 
-    // ── Y — Evaluation at the paper's four comparison levels ──────────────
-    //
-    //   Phase A (EpisodeRunner pipeline — same TAM + DbVNS for everyone):
-    //     policy level     : MAPPO, IPPO, MAPPER, Hybrid, RMCA
-    //     allocation level : TokenPassing (replaces TAM + policy)
-    //     ablation         : TamAlwaysAccept
-    //   Phase B (standalone full pipelines via SolverRunner):
-    //     system level     : CA [Asadi+2025], HAPC [Cortés+2009]
-    //
-    //   Both phases consume the SAME SharedEpisodeSetup per (city, scenario,
-    //   episode): identical task streams, agent start nodes, capacities and
-    //   ghost seeds. ep_seed formula matches MultiCityTrainer::run_eval.
-    //
-    //   Cities: 3 train Smalls + 2 held-out Smalls (NewYork, Paris).
-    //   Scenarios: paper Table 4. Episodes: 2 per (city, scenario).
-    else if (rep == "4" || rep == "eval" || rep == "evaluation") {
-        std::cout << "Seed (42/43/44): ";
-        int seed = 42;
-        std::cin >> seed;
-
+    // ── S — Smoke training: Tokyo Small+Medium, 1 seed. Times a few episodes
+    //    with the real paper environment; kill early after enough ep lines.
+    else if (rep == "S" || rep == "smoke") {
         CityRegistry::set_osm_root(kOsmRoot);
 
         TrainingConfig cfg;
+        cfg.cache_root  = kCacheRoot;
+        cfg.output_dir  = kOutputDir + "\\smoke";
+        cfg.start_seed  = 42;
+        cfg.n_seeds     = 1;
+        cfg.save_policy = true;
+        cfg.resume      = false;
+        cfg.verbose     = true;
+        cfg.log_every   = 1;
+
+        cfg.train_city_filter = { "Tokyo_Small", "Tokyo_Medium" };
+        cfg.train_modes = {
+            PolicyMode::MAPPO, PolicyMode::IPPO, PolicyMode::MAPPER
+        };
+        cfg.train_scenarios = build_scenarios(paper_task_regimes(),
+                                              paper_congestion_regimes(),
+                                              paper_fleet_regimes());
+
+        apply_paper_environment(cfg.episode_cfg);
+
+        MultiCityTrainer trainer;
+        trainer.train_grid(cfg);
+    }
+
+    // ── 4 — Evaluation: Phase A (RL + RMCA + TP + ablation on the shared
+    //    TAM/DbVNS pipeline) then Phase B (standalone CA + HAPC). Both phases
+    //    consume the same SharedEpisodeSetup per (city, scenario, episode).
+    //    Loads the per-seed checkpoints produced by option 3.
+    else if (rep == "4" || rep == "eval" || rep == "evaluation") {
+        // Sweep de charge : un niveau = (seed, RM). RM = ratio_mult des events
+        // (tasks = round(100·SCE·RM), ghosts = round(25000·SCE·RM)) ; la
+        // flotte (10·SCE·AM) ne change pas. RM avance de kEvalRatioStep par
+        // niveau ; seed = kEvalFirstSeed + (RM−1)/step — fonction de RM, donc
+        // un même niveau produit les mêmes épisodes quel que soit le
+        // découpage des lancements. Checkpoints d'entraînement FIXES
+        // (kEvalPolicySeed). Parallélisme : un terminal par groupe de villes,
+        // sorties séparées par le suffixe _g{groupe}.
+        const int   kEvalPolicySeed = 42;    // checkpoint train (42 / 43 / 44)
+        const int   kEvalFirstSeed  = 42;    // seed d'éval du niveau RM=1.0
+        const float kEvalRatioStep  = 0.5f;
+
+        std::cout << "Groupe de villes (1=Tokyo+Kyoto  2=LosAngeles+NewYork"
+                     "  3=Paris  0=toutes) : ";
+        int grp = 0;
+        std::cin >> grp;
+        std::cout << "RM min max (ex: 1.0 2.0) : ";
+        float rm_min = 1.f, rm_max = 1.f;
+        std::cin >> rm_min >> rm_max;
+
+        CityRegistry::set_osm_root(kOsmRoot);
+
+        const std::vector<std::vector<std::string>> city_groups = {
+            { "Tokyo_Small",      "Tokyo_Medium",
+              "Kyoto_Small",      "Kyoto_Medium",
+              "LosAngeles_Small", "LosAngeles_Medium",
+              "NewYork_Small",    "NewYork_Medium",
+              "Paris_Small",      "Paris_Medium" },
+            { "Tokyo_Small",      "Tokyo_Medium",
+              "Kyoto_Small",      "Kyoto_Medium" },
+            { "LosAngeles_Small", "LosAngeles_Medium",
+              "NewYork_Small",    "NewYork_Medium" },
+            { "Paris_Small",      "Paris_Medium" },
+        };
+        const std::vector<std::string>& eval_cities =
+            city_groups[(grp >= 1 && grp <= 3) ? grp : 0];
+
+        const std::string seed_tag =
+            "_seed" + std::to_string(kEvalPolicySeed) + ".bin";
+
+        const int n_levels = static_cast<int>(
+            std::round((rm_max - rm_min) / kEvalRatioStep)) + 1;
+        for (int lvl = 0; lvl < n_levels; ++lvl) {
+        const float rm     = rm_min + lvl * kEvalRatioStep;
+        const int   seed   = kEvalFirstSeed + static_cast<int>(
+            std::round((rm - 1.f) / kEvalRatioStep));
+        const int   tenths = static_cast<int>(std::round(rm * 10.f));
+        const std::string rm_tag =
+            std::to_string(tenths / 10) + "." + std::to_string(tenths % 10);
+        std::cout << "\n════════ Niveau de charge RM=" << rm_tag
+                  << " (seed=" << seed << ", groupe " << grp
+                  << ", policy seed " << kEvalPolicySeed << ") ════════\n";
+
+        TrainingConfig cfg;
         cfg.cache_root      = kCacheRoot;
-        cfg.output_dir      = kOutputDir + "\\paper_eval";
+        cfg.output_dir      = kOutputDir + "\\paper_eval\\pol"
+                            + std::to_string(kEvalPolicySeed)
+                            + "_rm" + rm_tag
+                            + "_g" + std::to_string(grp);
         cfg.n_seeds         = 1;
         cfg.start_seed      = seed;
-        cfg.n_eval_episodes = 1;     // 1 episode per (method, city, scenario)
+        cfg.n_eval_episodes = 1;
         cfg.verbose         = true;
 
-        cfg.eval_only            = true;
-        cfg.skip_stress_eval     = true;     // scenarios already cover stress
-        cfg.enable_generalization = true;
-        cfg.use_shared_episode_setup = true;
-
-        cfg.train_city_filter = {
-            "Tokyo_Small", "Kyoto_Small", "LosAngeles_Small"
-        };
-        cfg.gen_city_filter   = { "NewYork_Small", "Paris_Small" };
+        cfg.train_city_filter = eval_cities;
 
         cfg.eval_modes = {
             PolicyMode::MAPPO,
@@ -239,122 +294,32 @@ static int run_main()
             PolicyMode::Hybrid,
             PolicyMode::RMCA,
             PolicyMode::TokenPassing,
-            PolicyMode::TamAlwaysAccept,
         };
-        cfg.eval_scenarios = make_scenario_grid();   // 9 task×congestion combos
+        cfg.eval_scenarios = make_scenario_grid();
 
         apply_paper_environment(cfg.episode_cfg);
-        cfg.episode_cfg.agent_pool_multiplier = 10.0f;   // over_fleet head-room
+        cfg.episode_cfg.ratio_mult = rm;
 
-        cfg.load_policy        = true;
-        cfg.policy_path        = kOutputDir + "\\mappo\\policy_seed42.bin";
-        cfg.ippo_policy_path   = kOutputDir + "\\ippo_faithful\\ippo_seed42.bin";
-        cfg.mapper_policy_path = kOutputDir + "\\mapper\\mapper_seed42.bin";
+        cfg.policy_path        = kOutputDir + "\\mappo\\policy" + seed_tag;
+        cfg.ippo_policy_path   = kOutputDir + "\\ippo\\ippo" + seed_tag;
+        cfg.mapper_policy_path = kOutputDir + "\\mapper\\mapper" + seed_tag;
 
         std::filesystem::create_directories(cfg.output_dir);
 
-        // ── Phase A — RL + RMCA + TP + ablation on the shared pipeline ────
-        std::cout << "\n--- Phase A: EpisodeRunner pipeline (7 modes) ---\n";
+        // Episode-major : chaque slot (ville, scénario, épisode) est généré
+        // une fois puis rejoué par les 7 modes et par CA/HAPC standalone.
         {
             MultiCityTrainer trainer;
-            trainer.train(cfg);
+            trainer.evaluate(cfg);
         }
 
-        // ── Phase B — system-level standalone solvers (CA, HAPC) ──────────
-        std::cout << "\n--- Phase B: standalone CA + HAPC ---\n";
-        const std::string sota_dir = cfg.output_dir + "\\sota_standalone";
-        std::filesystem::create_directories(sota_dir);
-        const std::string sota_csv = sota_dir + "\\sota_seed"
-                                   + std::to_string(seed) + ".csv";
-        SolverCSVLogger logger(sota_csv, /*append=*/false);
-        logger.write_header();
-
-        struct CityToRun {
-            const CityConfig* cc;
-            int               ca_index;     // index within its phase list
-        };
-        const auto& all_cities = CityRegistry::all();
-        auto collect = [&](const std::vector<std::string>& names) {
-            std::vector<CityToRun> out;
-            for (const auto& want : names)
-                for (const auto& cc : all_cities)
-                    if (cc.name == want) {
-                        out.push_back({ &cc, static_cast<int>(out.size()) });
-                        break;
-                    }
-            return out;
-        };
-
-        auto eval_phase = [&](const std::vector<CityToRun>& cities) {
-            for (const auto& entry : cities) {
-                const CityConfig& cc = *entry.cc;
-                std::cout << "\n  City: " << cc.name << "\n";
-
-                const std::string cache_path = kCacheRoot + "/" + cc.name + ".json";
-                GeoBox geo_box;
-                if (GeoBoxManager::cache_exists(cache_path)) {
-                    geo_box = GeoBoxManager::load_geobox(cache_path);
-                } else {
-                    geo_box = create_geo_box(cc.osm_path,
-                                             cc.bbox.min_lon, cc.bbox.min_lat,
-                                             cc.bbox.max_lon, cc.bbox.max_lat);
-                    if (geo_box.is_valid)
-                        GeoBoxManager::save_geobox(geo_box, cache_path);
-                }
-                if (!geo_box.is_valid) {
-                    std::cerr << "    [Skip] GeoBox invalid for " << cc.name << "\n";
-                    continue;
-                }
-                Pathfinder pathfinder(geo_box);
-
-                EpisodeConfig per_city_ep = cfg.episode_cfg;
-                per_city_ep.city = &cc;
-                MultiCityTrainer::customize_episode_for_city(per_city_ep, cc);
-
-                for (size_t si = 0; si < cfg.eval_scenarios.size(); ++si) {
-                    const EpisodeScenario& sc = cfg.eval_scenarios[si];
-                    for (int e = 0; e < cfg.n_eval_episodes; ++e) {
-                        // EXACT MultiCityTrainer::run_eval seed formula —
-                        // Phase A and Phase B see the same task streams.
-                        const uint32_t ep_seed = static_cast<uint32_t>(
-                            1u + e
-                            + 101u * (static_cast<int>(si) + 1)
-                            + 10007u * (entry.ca_index + 1)
-                            + 1000003u * static_cast<uint32_t>(seed));
-
-                        SolverRunner runner(per_city_ep, geo_box, pathfinder,
-                                            sc, ep_seed);
-                        const SharedEpisodeSetup setup =
-                            build_shared_episode_setup(
-                                ep_seed, cc, sc, per_city_ep, geo_box);
-
-                        auto run_and_log = [&](ISolver& s) {
-                            SolverMetrics m = runner.run(s, &setup);
-                            m.city_label = cc.name;
-                            m.episode    = e;
-                            logger.write_row(m);
-                            std::cout << "    " << cc.name << " | " << sc.label
-                                      << " | ep" << e << " | " << m.solver_name
-                                      << "  thr=" << m.throughput_rate
-                                      << "  lat=" << m.latency_mean
-                                      << "  (" << m.wallclock_ms << "ms)\n";
-                        };
-                        { FaithfulCASolver               s; run_and_log(s); }
-                        { HybridAdaptivePredictiveSolver s; run_and_log(s); }
-                    }
-                }
-            }
-        };
-
-        eval_phase(collect(cfg.train_city_filter));
-        eval_phase(collect(cfg.gen_city_filter));
-        logger.close();
-
-        std::cout << "\n=== Evaluation done ===\n"
-                  << "  Phase A CSV: " << cfg.output_dir << "\\episodes_seed"
+        std::cout << "\n=== Niveau RM=" << rm_tag << " termine ===\n"
+                  << "  Modes CSV: " << cfg.output_dir << "\\episodes_seed"
                   << seed << ".csv\n"
-                  << "  Phase B CSV: " << sota_csv << "\n"
-                  << "  Join keys  : (city, scenario, episode)\n";
+                  << "  SoTA  CSV: " << cfg.output_dir
+                  << "\\sota_standalone\\sota_seed" << seed << ".csv\n"
+                  << "  Join keys: (city, scenario, episode)\n";
+        }   // fin du niveau RM
     }
 
 

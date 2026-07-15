@@ -7,72 +7,66 @@
 #include "DMASforPD/Policy/Hybrid.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
+#include "SoTA/SolverFramework.hpp"
+#include "SoTA/Standalone/CA.hpp"
+#include "SoTA/Standalone/HAPC.hpp"
 #include <algorithm>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <random>
 #include <stdexcept>
+#include <unordered_map>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#define PSAPI_VERSION 2
+#include <windows.h>
+#include <psapi.h>
+static long long process_commit_mb() {
+    PROCESS_MEMORY_COUNTERS_EX pmc{};
+    if (GetProcessMemoryInfo(GetCurrentProcess(),
+            reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&pmc), sizeof(pmc)))
+        return static_cast<long long>(pmc.PrivateUsage) / (1024 * 1024);
+    return -1;
+}
+#else
+static long long process_commit_mb() { return -1; }
+#endif
 
 namespace fs = std::filesystem;
 
 // ── City loading ──────────────────────────────────────────────────────────────
 
-// Scale per-city episode params so task duration is short relative to episode
-// length — needed so agents don't stay saturated and the policy gets enough
-// experience. Adapted from city area (km²).
+// Set the per-city size scalar SCE and its derived scale. SCE fixes the event
+// counts (tasks/ghosts) via env_scale; the fleet base is round(10·SCE) here and
+// gets ×AM per scenario at run time. Phases are a constant-fleet 3600-step
+// timeline carrying only the density label and the hot-zone count.
 void MultiCityTrainer::customize_episode_for_city(EpisodeConfig& ep, const CityConfig& cc) {
+    // Area tracks SCE (Small 25 / Medium 50 / Large 75 km²), so SCE also
+    // reflects graph size → consistent congestion density across sizes.
     const double a = cc.area_km2;
-    // Per-city tier override: skipped when the caller has set
-    // ghost_n_max_user_set, so strong-congestion eval (Option Y) keeps a
-    // SAME-density ghost regime across cities (otherwise the tier would
-    // silently downgrade Tokyo_Large from a user-supplied 500 to 80).
-    const bool override_ghost = !ep.ghost_n_max_user_set;
-    // Fleet shrink factor: caller-controlled (Y/F/Q opt-in). Combined with
-    // fleet_load_per_agent on the CongestionMap to keep the same per-edge
-    // congestion footprint while paying K× less A* / policy compute.
-    const int fleet_div = std::max(1, ep.fleet_size_divisor);
-    auto shrink = [fleet_div](int n) {
-        return std::max(2, (n + fleet_div - 1) / fleet_div);
+    float sce;
+    if      (a < 40.0) sce = 1.f;   // Small  (~25 km²)
+    else if (a < 65.0) sce = 2.f;   // Medium (~50 km²)
+    else               sce = 3.f;   // Large  (~75 km²)
+    ep.env_scale = sce;
+
+    const int fleet = event_tuning::derived_fleet_size(sce, 1.f);   // 10·SCE (×AM at run time)
+    ep.phases = {
+        { 1000, fleet, fleet, 0.0f, 4 },
+        { 1500, fleet, fleet, 0.5f, 6 },
+        { 1100, fleet, fleet, 1.0f, 8 },
     };
-    // Tier thresholds match Tokyo_Small / Tokyo_Medium / Tokyo_Large areas.
-    // Multi-task FIFO queue per agent — safe after the receive_task() reorder
-    // fix. Bigger graph ⇒ deeper queue so agents stay busy across long trips.
-    if (a < 50.0) {
-        // Small (~25 km²): ~150m–1500m trips.
-        ep.phases = {
-            { 1000,  6.f,  shrink( 6), shrink( 8), 0.0f, 3 },
-            { 1500,  8.f,  shrink( 8), shrink(11), 0.5f, 4 },
-            { 1100, 10.f,  shrink(11), shrink(12), 1.0f, 5 },
-        };
-        ep.min_task_dist_m = 150.f;
-        ep.max_task_dist_m = 1500.f;
-        ep.hot_zone_radius = 300.f;
-        ep.max_tasks_per_agent = 3;
-        if (override_ghost) ep.ghost_n_max = 30;
-    } else if (a < 300.0) {
-        // Medium (~144 km²): ~250m–3500m trips.
-        ep.phases = {
-            { 1000, 3.f, shrink(10), shrink(14), 0.0f, 4 },
-            { 1500, 4.f, shrink(14), shrink(18), 0.5f, 6 },
-            { 1100, 5.f, shrink(18), shrink(22), 1.0f, 7 },
-        };
-        ep.min_task_dist_m = 250.f;
-        ep.max_task_dist_m = 3500.f;
-        ep.hot_zone_radius = 500.f;
-        ep.max_tasks_per_agent = 3;
-        if (override_ghost) ep.ghost_n_max = 72;
+    ep.max_tasks_per_agent = 3;
+
+    if (sce <= 1.f) {
+        ep.min_task_dist_m = 150.f;  ep.max_task_dist_m = 1500.f;  ep.hot_zone_radius = 300.f;
+    } else if (sce <= 2.f) {
+        ep.min_task_dist_m = 250.f;  ep.max_task_dist_m = 3500.f;  ep.hot_zone_radius = 500.f;
     } else {
-        // Large (>=300 km²): ~400m–5000m trips.
-        ep.phases = {
-            { 1000, 2.f, shrink(16), shrink(20), 0.0f, 4 },
-            { 1500, 3.f, shrink(20), shrink(26), 0.5f, 6 },
-            { 1100, 4.f, shrink(26), shrink(30), 1.0f, 8 },
-        };
-        ep.min_task_dist_m = 400.f;
-        ep.max_task_dist_m = 5000.f;
-        ep.hot_zone_radius = 800.f;
-        ep.max_tasks_per_agent = 4;
-        if (override_ghost) ep.ghost_n_max = 160;
+        ep.min_task_dist_m = 400.f;  ep.max_task_dist_m = 5000.f;  ep.hot_zone_radius = 800.f;
     }
 }
 
@@ -106,25 +100,21 @@ std::unique_ptr<CityAssets> MultiCityTrainer::load_city(
     return std::make_unique<CityAssets>(&cc, idx, std::move(ep), std::move(gb));
 }
 
-// Fixed over-saturation scenario for the optional stress-eval phase.
-static const EpisodeScenario kStressScenario{ 2.0f, 0.6f, "stress" };
-
 // ── PolicyMode <-> string helper for flexible eval mode subsets ───────────────
 static const char* policy_mode_label(PolicyMode m) {
     switch (m) {
         case PolicyMode::MAPPO:           return "MAPPO";
         case PolicyMode::IPPO:            return "IPPO";
         case PolicyMode::MAPPER:          return "MAPPER";
-        case PolicyMode::FaithfulMAPPER:  return "FaithfulMAPPER";
         case PolicyMode::Hybrid:          return "Hybrid";
         case PolicyMode::TamAlwaysAccept: return "TamAlwaysAccept";
         case PolicyMode::Greedy:          return "Greedy";
         case PolicyMode::Random:          return "Random";
         case PolicyMode::InsertionGreedy: return "InsertionGreedy";
-        case PolicyMode::PIBT:            return "PIBT";
-        case PolicyMode::MCA:             return "MCA";
         case PolicyMode::TokenPassing:    return "TokenPassing";
         case PolicyMode::DoubleHorizon:   return "DoubleHorizon";
+        case PolicyMode::DbVNS:           return "DbVNS";
+        case PolicyMode::ALNS:            return "ALNS";
         case PolicyMode::RMCA:            return "RMCA";
     }
     return "Unknown";
@@ -138,195 +128,22 @@ static std::vector<PolicyMode> resolve_eval_modes(
     return std::vector<PolicyMode>(default_modes);
 }
 
-// ── Evaluation (train cities) ─────────────────────────────────────────────────
+// ── Evaluation ────────────────────────────────────────────────────────────────
 //
-// 5 eval modes per city:
-//   MAPPO            – full system (learned policy + TAM routing)
-//   TamAlwaysAccept  – TAM routing only, no learned policy (ablation)
-//   Greedy           – sequential scan, first idle agent
-//   Random           – random accept/reject baseline
-//   InsertionGreedy  – cost-aware heuristic (strongest non-learning baseline)
-//
-// The MAPPO vs TamAlwaysAccept comparison isolates the policy learning benefit.
-// The TamAlwaysAccept vs Greedy comparison isolates the TAM routing benefit.
+// Episode-major protocol: one initial state (SharedEpisodeSetup) per
+// (city, scenario, episode) slot, built ONCE and replayed by every method —
+// the eval modes on the shared TAM/DbVNS pipeline, then the standalone SoTA
+// solvers (CA, HAPC) on the same setup. prepare_run() restores the initial
+// state and clears the previous method's buffers before each run; the slot's
+// path caches are released once every method has passed.
 
 int MultiCityTrainer::run_eval(
     const TrainingConfig& cfg,
     const std::vector<std::unique_ptr<CityAssets>>& assets,
     std::vector<std::unique_ptr<EpisodeRunner>>& runners,
     int global_ep, int seed,
-    TrainingLogger& logger)
-{
-    const int num_cities = static_cast<int>(assets.size());
-
-    // Eval line-up: full default = 3 RL baselines + 9 non-learning, sweeps the
-    // design axes (centralised critic, decentralised actor, evolutionary RL).
-    // Override via cfg.eval_modes for a lighter targeted comparison.
-    const std::vector<PolicyMode> modes = resolve_eval_modes(cfg, {
-        PolicyMode::MAPPO, PolicyMode::IPPO, PolicyMode::MAPPER,
-        PolicyMode::RMCA,
-        PolicyMode::TamAlwaysAccept,
-        PolicyMode::Greedy, PolicyMode::Random,
-        PolicyMode::TokenPassing });
-
-    // Scenario sweep: if cfg.eval_scenarios is non-empty, iterate over each
-    // and tag the resulting record with phase = "eval_<label>". Otherwise
-    // fall back to single default scenario {1, 1, "normal"} → phase = "eval".
-    std::vector<EpisodeScenario> scenarios = cfg.eval_scenarios;
-    const bool single_scenario = scenarios.empty();
-    if (single_scenario)
-        scenarios.push_back(EpisodeScenario{1.f, 1.f, "normal"});
-
-    for (int ci = 0; ci < num_cities; ++ci) {
-        const CityAssets& ca     = *assets[ci];
-        EpisodeRunner&    runner = *runners[ci];
-
-        runner.train_mode = false;
-
-        for (PolicyMode m : modes) {
-            const char* name = policy_mode_label(m);
-            runner.policy_mode = m;
-            int sc_idx = 0;
-            for (const EpisodeScenario& sc : scenarios) {
-                const std::string phase = single_scenario
-                    ? "eval" : std::string("eval_") + sc.label;
-                for (int e = 0; e < cfg.n_eval_episodes; ++e) {
-                    // Deterministic per-(city, scenario, episode) seed so that
-                    // every policy mode sees the SAME task stream, ghost
-                    // profile, and hetero-capacity draws for the same eval
-                    // slot — the only difference across modes is the policy.
-                    const uint32_t ep_seed = static_cast<uint32_t>(
-                        1u + e
-                        + 101u * (sc_idx + 1)
-                        + 10007u * (ca.index + 1)
-                        + 1000003u * static_cast<uint32_t>(seed));
-                    // Publication-grade: build the canonical SharedEpisodeSetup
-                    // so every policy (and every SoTA solver run on the same
-                    // setup) sees a byte-identical environment. Opt-in via
-                    // cfg.use_shared_episode_setup so training remains unchanged.
-                    std::unique_ptr<SharedEpisodeSetup> setup;
-                    if (cfg.use_shared_episode_setup) {
-                        setup = std::make_unique<SharedEpisodeSetup>(
-                            build_shared_episode_setup(
-                                ep_seed, *ca.config, sc, ca.ep_cfg, ca.geo_box));
-                    }
-                    RunResult res = runner.run(ca.index, num_cities, sc,
-                                                ep_seed, setup.get());
-                    EpisodeRecord rec = make_record(
-                        res, seed, global_ep++,
-                        ca.config->name, phase, name,
-                        res.metrics.n_agents_max);
-                    logger.push(rec);
-                    std::cout << "    [" << phase
-                              << " " << ca.config->name << "/" << name
-                              << "/" << (e + 1) << "/" << cfg.n_eval_episodes
-                              << "]  thr=" << res.metrics.throughput_rate
-                              << "  acc=" << res.metrics.accept_rate
-                              << "  " << res.wallclock_ms << "ms\n";
-                }
-                ++sc_idx;
-            }
-        }
-    }
-
-    return global_ep;
-}
-
-// ── Generalisation evaluation (unseen cities) ─────────────────────────────────
-//
-// Runs MAPPO + TamAlwaysAccept + InsertionGreedy on cities held out from
-// training. Called once per seed after the final train-city eval.
-// Only 3 modes (skip Greedy/Random — already characterised on train cities).
-
-int MultiCityTrainer::run_generalize_eval(
-    const TrainingConfig& cfg,
-    const std::vector<std::unique_ptr<CityAssets>>& gen_assets,
-    std::vector<std::unique_ptr<EpisodeRunner>>& gen_runners,
-    int global_ep, int seed,
-    TrainingLogger& logger)
-{
-    if (gen_assets.empty()) return global_ep;
-
-    const int num_gen = static_cast<int>(gen_assets.size());
-
-    // Default generalisation modes: 3 RL + 5 strongest non-learning references.
-    // Override via cfg.eval_modes.
-    const std::vector<PolicyMode> modes = resolve_eval_modes(cfg, {
-        PolicyMode::MAPPO, PolicyMode::IPPO, PolicyMode::MAPPER,
-        PolicyMode::RMCA,
-        PolicyMode::TamAlwaysAccept, PolicyMode::TokenPassing });
-
-    // Scenario sweep on held-out cities (mirrors run_eval logic).
-    std::vector<EpisodeScenario> scenarios = cfg.eval_scenarios;
-    const bool single_scenario = scenarios.empty();
-    if (single_scenario)
-        scenarios.push_back(EpisodeScenario{1.f, 1.f, "normal"});
-
-    std::cout << "  -- Generalisation Eval (" << num_gen << " cities) --\n";
-    for (int ci = 0; ci < num_gen; ++ci) {
-        const CityAssets& ca     = *gen_assets[ci];
-        EpisodeRunner&    runner = *gen_runners[ci];
-
-        runner.train_mode = false;
-
-        for (PolicyMode m : modes) {
-            const char* name = policy_mode_label(m);
-            runner.policy_mode = m;
-            int sc_idx = 0;
-            for (const EpisodeScenario& sc : scenarios) {
-                const std::string phase = single_scenario
-                    ? "generalize" : std::string("generalize_") + sc.label;
-                for (int e = 0; e < cfg.n_eval_episodes; ++e) {
-                    // Deterministic seed: identical task stream per
-                    // (gen_city, scenario, ep) across all modes — see run_eval.
-                    const uint32_t ep_seed = static_cast<uint32_t>(
-                        1u + e
-                        + 101u * (sc_idx + 1)
-                        + 10007u * (ca.index + 1)
-                        + 1000003u * static_cast<uint32_t>(seed));
-                    std::unique_ptr<SharedEpisodeSetup> setup;
-                    if (cfg.use_shared_episode_setup) {
-                        setup = std::make_unique<SharedEpisodeSetup>(
-                            build_shared_episode_setup(
-                                ep_seed, *ca.config, sc, ca.ep_cfg, ca.geo_box));
-                    }
-                    RunResult res = runner.run(ca.index, num_gen, sc,
-                                                ep_seed, setup.get());
-                    EpisodeRecord rec = make_record(
-                        res, seed, global_ep++,
-                        ca.config->name, phase, name,
-                        res.metrics.n_agents_max);
-                    logger.push(rec);
-                    std::cout << "    [" << phase
-                              << " " << ca.config->name << "/" << name
-                              << "/" << (e + 1) << "/" << cfg.n_eval_episodes
-                              << "]  thr=" << res.metrics.throughput_rate
-                              << "  acc=" << res.metrics.accept_rate
-                              << "  " << res.wallclock_ms << "ms\n";
-                }
-                ++sc_idx;
-            }
-        }
-    }
-
-    return global_ep;
-}
-
-// ── Stress evaluation (oversaturated scenarios) ───────────────────────────────
-//
-// Runs all 8 modes on each train city with the kStressScenario applied
-// (density_mult=2.0, agents_mult=0.6). With ~4× over-saturation the system
-// cannot deliver every task; the policy must learn to be selective.
-//
-// Logged with phase = "stress" so the analysis script can separate normal-
-// load vs over-saturated performance.
-
-int MultiCityTrainer::run_stress_eval(
-    const TrainingConfig& cfg,
-    const std::vector<std::unique_ptr<CityAssets>>& assets,
-    std::vector<std::unique_ptr<EpisodeRunner>>& runners,
-    int global_ep, int seed,
-    TrainingLogger& logger)
+    TrainingLogger& logger,
+    SolverCSVLogger* sota)
 {
     const int num_cities = static_cast<int>(assets.size());
 
@@ -337,53 +154,88 @@ int MultiCityTrainer::run_stress_eval(
         PolicyMode::Greedy, PolicyMode::Random,
         PolicyMode::TokenPassing });
 
-    std::cout << "  -- Stress Eval (density="
-              << kStressScenario.density_mult << " agents="
-              << kStressScenario.agents_mult << ") --\n";
+    std::vector<EpisodeScenario> scenarios = cfg.eval_scenarios;
+    const bool single_scenario = scenarios.empty();
+    if (single_scenario)
+        scenarios.push_back(EpisodeScenario{1.f, "normal"});
 
     for (int ci = 0; ci < num_cities; ++ci) {
-        const CityAssets& ca     = *assets[ci];
-        EpisodeRunner&    runner = *runners[ci];
+        CityAssets&    ca     = *assets[ci];
+        EpisodeRunner& runner = *runners[ci];
         runner.train_mode = false;
 
-        for (PolicyMode m : modes) {
-            const char* name = policy_mode_label(m);
-            runner.policy_mode = m;
+        int sc_idx = 0;
+        for (const EpisodeScenario& sc : scenarios) {
+            const std::string phase = single_scenario
+                ? "eval" : std::string("eval_") + sc.label;
             for (int e = 0; e < cfg.n_eval_episodes; ++e) {
-                // Deterministic stress seed (single scenario = sc_idx 0).
+                // Deterministic slot seed: every method sees the SAME task
+                // stream, ghost profile and hetero-capacity draws.
                 const uint32_t ep_seed = static_cast<uint32_t>(
                     1u + e
-                    + 101u
+                    + 101u * (sc_idx + 1)
                     + 10007u * (ca.index + 1)
                     + 1000003u * static_cast<uint32_t>(seed));
-                RunResult res = runner.run(ca.index, num_cities, kStressScenario, ep_seed);
-                EpisodeRecord rec = make_record(
-                    res, seed, global_ep++,
-                    ca.config->name, "stress", name,
-                    res.metrics.n_agents_max);
-                logger.push(rec);
-                std::cout << "    [stress " << ca.config->name << "/" << name
-                          << "/" << (e + 1) << "/" << cfg.n_eval_episodes
-                          << "]  thr=" << res.metrics.throughput_rate
-                          << "  acc=" << res.metrics.accept_rate
-                          << "  " << res.wallclock_ms << "ms\n";
+                const SharedEpisodeSetup setup = build_shared_episode_setup(
+                    ep_seed, *ca.config, sc, ca.ep_cfg, ca.geo_box);
+
+                for (PolicyMode m : modes) {
+                    const char* name = policy_mode_label(m);
+                    runner.policy_mode = m;
+                    RunResult res = runner.run(ca.index, num_cities, sc,
+                                                ep_seed, &setup);
+                    logger.push(make_record(
+                        res, seed, global_ep++,
+                        ca.config->name, phase, name,
+                        res.metrics.n_agents_max));
+                    const auto& M = res.metrics;
+                    std::cout << "    [" << phase
+                              << " " << ca.config->name << " " << sc.label
+                              << " " << name
+                              << " ep" << (e + 1) << "/" << cfg.n_eval_episodes
+                              << "]  thr=" << M.throughput_rate
+                              << " done=" << M.tasks_completed << "/" << M.tasks_appeared
+                              << " cong=x" << M.mean_congestion
+                              << " lat=" << M.latency_mean
+                              << "  " << res.wallclock_ms << "ms\n";
+                }
+
+                if (sota) {
+                    SolverRunner srunner(ca.ep_cfg, ca.geo_box, sc, ep_seed);
+                    auto run_solver = [&](ISolver& s) {
+                        SolverMetrics m = srunner.run(s, &setup);
+                        m.city_label = ca.config->name;
+                        m.episode    = e;
+                        sota->write_row(m);
+                        std::cout << "    [" << phase
+                                  << " " << ca.config->name << " " << sc.label
+                                  << " " << m.solver_name
+                                  << " ep" << (e + 1) << "/" << cfg.n_eval_episodes
+                                  << "]  thr=" << m.throughput_rate
+                                  << " lat=" << m.latency_mean
+                                  << "  " << m.wallclock_ms << "ms\n";
+                    };
+                    { FaithfulCASolver               s; run_solver(s); }
+                    { HybridAdaptivePredictiveSolver s; run_solver(s); }
+                }
+
+                runner.release_episode_memory();
             }
+            ++sc_idx;
         }
     }
 
     return global_ep;
 }
 
-// ── Main training loop ────────────────────────────────────────────────────────
+// ── Evaluation protocol ───────────────────────────────────────────────────────
+// Loads the per-seed checkpoints produced by train_grid, then runs the
+// episode-major sweep (run_eval) on the eval cities. No training happens here.
 
-void MultiCityTrainer::train(const TrainingConfig& cfg) {
+void MultiCityTrainer::evaluate(const TrainingConfig& cfg) {
     fs::create_directories(cfg.output_dir);
 
-    // ── 1. Load train cities ──────────────────────────────────────────────
-    // When no filter is set, fall back to the registry's default "train" set
-    // (TrainAndApply role). When a filter IS set, take the user's list at
-    // face value — they may include ComparisonOnly cities (Tokyo_Large,
-    // London, ...) intentionally to expand the training distribution.
+    // ── 1. Load eval cities ───────────────────────────────────────────────
     std::vector<const CityConfig*> train_ptrs;
     if (cfg.train_city_filter.empty()) {
         train_ptrs = CityRegistry::train_cities();
@@ -406,50 +258,14 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
     }
     const int num_cities  = static_cast<int>(train_ptrs.size());
 
-    std::cout << "Loading " << num_cities << " train cities from " << cfg.cache_root << "\n";
+    std::cout << "Loading " << num_cities << " cities from " << cfg.cache_root << "\n";
     std::vector<std::unique_ptr<CityAssets>> assets;
     assets.reserve(num_cities);
     for (int i = 0; i < num_cities; ++i)
         assets.push_back(load_city(*train_ptrs[i], i, cfg.episode_cfg, cfg.cache_root));
-    std::cout << "All train cities loaded.\n\n";
+    std::cout << "All cities loaded.\n\n";
 
-    // ── 2. Load generalisation cities (skip gracefully if OSM missing) ────
-    std::vector<std::unique_ptr<CityAssets>> gen_assets;
-    if (cfg.enable_generalization) {
-        auto gen_ptrs_all = CityRegistry::comparison_cities();
-        std::vector<const CityConfig*> gen_ptrs;
-        if (cfg.gen_city_filter.empty()) {
-            gen_ptrs = gen_ptrs_all;
-        } else {
-            for (const auto* cc : gen_ptrs_all) {
-                for (const auto& want : cfg.gen_city_filter) {
-                    if (cc->name == want) { gen_ptrs.push_back(cc); break; }
-                }
-            }
-        }
-        if (!gen_ptrs.empty()) {
-            std::cout << "Loading generalisation cities (skip if missing)...\n";
-            for (int i = 0; i < (int)gen_ptrs.size(); ++i) {
-                try {
-                    gen_assets.push_back(
-                        load_city(*gen_ptrs[i], num_cities + i, cfg.episode_cfg, cfg.cache_root));
-                } catch (const std::exception& e) {
-                    std::cout << "  [Skip] " << gen_ptrs[i]->name
-                              << " — " << e.what() << "\n";
-                }
-            }
-            std::cout << gen_assets.size() << "/" << gen_ptrs.size()
-                      << " generalisation cities loaded.\n\n";
-        }
-    } else {
-        std::cout << "Generalisation eval disabled (Tokyo-only run).\n\n";
-    }
-
-    std::vector<int> train_indices;
-    for (int i = 0; i < num_cities; ++i)
-        train_indices.push_back(i);
-
-    // ── 3. Multi-seed loop ────────────────────────────────────────────────
+    // ── 2. Multi-seed loop ────────────────────────────────────────────────
     const std::string summary_path = cfg.output_dir + "/summary.csv";
 
     for (int s = 0; s < cfg.n_seeds; ++s) {
@@ -475,28 +291,21 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
         mapper.reinit(static_cast<uint32_t>(seed) ^ 0x2Bu);
         mapper.ensure_agents(learning_pool);
 
-        if (cfg.load_policy) {
-            auto try_load = [&](const char* name, const std::string& path,
-                                auto loader) {
-                if (path.empty()) return;
-                if (!loader(path)) {
-                    const std::string msg = std::string("Could not load ") + name
-                                          + " from " + path;
-                    if (cfg.eval_only)
-                        throw std::runtime_error("[eval_only] " + msg
-                            + " — aborting to avoid evaluating Xavier-init weights");
-                    std::cerr << "[Warn] " << msg << "\n";
-                } else {
-                    std::cout << "[Policy] Loaded " << name << " from " << path << "\n";
-                }
-            };
-            try_load("MAPPO   ", cfg.policy_path,
-                     [&](const std::string& p){ return policy.load(p); });
-            try_load("IPPO    ", cfg.ippo_policy_path,
-                     [&](const std::string& p){ return ippo.load(p); });
-            try_load("MAPPER  ", cfg.mapper_policy_path,
-                     [&](const std::string& p){ return mapper.load(p); });
-        }
+        auto try_load = [&](const char* name, const std::string& path,
+                            auto loader) {
+            if (path.empty()) return;
+            if (!loader(path))
+                throw std::runtime_error(std::string("Could not load ") + name
+                    + " from " + path
+                    + " — aborting to avoid evaluating fresh-init weights");
+            std::cout << "[Policy] Loaded " << name << " from " << path << "\n";
+        };
+        try_load("MAPPO   ", cfg.policy_path,
+                 [&](const std::string& p){ return policy.load(p); });
+        try_load("IPPO    ", cfg.ippo_policy_path,
+                 [&](const std::string& p){ return ippo.load(p); });
+        try_load("MAPPER  ", cfg.mapper_policy_path,
+                 [&](const std::string& p){ return mapper.load(p); });
 
         // ── Hybrid base initialisation ──────────────────────────────────────
         // Hybrid uses MAPPO's actor as its frozen base. If MAPPO was loaded
@@ -509,11 +318,9 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
         std::cout << "[Policy] Hybrid base set from MAPPO actor "
                   << "(" << learning_pool << " agent slots)\n";
 
-        // ── Safety check for eval_only mode ─────────────────────────────────
-        // If a policy is in eval_modes but its checkpoint path is empty, the
-        // eval would silently run on Xavier-init weights — invalidating the
-        // comparison. Detect and abort.
-        if (cfg.eval_only && !cfg.eval_modes.empty()) {
+        // Any RL mode in eval_modes without a checkpoint path would silently
+        // run on fresh-init weights — detect and abort.
+        if (!cfg.eval_modes.empty()) {
             auto has_mode = [&](PolicyMode m){
                 return std::find(cfg.eval_modes.begin(),
                                   cfg.eval_modes.end(), m)
@@ -523,301 +330,333 @@ void MultiCityTrainer::train(const TrainingConfig& cfg) {
                              const std::string& p) {
                 if (has_mode(m) && p.empty()) {
                     throw std::runtime_error(
-                        std::string("[eval_only] ") + name
+                        std::string(name)
                         + " is in eval_modes but its checkpoint path is empty"
                         + " — set the corresponding *_policy_path in cfg");
                 }
             };
-            check("MAPPO",          PolicyMode::MAPPO,          cfg.policy_path);
-            check("IPPO",           PolicyMode::IPPO,           cfg.ippo_policy_path);
-            check("MAPPER",         PolicyMode::MAPPER,         cfg.mapper_policy_path);
-            // Hybrid base derives from MAPPO, so check MAPPO path for it too.
+            check("MAPPO",  PolicyMode::MAPPO,  cfg.policy_path);
+            check("IPPO",   PolicyMode::IPPO,   cfg.ippo_policy_path);
+            check("MAPPER", PolicyMode::MAPPER, cfg.mapper_policy_path);
+            // Hybrid base derives from MAPPO.
             if (has_mode(PolicyMode::Hybrid) && cfg.policy_path.empty()) {
                 throw std::runtime_error(
-                    "[eval_only] Hybrid is in eval_modes but its base (MAPPO) "
+                    "Hybrid is in eval_modes but its base (MAPPO) "
                     "path is empty — set cfg.policy_path");
             }
         }
 
-        // Per-city runners for train cities (reused across rounds — A* cache warms up).
+        // Per-city runners (reused across seeds' episodes — A* cache warms up).
         std::vector<std::unique_ptr<EpisodeRunner>> runners;
         runners.reserve(num_cities);
         for (int i = 0; i < num_cities; ++i) {
             CityAssets& ca = *assets[i];
             runners.push_back(std::make_unique<EpisodeRunner>(
-                ca.ep_cfg, ca.geo_box, ca.pathfinder,
+                ca.ep_cfg, ca.geo_box,
                 static_cast<uint32_t>(seed)));
         }
-
-        // Per-city runners for generalisation cities (cold path — no training).
-        std::vector<std::unique_ptr<EpisodeRunner>> gen_runners;
-        gen_runners.reserve(gen_assets.size());
-        for (auto& ga : gen_assets)
-            gen_runners.push_back(std::make_unique<EpisodeRunner>(
-                ga->ep_cfg, ga->geo_box, ga->pathfinder,
-                static_cast<uint32_t>(seed)));
 
         TrainingLogger logger(cfg.output_dir, seed);
+        const std::string sota_dir = cfg.output_dir + "/sota_standalone";
+        fs::create_directories(sota_dir);
+        SolverCSVLogger sota(sota_dir + "/sota_seed" + std::to_string(seed) + ".csv");
+        sota.write_header();
         int global_ep = 0;
 
-        const std::vector<EpisodeScenario> scenario_grid =
-            cfg.train_scenarios.empty() ? make_scenario_grid() : cfg.train_scenarios;
-        size_t scenario_cursor = 0;
-
-        // ── 4. Training rounds ────────────────────────────────────────────
-        // In eval_only mode the training loop is skipped entirely: we drop
-        // straight to the post-training eval phase with the loaded weights.
-        // This is the protocol for the final "general eval on 7 cities with
-        // the best policy" — re-run with eval_only=true after a training run.
-        const int n_train_rounds = cfg.eval_only ? 0 : cfg.n_rounds;
-        for (int round = 0; round < n_train_rounds; ++round) {
-            // Linear anneal: lr_actor, lr_critic, ent_w decay toward their
-            // *_min values over the seed's training horizon. SoTA PPO/MAPPO
-            // recipe: high lr + high entropy early for exploration, both
-            // taper off so the policy can commit to a strategy.
-            const float progress = (cfg.n_rounds > 1)
-                ? static_cast<float>(round) / (cfg.n_rounds - 1) : 0.f;
-            policy.set_progress(progress);
-            ippo.set_progress(progress);
-            mapper.set_progress(progress);
-
-            // Helper to log one training episode's stats line uniformly.
-            auto log_train = [&](const RunResult& res, const char* tag,
-                                  int max_ep_h) {
-                if (!cfg.verbose) return;
-                std::cout << "  [s" << s << " r" << round
-                          << " " << (cfg.verbose ? "" : "")
-                          << " " << tag << "]"
-                          << "  thr="   << res.metrics.throughput_rate
-                          << "  acc="   << res.metrics.accept_rate
-                          << "  aloss=" << res.train_stats.actor_loss
-                          << "  closs=" << res.train_stats.critic_loss
-                          << "  ent="   << res.train_stats.entropy
-                          << "  kl="    << res.train_stats.kl_approx
-                          << "  cf="    << res.train_stats.clip_frac
-                          << "  ep="    << res.train_stats.n_epochs
-                                        << "/" << max_ep_h
-                          << "  n="     << res.train_stats.n_exp
-                          << "  "       << res.wallclock_ms << "ms\n";
-            };
-
-            // Resolve which policies to train this round.
-            auto train_mode_active = [&](PolicyMode m){
-                if (cfg.train_modes.empty()) return true;  // default = train all
-                return std::find(cfg.train_modes.begin(),
-                                  cfg.train_modes.end(), m)
-                       != cfg.train_modes.end();
-            };
-            const bool train_ippo     = train_mode_active(PolicyMode::IPPO);
-            // FaithfulMAPPER is a legacy alias of MAPPER (single paper-faithful
-            // implementation) — either entry trains the same policy.
-            const bool train_mapper   = train_mode_active(PolicyMode::MAPPER)
-                                     || train_mode_active(PolicyMode::FaithfulMAPPER);
-            const bool train_mappo    = train_mode_active(PolicyMode::MAPPO);
-
-            for (int ci : train_indices) {
-                CityAssets&    ca     = *assets[ci];
-                EpisodeRunner& runner = *runners[ci];
-
-                // Deterministic walk over the 9 task×congestion combinations;
-                // all policies in this (round, city) slot share the same one.
-                const EpisodeScenario sc = scenario_grid[scenario_cursor % scenario_grid.size()];
-                ++scenario_cursor;
-
-                // ── IPPO training episode (skipped if not in train_modes) ───
-                if (train_ippo) {
-                    runner.train_mode  = true;
-                    runner.policy_mode = PolicyMode::IPPO;
-                    RunResult res = runner.run(ca.index, num_cities, sc);
-                    logger.push(make_record(
-                        res, seed, global_ep++,
-                        ca.config->name, "train", "IPPO",
-                        res.metrics.n_agents_max));
-                    if (global_ep % cfg.log_every == 0)
-                        log_train(res, "IPPO", ippo.hparams.epochs);
-                }
-
-                // ── MAPPER training episode (skipped if not in train_modes) ─
-                if (train_mapper) {
-                    runner.train_mode  = true;
-                    runner.policy_mode = PolicyMode::MAPPER;
-                    RunResult res = runner.run(ca.index, num_cities, sc);
-                    logger.push(make_record(
-                        res, seed, global_ep++,
-                        ca.config->name, "train", "MAPPER",
-                        res.metrics.n_agents_max));
-                    if (global_ep % cfg.log_every == 0)
-                        log_train(res, "MAPPER", mapper.hparams.epochs);
-                }
-
-                // ── MAPPO training episode (skipped if not in train_modes) ──
-                if (train_mappo) {
-                    runner.train_mode  = true;
-                    runner.policy_mode = PolicyMode::MAPPO;
-                    RunResult res = runner.run(ca.index, num_cities, sc);
-                    logger.push(make_record(
-                        res, seed, global_ep++,
-                        ca.config->name, "train", "MAPPO",
-                        res.metrics.n_agents_max));
-                    if (global_ep % cfg.log_every == 0)
-                        log_train(res, "MAPPO", policy.hparams.epochs);
-                }
-            }
-
-            // ── MAPPER evolutionary selection (paper-faithful) ────────────
-            // on_round_end() self-gates on ev_params.period_rounds and runs
-            //   p_i = 1 − exp(η·R̄_i)/exp(η·R̄_best); Θ_i ← Θ_best (exact copy).
-            if (train_mapper) {
-                mapper.on_round_end();
-                const int n_rep = mapper.last_evolution_replacements();
-                if (n_rep > 0 && cfg.verbose
-                    && (round + 1) % std::max(1, mapper.ev_params.period_rounds) == 0) {
-                    std::cout << "  [MAPPER-Ev @ round " << (round + 1)
-                              << "] replaced " << n_rep << " policies"
-                              << " (exact copy of best, no mutation)\n";
-                }
-            }
-
-            // Periodic eval on train cities (normal + stress scenarios).
-            if (!cfg.train_only && (round + 1) % cfg.eval_every == 0) {
-                std::cout << "  -- Eval @ round " << (round + 1) << " --\n";
-                global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger);
-                if (!cfg.skip_stress_eval)
-                    global_ep = run_stress_eval(cfg, assets, runners, global_ep, seed, logger);
-                logger.flush();
-            }
-
-            // ── Per-round CSV flush ───────────────────────────────────────────
-            // Force the OS buffer to disk so the user can monitor progress live
-            // (default ofstream buffering is ~4 KB → ~10+ rows held internally
-            // until full). This is cheap (single fsync per round) and gives
-            // immediate feedback in long training runs.
-            logger.flush();
-
-            // ── Optional periodic checkpoint ──────────────────────────────────
-            // Insurance against crash / interrupt. Overwrites the same paths as
-            // the final end-of-seed checkpoint, so only the latest snapshot is
-            // kept on disk. Off by default (checkpoint_every_rounds = 0).
-            if (cfg.save_policy && !cfg.eval_only
-                && cfg.checkpoint_every_rounds > 0
-                && (round + 1) % cfg.checkpoint_every_rounds == 0
-                && (round + 1) < n_train_rounds)
-            {
-                auto should_save = [&](PolicyMode m){
-                    if (cfg.train_modes.empty()) return true;
-                    return std::find(cfg.train_modes.begin(),
-                                      cfg.train_modes.end(), m)
-                           != cfg.train_modes.end();
-                };
-                auto ensure_dir = [](const std::string& p) {
-                    std::error_code ec; fs::create_directories(p, ec);
-                };
-                if (should_save(PolicyMode::MAPPO)) {
-                    const std::string subdir = cfg.output_dir + "/mappo";
-                    ensure_dir(subdir);
-                    policy.save(subdir + "/policy_seed" + std::to_string(seed) + ".bin");
-                }
-                if (should_save(PolicyMode::IPPO)) {
-                    const std::string subdir = cfg.output_dir + "/ippo_faithful";
-                    ensure_dir(subdir);
-                    ippo.save(subdir + "/ippo_seed" + std::to_string(seed) + ".bin");
-                }
-                if (should_save(PolicyMode::MAPPER)
-                    || should_save(PolicyMode::FaithfulMAPPER)) {
-                    const std::string subdir = cfg.output_dir + "/mapper";
-                    ensure_dir(subdir);
-                    mapper.save(subdir + "/mapper_seed" + std::to_string(seed) + ".bin");
-                }
-                if (cfg.verbose)
-                    std::cout << "  [Checkpoint @ round " << (round + 1)
-                              << "] intermediate snapshot written\n";
-            }
-        }
-
-        // ── 5. Final evaluation ───────────────────────────────────────────
-        // In eval_only mode we ALWAYS run the final eval (no training rounds
-        // happened, so no periodic eval triggered). In training mode we run
-        // it only if the last round did not already eval (avoid duplicates).
-        // train_only short-circuits this entirely.
-        if (!cfg.train_only &&
-            (cfg.eval_only || cfg.n_rounds == 0 ||
-             cfg.n_rounds % cfg.eval_every != 0)) {
-            std::cout << "  -- Final Eval --\n";
-            global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger);
-            if (!cfg.skip_stress_eval)
-                global_ep = run_stress_eval(cfg, assets, runners, global_ep, seed, logger);
-        }
-
-        // ── 6. Generalisation evaluation (unseen cities, end of seed) ─────
-        if (!cfg.train_only && !cfg.skip_generalize_eval)
-            global_ep = run_generalize_eval(
-                cfg, gen_assets, gen_runners, global_ep, seed, logger);
+        std::cout << "  -- Eval --\n";
+        global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger, &sota);
+        sota.close();
         logger.flush();
 
-        // ── 7. Policy checkpoints ─────────────────────────────────────────
-        // Save only the policies that were actually trained this run — saving
-        // a Xavier-init policy that was never updated would silently overwrite
-        // a previously-trained checkpoint with random weights. Default (empty
-        // train_modes) preserves the old behaviour (save all four).
-        //
-        // Each method goes into its OWN subdirectory under cfg.output_dir,
-        // so checkpoints from different training runs (different methods, same
-        // seed) don't overwrite each other. The directories are created on the
-        // fly if they don't exist yet.
-        if (cfg.save_policy && !cfg.eval_only) {
-            auto should_save = [&](PolicyMode m){
-                if (cfg.train_modes.empty()) return true;   // default = save all
-                return std::find(cfg.train_modes.begin(),
-                                  cfg.train_modes.end(), m)
-                       != cfg.train_modes.end();
-            };
-            auto ensure_dir = [](const std::string& p) {
-                std::error_code ec;
-                fs::create_directories(p, ec);
-            };
-
-            if (should_save(PolicyMode::MAPPO)) {
-                const std::string subdir   = cfg.output_dir + "/mappo";
-                ensure_dir(subdir);
-                const std::string ckpt = subdir + "/policy_seed"
-                                       + std::to_string(seed) + ".bin";
-                policy.save(ckpt);
-                std::cout << "  [Checkpoint] MAPPO          saved to " << ckpt << "\n";
-            } else {
-                std::cout << "  [Checkpoint] MAPPO          skipped (not in train_modes)\n";
-            }
-            if (should_save(PolicyMode::IPPO)) {
-                const std::string subdir = cfg.output_dir + "/ippo_faithful";
-                ensure_dir(subdir);
-                const std::string ckpt = subdir + "/ippo_seed"
-                                       + std::to_string(seed) + ".bin";
-                ippo.save(ckpt);
-                std::cout << "  [Checkpoint] IPPO           saved to " << ckpt
-                          << "  (shared actor + shared critic)\n";
-            } else {
-                std::cout << "  [Checkpoint] IPPO           skipped (not in train_modes)\n";
-            }
-            if (should_save(PolicyMode::MAPPER)
-                || should_save(PolicyMode::FaithfulMAPPER)) {
-                const std::string subdir = cfg.output_dir + "/mapper";
-                ensure_dir(subdir);
-                const std::string ckpt = subdir + "/mapper_seed"
-                                       + std::to_string(seed) + ".bin";
-                mapper.save(ckpt);
-                std::cout << "  [Checkpoint] MAPPER         saved to " << ckpt
-                          << "  (paper-faithful evolution)\n";
-            } else {
-                std::cout << "  [Checkpoint] MAPPER         skipped (not in train_modes)\n";
-            }
-        }
-
-        // ── 8. Per-seed summary ───────────────────────────────────────────
         TrainingLogger::write_summary(summary_path, logger.records(), seed);
 
         std::cout << "Seed " << s << " done — " << global_ep << " episodes.\n\n";
     }
 
-    std::cout << "Training complete. Results in " << cfg.output_dir << "\n";
+    std::cout << "Evaluation complete. Results in " << cfg.output_dir << "\n";
+}
+
+// Completed grid points per seed in an existing training CSV. Rows are flushed
+// once per grid point, so a point is complete when every selected policy
+// logged it. Rows of incomplete points (crash mid-write) are pruned from the
+// file — the resumed run re-runs those points, keeping one clean dataset.
+static std::unordered_map<int, int> completed_grid_points(
+    const std::string& csv_path, int n_policies)
+{
+    std::unordered_map<int, int> per_seed;
+    std::ifstream in(csv_path);
+    std::string header, line;
+    if (!in.is_open() || !std::getline(in, header)) return per_seed;
+
+    std::vector<std::pair<long long, std::string>> data;   // (seed<<32|ep, raw)
+    std::unordered_map<long long, int> rows;
+    while (std::getline(in, line)) {
+        long long key = -1;
+        const size_t c1 = line.find(',');
+        const size_t c2 = (c1 == std::string::npos)
+            ? std::string::npos : line.find(',', c1 + 1);
+        if (c2 != std::string::npos) {
+            try {
+                const long long s = std::stoi(line.substr(0, c1));
+                const long long e = std::stoi(line.substr(c1 + 1, c2 - c1 - 1));
+                key = (s << 32) | e;
+            } catch (...) {}
+        }
+        if (key >= 0) ++rows[key];
+        data.emplace_back(key, line);
+    }
+    in.close();
+
+    for (const auto& [key, n] : rows)
+        if (n >= n_policies) ++per_seed[static_cast<int>(key >> 32)];
+
+    const auto complete = [&](const std::pair<long long, std::string>& d) {
+        return d.first >= 0 && rows[d.first] >= n_policies;
+    };
+    if (!std::all_of(data.begin(), data.end(), complete)) {
+        const std::string tmp = csv_path + ".tmp";
+        std::ofstream out(tmp, std::ios::trunc);
+        if (out.is_open()) {
+            out << header << '\n';
+            for (const auto& d : data)
+                if (complete(d)) out << d.second << '\n';
+            out.close();
+            std::error_code ec;
+            fs::rename(tmp, csv_path, ec);
+        }
+    }
+    return per_seed;
+}
+
+void MultiCityTrainer::train_grid(const TrainingConfig& cfg_in) {
+    fs::create_directories(cfg_in.output_dir);
+
+    const std::vector<EpisodeScenario> scenarios =
+        cfg_in.train_scenarios.empty() ? make_scenario_grid()
+                                       : cfg_in.train_scenarios;
+
+    std::vector<const CityConfig*> train_ptrs;
+    {
+        const auto& all_cities = CityRegistry::all();
+        if (cfg_in.train_city_filter.empty()) {
+            train_ptrs = CityRegistry::train_cities();
+        } else {
+            for (const auto& want : cfg_in.train_city_filter) {
+                bool matched = false;
+                for (const auto& cc : all_cities)
+                    if (cc.name == want) { train_ptrs.push_back(&cc); matched = true; break; }
+                if (!matched)
+                    std::cout << "  [Warn] train city \"" << want << "\" not found — skipped.\n";
+            }
+        }
+    }
+    const int num_cities   = static_cast<int>(train_ptrs.size());
+    const int n_seeds      = std::max(1, cfg_in.n_seeds);
+    const int eps_per_seed = num_cities * static_cast<int>(scenarios.size());
+    const int total_eps    = eps_per_seed * n_seeds;
+    if (num_cities == 0 || scenarios.empty()) {
+        std::cout << "  [train_grid] nothing to train (no cities/scenarios).\n";
+        return;
+    }
+
+    TrainingConfig cfg = cfg_in;
+    cfg.episode_cfg.rs_e_anneal = std::max(1, eps_per_seed);
+
+    std::cout << "Grid training: " << num_cities << " cities × " << n_seeds
+              << " seeds × " << scenarios.size() << " scenarios = "
+              << total_eps << " episodes / policy ("
+              << eps_per_seed << " per seed).\n";
+
+    std::vector<std::unique_ptr<CityAssets>> assets;
+    assets.reserve(num_cities);
+    for (int i = 0; i < num_cities; ++i)
+        assets.push_back(load_city(*train_ptrs[i], i, cfg.episode_cfg, cfg.cache_root));
+
+    int learning_pool = 0;
+    for (int i = 0; i < num_cities; ++i)
+        learning_pool = std::max(learning_pool,
+            static_cast<int>(std::ceil(assets[i]->ep_cfg.max_agents() * 1.5)));
+
+    std::vector<std::unique_ptr<EpisodeRunner>> runners;
+    runners.reserve(num_cities);
+    for (int i = 0; i < num_cities; ++i)
+        runners.push_back(std::make_unique<EpisodeRunner>(
+            assets[i]->ep_cfg, assets[i]->geo_box,
+            static_cast<uint32_t>(cfg.start_seed)));
+
+    auto want = [&](PolicyMode m) {
+        if (cfg.train_modes.empty()) return true;
+        return std::find(cfg.train_modes.begin(), cfg.train_modes.end(), m)
+               != cfg.train_modes.end();
+    };
+    const bool do_mappo  = want(PolicyMode::MAPPO);
+    const bool do_ippo   = want(PolicyMode::IPPO);
+    const bool do_mapper = want(PolicyMode::MAPPER);
+
+    auto& mappo  = mappo_policy();
+    auto& ippo   = ippo_policy();
+    auto& mapper = mapper_policy();
+
+    auto save_checkpoints = [&](int seed) {
+        if (!cfg.save_policy) return;
+        auto dir = [&](const char* sub) {
+            const std::string d = cfg.output_dir + "/" + sub;
+            std::error_code ec; fs::create_directories(d, ec);
+            return d;
+        };
+        const std::string tag = "_seed" + std::to_string(seed) + ".bin";
+        if (do_mappo)  mappo.save (dir("mappo")  + "/policy" + tag);
+        if (do_ippo)   ippo.save  (dir("ippo")   + "/ippo"   + tag);
+        if (do_mapper) mapper.save(dir("mapper") + "/mapper" + tag);
+    };
+
+    const int n_sel = (do_mappo ? 1 : 0) + (do_ippo ? 1 : 0) + (do_mapper ? 1 : 0);
+    std::unordered_map<int, int> done_pts;
+    if (cfg.resume)
+        done_pts = completed_grid_points(
+            cfg.output_dir + "/episodes_train.csv", n_sel);
+
+    TrainingLogger logger(cfg.output_dir, std::string("train"), !done_pts.empty());
+    const std::string summary_path = cfg.output_dir + "/summary.csv";
+
+    auto reinit_all = [&](int seed) {
+        if (do_mappo)  mappo.reinit(static_cast<uint32_t>(seed));
+        if (do_ippo)  { ippo.reinit(static_cast<uint32_t>(seed) ^ 0x1Au);
+                        ippo.ensure_agents(learning_pool); }
+        if (do_mapper) { mapper.reinit(static_cast<uint32_t>(seed) ^ 0x2Bu);
+                         mapper.ensure_agents(learning_pool); }
+    };
+
+    int    ep             = 0;
+    size_t seed_rec_begin = 0;
+    for (int si = 0; si < n_seeds; ++si) {
+        const int seed = cfg.start_seed + si;
+
+        int done = 0;
+        if (auto it = done_pts.find(seed); it != done_pts.end())
+            done = std::min(it->second, eps_per_seed);
+        if (done >= eps_per_seed) {
+            ep += eps_per_seed;
+            std::cout << "\n════ seed " << (si + 1) << "/" << n_seeds
+                      << " (rng=" << seed << ") — complete, skipped ════\n";
+            continue;
+        }
+
+        std::cout << "\n════ seed " << (si + 1) << "/" << n_seeds
+                  << " (rng=" << seed << ") ════\n";
+
+        reinit_all(seed);
+        if (done > 0) {
+            const std::string tag = "_seed" + std::to_string(seed) + ".bin";
+            bool ok = true;
+            if (do_mappo)  ok = ok && mappo.load (cfg.output_dir + "/mappo/policy" + tag);
+            if (do_ippo)   ok = ok && ippo.load  (cfg.output_dir + "/ippo/ippo"    + tag);
+            if (do_mapper) ok = ok && mapper.load(cfg.output_dir + "/mapper/mapper"+ tag);
+            if (ok) {
+                if (do_ippo)   ippo.ensure_agents(learning_pool);
+                if (do_mapper) mapper.ensure_agents(learning_pool);
+                std::cout << "  Resume: " << done << "/" << eps_per_seed
+                          << " episodes done — continuing at episode "
+                          << (done + 1) << ".\n";
+            } else {
+                std::cout << "  [Warn] checkpoint load failed — seed restarts from 0.\n";
+                done = 0;
+                reinit_all(seed);
+            }
+        }
+
+        int ep_in_seed = 0;
+        for (size_t sc = 0; sc < scenarios.size(); ++sc) {
+            const EpisodeScenario& scen = scenarios[sc];
+            std::cout << "  ── scenario " << (sc + 1) << "/" << scenarios.size()
+                      << "  " << scen.label
+                      << "  (AM=" << scen.agents_mult << ", "
+                      << num_cities << " cities × " << (do_mappo + do_ippo + do_mapper)
+                      << " policies) ──\n" << std::flush;
+            for (int ci = 0; ci < num_cities; ++ci) {
+                if (ep_in_seed < done) { ++ep; ++ep_in_seed; continue; }
+                CityAssets&    ca     = *assets[ci];
+                EpisodeRunner& runner = *runners[ci];
+
+                const float progress = (eps_per_seed > 1)
+                    ? static_cast<float>(ep_in_seed) / (eps_per_seed - 1) : 0.f;
+                if (do_mappo)  mappo.set_progress(progress);
+                if (do_ippo)   ippo.set_progress(progress);
+                if (do_mapper) mapper.set_progress(progress);
+
+                runner.set_global_episode(ep_in_seed);
+
+                uint32_t ep_seed =
+                      (static_cast<uint32_t>(seed)   * 2654435761u)
+                    ^ (static_cast<uint32_t>(ci + 1) *      40503u)
+                    ^ (static_cast<uint32_t>(sc + 1) * 2246822519u);
+                ep_seed |= 1u;
+
+                // One generated episode (tasks, capacities, starts, ghost
+                // seed) shared by every policy at this grid point.
+                const SharedEpisodeSetup setup = build_shared_episode_setup(
+                    ep_seed, *ca.config, scen, ca.ep_cfg, ca.geo_box);
+
+                auto run_one = [&](PolicyMode m, const char* tag) {
+                    runner.train_mode  = true;
+                    runner.policy_mode = m;
+                    RunResult res = runner.run(ci, num_cities, scen, ep_seed, &setup);
+                    logger.push(make_record(res, seed, ep,
+                                            ca.config->name, "train", tag,
+                                            res.metrics.n_agents_max));
+                    const auto& M = res.metrics;
+                    if (cfg.verbose && ep % std::max(1, cfg.log_every) == 0)
+                        std::cout << "  [ep " << (ep_in_seed + 1) << "/" << eps_per_seed
+                                  << " s" << seed << " " << ca.config->name
+                                  << " " << scen.label << " " << tag << "]"
+                                  << "  thr="  << M.throughput_rate
+                                  << " done="  << M.tasks_completed << "/" << M.tasks_appeared
+                                  << " acc="   << M.accept_rate
+                                  << " cong=x" << M.mean_congestion
+                                  << " lat="   << M.latency_mean
+                                  << " agents="<< M.n_agents_max
+                                  << " | aloss=" << res.train_stats.actor_loss
+                                  << " closs=" << res.train_stats.critic_loss
+                                  << " n="     << res.train_stats.n_exp
+                                  << "  "      << res.wallclock_ms << "ms"
+                                  << "  mem="  << process_commit_mb() << "MB\n"
+                                  << std::flush;
+                };
+
+                if (do_ippo)   run_one(PolicyMode::IPPO,   "IPPO");
+                if (do_mapper) run_one(PolicyMode::MAPPER, "MAPPER");
+                if (do_mappo)  run_one(PolicyMode::MAPPO,  "MAPPO");
+
+                ++ep;
+                ++ep_in_seed;
+                logger.flush();
+                save_checkpoints(seed);
+                runner.release_episode_memory();
+            }
+            if (do_mapper && ep_in_seed > done) {
+                mapper.on_round_end();
+                const int n_rep = mapper.last_evolution_replacements();
+                if (n_rep > 0 && cfg.verbose)
+                    std::cout << "  [MAPPER-Ev] replaced " << n_rep << " policies\n";
+            }
+        }
+
+        save_checkpoints(seed);
+        {
+            const auto& all = logger.records();
+            std::vector<EpisodeRecord> seed_records(
+                all.begin() + seed_rec_begin, all.end());
+            seed_rec_begin = all.size();
+            TrainingLogger::write_summary(summary_path, seed_records, seed);
+        }
+        std::cout << "  Seed " << seed << " done — checkpoints in "
+                  << cfg.output_dir << "/{mappo,ippo,mapper}/*_seed"
+                  << seed << ".bin\n";
+    }
+
+    logger.flush();
+    std::cout << "Grid training complete — " << total_eps
+              << " episodes / policy. Results in " << cfg.output_dir << "\n";
 }
 
 // ===== TrainingLogger.cpp =====
@@ -839,6 +678,19 @@ TrainingLogger::TrainingLogger(const std::string& output_dir, int seed) {
     if (!file_.is_open())
         throw std::runtime_error("TrainingLogger: cannot open " + path);
     write_header();
+}
+
+TrainingLogger::TrainingLogger(const std::string& output_dir,
+                               const std::string& filename_tag, bool append) {
+    fs::create_directories(output_dir);
+    std::string path = output_dir + "/episodes_" + filename_tag + ".csv";
+    std::error_code ec;
+    const bool fresh = !append || !fs::exists(path, ec)
+                       || fs::file_size(path, ec) == 0;
+    file_.open(path, fresh ? std::ios::out : std::ios::app);
+    if (!file_.is_open())
+        throw std::runtime_error("TrainingLogger: cannot open " + path);
+    if (fresh) write_header();
 }
 
 TrainingLogger::~TrainingLogger() {
@@ -885,7 +737,7 @@ void TrainingLogger::write_header() {
           // Real impact on edge traversal (BPR factors paid)
           << "mean_bpr_along_route,time_lost_to_congestion_steps,"
           << "n_traversals_in_jam,"
-          // Allocation optimality vs MCA full-scan oracle
+          // Allocation optimality vs full-scan cheapest-insertion oracle
           << "marginal_cost_ratio_vs_oracle,"
           // RMCA(r) regret diagnostics [Chen et al. 2021] (RMCA mode only)
           << "rmca_relative_regret,rmca_marginal_cost_k1,rmca_marginal_cost_k2,"

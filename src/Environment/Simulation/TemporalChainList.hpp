@@ -15,17 +15,15 @@
 // end-of-episode time). The same structure serves nodes and edges — only the
 // meaning of incident_elements differs (see TemporalGraph).
 //
-// Each segment is the interval [time_end - time_spend, time_end].
-// present_agent = number of agents concurrently occupying that interval; it is
-// maintained incrementally so two segments sharing an interval both reflect the
-// shared occupancy ("certified" on every insert/remove).
+// Each segment is the interval [time_end - time_spend, time_end]. The load at a
+// time t is recomputed on demand by load_at() (sum of weights of covering
+// segments) — no incremental per-segment occupancy counter is maintained.
 //
-// Three operations, each first purging expired segments (time_end < t*, the
-// last observed time) EXCEPT the t = 0 start sentinel:
-//   insert(time_end, time_spend) — add an occupancy in time order; overlapping
-//                                  segments get present_agent bumped both ways.
-//   remove(node)                 — the inverse: relink before↔after, decrement
-//                                  the overlaps it had bumped.
+// Operations, each first purging expired segments (time_end < t*, the last
+// observed time) EXCEPT the t = 0 start sentinel:
+//   insert(time_end, time_spend) — add an occupancy in time order (O(1) fast
+//                                  path when time_end is non-decreasing).
+//   remove(node)                 — relink before↔after (O(1)).
 //   find(t)                      — walk while t > time_end → next; returns the
 //                                  segment covering t (or the end sentinel).
 struct TemporalNode {
@@ -40,7 +38,6 @@ struct TemporalNode {
     std::vector<osmium::object_id_type> incident_elements;
 
     std::set<int> objective_id;        // task ids active in this interval (nodes)
-    int           present_agent = 0;   // concurrent agent count over this interval
     int           weight        = 1;   // this segment's own occupancy weight (load_per_agent)
     int           agent_id      = -1;  // owning agent (-1 = ghost / untagged)
 
@@ -96,7 +93,7 @@ private:
     TemporalNode* end_   = nullptr;     // sentinel at episode end
     float         last_time_ = 0.f;     // t* — last observed time, drives expiry
 
-    void unlink_and_decrement(TemporalNode* node);   // splice out + undo overlaps
+    void unlink(TemporalNode* node);   // splice out of the list + delete
 };
 
 #endif // ENVIRONMENT_TEMPORAL_CHAIN_LIST_HPP

@@ -4,7 +4,6 @@
 #include "DMASforPD/Policy/BidPolicy.hpp"
 #include "Environment/GeoBox/Box.hpp"
 #include "Environment/GeoBox/GeoBoxManager.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
 #include <iostream>
 #include <cmath>
 
@@ -54,10 +53,10 @@ bool run_training_smoke_test(const std::string& osm_file,
     cfg.n_hot_zones     = 3;
     cfg.hot_zone_radius = 400.f;
     cfg.phases = {
-        { 100, 5.f, 2, 3, 0.0f, 2 },   // low:    2→3 agents, ~5 tasks/agent
-        { 100, 8.f, 3, 4, 1.0f, 3 },   // high:   3→4 agents, ~8 tasks/agent
+        { 100, 2, 3, 0.0f, 2 },   // low phase:  2→3 agents
+        { 100, 3, 4, 1.0f, 3 },   // high phase: 3→4 agents
     };
-    // Expected lambdas:  low = 5*2.5/100 = 0.125 | high = 8*3.5/100 = 0.28
+    cfg.env_scale = 0.4f;   // ~40 tasks over 200 steps (α·env_scale)
 
     CHECK(cfg.max_agents() == 4, "max_agents() mismatch");
     CHECK(cfg.total_steps() == 200, "total_steps() mismatch");
@@ -65,13 +64,11 @@ bool run_training_smoke_test(const std::string& osm_file,
               << cfg.max_agents() << " agents max\n";
 
     // ── 3. Construct runner and run a TRAINING episode ────────────────────────
-    Pathfinder pathfinder(geo_box);
-
     bid_policy(BidPolicyKind::MAPPO).clear_buffers();
 
     std::unique_ptr<EpisodeRunner> runner;
     try {
-        runner = std::make_unique<EpisodeRunner>(cfg, geo_box, pathfinder, 42u);
+        runner = std::make_unique<EpisodeRunner>(cfg, geo_box, 42u);
     } catch (const std::exception& e) {
         std::cout << "  [FAIL] EpisodeRunner constructor: " << e.what() << "\n";
         return false;
@@ -158,14 +155,15 @@ bool run_training_smoke_test(const std::string& osm_file,
     cfg_mt.min_task_dist_m  = 50.f;
     cfg_mt.max_task_dist_m  = 600.f;  // short trips → multi-task cycling visible
     cfg_mt.phases = {
-        // High lambda + short trips → agents queue multiple tasks and complete some.
-        { 400, 25.f, 3, 4, 0.0f, 3 },
+        // High density + short trips → agents queue multiple tasks and complete some.
+        { 400, 3, 4, 0.0f, 3 },
     };
+    cfg_mt.env_scale = 0.85f;   // ~85 tasks over 400 steps
 
     std::unique_ptr<EpisodeRunner> runner_mt;
     try {
         bid_policy(BidPolicyKind::MAPPO).clear_buffers();
-        runner_mt = std::make_unique<EpisodeRunner>(cfg_mt, geo_box, pathfinder, 43u);
+        runner_mt = std::make_unique<EpisodeRunner>(cfg_mt, geo_box, 43u);
     } catch (const std::exception& e) {
         std::cout << "  [FAIL] Multi-task runner: " << e.what() << "\n";
         return false;
@@ -201,6 +199,63 @@ bool run_training_smoke_test(const std::string& osm_file,
               << ", thr=" << r_mt.metrics.throughput_rate
               << ", tasks=" << r_mt.metrics.tasks_appeared
               << ", reset acc=" << r_mt2.metrics.accept_rate << "\n";
+
+    // ── 7. Reward shaping v2 sanity — bounds + credit identity ────────────────
+    {
+        // Pure-helper identity: φ(0) = 1, so the pickup+delivery credits of an
+        // immediately-delivered task sum to val_i (val_i/λ under normalisation).
+        CHECK(latency_phi(0, 0.4f, 1500) == 1.f, "latency_phi(0) must be 1");
+        EpisodeConfig cfg_rs = cfg_mt;
+        enable_all_reward_shaping(cfg_rs);
+        const RewardScales sc = make_reward_scales(cfg_rs);
+        CHECK(sc.task_value >= 1.f, "normalisation scale must be >= 1");
+        const float val   = event_tuning::kTaskRewardClampMax;
+        const float split = cfg_rs.pickup_reward_frac * val / sc.task_value
+                          + (1.f - cfg_rs.pickup_reward_frac) * val / sc.task_value;
+        CHECK(std::fabs(split - val / sc.task_value) < 1e-5f,
+              "pickup+delivery credits must sum to val/lambda");
+
+        // Full-flags episode: every buffered reward stays bounded after
+        // normalisation. Eval mode keeps the buffers un-trained so we can
+        // probe the accumulated per-entry rewards at the end.
+        auto& pol = bid_policy(BidPolicyKind::MAPPO);
+        pol.clear_buffers();
+        EpisodeRunner runner_rs(cfg_rs, geo_box, 44u);
+        runner_rs.train_mode  = false;
+        runner_rs.policy_mode = PolicyMode::MAPPO;
+        RunResult r_rs;
+        try { r_rs = runner_rs.run(0, 1); }
+        catch (const std::exception& e) {
+            std::cout << "  [FAIL] RS sanity episode: " << e.what() << "\n";
+            return false;
+        }
+        CHECK(in01(r_rs.metrics.accept_rate), "RS accept_rate out of [0,1]");
+        const float mx = pol.max_abs_reward();
+        CHECK(finite(mx) && mx <= 2.0f,
+              "reward-shaping term exceeded the normalised bound");
+
+        // Train-mode pass: shaped rewards (all terms + §9 annealing at e=10 +
+        // §10 potential shaping) must flow through GAE/PPO without NaN.
+        pol.clear_buffers();
+        EpisodeRunner runner_rs2(cfg_rs, geo_box, 45u);
+        runner_rs2.train_mode  = true;
+        runner_rs2.policy_mode = PolicyMode::MAPPO;
+        runner_rs2.set_global_episode(10);
+        RunResult r_tr;
+        try { r_tr = runner_rs2.run(0, 1); }
+        catch (const std::exception& e) {
+            std::cout << "  [FAIL] RS train episode: " << e.what() << "\n";
+            return false;
+        }
+        CHECK(finite(r_tr.train_stats.actor_loss)
+           && finite(r_tr.train_stats.critic_loss),
+              "RS train losses not finite");
+        CHECK(r_tr.train_stats.n_exp > 0, "RS train episode buffered no experience");
+        pol.clear_buffers();
+        std::cout << "  [7] Reward shaping v2 OK — eval max|r|=" << mx
+                  << " (bound 2.0), train n_exp=" << r_tr.train_stats.n_exp
+                  << ", losses finite, credit identity holds\n";
+    }
 
     std::cout << "=== PASS ===\n\n";
     return true;

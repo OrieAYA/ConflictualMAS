@@ -14,7 +14,6 @@
 #include "SoTA/Standalone/CA.hpp"
 #include "SoTA/Standalone/HAPC.hpp"
 #include "DMASforPD/Algorithms/TDAStar.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
 #include <algorithm>
 #include <cmath>
 #include <exception>
@@ -34,7 +33,8 @@ static EpisodeConfig module_config() {
     cfg.n_hot_zones         = 2;
     cfg.hot_zone_radius     = 400.f;
     cfg.max_tasks_per_agent = 3;
-    cfg.phases = { { 400, 20.f, 3, 4, 0.0f, 2 } };
+    cfg.phases    = { { 400, 3, 4, 0.0f, 2 } };
+    cfg.env_scale = 0.7f;   // ~70 tasks, matches prior volume
     return cfg;
 }
 
@@ -44,11 +44,10 @@ bool run_module_tests(const std::string& osm_file, const std::string& cache_dir)
 
     GeoBox gb = load_smoke_geobox(osm_file, cache_dir);
     CHECK(gb.is_valid && gb.data.nodes.size() >= 2, "GeoBox invalid / too small");
-    Pathfinder pf(gb);
 
     // ── [1] GlobalMemory — lifecycle + ID refresh ─────────────────────────────
     {
-        PDPGlobalMemory mem(gb, pf);
+        PDPGlobalMemory mem(gb);
         auto it = gb.data.nodes.begin();
         const osmium::object_id_type n1 = it->first; ++it;
         const osmium::object_id_type n2 = it->first;
@@ -102,7 +101,7 @@ bool run_module_tests(const std::string& osm_file, const std::string& cache_dir)
         bid_policy(BidPolicyKind::MAPPO).clear_buffers();
         RunResult r;
         try {
-            EpisodeRunner runner(cfg, gb, pf, 42u);
+            EpisodeRunner runner(cfg, gb, 42u);
             runner.train_mode  = false;
             runner.policy_mode = m;
             r = runner.run(0, 1);
@@ -131,11 +130,11 @@ bool run_module_tests(const std::string& osm_file, const std::string& cache_dir)
         return ok;
     };
 
-    // ── [4] Planning — DbVNS / MCA / DoubleHorizon (must route + deliver) ─────
+    // ── [4] Planning — DbVNS / ALNS / DoubleHorizon (must route + deliver) ────
     CHECK(run_mode("DbVNS",         PolicyMode::DbVNS,         true), "DbVNS planning failed");
-    CHECK(run_mode("MCA",           PolicyMode::MCA,           true), "MCA planning failed");
+    CHECK(run_mode("ALNS",          PolicyMode::ALNS,          true), "ALNS planning failed");
     CHECK(run_mode("DoubleHorizon", PolicyMode::DoubleHorizon, true), "DoubleHorizon planning failed");
-    std::cout << "  [4] Planning OK — DbVNS / MCA / DoubleHorizon (valid routes + delivery)\n";
+    std::cout << "  [4] Planning OK — DbVNS / ALNS / DoubleHorizon (valid routes + delivery)\n";
 
     // ── [5] Scoring — RMCA (deterministic marginal-cost scorer) ───────────────
     CHECK(run_mode("RMCA", PolicyMode::RMCA, true), "RMCA scoring failed");
@@ -153,7 +152,7 @@ bool run_module_tests(const std::string& osm_file, const std::string& cache_dir)
         EpisodeConfig cfg = module_config();
         auto run_seeded = [&]() {
             bid_policy(BidPolicyKind::MAPPO).clear_buffers();
-            EpisodeRunner runner(cfg, gb, pf, 1u);
+            EpisodeRunner runner(cfg, gb, 1u);
             runner.train_mode = false;
             runner.policy_mode = PolicyMode::TamAlwaysAccept;
             RunResult r = runner.run(0, 1, /*scenario*/{}, /*episode_seed*/777u);
@@ -174,7 +173,7 @@ bool run_module_tests(const std::string& osm_file, const std::string& cache_dir)
     {
         EpisodeConfig cfg = module_config();
         auto run_solver = [&](const char* label, ISolver& s) -> bool {
-            SolverRunner runner(cfg, gb, pf, /*scenario*/{}, /*seed*/55u);
+            SolverRunner runner(cfg, gb, /*scenario*/{}, /*seed*/55u);
             SolverMetrics m;
             try { m = runner.run(s); }
             catch (const std::exception& e) {
@@ -195,18 +194,19 @@ bool run_module_tests(const std::string& osm_file, const std::string& cache_dir)
         std::cout << "  [8] SoTA solvers OK — CA + HAPC (valid SolverRunner pipeline)\n";
     }
 
-    // ── [9] Scenario grid — 9 deterministic task×congestion combos ────────────
+    // ── [9] Scenario grid — 27 deterministic task×congestion×fleet combos ─────
     {
         const auto g1 = make_scenario_grid();
         const auto g2 = make_scenario_grid();
-        CHECK(g1.size() == 9, "scenario grid must be 3 task × 3 congestion = 9");
+        CHECK(g1.size() == 27, "scenario grid must be 3 task × 3 congestion × 3 fleet = 27");
         bool same = g1.size() == g2.size();
         for (size_t i = 0; same && i < g1.size(); ++i)
-            same = g1[i].density_mult == g2[i].density_mult
+            same = g1[i].task_profile == g2[i].task_profile
+                && g1[i].congestion_profile == g2[i].congestion_profile
                 && g1[i].agents_mult  == g2[i].agents_mult
-                && g1[i].congestion_profile == g2[i].congestion_profile;
+                && g1[i].label == g2[i].label;
         CHECK(same, "scenario grid is not deterministic");
-        std::cout << "  [9] Scenario grid OK — 9 deterministic combos\n";
+        std::cout << "  [9] Scenario grid OK — 27 deterministic combos\n";
     }
 
     // ── [10] TD-A* is time-dependent: jamming the path slows it or reroutes ───
@@ -255,7 +255,7 @@ bool run_module_tests(const std::string& osm_file, const std::string& cache_dir)
     // Also checks the node-event invariant: the current objective sits in the
     // node's chain at t* (the first segment, not the start sentinel).
     {
-        PDPGlobalMemory mem(gb, pf);
+        PDPGlobalMemory mem(gb);
         mem.total_steps = 2000;
 
         std::vector<osmium::object_id_type> ids;

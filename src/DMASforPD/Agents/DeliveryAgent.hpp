@@ -104,6 +104,16 @@ public:
     // computing capacity-aware insertion positions.
     int                        max_capacity = 0;
 
+    // Number of tasks this agent was ever assigned during the CURRENT episode
+    // (reset by the runner). §5 idle-penalty condition: an agent that never
+    // received any task counts as idle, regardless of end-of-episode status.
+    int                        n_tasks_ever_assigned = 0;
+
+    // Peak simultaneous onboard load along the CURRENT planned sequence
+    // (walk pickups +1 / deliveries −1). Shared by the load_at_insertion
+    // policy feature and the §6 capacity-balance reward term.
+    int planned_peak_onboard() const;
+
     DeliveryAgent() = delete;
     DeliveryAgent(int id, osmium::object_id_type start_node);
 

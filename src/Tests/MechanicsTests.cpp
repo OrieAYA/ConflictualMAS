@@ -8,7 +8,6 @@
 #include "DMASforPD/Agents/DeliveryAgent.hpp"
 #include "DMASforPD/Structures/PDPTask.hpp"           // TaskTimeline
 #include "DMASforPD/Policy/BidPolicy.hpp"
-#include "Legacy/Common/Pathfinding.hpp"
 #include <algorithm>
 #include <cmath>
 #include <exception>
@@ -31,7 +30,8 @@ static EpisodeConfig mechanics_config() {
     cfg.n_hot_zones         = 3;
     cfg.hot_zone_radius     = 400.f;
     cfg.max_tasks_per_agent = 5;
-    cfg.phases = { { 400, 25.f, 3, 4, 0.0f, 3 } };
+    cfg.phases    = { { 400, 3, 4, 0.0f, 3 } };
+    cfg.env_scale = 0.85f;   // ~85 tasks (α·env_scale), matches prior volume
     return cfg;
 }
 
@@ -80,7 +80,7 @@ bool run_mechanics_tests(const std::string& osm_file, const std::string& cache_d
     {
         EpisodeConfig cfg = mechanics_config();
         EpisodeGenerator gen(cfg, gb, 7u);
-        const auto stream = gen.generate();
+        const auto stream = gen.generate(TemporalProfile::Uniform);
         CHECK(!stream.empty(), "no task generated");
         int lo = stream.front().arrival_step, hi = lo;
         for (const auto& s : stream) {
@@ -97,12 +97,11 @@ bool run_mechanics_tests(const std::string& osm_file, const std::string& cache_d
     // ── [3] Time progression + agent movement + task completion ───────────────
     {
         EpisodeConfig cfg = mechanics_config();
-        Pathfinder pf(gb);
         bid_policy(BidPolicyKind::MAPPO).clear_buffers();
 
         std::unique_ptr<EpisodeRunner> runner;
         try {
-            runner = std::make_unique<EpisodeRunner>(cfg, gb, pf, 43u);
+            runner = std::make_unique<EpisodeRunner>(cfg, gb, 43u);
         } catch (const std::exception& e) {
             std::cout << "  [FAIL] runner ctor: " << e.what() << "\n"; return false;
         }
@@ -148,19 +147,17 @@ bool run_mechanics_tests(const std::string& osm_file, const std::string& cache_d
     // injected ghost traffic. Closes the loop the BPR unit check in [1] opens:
     // ghosts → higher edge load → the cost model the agents actually pay.
     {
-        Pathfinder pf(gb);
         EpisodeConfig off = mechanics_config();           // no ghosts (default)
         EpisodeConfig on  = mechanics_config();
-        on.enable_ghost_traffic = true;
-        on.ghost_n_max          = 120;
-        on.ghost_n_max_user_set = true;                   // keep this density as-is
-        on.ghost_window_steps   = 8;
-        on.ghost_hot_way_count  = 15;                     // concentrate → real pileups
-        on.ghost_load_per_unit  = 4;
+        on.enable_ghost_traffic    = true;
+        on.ghost_n_events          = 400;
+        on.ghost_n_events_user_set = true;                // fixed count for this test
+        on.ghost_window_steps      = 8;
+        on.ghost_hot_way_count     = 15;                  // concentrate → real pileups
 
         auto cong_of = [&](const EpisodeConfig& cfg) -> float {
             bid_policy(BidPolicyKind::MAPPO).clear_buffers();
-            EpisodeRunner runner(cfg, gb, pf, 5u);
+            EpisodeRunner runner(cfg, gb, 5u);
             runner.train_mode  = false;
             runner.policy_mode = PolicyMode::TamAlwaysAccept;
             const float c = runner.run(0, 1, {}, /*episode_seed*/2024u).metrics.mean_congestion;

@@ -9,7 +9,7 @@
 //   1. GlobalMemory  — task add/get, lifecycle list transitions, ID refresh.
 //   2. BPR           — capacity model + monotone congestion factor.
 //   3. TAM           — multi-candidate allocation correctness (TamMcTest).
-//   4. Planning      — DbVNS / MCA / DoubleHorizon route validly AND deliver.
+//   4. Planning      — DbVNS / ALNS / DoubleHorizon route validly AND deliver.
 //   5. Scoring       — RMCA delivers with 0 pairing/capacity violations.
 //   6. Policies      — MAPPO / IPPO / MAPPER / Hybrid produce valid sims.
 //   7. Determinism   — same (mode, episode_seed) ⇒ identical metrics.

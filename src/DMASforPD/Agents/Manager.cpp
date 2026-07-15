@@ -9,10 +9,10 @@
 
 // ---- Construction -------------------------------------------------------
 
-PDPGlobalMemory::PDPGlobalMemory(GeoBox& box, Pathfinder& pf,
+PDPGlobalMemory::PDPGlobalMemory(GeoBox& box,
                                  const CongestionParams& cparams,
                                  const TaskAgentParams& taparams)
-    : geo_box(box), pathfinder(pf), server_memory(box, pf),
+    : geo_box(box), server_memory(box),
       congestion_map(cparams), node_events(box, 1e30f), task_agent(0, taparams) {
     server_memory.initialize_from_geobox();
     region_grid.init(box);
@@ -272,6 +272,11 @@ DeliveryAgent* PDPGlobalMemory::get_delivery_agent(int agent_id) {
     return it != delivery_agents_.end() ? it->second : nullptr;
 }
 
+const DeliveryAgent* PDPGlobalMemory::get_delivery_agent(int agent_id) const {
+    auto it = delivery_agents_.find(agent_id);
+    return it != delivery_agents_.end() ? it->second : nullptr;
+}
+
 DeliveryAgent* PDPGlobalMemory::get_agent_for_task(int task_id) {
     const PDPTask* task = get_task(task_id);
     if (!task || task->agent_id < 0) return nullptr;
@@ -492,7 +497,7 @@ TDAStarResult PDPGlobalMemory::time_dependent_astar(
 
 float PDPGlobalMemory::bpr_path_cost(
     osmium::object_id_type from, osmium::object_id_type to,
-    int group_id, int depart_step, float speed_mps
+    int group_id, int depart_step, float speed_mps, int self_weight
 ) {
     const ObjectivePath* p = get_or_compute_path(from, to, group_id);
     if (!p || !p->valid()) return std::numeric_limits<float>::max();
@@ -514,7 +519,8 @@ float PDPGlobalMemory::bpr_path_cost(
         auto it = ways.find(wid);
         const float d = (it != ways.end()) ? it->second.distance_meters : 0.f;
         if (d <= 0.f) continue;
-        const float adj = congestion_map.adjusted_cost(wid, d, d, static_cast<int>(t));
+        const float adj = congestion_map.adjusted_cost(wid, d, d,
+                                                       static_cast<int>(t), self_weight);
         acc += adj;
         t   += adj / spd;                           // advance time along the path
     }

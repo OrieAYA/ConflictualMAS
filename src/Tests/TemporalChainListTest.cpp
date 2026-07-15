@@ -30,21 +30,22 @@ bool run_temporal_chain_tests()
         CHECK(n == 3, "walk visited the wrong number of segments");
     }
 
-    // ── T3 overlap certifies present_agent both ways ──────────────────────────
+    // ── T3 load_at sums overlapping occupancy ─────────────────────────────────
     {
         TemporalChainList L(200.f);
         TemporalNode* A = L.insert(30.f, 20.f);   // [10, 30]
         TemporalNode* B = L.insert(40.f, 20.f);   // [20, 40] overlaps A on [20,30]
-        TemporalNode* C = L.insert(100.f, 5.f);   // [95,100] disjoint
-        CHECK(A->present_agent == 2 && B->present_agent == 2,
-              "overlap must raise present_agent on both segments");
-        CHECK(C->present_agent == 1, "disjoint segment must stay at 1");
+        L.insert(100.f, 5.f);                     // [95,100] disjoint
+        CHECK(L.load_at(25.f) == 2, "load_at must sum both overlapping segments");
+        CHECK(L.load_at(15.f) == 1, "load_at outside the overlap counts one");
+        CHECK(L.load_at(97.f) == 1, "disjoint segment contributes its own load");
+        CHECK(L.load_at(50.f) == 0, "gap between segments has zero load");
+        (void)A;
 
-        // ── T4 remove reverses the overlap accounting ─────────────────────────
+        // ── T4 remove drops that segment's load contribution ──────────────────
         L.remove(B);
-        CHECK(A->present_agent == 1, "remove must decrement the overlap it created");
-        CHECK(L.size() == 2,         "size after one removal");
-        (void)C;
+        CHECK(L.load_at(25.f) == 1, "remove must drop the removed segment's load");
+        CHECK(L.size() == 2,        "size after one removal");
     }
 
     // ── T5 find returns the segment covering t (queries non-decreasing) ───────
@@ -88,7 +89,7 @@ bool run_temporal_graph_test(const GeoBox& geo_box)
           "node chain sentinels not at [0, episode_end]");
 
     nc.insert(120.f, 20.f);                         // [100, 120]
-    CHECK(nc.find(110.f)->present_agent >= 1, "find after insert on a node chain");
+    CHECK(nc.load_at(110.f) >= 1, "load_at after insert on a node chain");
     CHECK(tg.has_node_chain(nid) && !tg.has_node_chain(nid + 999983),
           "has_node_chain lookup wrong");
 
