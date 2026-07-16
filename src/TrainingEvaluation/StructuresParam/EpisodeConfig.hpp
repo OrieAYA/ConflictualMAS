@@ -116,6 +116,35 @@ struct EpisodeConfig {
     float rs_mu_idle_lo = 0.3f;          // §5 μ band actually debited
     float rs_mu_idle_hi = 0.7f;
 
+    // ── Movement decision policy (PPO gate on local TD-A* replanning) ──────
+    // OFF = legacy behaviour exactly (unconditional >5% reroute check at
+    // objective boundaries only). ON = the policy decides at every node.
+    bool  use_movement_policy = false;
+    bool  movement_train      = false;   // Bernoulli sampling + train_round
+    float mp_replan_cost       = 0.05f;  // κ — cost of a replan call
+    float mp_null_gain_penalty = 0.05f;  // β — extra penalty when gain < ε
+    float mp_gain_eps          = 0.02f;  // ε — near-zero gain threshold
+    float mp_outcome_w         = 0.3f;   // leg-outcome credit weight
+
+    // ── Moving ghosts ── NOT WIRED YET (module MovingGhosts.{hpp,cpp}).
+    // Ghosts as moving entities revealed online instead of pre-injected
+    // events; wiring plan in the module header (setup_ghost_traffic + loop;
+    // online mode = reveal_to_map=false + fleet observations).
+    bool  ghost_moving          = false;
+    float ghost_move_speed_mps  = 5.f;
+    int   ghost_route_edges_min = 8;
+    int   ghost_route_edges_max = 40;
+    float ghost_hot_spawn_bias  = 0.6f;
+
+    // ── LSM congestion prediction / signaling ── OFF = no tick, no alert
+    // (movement feature f4 stays 0). lsm_train = online NLMS readout learning.
+    bool  use_lsm   = false;
+    bool  lsm_train = false;
+    int   lsm_every           = 10;    // liquid tick period (steps)
+    int   lsm_horizon         = 100;   // prediction horizon H (steps)
+    float lsm_alert_threshold = 0.5f;  // ŷ ≥ θ → alerting cell
+    float lsm_lr              = 0.1f;  // NLMS learning rate
+
     // ── Planning strategy (mutually exclusive; dbvns wins if both set) ──────
     // default → cheapest insertion | use_dh → Double-Horizon (slack-preserving) |
     // use_dbvns → forward DbVNS-PDP global replan. Mirrored to

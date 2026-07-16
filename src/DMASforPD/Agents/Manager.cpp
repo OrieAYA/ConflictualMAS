@@ -372,6 +372,8 @@ void PDPGlobalMemory::register_committed_plan(int agent_id, float speed_mps) {
     const int lo = congestion_map.window_lo();
     const int hi = congestion_map.window_hi();
 
+    if (record_plan_congestion) agent->local_memory.plan_cong.clear();
+
     auto register_leg = [&](osmium::object_id_type from, const ObjectiveNode& to)
         -> int /* arrival step, or -1 if no path */ {
         const ObjectivePath* path = get_or_compute_path(from, to.id, to.group_id);
@@ -379,6 +381,15 @@ void PDPGlobalMemory::register_committed_plan(int agent_id, float speed_mps) {
         TimedPath tp = make_timed_path(*path, from, speed_mps,
                                        geo_box.data, congestion_map, t);
         for (std::size_t i = 0; i < tp.edge_ids.size(); ++i) {
+            if (record_plan_congestion) {
+                auto wit = geo_box.data.ways.find(tp.edge_ids[i]);
+                const float dist = (wit != geo_box.data.ways.end())
+                    ? wit->second.distance_meters : 0.f;
+                const float cap = congestion_map.edge_capacity(dist);
+                const float x   = congestion_map.get_load(
+                    tp.edge_ids[i], tp.abs_entry(i, t)) / std::max(1.f, cap);
+                agent->local_memory.plan_cong[tp.edge_ids[i]] = x / (1.f + x);
+            }
             const int e_lo = std::max(lo, tp.abs_entry(i, t));
             const int e_hi = std::min(hi, tp.abs_exit (i, t));
             if (e_lo > e_hi) continue;          // outside the registrable window
@@ -406,7 +417,8 @@ void PDPGlobalMemory::commit_plan(int agent_id, float speed_mps) {
 
 // ---- Congestion-push reroute -------------------------------------------
 
-void PDPGlobalMemory::push_rerouted_path(int agent_id, float speed_mps) {
+void PDPGlobalMemory::push_rerouted_path(int agent_id, float speed_mps,
+                                         RerouteOutcome* out) {
     DeliveryAgent* agent = get_delivery_agent(agent_id);
     if (!agent) return;
 
@@ -432,10 +444,18 @@ void PDPGlobalMemory::push_rerouted_path(int agent_id, float speed_mps) {
     TDAStarResult tda = time_dependent_astar(from, to.id, current_time_, speed_mps);
     if (!tda.valid() || tda.nodes.size() < 2) return;
 
+    if (out) {
+        out->attempted = true;
+        out->cur_steps = cur_steps;
+        out->tda_steps = tda.total_time;
+    }
+
     // Reroute only on a meaningful (>5%) travel-time improvement.
     if (static_cast<float>(tda.total_time)
         >= static_cast<float>(cur_steps) / 1.05f)
         return;
+
+    if (out) out->adopted = true;
 
     // Adopt the TD-A* GEOMETRY (not just its cost): copy it into the agent's
     // owned reroute slot so current_path can outlive the cache entry.

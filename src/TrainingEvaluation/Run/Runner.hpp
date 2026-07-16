@@ -9,9 +9,12 @@
 #include "DMASforPD/Agents/Manager.hpp"
 #include "DMASforPD/Agents/DeliveryAgent.hpp"
 #include "DMASforPD/Policy/BidPolicy.hpp"
+#include "DMASforPD/Policy/MovementPolicy.hpp"
+#include "DMASforPD/Prediction/Lsm.hpp"
 #include "Environment/Simulation/GhostTrafficController.hpp"
 #include <array>
 #include <chrono>
+#include <deque>
 #include <memory>
 #include <random>
 #include <unordered_map>
@@ -96,6 +99,38 @@ public:
     const PDPGlobalMemory& memory() const { return memory_; }
     const std::vector<std::unique_ptr<DeliveryAgent>>& agents() const { return all_agents_; }
 
+    // Movement-policy episode counters (cfg.use_movement_policy runs only).
+    struct MovementEpisodeStats {
+        int   n_decisions = 0;
+        int   n_replans   = 0;
+        int   n_adopted   = 0;
+        float gain_sum    = 0.f;
+        TrainingStats train;
+    };
+    const MovementEpisodeStats& movement_stats() const { return mv_stats_; }
+
+    // LSM episode counters (cfg.use_lsm runs only).
+    struct LsmEpisodeStats {
+        int       n_ticks          = 0;
+        int       n_learn          = 0;
+        double    mse_sum          = 0.0;
+        long long alert_cells_sum  = 0;
+        long long agent_alerts_sum = 0;
+
+        float mse_mean() const {
+            return n_learn > 0 ? static_cast<float>(mse_sum / n_learn) : 0.f;
+        }
+        float alert_cells_mean() const {
+            return n_ticks > 0
+                ? static_cast<float>(alert_cells_sum) / n_ticks : 0.f;
+        }
+        float agent_alerts_mean() const {
+            return n_ticks > 0
+                ? static_cast<float>(agent_alerts_sum) / n_ticks : 0.f;
+        }
+    };
+    const LsmEpisodeStats& lsm_stats() const { return lsm_stats_; }
+
 private:
     const EpisodeConfig& cfg_;
     PDPGlobalMemory      memory_;
@@ -133,6 +168,15 @@ private:
 
     // ep_seed of the last prepared run — path cache purged when it changes.
     uint32_t last_episode_seed_ = 0;
+
+    MovementEpisodeStats mv_stats_;
+
+    // ── LSM prediction/signaling state (RunnerPrediction.cpp) ───────────────
+    std::deque<std::pair<int, std::vector<float>>> lsm_hist_;
+    std::unordered_map<int, float>                 lsm_alert_;
+    LsmEpisodeStats                                lsm_stats_;
+
+    void lsm_tick(int step, int total_steps, float lambda, int n_active);
 
     // Reward shaping v2 state (RewardShaping.hpp).
     RewardScales scales_;               // static scales (1 when flag off)
@@ -238,8 +282,16 @@ private:
     int schedule_next_edge(int agent_id, int current_step);
 
     // Pickup/delivery reached: fire rewards, promote the pre-fetched path,
-    // start the next leg.
-    void on_objective_reached(int agent_id, int task_id, bool is_pickup, int current_step);
+    // start the next leg. came_from = edge just traversed (movement policy).
+    void on_objective_reached(int agent_id, int task_id, bool is_pickup,
+                              int current_step,
+                              osmium::object_id_type came_from = 0);
+
+    // Movement policy gate: one decision per node arrival; on "replan",
+    // push_rerouted_path runs and the immediate reward is credited.
+    void movement_decision(int agent_id, int current_step,
+                           osmium::object_id_type next_edge,
+                           osmium::object_id_type came_from);
 
     // Resolve task identity + pickup/delivery role of the agent's next
     // sequence objective from its own task states.

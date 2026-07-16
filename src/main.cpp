@@ -100,7 +100,9 @@ static int run_main()
                  "  1  Legacy      (orienteering / GeoBox / render / PDP utils)\n"
                  "  2  Tests       (submenu: A structure B mechanics C modules D e2e E all)\n"
                  "  3  Training    (MAPPO + IPPO + MAPPER, paper protocol)\n"
-                 "  4  Evaluation  (RL + RMCA + TP + CA + HAPC)\n\n"
+                 "  4  Evaluation  (RL + RMCA + TP + CA + HAPC)\n"
+                 "  5  MovementRL  (PPO replan gate, frozen MAPPO bid)\n"
+                 "  6  LSM         (congestion prediction readout pretrain)\n\n"
                  "Choice: ";
     std::string rep;
     std::cin >> rep;
@@ -322,6 +324,72 @@ static int run_main()
         }   // fin du niveau RM
     }
 
+
+    // ── 5 — Movement policy training: bid side frozen (MAPPO checkpoint in
+    //    eval mode), only the movement PPO learns. Reduced grid first.
+    else if (rep == "5" || rep == "M" || rep == "movement") {
+        CityRegistry::set_osm_root(kOsmRoot);
+
+        TrainingConfig cfg;
+        cfg.cache_root  = kCacheRoot;
+        cfg.output_dir  = kOutputDir + "\\movement_train";
+        cfg.start_seed  = 42;
+        cfg.n_seeds     = 1;
+        cfg.save_policy = true;
+        cfg.verbose     = true;
+
+        cfg.train_city_filter = { "Tokyo_Small", "Tokyo_Medium" };
+        cfg.train_scenarios = build_scenarios(paper_task_regimes(),
+                                              paper_congestion_regimes(),
+                                              paper_fleet_regimes());
+
+        apply_paper_environment(cfg.episode_cfg);
+        cfg.episode_cfg.use_movement_policy = true;
+        cfg.episode_cfg.movement_train      = true;
+
+        cfg.policy_path = kOutputDir + "\\mappo\\policy_seed42.bin";
+
+        // Frozen LSM (menu 6 output) -> alert feature f4; absent = f4 stays 0.
+        const std::string lsm_ckpt =
+            kOutputDir + "\\lsm_train\\lsm\\lsm_seed42.bin";
+        if (std::filesystem::exists(lsm_ckpt)) {
+            cfg.lsm_path                = lsm_ckpt;
+            cfg.episode_cfg.use_lsm     = true;
+            cfg.episode_cfg.lsm_train   = false;
+        }
+
+        MultiCityTrainer trainer;
+        trainer.train_movement(cfg);
+    }
+
+    // ── 6 — LSM pretraining: bid side frozen (MAPPO checkpoint, eval mode),
+    //    movement policy OFF, NLMS readout learns online against realized
+    //    congestion at t+H.
+    else if (rep == "6" || rep == "lsm" || rep == "LSM") {
+        CityRegistry::set_osm_root(kOsmRoot);
+
+        TrainingConfig cfg;
+        cfg.cache_root  = kCacheRoot;
+        cfg.output_dir  = kOutputDir + "\\lsm_train";
+        cfg.start_seed  = 42;
+        cfg.n_seeds     = 1;
+        cfg.save_policy = true;
+        cfg.verbose     = true;
+
+        cfg.train_city_filter = { "Tokyo_Small", "Tokyo_Medium" };
+        cfg.train_scenarios = build_scenarios(paper_task_regimes(),
+                                              paper_congestion_regimes(),
+                                              paper_fleet_regimes());
+
+        apply_paper_environment(cfg.episode_cfg);
+        cfg.episode_cfg.use_lsm   = true;
+        cfg.episode_cfg.lsm_train = true;
+
+        cfg.policy_path = kOutputDir + "\\mappo\\policy_seed42.bin";
+
+        MultiCityTrainer trainer;
+        trainer.pretrain_lsm(cfg);
+    }
 
     else {
         std::cout << "Unknown option.\n";

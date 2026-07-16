@@ -38,7 +38,9 @@ set(SOURCES
     src/DMASforPD/Policy/IPPO.cpp
     src/DMASforPD/Policy/MAPPERInspired.cpp
     src/DMASforPD/Policy/MAPPO.cpp
+    src/DMASforPD/Policy/MovementPolicy.cpp
     src/DMASforPD/Policy/PolicyKit.cpp
+    src/DMASforPD/Prediction/Lsm.cpp
     src/DMASforPD/Structures/AgentSolution.cpp
     src/DMASforPD/Structures/ObjectiveCache.cpp
     src/DMASforPD/Structures/OperableEnvironment.cpp
@@ -49,6 +51,7 @@ set(SOURCES
     src/Environment/Render/MapRenderer.cpp
     src/Environment/Simulation/CongestionMap.cpp
     src/Environment/Simulation/GhostTrafficController.cpp
+    src/Environment/Simulation/MovingGhosts.cpp
     src/Environment/Simulation/TemporalChainList.cpp
     src/Environment/Simulation/TemporalGraph.cpp
     src/Environment/Structure/Episode.cpp
@@ -86,6 +89,7 @@ set(SOURCES
     src/TrainingEvaluation/Run/Runner.cpp
     src/TrainingEvaluation/Run/RunnerAllocation.cpp
     src/TrainingEvaluation/Run/RunnerMovement.cpp
+    src/TrainingEvaluation/Run/RunnerPrediction.cpp
     src/TrainingEvaluation/Run/Trainer.cpp
     src/TrainingEvaluation/StructuresParam/CityConfig.cpp
     src/TrainingEvaluation/StructuresParam/ScenarioConfig.cpp

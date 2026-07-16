@@ -110,6 +110,15 @@ void EpisodeRunner::prepare_run(const EpisodeScenario& scenario,
         active_policy_->clear_recent_records();
     }
 
+    memory_.record_plan_congestion = cfg_.use_movement_policy;
+    mv_stats_ = {};
+    if (cfg_.use_movement_policy) movement_policy().clear_buffers();
+
+    lsm_hist_.clear();
+    lsm_alert_.clear();
+    lsm_stats_ = {};
+    if (cfg_.use_lsm) lsm_module().reset_state();
+
     acc_.reset();
     PDPServerMemory::reset_path_compute_time();
 
@@ -192,6 +201,7 @@ void EpisodeRunner::prepare_run(const EpisodeScenario& scenario,
         a->local_memory.tasks.clear();
         a->local_memory.local_agents.clear();
         a->local_memory.operable_env = OperableEnvironment{};
+        a->local_memory.plan_cong.clear();
     }
 
     // Canonical start positions when a SharedEpisodeSetup is provided (same
@@ -280,6 +290,9 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
             (step < (int)step_rate.size()) ? step_rate[step] : 0.f;
         n_active  = std::max(1, static_cast<int>(std::round(n_active * scenario.agents_mult)));
         n_active = std::min(n_active, static_cast<int>(all_agents_.size()));
+
+        if (cfg_.use_lsm && step % std::max(1, cfg_.lsm_every) == 0)
+            lsm_tick(step, total_steps, lambda, n_active);
 
         // Arrivals first, so agents that just delivered are Idle for new work.
         process_arrivals(step);
@@ -418,6 +431,10 @@ RunResult EpisodeRunner::run(int city_index, int num_cities,
         && (train_mode || active_policy_->trains_online())) {
         result.train_stats = active_policy_->train_round();
     }
+
+    if (cfg_.use_movement_policy && cfg_.movement_train
+        && movement_policy().total_buffer_size() > 0)
+        mv_stats_.train = movement_policy().train_round();
 
     auto t1 = std::chrono::steady_clock::now();
     result.wallclock_ms =

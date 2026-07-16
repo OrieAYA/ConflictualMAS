@@ -212,6 +212,20 @@ public:
     // rewritten after every episode, so a crash loses at most one episode.
     void train_grid(const TrainingConfig& cfg);
 
+    // Movement-policy training. Bid side frozen: MAPPO checkpoint loaded from
+    // cfg.policy_path, runner in eval mode; only the movement PPO learns
+    // (cfg.episode_cfg.use_movement_policy + movement_train must be set).
+    // cfg.lsm_path non-empty = frozen LSM loaded (alert feature f4 active).
+    // Checkpoint {out}/movement/movement_seed{seed}.bin rewritten every
+    // episode + movement_train.csv.
+    void train_movement(const TrainingConfig& cfg);
+
+    // LSM readout pretraining. Bid side frozen (cfg.policy_path, eval mode),
+    // movement policy OFF; the NLMS readout learns online against realized
+    // congestion at t+H (cfg.episode_cfg.use_lsm + lsm_train must be set).
+    // Checkpoint {out}/lsm/lsm_seed{seed}.bin + lsm_train.csv.
+    void pretrain_lsm(const TrainingConfig& cfg);
+
     // Public helper exposing the per-city EpisodeConfig customisation: size
     // scalar SCE (env_scale), constant-fleet phases, task distance range and
     // hot zones.

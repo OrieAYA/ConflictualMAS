@@ -56,6 +56,32 @@ autorité unique partagée par planning, commit et mouvement.
 (`127`). Les ghosts écrivent dans `load_` via `add_ghost_load`
 (`CongestionMap.cpp:37`), exactement comme les agents.
 
+**Ghosts mobiles — `MovingGhosts.{hpp,cpp}` (module écrit, NON BRANCHÉ)** :
+`MovingGhostTraffic` remplace les événements statiques par de vraies
+trajectoires — chaque ghost spawn (densité ∝ profil temporel, biais hot-way),
+marche le graphe arête par arête à vitesse free-flow, puis sort. Le jeu de
+`GhostTransit{ghost_id, edge, t_entry, t_exit, load}` est une fonction pure
+de la seed (replays identiques), mais un transit n'est **observable qu'au
+moment où il a lieu** :
+- `reveal_to_map=true` : `step(t, cmap)` pousse chaque transit dans la map à
+  son `t_entry` (online en temps, global en espace — le futur d'un ghost
+  n'est jamais visible du Manager, contrairement au contrôleur actuel qui
+  injecte tout au reset).
+- `reveal_to_map=false` (mode online post-éval) : rien n'est écrit ; la
+  vérité vit dans le module (`truth_load(edge,t)`, `observe_incident(node,t)`)
+  et le Manager ne connaît que ce que la flotte a vu.
+
+Plan de branchement (détaillé en tête de `MovingGhosts.hpp`) :
+(1) mode révélé : `setup_ghost_traffic` instancie sur `cfg.ghost_moving`
+(flags `ghost_moving`/`ghost_move_*` déjà dans EpisodeConfig, OFF), la boucle
+remplace `ghost_traffic_.step(step)` par `step(step, congestion_map)` ;
+parité de volume `n_ghosts ≈ n_events·window/durée_route_moyenne`.
+(2) mode online : `reveal_to_map=false` + physique du mouvement ajoute
+`truth_load` au coût de traversée (`schedule_next_edge`) + à chaque
+`arrive_at_node` le runner ingère `observe_incident` dans la map en ghost
+loads courte durée (`add_ghost_load(edge, t, t+ttl, load)`).
+(3) LSM : l'entrée g[4] passe au comptage d'arêtes fraîchement observées.
+
 ### 1.4 Path caches (meta-graphe inter-objectifs) — `ObjectiveCache.hpp`
 
 `ObjectivePath` (`:14`) — un plus court chemin **statique** mémoïsé :
@@ -194,6 +220,9 @@ Logique (`step`, `TaskAllocationModule.cpp:147`) :
 - `operable_env : OperableEnvironment` (`78`), `local_agents` (`79`)
 - `reroute_path : ObjectivePath` (`84`) — propriétaire stable d'un reroute TD-A*
   poussé par le Manager (le cache ne stocke que des chemins statiques)
+- `plan_cong : unordered_map<way_id,float>` — congestion normalisée de chaque
+  arête committée **au moment du planning** (snapshot par
+  `register_committed_plan` quand `record_plan_congestion` ; feature f2 §4.1)
 
 **Module planning** : `receive_task` → DbVNS (legacy) sur `OperableEnvironment`
 (`OperableEnvironment.hpp:20`), volontairement léger :
@@ -246,6 +275,76 @@ décentralise tout + sélection évolutionnaire
 `MapperPolicy.cpp:98`) ; Hybrid spécialise en ligne une base partagée gelée
 `μ = σ(z_base + w_i·x + b_i)` (`HybridPolicy.cpp`).
 
+### 4.1 Movement Decision Policy — `MovementPolicy.{hpp,cpp}`
+
+Gate PPO appris sur le replanning local (slide 36 du plan de recherche) :
+**une décision par arrivée sur node** — faut-il recalculer la jambe courante
+via TD-A* ? Mono-agent : un seul actor/critic partagé par la flotte,
+totalement découplé des bid policies (structures propres `MoveObs` /
+`MoveExperience`, PPO recopié de `ppo_train` — `Experience`/`kPolicySz`
+intacts).
+
+- **Observation** (`kMoveObsSz = 36`) : 4 scalaires — congestion de l'arête
+  planifiée suivante maintenant (`f1`), la même au moment du planning (`f2`,
+  snapshot `plan_cong`), min des autres arêtes incidentes hors arête
+  d'arrivée (`f3`, 1 = pas d'alternative), alerte LSM de l'agent (`f4`,
+  §4.2, 0 si LSM off) — + étoile locale : K=8 slots d'arêtes incidentes × 4
+  features `[cong_now, plan_cong, is_next, is_from]`.
+  Normalisation `c = x/(1+x)`, `x = get_load/edge_capacity`.
+- **Réseau** `StarNet` : encodeur partagé par arête `16×4` → ReLU → pooling
+  mean‖max (32) → concat scalaires (35) → tête `Mlp{35→64→64→1}`
+  (invariance par permutation, degré variable). Backward encodeur manuel
+  (`StarNet::backprop`), Adam via `policy_optim`. Hyperparams colonne IPPO
+  (clip 0.2, 4 epochs, lr 1e-4, grad 0.5, ent 5e-3).
+- **Reward mixte** : à la décision, si replan : `g − κ − β·1[g<ε]` avec
+  `g = max(0, cur−tda)/cur` mesuré par `RerouteOutcome` (κ=`mp_replan_cost`,
+  β=`mp_null_gain_penalty`, ε=`mp_gain_eps`) ; à l'objectif de la jambe,
+  chaque décision ouverte reçoit `w_out·clamp((pred−actual)/pred, −1, 1)`
+  (`credit_leg_outcome`, pred = `estimated_arrival − step` au moment de la
+  décision).
+- **Flags** (`EpisodeConfig`, OFF par défaut = comportement legacy exact) :
+  `use_movement_policy` (le gate remplace le check >5% inconditionnel aux
+  objectifs et s'applique aussi aux nodes intermédiaires),
+  `movement_train` (échantillonnage Bernoulli + `train_round` fin d'épisode),
+  `mp_*`.
+- **Branchement** : `process_arrivals` (node intermédiaire,
+  `RunnerMovement.cpp`) et les deux frontières d'objectif
+  (`on_objective_reached`) appellent `movement_decision` → si oui,
+  `push_rerouted_path(agent, speed, &out)` (TD-A* + règle >5% inchangée).
+  Snapshot `plan_cong` rempli par `register_committed_plan` quand
+  `PDPGlobalMemory::record_plan_congestion` (posé par `prepare_run`).
+- **Checkpoint** : magic `0xDEA110D2`, actor+critic+vrms (format MAPPO).
+
+### 4.2 LSM Prediction/Signaling — `src/DMASforPD/Prediction/Lsm.{hpp,cpp}`
+
+Liquid State Machine (Maass) côté serveur (slide 37 Mechanisms ; papier §7
+« refinement of congestion level prediction ») : prédit la congestion à
+t+H par zone et **signale les agents** dont la route planifiée traverse une
+zone d'alerte — le signal alimente la feature f4 de la movement policy
+(pattern slide 33 : serveur → signal → truck → policy confirme).
+
+- **Liquide fixe** (`LsmModule`, singleton `lsm_module()`) : 256 LIF sur
+  lattice 4×4×16, 80/20 exc/inh, connectivité `p = C·exp(−d²/λ²)` (C Maass
+  2002 par type de paire), lignes normalisées (Σ|w| = gain). Tick :
+  `v = 0.9·v + W_in·u + W_res·s` ; spike si v>1 (reset) ; état liquide =
+  trace exponentielle normalisée des spikes.
+- **Entrée u (136)** : 64 congestion coarse 8×8 (agrégation des
+  `cell_cong_cache` 32×32 de la RegionStatsGrid, normalisation absolue
+  `(mul−1)/mul`) + 64 densité coarse (`task_counts/max_count`) + 8 globaux
+  (time_ratio, mean/peak load, n_edges_load_ge(2), ghosts actifs, λ
+  arrivées, ratio agents actifs, ratio tâches disponibles).
+- **Sortie ŷ (65)** : congestion coarse prédite à t+H (64) + niveau global.
+  Seul le readout `W_out` apprend : **NLMS online** avec supervision différée
+  (ring buffer d'états ; à t+H la valeur réalisée devient la cible).
+- **Branchement** (`EpisodeRunner::lsm_tick`, `RunnerPrediction.cpp`) :
+  tick tous les `lsm_every` steps dans la boucle (avant `process_arrivals`) ;
+  zones d'alerte = `ŷ ≥ lsm_alert_threshold` ; alerte agent = max ŷ des
+  cellules croisées par sa route restante (cursor, stride ≤16 lookups) +
+  `next_path` → `lsm_alert_` lu par `movement_decision` (f4, 0 si absent).
+- **Flags** (`EpisodeConfig`, OFF par défaut = zéro impact) : `use_lsm`,
+  `lsm_train`, `lsm_every=10`, `lsm_horizon=100`, `lsm_alert_threshold=0.5`,
+  `lsm_lr=0.1`. Checkpoint : magic `0xDEA110D4` (W_in, W_res, W_out).
+
 ---
 
 ## 5. Scénarios, training et évaluation
@@ -274,6 +373,23 @@ de shaping §9) indexée sur l'épisode dans la seed. Checkpoints
 `{out}/{mappo,ippo,mapper}/{policy,ippo,mapper}_seed{seed}.bin` **réécrits
 après chaque épisode** (perte max = 1 épisode) ; CSV `episodes_train.csv`
 flushé au même rythme, `summary.csv` par seed.
+
+**Training movement** — `MultiCityTrainer::train_movement` (`Trainer.cpp`,
+menu `5`) : côté bid **gelé** (checkpoint MAPPO `cfg.policy_path` chargé,
+`train_mode=false` → pas d'exploration ni de train_round bid) ; seule la
+movement policy (§4.1) apprend (`use_movement_policy` + `movement_train`
+posés par main.cpp). Grille réduite par défaut (Tokyo Small/Medium × 27
+scénarios, 1 seed). Sorties : `{out}/movement/movement_seed{seed}.bin`
+(réécrit chaque épisode) + `movement_train.csv` (décisions, replans,
+adoptions, gain moyen, stats PPO par épisode). Pas de resume (v1).
+Si `results/lsm_train/lsm/lsm_seed42.bin` existe, main.cpp l'active
+(`cfg.lsm_path`, `use_lsm=true`, `lsm_train=false`) → LSM figé, f4 vivante.
+
+**Pretraining LSM** — `MultiCityTrainer::pretrain_lsm` (`Trainer.cpp`,
+menu `6`) : bid gelé (MAPPO éval), movement policy OFF, `use_lsm` +
+`lsm_train` → le readout NLMS apprend online. Sorties :
+`{out}/lsm/lsm_seed{seed}.bin` (réécrit chaque épisode) + `lsm_train.csv`
+(mse, cellules/agents en alerte, throughput par épisode).
 
 **Reprise après crash** (`cfg.resume`, ON par défaut ; smoke : OFF) :
 `completed_grid_points` relit `episodes_train.csv` (un point est complet si
@@ -353,6 +469,8 @@ Implémentation découpée en trois fichiers (`src/TrainingEvaluation/Run/`) :
 2. Boucle `step = 0..T` :
    - `advance_time(step)` (horloge + purge congestion passée)
    - `ghost_traffic_.step(step)` (trafic exogène)
+   - `lsm_tick(step, …)` si `use_lsm` et step multiple de `lsm_every`
+     (§4.2 : tick liquide, apprentissage différé, zones + alertes agents)
    - `build_global_state` → `memory_.cur_global_state`
    - **Arrivées** : `add_task` (crée le `PDPTask`, l'inscrit dans `available_` +
      `node_to_task_id_`) puis `offer_task` :
@@ -363,7 +481,11 @@ Implémentation découpée en trois fichiers (`src/TrainingEvaluation/Run/`) :
      - sur allocation : `commit_accepted_task` → si idle, `start_leg`.
    - **Mouvement** : `process_arrivals` → `on_objective_reached` (pickup/delivery)
      replanifie : `begin_leg` → `commit_plan` → `schedule_next_edge`
-     (commit **avant** schedule, cf. §3.2 self-exclusion).
+     (commit **avant** schedule, cf. §3.2 self-exclusion). Avec
+     `use_movement_policy`, chaque arrivée sur node (intermédiaire ou
+     objectif) passe par `movement_decision` (§4.1) qui gate l'appel
+     `push_rerouted_path` ; OFF = check >5% inconditionnel aux objectifs
+     seulement (comportement historique).
    - Récompenses : crédit pickup à l'arrivée pickup, crédit delivery (×facteur
      latence) à la livraison ; pénalités non-affecté / unfinished / idle.
 3. **Fin** : pénalités unfinished/idle ; `train_round()` de la policy active

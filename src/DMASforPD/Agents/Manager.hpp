@@ -210,7 +210,19 @@ public:
     // Refreshes the dynamic cost of the cached path, then calls
     // agent->push_updated_path() so the agent's edge cursor resumes correctly.
     // No-op if the path has not changed or no improvement is found.
-    void push_rerouted_path(int agent_id, float speed_mps);
+    // `out` (optional) reports the TD-A* comparison for reward computation.
+    struct RerouteOutcome {
+        bool attempted = false;   // both routes were costed
+        bool adopted   = false;   // >5% improvement, path pushed
+        int  cur_steps = 0;       // BPR-replayed remaining time, current route
+        int  tda_steps = 0;       // TD-A* alternative time
+    };
+    void push_rerouted_path(int agent_id, float speed_mps,
+                            RerouteOutcome* out = nullptr);
+
+    // When true, register_committed_plan snapshots each committed edge's
+    // congestion level into the agent's plan_cong (movement policy feature).
+    bool record_plan_congestion = false;
 
     // ---- Path cache (delegates to server_memory) ------------------------
 

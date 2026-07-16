@@ -659,6 +659,276 @@ void MultiCityTrainer::train_grid(const TrainingConfig& cfg_in) {
               << " episodes / policy. Results in " << cfg.output_dir << "\n";
 }
 
+// ── Movement-policy training ──────────────────────────────────────────────────
+
+void MultiCityTrainer::train_movement(const TrainingConfig& cfg) {
+    fs::create_directories(cfg.output_dir);
+
+    if (!cfg.episode_cfg.use_movement_policy || !cfg.episode_cfg.movement_train) {
+        std::cout << "  [train_movement] episode_cfg.use_movement_policy / "
+                     "movement_train must both be set.\n";
+        return;
+    }
+
+    const std::vector<EpisodeScenario> scenarios =
+        cfg.train_scenarios.empty() ? make_scenario_grid()
+                                    : cfg.train_scenarios;
+
+    std::vector<const CityConfig*> train_ptrs;
+    for (const auto& want : cfg.train_city_filter)
+        for (const auto& cc : CityRegistry::all())
+            if (cc.name == want) { train_ptrs.push_back(&cc); break; }
+    const int num_cities   = static_cast<int>(train_ptrs.size());
+    const int n_seeds      = std::max(1, cfg.n_seeds);
+    const int eps_per_seed = num_cities * static_cast<int>(scenarios.size());
+    if (num_cities == 0 || scenarios.empty()) {
+        std::cout << "  [train_movement] nothing to train (no cities/scenarios).\n";
+        return;
+    }
+
+    std::cout << "Movement training: " << num_cities << " cities × " << n_seeds
+              << " seeds × " << scenarios.size() << " scenarios = "
+              << eps_per_seed * n_seeds << " episodes.\n"
+              << "  Frozen bid policy: MAPPO <- " << cfg.policy_path << "\n";
+
+    std::vector<std::unique_ptr<CityAssets>> assets;
+    assets.reserve(num_cities);
+    for (int i = 0; i < num_cities; ++i)
+        assets.push_back(load_city(*train_ptrs[i], i, cfg.episode_cfg, cfg.cache_root));
+
+    std::vector<std::unique_ptr<EpisodeRunner>> runners;
+    runners.reserve(num_cities);
+    for (int i = 0; i < num_cities; ++i)
+        runners.push_back(std::make_unique<EpisodeRunner>(
+            assets[i]->ep_cfg, assets[i]->geo_box,
+            static_cast<uint32_t>(cfg.start_seed)));
+
+    auto& mp    = movement_policy();
+    auto& mappo = mappo_policy();
+
+    const std::string mv_dir = cfg.output_dir + "/movement";
+    fs::create_directories(mv_dir);
+    std::ofstream csv(cfg.output_dir + "/movement_train.csv", std::ios::trunc);
+    csv << "seed,episode,city,scenario,decisions,replans,adopted,gain_mean,"
+           "aloss,closs,entropy,kl,n_exp,n_epochs,"
+           "tasks_completed,tasks_appeared,throughput,wallclock_ms\n";
+
+    for (int si = 0; si < n_seeds; ++si) {
+        const int seed = cfg.start_seed + si;
+        std::cout << "\n════ movement seed " << (si + 1) << "/" << n_seeds
+                  << " (rng=" << seed << ") ════\n";
+
+        mappo.reinit(static_cast<uint32_t>(seed));
+        if (!mappo.load(cfg.policy_path)) {
+            std::cout << "  [Abort] MAPPO checkpoint load failed: "
+                      << cfg.policy_path << "\n";
+            return;
+        }
+        mp.reinit(static_cast<uint32_t>(seed) ^ 0x3Cu);
+        if (!cfg.lsm_path.empty()) {
+            if (lsm_module().load(cfg.lsm_path))
+                std::cout << "  Frozen LSM <- " << cfg.lsm_path << "\n";
+            else
+                std::cout << "  [Warn] LSM checkpoint load failed ("
+                          << cfg.lsm_path << ") — f4 stays 0.\n";
+        }
+
+        int ep_in_seed = 0;
+        for (size_t sc = 0; sc < scenarios.size(); ++sc) {
+            const EpisodeScenario& scen = scenarios[sc];
+            for (int ci = 0; ci < num_cities; ++ci) {
+                CityAssets&    ca     = *assets[ci];
+                EpisodeRunner& runner = *runners[ci];
+
+                const float progress = (eps_per_seed > 1)
+                    ? static_cast<float>(ep_in_seed) / (eps_per_seed - 1) : 0.f;
+                mp.set_progress(progress);
+                runner.set_global_episode(ep_in_seed);
+
+                uint32_t ep_seed =
+                      (static_cast<uint32_t>(seed)   * 2654435761u)
+                    ^ (static_cast<uint32_t>(ci + 1) *      40503u)
+                    ^ (static_cast<uint32_t>(sc + 1) * 2246822519u);
+                ep_seed |= 1u;
+
+                const SharedEpisodeSetup setup = build_shared_episode_setup(
+                    ep_seed, *ca.config, scen, ca.ep_cfg, ca.geo_box);
+
+                runner.train_mode  = false;   // bid side frozen (no exploration)
+                runner.policy_mode = PolicyMode::MAPPO;
+                RunResult res = runner.run(ci, num_cities, scen, ep_seed, &setup);
+
+                const auto& mv = runner.movement_stats();
+                const float gain_mean = (mv.n_replans > 0)
+                    ? mv.gain_sum / mv.n_replans : 0.f;
+                csv << seed << ',' << ep_in_seed << ',' << ca.config->name << ','
+                    << scen.label << ',' << mv.n_decisions << ','
+                    << mv.n_replans << ',' << mv.n_adopted << ','
+                    << gain_mean << ',' << mv.train.actor_loss << ','
+                    << mv.train.critic_loss << ',' << mv.train.entropy << ','
+                    << mv.train.kl_approx << ',' << mv.train.n_exp << ','
+                    << mv.train.n_epochs << ','
+                    << res.metrics.tasks_completed << ','
+                    << res.metrics.tasks_appeared << ','
+                    << res.metrics.throughput_rate << ','
+                    << res.wallclock_ms << '\n';
+                csv.flush();
+
+                if (cfg.verbose)
+                    std::cout << "  [mv ep " << (ep_in_seed + 1) << "/" << eps_per_seed
+                              << " s" << seed << " " << ca.config->name
+                              << " " << scen.label << "]"
+                              << "  dec=" << mv.n_decisions
+                              << " rep=" << mv.n_replans
+                              << " adopt=" << mv.n_adopted
+                              << " gain=" << gain_mean
+                              << " | aloss=" << mv.train.actor_loss
+                              << " ent=" << mv.train.entropy
+                              << " n=" << mv.train.n_exp
+                              << "  thr=" << res.metrics.throughput_rate
+                              << "  " << res.wallclock_ms << "ms"
+                              << "  mem=" << process_commit_mb() << "MB\n"
+                              << std::flush;
+
+                if (cfg.save_policy)
+                    mp.save(mv_dir + "/movement_seed" + std::to_string(seed) + ".bin");
+                ++ep_in_seed;
+                runner.release_episode_memory();
+            }
+        }
+        std::cout << "  Movement seed " << seed << " done — checkpoint "
+                  << mv_dir << "/movement_seed" << seed << ".bin\n";
+    }
+    std::cout << "Movement training complete. Results in "
+              << cfg.output_dir << "\n";
+}
+
+// ── LSM readout pretraining ───────────────────────────────────────────────────
+
+void MultiCityTrainer::pretrain_lsm(const TrainingConfig& cfg) {
+    fs::create_directories(cfg.output_dir);
+
+    if (!cfg.episode_cfg.use_lsm || !cfg.episode_cfg.lsm_train) {
+        std::cout << "  [pretrain_lsm] episode_cfg.use_lsm / lsm_train "
+                     "must both be set.\n";
+        return;
+    }
+
+    const std::vector<EpisodeScenario> scenarios =
+        cfg.train_scenarios.empty() ? make_scenario_grid()
+                                    : cfg.train_scenarios;
+
+    std::vector<const CityConfig*> train_ptrs;
+    for (const auto& want : cfg.train_city_filter)
+        for (const auto& cc : CityRegistry::all())
+            if (cc.name == want) { train_ptrs.push_back(&cc); break; }
+    const int num_cities   = static_cast<int>(train_ptrs.size());
+    const int n_seeds      = std::max(1, cfg.n_seeds);
+    const int eps_per_seed = num_cities * static_cast<int>(scenarios.size());
+    if (num_cities == 0 || scenarios.empty()) {
+        std::cout << "  [pretrain_lsm] nothing to train (no cities/scenarios).\n";
+        return;
+    }
+
+    std::cout << "LSM pretraining: " << num_cities << " cities × " << n_seeds
+              << " seeds × " << scenarios.size() << " scenarios = "
+              << eps_per_seed * n_seeds << " episodes.\n"
+              << "  Frozen bid policy: MAPPO <- " << cfg.policy_path << "\n";
+
+    std::vector<std::unique_ptr<CityAssets>> assets;
+    assets.reserve(num_cities);
+    for (int i = 0; i < num_cities; ++i)
+        assets.push_back(load_city(*train_ptrs[i], i, cfg.episode_cfg, cfg.cache_root));
+
+    std::vector<std::unique_ptr<EpisodeRunner>> runners;
+    runners.reserve(num_cities);
+    for (int i = 0; i < num_cities; ++i)
+        runners.push_back(std::make_unique<EpisodeRunner>(
+            assets[i]->ep_cfg, assets[i]->geo_box,
+            static_cast<uint32_t>(cfg.start_seed)));
+
+    auto& lsm   = lsm_module();
+    auto& mappo = mappo_policy();
+
+    const std::string lsm_dir = cfg.output_dir + "/lsm";
+    fs::create_directories(lsm_dir);
+    std::ofstream csv(cfg.output_dir + "/lsm_train.csv", std::ios::trunc);
+    csv << "seed,episode,city,scenario,n_ticks,n_learn,mse,"
+           "alert_cells_mean,agent_alerts_mean,"
+           "tasks_completed,tasks_appeared,throughput,wallclock_ms\n";
+
+    for (int si = 0; si < n_seeds; ++si) {
+        const int seed = cfg.start_seed + si;
+        std::cout << "\n════ lsm seed " << (si + 1) << "/" << n_seeds
+                  << " (rng=" << seed << ") ════\n";
+
+        mappo.reinit(static_cast<uint32_t>(seed));
+        if (!mappo.load(cfg.policy_path)) {
+            std::cout << "  [Abort] MAPPO checkpoint load failed: "
+                      << cfg.policy_path << "\n";
+            return;
+        }
+        lsm.reinit(static_cast<uint32_t>(seed) ^ 0x4Du);
+
+        int ep_in_seed = 0;
+        for (size_t sc = 0; sc < scenarios.size(); ++sc) {
+            const EpisodeScenario& scen = scenarios[sc];
+            for (int ci = 0; ci < num_cities; ++ci) {
+                CityAssets&    ca     = *assets[ci];
+                EpisodeRunner& runner = *runners[ci];
+
+                runner.set_global_episode(ep_in_seed);
+
+                uint32_t ep_seed =
+                      (static_cast<uint32_t>(seed)   * 2654435761u)
+                    ^ (static_cast<uint32_t>(ci + 1) *      40503u)
+                    ^ (static_cast<uint32_t>(sc + 1) * 2246822519u);
+                ep_seed |= 1u;
+
+                const SharedEpisodeSetup setup = build_shared_episode_setup(
+                    ep_seed, *ca.config, scen, ca.ep_cfg, ca.geo_box);
+
+                runner.train_mode  = false;
+                runner.policy_mode = PolicyMode::MAPPO;
+                RunResult res = runner.run(ci, num_cities, scen, ep_seed, &setup);
+
+                const auto& st = runner.lsm_stats();
+                csv << seed << ',' << ep_in_seed << ',' << ca.config->name << ','
+                    << scen.label << ',' << st.n_ticks << ',' << st.n_learn << ','
+                    << st.mse_mean() << ',' << st.alert_cells_mean() << ','
+                    << st.agent_alerts_mean() << ','
+                    << res.metrics.tasks_completed << ','
+                    << res.metrics.tasks_appeared << ','
+                    << res.metrics.throughput_rate << ','
+                    << res.wallclock_ms << '\n';
+                csv.flush();
+
+                if (cfg.verbose)
+                    std::cout << "  [lsm ep " << (ep_in_seed + 1) << "/" << eps_per_seed
+                              << " s" << seed << " " << ca.config->name
+                              << " " << scen.label << "]"
+                              << "  mse=" << st.mse_mean()
+                              << " learn=" << st.n_learn
+                              << " alert_cells=" << st.alert_cells_mean()
+                              << " agent_alerts=" << st.agent_alerts_mean()
+                              << "  thr=" << res.metrics.throughput_rate
+                              << "  " << res.wallclock_ms << "ms"
+                              << "  mem=" << process_commit_mb() << "MB\n"
+                              << std::flush;
+
+                if (cfg.save_policy)
+                    lsm.save(lsm_dir + "/lsm_seed" + std::to_string(seed) + ".bin");
+                ++ep_in_seed;
+                runner.release_episode_memory();
+            }
+        }
+        std::cout << "  LSM seed " << seed << " done — checkpoint "
+                  << lsm_dir << "/lsm_seed" << seed << ".bin\n";
+    }
+    std::cout << "LSM pretraining complete. Results in "
+              << cfg.output_dir << "\n";
+}
+
 // ===== TrainingLogger.cpp =====
 #include <cmath>
 #include <fstream>

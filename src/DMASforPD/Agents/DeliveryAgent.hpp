@@ -7,6 +7,7 @@
 #include "DMASforPD/Algorithms/DbVNS.hpp"
 #include "DMASforPD/Structures/ObjectiveCache.hpp"
 #include <optional>
+#include <unordered_map>
 #include <vector>
 
 struct TaskOffer;
@@ -82,6 +83,10 @@ struct DeliveryLocalMemory {
     // when the Manager pushes a TD-A* alternative (the path cache only stores
     // static shortest paths; rerouted geometry needs a stable owner).
     ObjectivePath                   reroute_path;
+
+    // Congestion level per committed edge as seen at planning time
+    // (register_committed_plan snapshot; movement policy feature f2).
+    std::unordered_map<osmium::object_id_type, float> plan_cong;
 };
 
 // ════════════════════════════════════════════════════════════════════════════
