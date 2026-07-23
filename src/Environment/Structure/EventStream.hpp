@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cmath>
 
-// ══════════════════════════
+
 enum class TemporalProfile {
     Uniform,      // 1                  — constant density ("Normal" in the paper)
     Flat,         // 0.10 (constant)    — low constant congestion baseline
@@ -20,7 +20,7 @@ const char* temporal_profile_label(TemporalProfile p);
 // f(t01) for the given profile; t01 is clamped to [0, 1].
 float temporal_profile_value(TemporalProfile p, float t01);
 
-// ══════════════════════════
+
 namespace event_tuning {
 
 inline constexpr float kTaskBaseQtt  = 100.f;    // tasks         = round(base · SCE · RM)

@@ -6,7 +6,7 @@
 #include <iostream>
 #include <queue>
 
-// ── Path-compute timing accumulator (single-threaded simulation) ────────────
+//  Path-compute timing accumulator (single-threaded simulation)
 namespace { long long g_path_compute_time_us = 0; }
 long long PDPServerMemory::path_compute_time_us()        { return g_path_compute_time_us; }
 void      PDPServerMemory::reset_path_compute_time()     { g_path_compute_time_us = 0; }

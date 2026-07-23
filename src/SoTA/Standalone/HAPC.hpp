@@ -13,7 +13,7 @@ public:
     HybridAdaptivePredictiveSolver() = default;
     ~HybridAdaptivePredictiveSolver() override = default;
 
-    // ── Tunable hyperparameters (paper §3.3 + §4.1) ─────────────────────────
+    //  Tunable hyperparameters (paper §3.3 + §4.1)
     struct HParams {
         float alpha            = 1.0f;    // paper §3.3 waiting-cost weight (paper test α = 1)
         bool  enable_two_step  = true;    // §3.3 two-steps-ahead lookahead (false = myopic)
@@ -142,7 +142,7 @@ private:
     // conservative per-entry cost
     static constexpr size_t kPrewarmBytesPerEntry = 48;
 
-    // ── Precomputed sequence profile ──────────────
+    //  Precomputed sequence profile
     struct SeqProfile {
         // t_seg[i]        = seg(pred(i), seq[i]) for i ∈ [0, n)
         std::vector<float> t_seg;
@@ -170,7 +170,7 @@ private:
     mutable std::vector<float> scratch_seg_D_in_;
     mutable std::vector<float> scratch_seg_D_out_;
 
-    // ── Bookkeeping for metrics ─────────────────────────────────────────────
+    //  Bookkeeping for metrics
     int  appeared_         = 0;
     int  completed_        = 0;
     int  refused_          = 0;
@@ -185,7 +185,7 @@ private:
     int  pairing_violations_  = 0;
     SolverInstrumentation instr_;
 
-    // ── Internal helpers ────────────────────────────────────────────────────
+    //  Internal helpers
 
     // static shortest-path distance, +inf if none
     float seg_cost(osmium::object_id_type from,

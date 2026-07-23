@@ -3,7 +3,7 @@
 #include <cmath>
 #include <stdexcept>
 
-// ── Construction ──────────────────────────────────────────────────────────────
+//  Construction
 EpisodeGenerator::EpisodeGenerator(const EpisodeConfig& cfg,
                                    const GeoBox&        geo_box,
                                    uint32_t             seed)
@@ -14,7 +14,7 @@ EpisodeGenerator::EpisodeGenerator(const EpisodeConfig& cfg,
     build_valid_index();
 }
 
-// ── Valid node index ──────────────────────────────────────────────────────────
+//  Valid node index
 void EpisodeGenerator::build_valid_index() {
     valid_nodes_.clear();
     valid_nodes_.reserve(geo_box_.data.nodes.size());
@@ -28,7 +28,7 @@ void EpisodeGenerator::build_valid_index() {
     build_spatial_grid();
 }
 
-// ── Spatial grid (cell ≈ hot_zone_radius) ─────────────────────────────────────
+//  Spatial grid (cell ≈ hot_zone_radius)
 void EpisodeGenerator::build_spatial_grid() {
     spatial_grid_.clear();
     if (valid_nodes_.empty()) return;
@@ -63,7 +63,7 @@ std::pair<int,int> EpisodeGenerator::cell_of(double lat, double lon) const {
              static_cast<int>(std::floor((lon - grid_min_lon_) / cell_lon_deg_)) };
 }
 
-// ── Hot zone re-sampling ──────────────────────────────────────────────────────
+//  Hot zone re-sampling
 void EpisodeGenerator::resample_hot_zones(int n_zones) {
     hot_zones_.clear();
     if (n_zones <= 0 || cfg_.cluster_prob <= 0.f || valid_nodes_.empty()) return;
@@ -73,7 +73,7 @@ void EpisodeGenerator::resample_hot_zones(int n_zones) {
         hot_zones_.push_back(valid_nodes_[pick(rng_)]);
 }
 
-// ── Phase table ───────────────────────────────────────────────────────────────
+//  Phase table
 std::vector<PhaseInfo> EpisodeGenerator::build_phase_table() const {
     std::vector<PhaseInfo> table;
     int step = 0;
@@ -86,7 +86,7 @@ std::vector<PhaseInfo> EpisodeGenerator::build_phase_table() const {
     return table;
 }
 
-// ── Episode generation ────────────────────────────────────────────────────────
+//  Episode generation
 std::vector<ScheduledTask> EpisodeGenerator::generate(TemporalProfile profile) {
     last_delivery_ = 0;
     auto phases = build_phase_table();
@@ -116,11 +116,11 @@ std::vector<ScheduledTask> EpisodeGenerator::generate(TemporalProfile profile) {
 
     if (total_episode_steps <= 0) return stream;
 
-    // ── Event count = round(100 · SCE · RM); fd only shapes WHEN they occur ─
+    //  Event count = round(100 · SCE · RM); fd only shapes WHEN they occur
     const int n_events = event_tuning::derived_task_count(cfg_.env_scale,
                                                           cfg_.ratio_mult);
 
-    // ── Arrival steps: density ∝ profile(t/T) over the arrival window ──�
+    //  Arrival steps: density ∝ profile(t/T) over the arrival window
     const int arrival_cutoff = std::max(1, static_cast<int>(
         total_episode_steps * event_tuning::kTaskArrivalWindow));
     std::vector<float> weights(static_cast<size_t>(total_episode_steps), 0.f);
@@ -139,7 +139,7 @@ std::vector<ScheduledTask> EpisodeGenerator::generate(TemporalProfile profile) {
     for (int i = 0; i < n_events; ++i) arrival_steps[i] = step_dist(rng_);
     std::sort(arrival_steps.begin(), arrival_steps.end());
 
-    // ── Per-task draws (walk arrivals in order; hot zones follow phases) ───
+    //  Per-task draws (walk arrivals in order; hot zones follow phases)
     size_t phase_idx = 0;
     resample_hot_zones(phases.empty() ? cfg_.n_hot_zones
                                       : phases.front().n_hot_zones);
@@ -187,7 +187,7 @@ std::vector<ScheduledTask> EpisodeGenerator::generate(TemporalProfile profile) {
     return stream;
 }
 
-// ── Scenario density scaling (canonical sub/supersample) ─────────────────────
+//  Scenario density scaling (canonical sub/supersample)
 void apply_density_mult(std::vector<ScheduledTask>& stream,
                         float density_mult, uint32_t seed)
 {
@@ -219,7 +219,7 @@ void apply_density_mult(std::vector<ScheduledTask>& stream,
     }
 }
 
-// ── Node sampling ─────────────────────────────────────────────────────────────
+//  Node sampling
 osmium::object_id_type EpisodeGenerator::sample_node_uniform() {
     if (valid_nodes_.empty()) return 0;
     std::uniform_int_distribution<int> d(0, static_cast<int>(valid_nodes_.size()) - 1);
@@ -259,7 +259,7 @@ osmium::object_id_type EpisodeGenerator::sample_node_near(
     return candidates[pick(rng_)];
 }
 
-// ── Private helpers ───────────────────────────────────────────────────────────
+//  Private helpers
 osmium::object_id_type EpisodeGenerator::sample_pickup(bool clustered) {
     // same_origin_prob: model return-trips / lifelong locality by starting a new
     // task from the previous task's delivery node (chaining tasks spatially).

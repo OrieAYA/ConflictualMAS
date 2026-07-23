@@ -82,7 +82,7 @@ int FaithfulCASolver::edge_arrival_step(osmium::object_id_type edge_id,
     return t_enter + std::max(1, static_cast<int>(std::ceil(adj)));
 }
 
-// ── BPR-aware A* ───────────────────�
+//  BPR-aware A*
 FaithfulCASolver::BPRPath
 FaithfulCASolver::bpr_a_star(osmium::object_id_type from,
                               osmium::object_id_type to,
@@ -404,7 +404,7 @@ bool FaithfulCASolver::try_allocate_one(int step) {
     }
     if (eligible_idx.empty()) return false;
 
-    // ── DEFINING DECISION RULE (paper §3.4 + §3.3) ────────�
+    //  DEFINING DECISION RULE (paper §3.4 + §3.3)
 
     struct Cand { int agent_id; int task_idx; float cost; int load; };
     std::vector<Cand> cands;

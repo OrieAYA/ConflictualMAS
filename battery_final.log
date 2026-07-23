@@ -1,0 +1,83 @@
+
+=== ConflictualMAS ===
+
+  1  Legacy      (orienteering / GeoBox / render / PDP utils)
+  2  Tests       (submenu: A structure B mechanics C modules D e2e E all)
+  3  Training    (MAPPO + IPPO + MAPPER, paper protocol)
+  4  Evaluation  (RL + RMCA + TP + CA + HAPC)
+  5  MovementRL  (PPO replan gate, frozen MAPPO bid)
+  6  LSM         (congestion prediction readout pretrain)
+
+Choice: 
+[Tests]  A Structure  B Mechanics  C Modules  D EndToEnd  R Regression  E All   |   G CongestionDiag  P PlanningCompare
+Choice: 
+=== A. Structure & Construction ===
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+  [1] Env created  E33179 nodes, 39877 ways
+  [2] Edge integrity OK  E0 dangling / 0 zero-length / 0 self-loop
+  [3] Incidence symmetry OK
+
+=== GeoBox Connectivity  Esmoke_test ===
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+  [OK]   smoke_test.json  nodes=33179  ways=39877  fully connected
+=== PASS  Etous les caches sont connexes ===
+
+  [4] Connectivity OK
+[PDPServerMemory] Initialized 0 group caches
+  [5] PDPGlobalMemory construction OK
+  [6] Dijkstra OK  Ereached 33179/33179 nodes, all distances finite ≥ 0
+  [7] TemporalChainList OK  Esentinels / order / overlap / remove / find / expiry
+  [8] TemporalGraph OK  Eper-node chains, correct incident edges
+=== A PASS ===
+
+=== B. Mechanics & Simulation ===
+  [1] Congestion/BPR OK  Ef(5)=115 f(10)=340 steps 7->23
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+  [2] Lifelong tasks OK  E73 tasks, arrivals in [12,315] of 400 steps
+[PDPServerMemory] Initialized 0 group caches
+  [3] Time/movement/completion OK  Eappeared=76 completed=5 finished_list=5
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+  [4] Congestion impact OK  Emean load 1.01408 (off) -> 2.29645 (ghost on)
+  [5] BPR time-dependence OK  Ecost 100/198.304/100 (before/in/after window)
+=== B PASS ===
+
+=== C. Modules ===
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+[PDPServerMemory] Initialized 0 group caches
+  [1] GlobalMemory OK  Elifecycle + id refresh (0,1 ↁEreset ↁE0)
+  [2] BPR OK  Ecap floor + monotone factor
+
+=== TAM Multi-Candidate Test ===
+  [1] GeoBox <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0

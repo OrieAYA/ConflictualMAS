@@ -147,7 +147,7 @@ public:
     PDPServerMemory() = delete;
     explicit PDPServerMemory(GeoBox& box);
 
-    // ── Path-compute timing instrumentation ───────────�
+    //  Path-compute timing instrumentation
     static long long path_compute_time_us();
     static void      reset_path_compute_time();
 

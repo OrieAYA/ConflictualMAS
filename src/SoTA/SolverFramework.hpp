@@ -6,7 +6,7 @@
 
 // one metric record per (solver, episode)
 struct SolverMetrics {
-    // ── Identity / context (filled by SolverRunner) ─────────────────────────
+    //  Identity / context (filled by SolverRunner)
     std::string solver_name;
     std::string city_label;
     std::string scenario_label;
@@ -14,56 +14,56 @@ struct SolverMetrics {
     int         total_steps  = 0;
     int         n_active_agents = 0;
 
-    // ── Headline LGPDP metrics ──────────────────────────────────────────────
+    //  Headline LGPDP metrics
     int    tasks_appeared  = 0;
     int    tasks_completed = 0;
     int    tasks_refused   = 0;
     float  throughput_rate = 0.f;
     float  accept_rate     = 0.f;
 
-    // ── Time metrics (mean over completed tasks) ────────────────────────────
+    //  Time metrics (mean over completed tasks)
     double latency_mean       = 0.;
     double latency_per_agent  = 0.;
     double mean_wait_steps    = 0.;
     double mean_trip_steps    = 0.;
     double mean_road_pd_m     = 0.;
 
-    // ── Routing diagnostics ─────────────────────────────────────────────────
+    //  Routing diagnostics
     double mean_extra_steps_per_task     = 0.;
     double delivery_route_efficiency     = 0.;
     double total_fleet_distance_m        = 0.;
 
-    // ── Agent metrics ───────────────────────────────────────────────────────
+    //  Agent metrics
     float  agent_utilisation             = 0.f;
     int    agent_completed_max           = 0;
     int    agent_completed_min           = 0;
     float  agent_completed_gini          = 0.f;
     float  agent_completed_std           = 0.f;   // coefficient of variation
 
-    // ── Network-level congestion ───────────────────────────────────────────
+    //  Network-level congestion
     float  mean_congestion               = 0.f;   // mean(load_now) over all steps
     float  congestion_variance           = 0.f;
     int    peak_load                     = 0;     // max load_now across episode
     float  n_ghost_active_mean           = 0.f;   // SolverRunner fills this
 
-    // ── Congestion exposure (along agent traversals) ────────────────────────
+    //  Congestion exposure (along agent traversals)
     float  mean_congestion_at_decision   = 0.f;
     double mean_bpr_along_route          = 1.;
     double time_lost_to_congestion       = 0.;
     int    n_traversals_in_jam           = 0;
     float  route_congestion_exposure     = 0.f;
 
-    // ── Compute complexity ──────────────────────────────────────────────────
+    //  Compute complexity
     long long wallclock_ms               = 0;
     long long n_allocation_calls         = 0;     // # try_allocate / batch calls
     double    compute_time_per_task_ms   = 0.;
     double    compute_time_per_decision_us = 0.;
 
-    // ── Solver-specific bookkeeping ─────────────────────────────────────────
+    //  Solver-specific bookkeeping
     int    n_replans                     = 0;
     int    n_collisions_avoided          = 0;
 
-    // ── Validity audit — must remain zero ───────────────────────────────────
+    //  Validity audit — must remain zero
     int    capacity_violations           = 0;
     int    pairing_violations            = 0;
 };
@@ -81,14 +81,14 @@ struct SolverMetrics {
 // shared surface: identical across every compared method
 
 struct SolverContext {
-    // ── World (read-only references) ────────────────────────────────────────
+    //  World (read-only references)
     const GeoBox*    geo_box    = nullptr;   // road graph (owned by caller)
 
-    // ── Mutable shared state ────────────────�
+    //  Mutable shared state
     CongestionMap*        congestion_map = nullptr;
     GhostTrafficController* ghost         = nullptr;   // may be nullptr
 
-    // ── Episode definition ──────────────────────────────────────────────────
+    //  Episode definition
     const EpisodeConfig* episode_config = nullptr;   // user-configured params
 
     // deterministic task stream, replayed identically by every solver
@@ -103,19 +103,19 @@ struct SolverContext {
     // agent_start_nodes[i].
     std::vector<osmium::object_id_type> agent_start_nodes;
 
-    // ── Per-agent capacity heterogeneity (paper Y, optional) ──────
+    //  Per-agent capacity heterogeneity (paper Y, optional)
     std::vector<int> per_agent_capacity;
 
-    // ── Sim parameters (already scaled to this episode's scenario) ──────────
+    //  Sim parameters (already scaled to this episode's scenario)
     int   total_steps  = 0;
     float speed_mps    = 5.f;
     int   city_index   = 0;
     int   num_cities   = 1;
 
-    // ── RNG seed (stable for this episode) ────────────
+    //  RNG seed (stable for this episode)
     uint32_t episode_seed = 42;
 
-    // ── Helpers ─────────────────────
+    //  Helpers
     osmium::object_id_type sample_valid_node(std::mt19937& rng) const;
 };
 
@@ -440,26 +440,26 @@ class ISolver {
 public:
     virtual ~ISolver() = default;
 
-    // ── One-time setup ──────────────────�
+    //  One-time setup
     virtual void init(const SolverContext& ctx) = 0;
 
-    // ── Task ingestion ──────────────────�
+    //  Task ingestion
     virtual void inject_task(const ScheduledTask& task, int step) = 0;
 
-    // ── Simulation tick ──────────────────�
+    //  Simulation tick
     virtual void step(int timestep) = 0;
 
-    // ── Wrap-up ─────────────────────
+    //  Wrap-up
     virtual SolverMetrics finalize() = 0;
 
-    // ── Identification ──────────────────�
+    //  Identification
     virtual const char* name() const = 0;
 };
 
 // ===== SolverCSVLogger.hpp =====
 #include <fstream>
 
-// ══════════════════════════
+
 class SolverCSVLogger {
 public:
     SolverCSVLogger(const std::string& path, bool append = false);
@@ -486,7 +486,7 @@ private:
 #include "TrainingEvaluation/Run/Runner.hpp"   // EpisodeScenario, PolicyMode
 #include <memory>
 
-// ══════════════════════════
+
 class SolverRunner {
 public:
     SolverRunner(const EpisodeConfig& cfg,

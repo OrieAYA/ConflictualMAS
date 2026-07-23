@@ -9,7 +9,7 @@ namespace {
 constexpr float kInf = std::numeric_limits<float>::infinity();
 }
 
-// ══════════════════════════
+
 
 int HybridAdaptivePredictiveSolver::ZonePairForecast::cell_of(
     osmium::object_id_type id, const GeoBox& g) const
@@ -109,7 +109,7 @@ HybridAdaptivePredictiveSolver::ZonePairForecast::top_h(
     return out;
 }
 
-// ══════════════════════════
+
 
 HybridAdaptivePredictiveSolver::SharedDistanceCache&
 HybridAdaptivePredictiveSolver::shared_cache()
@@ -167,7 +167,7 @@ void HybridAdaptivePredictiveSolver::init(const SolverContext& ctx) {
     capacity_violations_ = pairing_violations_ = 0;
     instr_.init(ctx.n_active_agents, ctx.speed_mps);
 
-    // ── Build the OD-pair forecast grid over the GeoBox bounding box. ───
+    //  Build the OD-pair forecast grid over the GeoBox bounding box.
     forecast_.dim = std::max(2, hparams.demand_grid_dim);
     forecast_.count_interval.clear();
     forecast_.count_total.clear();
@@ -214,7 +214,7 @@ void HybridAdaptivePredictiveSolver::inject_task(const ScheduledTask& task,
     r.delivery_node  = task.delivery_node_id;
     r.arrival_step   = step;
 
-    // ── Bulk cache pre-warm (Dijkstra-from-source) ─────────�
+    //  Bulk cache pre-warm (Dijkstra-from-source)
     prewarm_from_node(r.pickup_node);
     prewarm_from_node(r.delivery_node);
 
@@ -232,7 +232,7 @@ void HybridAdaptivePredictiveSolver::inject_task(const ScheduledTask& task,
     });
 }
 
-// ══════════════════════════
+
 
 void HybridAdaptivePredictiveSolver::prewarm_from_node(
     osmium::object_id_type src) const
@@ -259,7 +259,7 @@ void HybridAdaptivePredictiveSolver::prewarm_from_node(
     sc.entries += dist_map.size();
 }
 
-// ══════════════════════════
+
 
 float HybridAdaptivePredictiveSolver::seg_cost(
     osmium::object_id_type from, osmium::object_id_type to) const
@@ -267,7 +267,7 @@ float HybridAdaptivePredictiveSolver::seg_cost(
     if (from == 0 || to == 0) return kInf;
     if (from == to) return 0.f;
 
-    // ── L1: per-source Dijkstra cache (hot path, ~150ns) ─────────────────
+    //  L1: per-source Dijkstra cache (hot path, ~150ns)
     auto& sc = shared_cache();
     auto it = sc.dijkstra_from.find(from);
     if (it != sc.dijkstra_from.end()) {
@@ -281,7 +281,7 @@ float HybridAdaptivePredictiveSolver::seg_cost(
         if (jt != it->second.end()) return jt->second;
     }
 
-    // ── L2 fallback: PathHelper (persistent across episodes within city) ──
+    //  L2 fallback: PathHelper (persistent across episodes within city)
     if (!paths_) return kInf;
     const auto& p = paths_->get(from, to);
     return p.valid ? p.cost : kInf;
@@ -325,7 +325,7 @@ HybridAdaptivePredictiveSolver::paper_cost(
     return cb;
 }
 
-// ══════════════════════════
+
 
 bool HybridAdaptivePredictiveSolver::build_profile(
     const std::vector<SequenceStop>& seq,
@@ -367,7 +367,7 @@ bool HybridAdaptivePredictiveSolver::build_profile(
     return true;
 }
 
-// ══════════════════════════
+
 
 HybridAdaptivePredictiveSolver::InsertionResult
 HybridAdaptivePredictiveSolver::cheapest_insertion_in_seq(
@@ -406,7 +406,7 @@ HybridAdaptivePredictiveSolver::cheapest_insertion_with_profile(
     const int initial_load = profile.initial_load;
     if (initial_load > capacity) return best;
 
-    // ══════════════════════════
+
 
     const osmium::object_id_type from_node = profile.from_node;
     const auto& t_seg         = profile.t_seg;
@@ -415,7 +415,7 @@ HybridAdaptivePredictiveSolver::cheapest_insertion_with_profile(
     const auto& t_seg_prefix  = profile.t_seg_prefix;
     const auto& pickup_suffix = profile.pickup_suffix;
 
-    // ── Insertion-related seg_cost precompute (O(n)) ────────�
+    //  Insertion-related seg_cost precompute (O(n))
     auto& seg_to_P  = scratch_seg_to_P_;   seg_to_P.assign (n + 1, kInf);
     auto& seg_P_out = scratch_seg_P_out_;  seg_P_out.assign(std::max(1, n), kInf);
     auto& seg_D_in  = scratch_seg_D_in_;   seg_D_in.assign (n + 1, kInf);
@@ -433,7 +433,7 @@ HybridAdaptivePredictiveSolver::cheapest_insertion_with_profile(
 
     const float alpha = hparams.alpha;
 
-    // ── Try every (pos_p, pos_d) — O(1) per candidate ───────────────────────
+    //  Try every (pos_p, pos_d) — O(1) per candidate
     for (int pos_p = 0; pos_p <= n; ++pos_p) {
         const int lbp = (pos_p > 0) ? load_after[pos_p - 1] : initial_load;
         if (lbp + 1 > capacity) continue;
@@ -454,7 +454,7 @@ HybridAdaptivePredictiveSolver::cheapest_insertion_with_profile(
             float delta_waiting = 0.f;
 
             if (pos_p == pos_d) {
-                // ── Case A: P and D consecutive at position pos_p ──────────
+                //  Case A: P and D consecutive at position pos_p
                 if (pos_p < n) {
                     const float sdo = seg_D_out[pos_p];
                     if (!std::isfinite(sdo)) continue;
@@ -476,7 +476,7 @@ HybridAdaptivePredictiveSolver::cheapest_insertion_with_profile(
                     delta_waiting = alpha * arrive_at_P;
                 }
             } else {
-                // ── Case B: pos_p < pos_d ─────────────────────────────────
+                //  Case B: pos_p < pos_d
                 const float spo = seg_P_out[pos_p];   // P → seq[pos_p]
                 const float sdi = seg_D_in[pos_d];    // seq[pos_d-1] → D
                 if (!std::isfinite(spo) || !std::isfinite(sdi)) continue;
@@ -527,7 +527,7 @@ HybridAdaptivePredictiveSolver::cheapest_insertion_with_profile(
         }
     }
 
-    // ── Materialise the winning sequence (once, at the end) ─────────────────
+    //  Materialise the winning sequence (once, at the end)
     if (best.pos_p >= 0 && best.pos_d >= 0) {
         best.resulting_sequence.clear();
         best.resulting_sequence.reserve(static_cast<size_t>(n + 2));
@@ -564,7 +564,7 @@ HybridAdaptivePredictiveSolver::cheapest_insertion(
     return r;
 }
 
-// ══════════════════════════
+
 
 bool HybridAdaptivePredictiveSolver::try_insert_task(int task_id, int step) {
     if (task_id < 0 || task_id >= static_cast<int>(tasks_.size())) return false;
@@ -654,7 +654,7 @@ bool HybridAdaptivePredictiveSolver::try_insert_task(int task_id, int step) {
     return true;
 }
 
-// ══════════════════════════
+
 
 int HybridAdaptivePredictiveSolver::edge_arrival_step(
     osmium::object_id_type edge_id, int t_enter)
@@ -847,7 +847,7 @@ void HybridAdaptivePredictiveSolver::recommit_route(AgentState& a, int step) {
             edge_arrival_step(a.current_path_edges[a.next_idx], step);
 }
 
-// ══════════════════════════
+
 
 void HybridAdaptivePredictiveSolver::register_arrival(
     osmium::object_id_type pickup_node,
@@ -859,7 +859,7 @@ void HybridAdaptivePredictiveSolver::register_arrival(
     forecast_.register_arrival(p_cell, d_cell);
 }
 
-// ══════════════════════════
+
 
 void HybridAdaptivePredictiveSolver::step(int timestep) {
     if (ctx_) {
@@ -886,7 +886,7 @@ void HybridAdaptivePredictiveSolver::step(int timestep) {
     for (auto& a : agents_) advance_agent(a, timestep);
 }
 
-// ══════════════════════════
+
 
 SolverMetrics HybridAdaptivePredictiveSolver::finalize() {
     SolverMetrics m;

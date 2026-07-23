@@ -18,7 +18,7 @@ PDPGlobalMemory::PDPGlobalMemory(GeoBox& box,
     region_grid.init(box);
 }
 
-// ── RegionStatsGrid implementation ─────────────────────────────────────────
+//  RegionStatsGrid implementation
 
 void RegionStatsGrid::init(const GeoBox& gb) {
     // Bounding box from the GeoBox. Fallback to scanning nodes if osmium::Box

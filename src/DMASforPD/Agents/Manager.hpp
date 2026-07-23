@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
-// ── RegionStatsGrid — task density + congestion heatmap over the city bbo
+//  RegionStatsGrid — task density + congestion heatmap over the city bbo
 struct RegionStatsGrid {
     static constexpr int kDim                = 32;
     static constexpr int kSize               = kDim * kDim;
@@ -22,14 +22,14 @@ struct RegionStatsGrid {
     double min_lat = 0, min_lon = 0;
     double cell_h_lat = 1, cell_w_lon = 1;
 
-    // ── Density tracking (sliding window of task arrivals) ──────────────────
+    //  Density tracking (sliding window of task arrivals)
     int    task_counts[kSize]  = {};
     int    max_count           = 1;
     int    window_steps        = 600;
     struct Event { int step; int cell; };
     std::deque<Event> task_events;
 
-    // ── Congestion cache (refreshed every kCacheRefreshSteps) ───────────────
+    //  Congestion cache (refreshed every kCacheRefreshSteps)
     float  cell_cong_cache[kSize] = {};   // mean BPR multiplier (≥ 1.0)
     float  max_cell_cong          = 1.f;  // for normalisation
     int    last_cache_refresh     = -kCacheRefreshSteps;
@@ -79,7 +79,7 @@ public:
     float speed_mps   = 5.0f;
     int   total_steps = 3600;
 
-    // ── Planning strategy used by DeliveryAgent::receive_task() ─────
+    //  Planning strategy used by DeliveryAgent::receive_task()
 
     // Double-Horizon insertion [Mitrovic-Minic et al. 2004]: insertion cost
     // weighted by slack preservation for long-horizon positions.
@@ -100,7 +100,7 @@ public:
     // System-state snapshot (kGlobSz = 20 floats) refreshed once per step by
     float cur_global_state[20] = {};
 
-    // ── Spatial heatmap : task density + congestion per cell ──────
+    //  Spatial heatmap : task density + congestion per cell
     RegionStatsGrid region_grid;
 
     PDPGlobalMemory() = delete;

@@ -421,21 +421,6 @@ C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイ�
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Environment/Structure/Episode.cpp' をコンパイルしています)
   
-C:\ConflictualMAS\src\Environment\Structure\Episode.cpp(124,63): error C2059: 構文エラー: ')' [C:\ConflictualMAS\build\main.vcxproj]
-C:\ConflictualMAS\src\Environment\Structure\Episode.cpp(124,64): error C2059: 構文エラー: ')' [C:\ConflictualMAS\build\main.vcxproj]
-C:\ConflictualMAS\src\Environment\Structure\Episode.cpp(124,29): warning C4552: '*': 式の結果が使用されていません [C:\ConflictualMAS\build\main.vcxproj]
-C:\ConflictualMAS\src\Environment\Structure\Episode.cpp(127,25): error C2065: 'arrival_cutoff': 定義されていない識別子です。 [C:\ConflictualMAS\build\main.vcxproj]
-C:\ConflictualMAS\src\Environment\Structure\Episode.cpp(134,54): error C2065: 'arrival_cutoff': 定義されていない識別子です。 [C:\ConflictualMAS\build\main.vcxproj]
-C:\ConflictualMAS\src\Environment\Structure\Episode.cpp(134,14): error C2672: 'std::fill': 一致するオーバーロードされた関数が見つかりませんでした。 [C:\ConflictualMAS\build\main.vcxproj]
-      C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\include\xutility(5428,6):
-      'void std::fill(_ExPo &&,_FwdIt,_FwdIt,const _Ty &) noexcept' の可能性があります
-          C:\ConflictualMAS\src\Environment\Structure\Episode.cpp(134,14):
-          'void std::fill(_ExPo &&,_FwdIt,_FwdIt,const _Ty &) noexcept': 4 引数が必要です - 2 が指定されました
-      C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\include\xutility(5397,19):
-      または 'void std::fill(const _FwdIt,const _FwdIt,const _Ty &)'
-          C:\ConflictualMAS\src\Environment\Structure\Episode.cpp(134,14):
-          'void std::fill(const _FwdIt,const _FwdIt,const _Ty &)': 3 引数が必要です - 2 が指定されました
-  
   EpisodeManager.cpp
 C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
 C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -779,10 +764,6 @@ C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファ�
 C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
   
-C:\ConflictualMAS\src\SoTA\SolverFramework.cpp(379,16): error C2039: 'step': 'ISolver' のメンバーではありません [C:\ConflictualMAS\build\main.vcxproj]
-      C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(439,7):
-      'ISolver' の宣言を確認してください
-  
   CA.cpp
 C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
 C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -866,205 +847,6 @@ C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: �
 C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
   
-C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(23,19): error C3668: 'FaithfulCASolver::step': オーバーライド指定子 'override' を伴うメソッドは、基底クラス メソッドをオーバーライドしませんでした [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
-  
-C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(86,19): error C4430: 型指定子がありません - int と仮定しました。メモ: C++ は int を既定値としてサポートしていません [C:\ConflictualMAS\build\main.vcxproj]
-C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(86,19): error C2556: 'int FaithfulCASolver::bpr_a_star(osmium::object_id_type,osmium::object_id_type,int) const': オーバーロード関数は、'FaithfulCASolver::BPRPath FaithfulCASolver::bpr_a_star(osmium::object_id_type,osmium::object_id_type,int) const' と戻り値の型のみが異なります。 [C:\ConflictualMAS\build\main.vcxproj]
-      C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(97,13):
-      'FaithfulCASolver::bpr_a_star' の宣言を確認してください
-  
-C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(86,19): error C2371: 'FaithfulCASolver::bpr_a_star': 再定義されています。異なる基本型です。 [C:\ConflictualMAS\build\main.vcxproj]
-      C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(97,13):
-      'FaithfulCASolver::bpr_a_star' の宣言を確認してください
-  
-C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(90,5): warning C4390: ';': 制御が空の文が見つかりました。意図した記述でしょうか? [C:\ConflictualMAS\build\main.vcxproj]
-C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(91,5): warning C4390: ';': 制御が空の文が見つかりました。意図した記述でしょうか? [C:\ConflictualMAS\build\main.vcxproj]
-C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(104,5): warning C4390: ';': 制御が空の文が見つかりました。意図した記述でしょうか? [C:\ConflictualMAS\build\main.vcxproj]
-C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,18): error C2440: '初期化中': 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'FaithfulCASolver::BPRPath' に変換できません。 [C:\ConflictualMAS\build\main.vcxproj]
-      C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,18):
-      'FaithfulCASolver::BPRPath::BPRPath': オーバーロードされた関数ですべての引数の型を変換できませんでした
-          C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(73,5):
-          'FaithfulCASolver::BPRPath::BPRPath(FaithfulCASolver::BPRPath &&)' の可能性があります
-              C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,18):
-              'FaithfulCASolver::BPRPath::BPRPath(FaithfulCASolver::BPRPath &&)': 引数 1 を 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'FaithfulCASolver::BPRPath &&' へ変換できません。
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,30):
-                  理由: 'overloaded-function' から 'FaithfulCASolver::BPRPath' へは変換できません。
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,30):
-                  変換には 2 番目のユーザー定義変換演算子またはコンストラクターが必要です。
-          C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(73,5):
-          または 'FaithfulCASolver::BPRPath::BPRPath(const FaithfulCASolver::BPRPath &)'
-              C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,18):
-              'FaithfulCASolver::BPRPath::BPRPath(const FaithfulCASolver::BPRPath &)': 引数 1 を 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'const FaithfulCASolver::BPRPath &' へ変換できません。
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,30):
-                  理由: 'overloaded-function' から 'const FaithfulCASolver::BPRPath' へは変換できません。
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,30):
-                  変換には 2 番目のユーザー定義変換演算子またはコンストラクターが必要です。
-          C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,18):
-          引数リスト '(overloaded-function)' を一致させようとしているとき
-  
-C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,30): error C2440: '初期化中': 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>' に変換できません。 [C:\ConflictualMAS\build\main.vcxproj]
-      C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,30):
-      'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector': オーバーロードされた関数ですべての引数の型を変換できませんでした
-          C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\include\vector(719,5):
-          'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector(std::initializer_list<_Ty>,const _Alloc &)' の可能性があります
-          with
-          [
-              _Ty=osmium::object_id_type,
-              _Alloc=std::allocator<osmium::object_id_type>
-          ]
-              C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,30):
-              'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector(std::initializer_list<_Ty>,const _Alloc &)': 引数 1 を 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'std::initializer_list<_Ty>' へ変換できません。
-          with
-          [
-              _Ty=osmium::object_id_type,
-              _Alloc=std::allocator<osmium::object_id_type>
-          ]
-          and
-          [
-              _Ty=osmium::object_id_type
-          ]
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,30):
-                  変換には 2 番目のユーザー定義変換演算子またはコンストラクターが必要です。
-          C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\include\vector(692,5):
-          または 'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector(_Iter,_Iter,const _Alloc &)'
-          with
-          [
-              _Alloc=std::allocator<osmium::object_id_type>
-          ]
-          C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\include\vector(686,5):
-          または 'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector(const unsigned __int64,const _Ty &,const _Alloc &)'
-          with
-          [
-              _Ty=osmium::object_id_type,
-              _Alloc=std::allocator<osmium::object_id_type>
-          ]
-          C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(209,30):
-          引数リスト '(overloaded-function)' を一致させようとしているとき
-  
-C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,18): error C2440: '初期化中': 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'FaithfulCASolver::BPRPath' に変換できません。 [C:\ConflictualMAS\build\main.vcxproj]
-      C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,18):
-      'FaithfulCASolver::BPRPath::BPRPath': オーバーロードされた関数ですべての引数の型を変換できませんでした
-          C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(73,5):
-          'FaithfulCASolver::BPRPath::BPRPath(FaithfulCASolver::BPRPath &&)' の可能性があります
-              C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,18):
-              'FaithfulCASolver::BPRPath::BPRPath(FaithfulCASolver::BPRPath &&)': 引数 1 を 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'FaithfulCASolver::BPRPath &&' へ変換できません。
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,30):
-                  理由: 'overloaded-function' から 'FaithfulCASolver::BPRPath' へは変換できません。
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,30):
-                  変換には 2 番目のユーザー定義変換演算子またはコンストラクターが必要です。
-          C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(73,5):
-          または 'FaithfulCASolver::BPRPath::BPRPath(const FaithfulCASolver::BPRPath &)'
-              C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,18):
-              'FaithfulCASolver::BPRPath::BPRPath(const FaithfulCASolver::BPRPath &)': 引数 1 を 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'const FaithfulCASolver::BPRPath &' へ変換できません。
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,30):
-                  理由: 'overloaded-function' から 'const FaithfulCASolver::BPRPath' へは変換できません。
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,30):
-                  変換には 2 番目のユーザー定義変換演算子またはコンストラクターが必要です。
-          C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,18):
-          引数リスト '(overloaded-function)' を一致させようとしているとき
-  
-C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,30): error C2440: '初期化中': 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>' に変換できません。 [C:\ConflictualMAS\build\main.vcxproj]
-      C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,30):
-      'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector': オーバーロードされた関数ですべての引数の型を変換できませんでした
-          C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\include\vector(719,5):
-          'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector(std::initializer_list<_Ty>,const _Alloc &)' の可能性があります
-          with
-          [
-              _Ty=osmium::object_id_type,
-              _Alloc=std::allocator<osmium::object_id_type>
-          ]
-              C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,30):
-              'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector(std::initializer_list<_Ty>,const _Alloc &)': 引数 1 を 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'std::initializer_list<_Ty>' へ変換できません。
-          with
-          [
-              _Ty=osmium::object_id_type,
-              _Alloc=std::allocator<osmium::object_id_type>
-          ]
-          and
-          [
-              _Ty=osmium::object_id_type
-          ]
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,30):
-                  変換には 2 番目のユーザー定義変換演算子またはコンストラクターが必要です。
-          C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\include\vector(692,5):
-          または 'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector(_Iter,_Iter,const _Alloc &)'
-          with
-          [
-              _Alloc=std::allocator<osmium::object_id_type>
-          ]
-          C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\include\vector(686,5):
-          または 'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector(const unsigned __int64,const _Ty &,const _Alloc &)'
-          with
-          [
-              _Ty=osmium::object_id_type,
-              _Alloc=std::allocator<osmium::object_id_type>
-          ]
-          C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(214,30):
-          引数リスト '(overloaded-function)' を一致させようとしているとき
-  
-C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,23): error C2440: '初期化中': 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'FaithfulCASolver::BPRPath' に変換できません。 [C:\ConflictualMAS\build\main.vcxproj]
-      C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,23):
-      'FaithfulCASolver::BPRPath::BPRPath': オーバーロードされた関数ですべての引数の型を変換できませんでした
-          C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(73,5):
-          'FaithfulCASolver::BPRPath::BPRPath(FaithfulCASolver::BPRPath &&)' の可能性があります
-              C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,23):
-              'FaithfulCASolver::BPRPath::BPRPath(FaithfulCASolver::BPRPath &&)': 引数 1 を 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'FaithfulCASolver::BPRPath &&' へ変換できません。
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,35):
-                  理由: 'overloaded-function' から 'FaithfulCASolver::BPRPath' へは変換できません。
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,35):
-                  変換には 2 番目のユーザー定義変換演算子またはコンストラクターが必要です。
-          C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(73,5):
-          または 'FaithfulCASolver::BPRPath::BPRPath(const FaithfulCASolver::BPRPath &)'
-              C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,23):
-              'FaithfulCASolver::BPRPath::BPRPath(const FaithfulCASolver::BPRPath &)': 引数 1 を 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'const FaithfulCASolver::BPRPath &' へ変換できません。
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,35):
-                  理由: 'overloaded-function' から 'const FaithfulCASolver::BPRPath' へは変換できません。
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,35):
-                  変換には 2 番目のユーザー定義変換演算子またはコンストラクターが必要です。
-          C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,23):
-          引数リスト '(overloaded-function)' を一致させようとしているとき
-  
-C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,35): error C2440: '初期化中': 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>' に変換できません。 [C:\ConflictualMAS\build\main.vcxproj]
-      C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,35):
-      'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector': オーバーロードされた関数ですべての引数の型を変換できませんでした
-          C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\include\vector(719,5):
-          'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector(std::initializer_list<_Ty>,const _Alloc &)' の可能性があります
-          with
-          [
-              _Ty=osmium::object_id_type,
-              _Alloc=std::allocator<osmium::object_id_type>
-          ]
-              C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,35):
-              'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector(std::initializer_list<_Ty>,const _Alloc &)': 引数 1 を 'FaithfulCASolver::BPRPath (__cdecl FaithfulCASolver::* )(osmium::object_id_type,osmium::object_id_type,int) const' から 'std::initializer_list<_Ty>' へ変換できません。
-          with
-          [
-              _Ty=osmium::object_id_type,
-              _Alloc=std::allocator<osmium::object_id_type>
-          ]
-          and
-          [
-              _Ty=osmium::object_id_type
-          ]
-                  C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,35):
-                  変換には 2 番目のユーザー定義変換演算子またはコンストラクターが必要です。
-          C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\include\vector(692,5):
-          または 'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector(_Iter,_Iter,const _Alloc &)'
-          with
-          [
-              _Alloc=std::allocator<osmium::object_id_type>
-          ]
-          C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\include\vector(686,5):
-          または 'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>::vector(const unsigned __int64,const _Ty &,const _Alloc &)'
-          with
-          [
-              _Ty=osmium::object_id_type,
-              _Alloc=std::allocator<osmium::object_id_type>
-          ]
-          C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(283,35):
-          引数リスト '(overloaded-function)' を一致させようとしているとき
-  
-C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(381,13): error C3487: 'void': すべての return 式は推論結果が同じでなければなりません。以前は 'std::vector<osmium::object_id_type,std::allocator<osmium::object_id_type>>' でした。 [C:\ConflictualMAS\build\main.vcxproj]
   HAPC.cpp
 C:\ConflictualMAS\src\SoTA\Standalone\HAPC.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
 C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -1148,10 +930,7 @@ C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: �
 C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
   
-C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(30,19): error C3668: 'HybridAdaptivePredictiveSolver::step': オーバーライド指定子 'override' を伴うメソッドは、基底クラス メソッドをオーバーライドしませんでした [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
-  
-C:\ConflictualMAS\src\SoTA\Standalone\HAPC.cpp(741,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\SoTA\Standalone\HAPC.cpp(768,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   TP.cpp
 C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
@@ -1519,13 +1298,7 @@ C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイル
 C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
   
-C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(23,19): error C3668: 'FaithfulCASolver::step': オーバーライド指定子 'override' を伴うメソッドは、基底クラス メソッドをオーバーライドしませんでした [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
-  
 C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
-  
-C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(30,19): error C3668: 'HybridAdaptivePredictiveSolver::step': オーバーライド指定子 'override' を伴うメソッドは、基底クラス メソッドをオーバーライドしませんでした [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
   
   PDPTests.cpp
@@ -1739,13 +1512,7 @@ C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイル
 C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
   
-C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(23,19): error C3668: 'FaithfulCASolver::step': オーバーライド指定子 'override' を伴うメソッドは、基底クラス メソッドをオーバーライドしませんでした [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
-  
 C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
-  
-C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(30,19): error C3668: 'HybridAdaptivePredictiveSolver::step': オーバーライド指定子 'override' を伴うメソッドは、基底クラス メソッドをオーバーライドしませんでした [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
   
   StructureTests.cpp
@@ -2443,13 +2210,7 @@ C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイル
 C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
   
-C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(23,19): error C3668: 'FaithfulCASolver::step': オーバーライド指定子 'override' を伴うメソッドは、基底クラス メソッドをオーバーライドしませんでした [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
-  
 C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
-  
-C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(30,19): error C3668: 'HybridAdaptivePredictiveSolver::step': オーバーライド指定子 'override' を伴うメソッドは、基底クラス メソッドをオーバーライドしませんでした [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp(23,9): warning C4005: 'NOMINMAX': マクロが再定義されました。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -2583,3 +2344,4 @@ C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv'
 C:\ConflictualMAS\src\utility.cpp(221,21): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。 [C:\ConflictualMAS\build\main.vcxproj]
 C:\ConflictualMAS\src\utility.cpp(222,20): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。 [C:\ConflictualMAS\build\main.vcxproj]
   コードを生成中...
+  main.vcxproj -> C:\ConflictualMAS\build\Debug\main.exe
