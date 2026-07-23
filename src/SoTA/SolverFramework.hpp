@@ -4,10 +4,7 @@
 // ===== SolverMetrics.hpp =====
 #include <string>
 
-// Unified metric record produced by every standalone SoTA solver per episode.
-// Mirrors ComparisonMetrics where it makes sense so SoTA and MAPPO/Hybrid runs
-// compare apples-to-apples. Throughput (completed/appeared) is the LGPDP axis;
-// the rest are secondary. Inapplicable metrics stay at their default 0.
+// one metric record per (solver, episode)
 struct SolverMetrics {
     // ── Identity / context (filled by SolverRunner) ─────────────────────────
     std::string solver_name;
@@ -81,28 +78,20 @@ struct SolverMetrics {
 #include <osmium/osm/types.hpp>
 #include <vector>
 
-// Everything that must be IDENTICAL across SoTA solvers for a fair comparison.
-// SolverRunner builds one per episode and passes a const ref into ISolver::init().
-// It owns the shared simulation surface (road graph, congestion model, task
-// stream, scenario, fleet sizing) so two solvers face byte-identical arrivals,
-// ghost injection and start positions. Each ISolver owns the rest itself
-// (allocation, path planning, per-agent state, replanning, internal cost model).
-// Lives for the whole run(); references inside stay stable for the episode.
+// shared surface: identical across every compared method
 
 struct SolverContext {
     // ── World (read-only references) ────────────────────────────────────────
     const GeoBox*    geo_box    = nullptr;   // road graph (owned by caller)
 
-    // ── Mutable shared state ────────────────────────────────────────────────
-    // Solvers WRITE to congestion_map (registering their agents' paths) so the
-    // BPR feedback works across the system. Ghost traffic writes here too.
+    // ── Mutable shared state ────────────────�
     CongestionMap*        congestion_map = nullptr;
     GhostTrafficController* ghost         = nullptr;   // may be nullptr
 
     // ── Episode definition ──────────────────────────────────────────────────
     const EpisodeConfig* episode_config = nullptr;   // user-configured params
 
-    // The task stream. Pre-generated deterministically from the seed so every
+    // deterministic task stream, replayed identically by every solver
     // solver replays the exact same arrivals. The solver does NOT mutate this.
     std::vector<ScheduledTask> task_stream;
 
@@ -110,13 +99,11 @@ struct SolverContext {
     int  n_active_agents       = 0;
     int  max_capacity_per_agent = 1;
 
-    // Initial agent positions. solvers[i] should start agent i at
+    // initial agent positions
     // agent_start_nodes[i].
     std::vector<osmium::object_id_type> agent_start_nodes;
 
-    // ── Per-agent capacity heterogeneity (paper Y, optional) ────────────────
-    // When non-empty, capacities[i] is the carrying capacity of agent i. Empty
-    // = use max_capacity_per_agent uniformly.
+    // ── Per-agent capacity heterogeneity (paper Y, optional) ──────
     std::vector<int> per_agent_capacity;
 
     // ── Sim parameters (already scaled to this episode's scenario) ──────────
@@ -125,14 +112,10 @@ struct SolverContext {
     int   city_index   = 0;
     int   num_cities   = 1;
 
-    // ── RNG seed (stable for this episode) ──────────────────────────────────
-    // Solvers MUST NOT call rand() / std::random_device directly. Any internal
-    // randomness should be seeded from this value for reproducibility.
+    // ── RNG seed (stable for this episode) ────────────
     uint32_t episode_seed = 42;
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
-    // Sample one valid road node (uniform over the road graph). Useful for
-    // solvers that need to park idle agents at non-task endpoints.
+    // ── Helpers ─────────────────────
     osmium::object_id_type sample_valid_node(std::mt19937& rng) const;
 };
 
@@ -141,35 +124,13 @@ struct SolverContext {
 #include <cmath>
 #include <tuple>
 
-// Solver congestion footprint — replicates the DMAS pipeline's commit_plan.
-// Like commit_plan, every agent publishes the occupancy of its ENTIRE remaining
-// route on the shared CongestionMap (each edge registered for the BPR-adjusted
-// window it will really occupy, weight = load_per_agent, previous registration
-// removed on replan), so the BPR/throughput/latency axes are measured under the
-// same dense, predictive congestion regime as the EpisodeRunner pipeline.
+// congestion footprint, mirrors commit_plan
 
-// One committed edge occupancy: (edge_id, t_enter, t_exit). Stored per agent so
+// committed edge occupancy (edge, t_enter, t_exit), per agent
 // the previous registration can be removed before re-committing.
 using CommittedOcc = std::vector<std::tuple<osmium::object_id_type, int, int>>;
 
-// Register an agent's full remaining route on `cmap`, exactly like commit_plan:
-//   1. remove the agent's previous occupancy (`committed`);
-//   2. walk the ordered `stops` from `from`, leg by leg, accumulating the
-//      BPR-ADJUSTED traversal time of each edge at its predicted entry step;
-//      add_agent each edge for [t, t+steps] with weight = load_per_agent;
-//      remember it in `committed`.
-// `path_fn(from, to, t)` returns the edge-id list of the planned leg path.
-//
-// Window length parity with the RL pipeline (make_timed_path, Manager.cpp):
-// both use CongestionMap::traversal_steps with self_weight = 0 at the edge's
-// predicted entry step. Free-flow windows (the previous behaviour) understated
-// the footprint AND placed it too early in time, so a solver fleet generated
-// strictly less congestion than an RL fleet driving the same routes.
-// The agent's own previous footprint is removed in step 1, so self_weight = 0
-// here reads "everybody else's load" — same contract as the RL pipeline's
-// unregister_committed_plan → register_committed_plan sequence.
-//
-// Returns the accumulated step at the last stop (ETA of the plan's tail).
+// republish the remaining route with BPR windows; returns the plan ETA
 template <typename PathFn>
 inline int commit_agent_route(
     CongestionMap& cmap, const GeoBox& geo_box, float speed_mps,
@@ -210,45 +171,34 @@ inline int commit_agent_route(
 // ===== SolverInstrumentation.hpp =====
 #include <chrono>
 
-// Shared helper for the SECONDARY metrics (Gini, mean/var congestion, fleet
-// distance, compute time, …). Solvers own one instance, call its sample_*()
-// methods, and finalise() fills the columns it owns. Headline metrics
-// (throughput, latency, wait/trip, road_pd, violations) stay solver-owned.
+// secondary metrics: Gini, congestion, fleet distance, compute time
 class SolverInstrumentation {
 public:
     // Per-agent completion counters (size = n_agents).
     std::vector<int> per_agent_completed;
 
-    // Total fleet distance (sum of edge lengths traversed by ALL agents,
+    // metres actually driven by the fleet
     // in meters).
     double total_fleet_distance_m = 0.0;
 
-    // Congestion sampling (mean_load_now per step). Stored as
+    // per-step congestion, Welford
     // online-Welford for variance.
     double cong_mean = 0.0;
     double cong_m2   = 0.0;     // sum of squared deviations
     long   cong_n    = 0;
     int    peak_load = 0;
 
-    // BPR slowdown factor (adjusted / free-flow) actually experienced along
-    // executed edges; its mean over all traversals feeds mean_bpr_along_route
-    // (otherwise that field keeps its default 1.0 for SoTA solvers).
+    // BPR slowdown actually paid on traversed edges
     double bpr_sum = 0.0;
     long   bpr_n   = 0;
 
-    // Congestion exposure — same definitions as EpisodeRunner (RunnerMovement
-    // schedule_next_edge / Runner build_global_state) so the columns mean the
-    // same thing in both CSVs:
-    //   time_lost_steps    = Σ (adjusted − free-flow) travel time, at entry
-    //   n_traversals_in_jam= # traversals entered on an edge with load ≥ 5
-    //   exposure_*         = mean load on the edge each in-transit agent
-    //                        occupies, sampled once per step per agent
+    // congestion exposure, same definitions as EpisodeRunner
     double time_lost_steps     = 0.0;
     int    n_traversals_in_jam = 0;
     double exposure_sum        = 0.0;
     long   exposure_n          = 0;
 
-    // Agent speed — needed to turn mean_road_pd_m into the "ideal" trip time
+    // speed, for the ideal trip time
     // used by delivery_route_efficiency / mean_extra_steps_per_task.
     float  speed_mps = 5.f;
 
@@ -279,7 +229,7 @@ public:
         t_start = std::chrono::steady_clock::now();
     }
 
-    // Call this once per agent that DELIVERS a task. agent_id must be a
+    // one call per delivery
     // valid index into per_agent_completed.
     void record_delivery(int agent_id) {
         if (agent_id < 0 ||
@@ -287,17 +237,13 @@ public:
         ++per_agent_completed[agent_id];
     }
 
-    // Call once per edge traversal: add the edge length (meters) to the
+    // one call per edge traversal
     // fleet-wide distance counter.
     void record_edge_traversal(float edge_length_m) {
         if (edge_length_m > 0.f) total_fleet_distance_m += edge_length_m;
     }
 
-    // Record one edge ENTRY. `base_time` / `eff_time` are the free-flow and
-    // BPR-adjusted traversal times of that edge (same unit, steps), and
-    // `load_at_entry` the edge load read at the entry step. Must be called at
-    // entry, not at completion: CongestionMap::advance() purges past steps.
-    // Mirrors EpisodeRunner::schedule_next_edge's three accumulators.
+    // one call per edge entry: free-flow vs adjusted time, load at entry
     void record_edge_entry(float base_time, float eff_time, int load_at_entry) {
         if (base_time > 0.f) {
             bpr_sum += static_cast<double>(eff_time / base_time);
@@ -307,7 +253,7 @@ public:
         if (load_at_entry >= 5) ++n_traversals_in_jam;
     }
 
-    // Sample the load on the edge an agent is currently traversing — call once
+    // one call per in-transit agent per step
     // per step per in-transit agent (RL analogue: Runner.cpp route_exposure).
     void sample_route_exposure(int load_on_edge) {
         exposure_sum += static_cast<double>(load_on_edge);
@@ -315,9 +261,6 @@ public:
     }
 
     // Sample the CongestionMap state — call ONCE per simulation step, AFTER
-    // congestion_map.advance(t). Uses load_sample_now() which combines mean +
-    // peak in a single pass over load_ → 2× faster than the previous
-    // mean_load_now() + peak_load_now() sequence.
     void sample_congestion(const CongestionMap* cmap) {
         if (!cmap) return;
         const auto s = cmap->load_sample_now();
@@ -361,7 +304,7 @@ public:
         ++n_allocation_calls;
     }
 
-    // Fill the SolverMetrics fields this helper owns. Call from
+    // fill the fields this helper owns; call after the headline metrics
     // ISolver::finalize after the solver has filled the headline metrics.
     void finalize_into(SolverMetrics& m) const {
         const auto t_end = std::chrono::steady_clock::now();
@@ -370,7 +313,7 @@ public:
 
         // Gini, max, min, std of per-agent completion counts.
         if (!per_agent_completed.empty()) {
-            // Only consider agents that received at least one task; the
+            // active agents only
             // Gini of all-zero agents is degenerate.
             std::vector<int> active;
             active.reserve(per_agent_completed.size());
@@ -383,8 +326,6 @@ public:
                 m.agent_completed_max = active.back();
 
                 // Gini = 1 - (Σ (2k - N - 1) × x_k) / (N × Σ x_k) where
-                // x is sorted ascending. Range [0, 1-1/N], with 0 = perfect
-                // equality, 1 = one agent does all.
                 const double N = static_cast<double>(active.size());
                 double sum = 0.0, weighted = 0.0;
                 for (size_t k = 0; k < active.size(); ++k) {
@@ -425,9 +366,7 @@ public:
             ? static_cast<float>(exposure_sum / exposure_n) : 0.f;
         m.n_ghost_active_mean = static_cast<float>(ghost_mean);
 
-        // Route efficiency / detour — identical formula to the RL pipeline
-        // (Metrics.cpp finalize_episode_metrics). Requires the solver to have
-        // filled mean_road_pd_m and mean_trip_steps beforehand.
+        // route efficiency, same formula as the RL pipeline
         const double ideal_steps = (speed_mps > 0.f && m.mean_road_pd_m > 0.)
             ? m.mean_road_pd_m / speed_mps : 0.;
         if (m.mean_trip_steps > 0. && ideal_steps > 0.) {
@@ -454,10 +393,7 @@ public:
 #include <unordered_map>
 #include <utility>
 
-// Shared A* path cache for SoTA solvers. Wraps graph_search::shortest_path_edges
-// into a (nodes, edges, cost) triple cached per (from, to). Safe because static
-// paths depend only on the shared GeoBox, not on any solver. No cost adjustment /
-// congestion-aware / guide-path logic — that lives inside each solver.
+// shared static A* path cache
 struct SimplePath {
     std::vector<osmium::object_id_type> nodes;     // nodes[0] = from, nodes.back() = to
     std::vector<osmium::object_id_type> edges;     // edges[i] connects nodes[i] and nodes[i+1]
@@ -470,18 +406,13 @@ public:
     explicit PathHelper(const GeoBox& gb);
 
     // Get (or compute and cache) the shortest path from `from` to `to`.
-    // Returns a const reference into the cache; valid for the lifetime of
-    // this PathHelper. If no path exists, the returned SimplePath has
-    // valid=false.
     const SimplePath& get(osmium::object_id_type from,
                           osmium::object_id_type to);
 
     // Cache size diagnostic.
     int cache_size() const { return static_cast<int>(cache_.size()); }
 
-    // Compute the EUCLIDEAN heuristic cost between two nodes (haversine in
-    // metres). Used by solvers needing a quick h-value when no path exists
-    // yet or when an upper-bound estimate is enough.
+    // haversine heuristic, metres
     float heuristic(osmium::object_id_type from,
                     osmium::object_id_type to) const;
 
@@ -504,59 +435,31 @@ private:
 // ===== ISolver.hpp =====
 #include "Environment/Structure/Episode.hpp"   // ScheduledTask
 
-// Abstract interface every standalone SoTA solver implements. The solver owns
-// its full LGPDP pipeline (allocation, planning, replanning) and READS the
-// SolverContext for the shared surface (graph, congestion, task stream, fleet).
-// It must not modify the task stream or GeoBox; it MAY register its paths on the
-// CongestionMap. Must be deterministic given context.episode_seed.
-//
-// Lifecycle (driven by SolverRunner):
-//   init(ctx);
-//   for t in [0, total_steps): inject_task(task, t) for arrivals; step(t);
-//   metrics = finalize();
+// interface for standalone SoTA solvers
 class ISolver {
 public:
     virtual ~ISolver() = default;
 
-    // ── One-time setup ──────────────────────────────────────────────────────
-    // Called once at the start of an episode. Solver should allocate its
-    // internal agent state, path caches, queues, etc. and store the context
-    // reference if it needs it later. The context lives for the entire run.
+    // ── One-time setup ──────────────────�
     virtual void init(const SolverContext& ctx) = 0;
 
-    // ── Task ingestion ──────────────────────────────────────────────────────
-    // Called once for each task at its arrival_step, BEFORE step(t) runs for
-    // that same step. Solver may allocate the task immediately or defer it
-    // (e.g. RHCR's batch replanning).
+    // ── Task ingestion ──────────────────�
     virtual void inject_task(const ScheduledTask& task, int step) = 0;
 
-    // ── Simulation tick ─────────────────────────────────────────────────────
-    // Called once per simulation step. Solver advances its agents along
-    // their current paths, processes pickup/delivery events, may replan
-    // and may register edge load on the congestion map.
+    // ── Simulation tick ──────────────────�
     virtual void step(int timestep) = 0;
 
-    // ── Wrap-up ─────────────────────────────────────────────────────────────
-    // Called once at episode end. Solver returns its metrics; SolverRunner
-    // augments them with wallclock and solver_name.
+    // ── Wrap-up ─────────────────────
     virtual SolverMetrics finalize() = 0;
 
-    // ── Identification ──────────────────────────────────────────────────────
-    // Short solver name for logging and CSV columns. Matches the paper
-    // identifier (e.g. "TokenPassing", "TrafficFlow", "RHCR").
+    // ── Identification ──────────────────�
     virtual const char* name() const = 0;
 };
 
 // ===== SolverCSVLogger.hpp =====
 #include <fstream>
 
-// ════════════════════════════════════════════════════════════════════════════
-// SolverCSVLogger
-// ════════════════════════════════════════════════════════════════════════════
-//
-// One CSV row per (solver, city, scenario, episode); the schema mirrors the
-// useful ComparisonMetrics columns so SoTA and MAPPO/Hybrid runs merge for
-// analysis. TRUNCATE by default; append=true extends a file (no header rewrite).
+// ══════════════════════════
 class SolverCSVLogger {
 public:
     SolverCSVLogger(const std::string& path, bool append = false);
@@ -583,15 +486,7 @@ private:
 #include "TrainingEvaluation/Run/Runner.hpp"   // EpisodeScenario, PolicyMode
 #include <memory>
 
-// ════════════════════════════════════════════════════════════════════════════
-// SolverRunner
-// ════════════════════════════════════════════════════════════════════════════
-//
-// Runs ONE episode for ONE ISolver under a FIXED shared SolverContext. Fairness:
-// the task stream is pre-generated once from episode_seed and replayed to every
-// solver in arrival order; ghost traffic is seeded deterministically and ticks
-// per step; the CongestionMap is reset before and after each run(). Independent
-// from EpisodeRunner (no shared state) — that stays the entry point for RL.
+// ══════════════════════════
 class SolverRunner {
 public:
     SolverRunner(const EpisodeConfig& cfg,
@@ -600,15 +495,6 @@ public:
                  uint32_t             episode_seed  = 42);
 
     // Run ONE episode with the given solver.
-    // The runner resets its shared congestion map before the run and again
-    // after, so consecutive calls with different solvers are mutually
-    // isolated. Returns the solver's metrics + wallclock + name.
-    //
-    // When `setup` is non-null, the runner consumes its canonical task stream,
-    // agent_start_nodes, per_agent_capacity, n_active_agents, total_steps and
-    // ghost_seed verbatim — bypassing internal RNG-driven re-derivation. This
-    // is the publication-grade path used by Option O, ensuring SoTA solvers
-    // see byte-identical environment to RL policies running on the SAME setup.
     SolverMetrics run(ISolver& solver,
                        const struct SharedEpisodeSetup* setup = nullptr);
 
@@ -628,9 +514,6 @@ private:
     SolverContext                            ctx_;
 
     // Build the SolverContext for this episode. Called from the constructor
-    // and again at the start of each run() to reset task_stream + congestion
-    // map. The task stream is regenerated with the SAME seed so identity is
-    // preserved across run() calls.
     void prepare_episode();
 };
 

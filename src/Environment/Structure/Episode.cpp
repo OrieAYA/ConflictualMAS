@@ -94,8 +94,6 @@ std::vector<ScheduledTask> EpisodeGenerator::generate(TemporalProfile profile) {
 
     std::uniform_real_distribution<float> unit(0.f, 1.f);
     // Importance distribution: widened range when task-value heterogeneity is on
-    // (Phase 3). Default [0.5, 2.0] keeps the existing behaviour for all other
-    // options.
     const float imp_lo = cfg_.enable_task_value_heterogeneity
         ? std::max(0.05f, cfg_.task_imp_min) : 0.5f;
     const float imp_hi = cfg_.enable_task_value_heterogeneity
@@ -103,8 +101,6 @@ std::vector<ScheduledTask> EpisodeGenerator::generate(TemporalProfile profile) {
     std::uniform_real_distribution<float> imp_dist(imp_lo, imp_hi);
 
     // Per-task reward multiplier — independent of distance — gated by the
-    // task-value-heterogeneity flag. Decouples task VALUE from task EFFORT,
-    // so two same-distance tasks can have very different rewards.
     const float val_lo = cfg_.enable_task_value_heterogeneity
         ? std::max(0.1f, cfg_.task_value_mul_min) : 1.0f;
     const float val_hi = cfg_.enable_task_value_heterogeneity
@@ -116,14 +112,6 @@ std::vector<ScheduledTask> EpisodeGenerator::generate(TemporalProfile profile) {
     const float speed = std::max(cfg_.speed_mps, 0.1f);
 
     // Feasibility-margin multiplier on the minimum delivery time. Accounts for
-    //   (i) the pickup leg (agent → pickup), unknown at generation time but
-    //       comparable in scale to the delivery leg
-    //   (ii) the road-vs-haversine factor (real road distance is typically
-    //        1.3–1.6× the great-circle distance)
-    // Tasks that need more than `feasibility_margin × haversine_steps` of
-    // remaining episode time are physically un-deliverable; we skip them at
-    // generation rather than letting them pollute the buffer with un-finishable
-    // accept decisions. A logical pickup-then-delivery task must be doable.
     constexpr float kFeasibilityMargin = 2.2f;
 
     if (total_episode_steps <= 0) return stream;
@@ -132,17 +120,19 @@ std::vector<ScheduledTask> EpisodeGenerator::generate(TemporalProfile profile) {
     const int n_events = event_tuning::derived_task_count(cfg_.env_scale,
                                                           cfg_.ratio_mult);
 
-    // ── Arrival steps: density ∝ profile(t/T) (inverse-CDF sampling) ───────
+    // ── Arrival steps: density ∝ profile(t/T) over the arrival window ──�
+    const int arrival_cutoff = std::max(1, static_cast<int>(
+        total_episode_steps * event_tuning::kTaskArrivalWindow));
     std::vector<float> weights(static_cast<size_t>(total_episode_steps), 0.f);
     double weight_sum = 0.0;
-    for (int s = 0; s < total_episode_steps; ++s) {
+    for (int s = 0; s < arrival_cutoff; ++s) {
         const float f = std::max(0.f, temporal_profile_value(
             profile, (static_cast<float>(s) + 0.5f) / total_episode_steps));
         weights[s]  = f;
         weight_sum += f;
     }
     if (weight_sum <= 0.0)                       // degenerate profile → uniform
-        std::fill(weights.begin(), weights.end(), 1.f);
+        std::fill(weights.begin(), weights.begin() + arrival_cutoff, 1.f);
 
     std::discrete_distribution<int> step_dist(weights.begin(), weights.end());
     std::vector<int> arrival_steps(static_cast<size_t>(n_events));
@@ -170,16 +160,11 @@ std::vector<ScheduledTask> EpisodeGenerator::generate(TemporalProfile profile) {
         if (pu == 0 || del == 0 || pu == del) continue;
 
         // Feasibility filter: drop tasks that cannot logically finish
-        // before the episode ends. Computes the lower-bound delivery
-        // time from the great-circle distance and rejects when even
-        // the most generous margin overshoots the remaining horizon.
         const float dist_m       = haversine_m(pu, del);
         const float min_steps    = dist_m / speed;
         const float needed_steps = min_steps * kFeasibilityMargin;
         if (needed_steps > static_cast<float>(steps_remaining)) {
             // Try one fallback: resample a closer delivery once. If
-            // still infeasible, drop the task entirely (rather than
-            // ship an impossible pickup-then-delivery).
             auto alt = sample_delivery(pu, false);
             if (alt == 0 || alt == pu) continue;
             const float alt_dist = haversine_m(pu, alt);
@@ -193,9 +178,6 @@ std::vector<ScheduledTask> EpisodeGenerator::generate(TemporalProfile profile) {
         t.pickup_node_id   = pu;
         t.delivery_node_id = del;
         // When task-value heterogeneity is enabled, multiply the
-        // distance-based reward by a per-task random factor so the
-        // policy faces a real "value vs effort" tradeoff. Otherwise
-        // val_mul_dist is identity (1.0 always) — legacy behaviour.
         t.reward           = estimate_reward(pu, del) * val_mul_dist(rng_);
         t.importance       = imp_dist(rng_);
         t.is_clustered     = clustered;
@@ -335,4 +317,4 @@ float EpisodeGenerator::estimate_reward(osmium::object_id_type pickup,
     // Normalised so that a 2-km task gives reward ≈ 1.0.
     return std::clamp(dist / 2000.f, event_tuning::kTaskRewardClampMin,
                       event_tuning::kTaskRewardClampMax);
-}
+}

@@ -11,15 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
-// ── RegionStatsGrid — task density + congestion heatmap over the city bbox ───
-//
-// Lightweight 32×32 grid over the GeoBox bbox. Tracks:
-//   - Per-cell task arrival density (sliding window of `window_steps` steps)
-//   - Per-cell mean BPR multiplier (refreshed every kCacheRefreshSteps)
-//
-// Used by PolicyFeatures::area_heat_pickup = density_norm × congestion_norm.
-// Total memory: ~40 KB per episode (negligible). Total runtime: O(1) per task
-// arrival + O(N_cells × N_sampled_edges) every kCacheRefreshSteps steps.
+// ── RegionStatsGrid — task density + congestion heatmap over the city bbo
 struct RegionStatsGrid {
     static constexpr int kDim                = 32;
     static constexpr int kSize               = kDim * kDim;
@@ -65,18 +57,6 @@ struct RegionStatsGrid {
 };
 
 // Top-level server memory for the PDP multi-agent system.
-//
-// Central registry for:
-//   - Environment (geo_box + congestion state)
-//   - Tasks in three lifecycle categories (available / allocated / finished)
-//   - Delivery agents + their committed plans
-//   - ObjectiveNode → Task lookup (O(1))
-//   - Task → DeliveryAgent lookup (via task.agent_id)
-//
-// Environment consistency rule:
-//   Whenever an agent's solution changes, call commit_plan().
-//   commit_plan() removes the old congestion contribution, rebuilds timed
-//   paths from the new solution, and registers the new contribution.
 class PDPGlobalMemory {
 public:
     GeoBox&         geo_box;
@@ -96,18 +76,10 @@ public:
     float cur_time_ratio = 0.f;
 
     // Set by EpisodeRunner once per episode (in run()). Used by try_accept_task
-    // to compute the `deliverability` feature: steps_remaining / delivery_steps.
-    //   speed_mps   — agent speed in meters per step (typically 5.0 → ~18 km/h)
-    //   total_steps — episode horizon in simulation steps (typically 3600)
-    // Without these, the policy cannot judge whether an accepted task can
-    // physically be completed before the episode ends.
     float speed_mps   = 5.0f;
     int   total_steps = 3600;
 
-    // ── Planning strategy used by DeliveryAgent::receive_task() ─────────────
-    // At most one flag is set per run (EpisodeRunner::prepare_run dispatch);
-    // all flags off = cheapest insertion (Solomon-style (pos_P, pos_D) argmin).
-    // Capacity + pickup-before-delivery invariants hold in every branch.
+    // ── Planning strategy used by DeliveryAgent::receive_task() ─────
 
     // Double-Horizon insertion [Mitrovic-Minic et al. 2004]: insertion cost
     // weighted by slack preservation for long-horizon positions.
@@ -121,24 +93,14 @@ public:
     bool  planning_use_alns  = false;
 
     // Active objective-policy dispatcher used by DeliveryAgent::bid_for_task:
-    //   kMAPPO / kIPPO / kMAPPER / kHybrid → the corresponding IBidPolicy
-    //   kRMCA → non-learning marginal-cost scorer (Chen+2021), deterministic,
-    //           no buffer write.
-    // Modes that never consult a policy (Greedy, Random, ...) bypass
-    // bid_for_task entirely, so the kind is ignored for them.
     enum class PolicyKind { kMAPPO = 0, kIPPO = 1, kMAPPER = 2,
                             kHybrid = 3, kRMCA = 4 };
     PolicyKind active_policy = PolicyKind::kMAPPO;
 
     // System-state snapshot (kGlobSz = 20 floats) refreshed once per step by
-    // the episode runner. bid_for_task forwards it into each recorded
-    // experience so the MAPPO critic sees the state the decision was made in.
     float cur_global_state[20] = {};
 
-    // ── Spatial heatmap : task density + congestion per cell ───────────────
-    // Initialised once at construction (via geo_box bbox), reset between
-    // episodes. EpisodeRunner calls register_task() on arrival and refresh
-    // happens lazily inside area_heat() via advance_time hooks.
+    // ── Spatial heatmap : task density + congestion per cell ──────
     RegionStatsGrid region_grid;
 
     PDPGlobalMemory() = delete;
@@ -190,16 +152,6 @@ public:
     const AgentSolution* get_solution(int agent_id) const;
 
     // ---- Plan commit (environment sync) ---------------------------------
-    //
-    // Must be called after any solution change.
-    //
-    // 1. Removes the agent's previously committed congestion contribution.
-    // 2. Walks the current solution: current_node → seq[0] → seq[1] → …
-    // 3. Builds a TimedPath per leg (steps = ceil(dist/speed_mps), min 1).
-    // 4. Registers the new contribution into congestion_map.
-    // 5. Fills estimated_arrival for each SolutionStep in the solution.
-    //
-    // speed_mps: agent speed in meters per step.
     void commit_plan(int agent_id, float speed_mps);
 
     // Remove an objective node from its group cache after pickup or delivery.
@@ -207,10 +159,6 @@ public:
     void clear_objective(osmium::object_id_type node_id, int group_id);
 
     // Push a congestion-rerouted path to a delivery agent mid-traversal.
-    // Refreshes the dynamic cost of the cached path, then calls
-    // agent->push_updated_path() so the agent's edge cursor resumes correctly.
-    // No-op if the path has not changed or no improvement is found.
-    // `out` (optional) reports the TD-A* comparison for reward computation.
     struct RerouteOutcome {
         bool attempted = false;   // both routes were costed
         bool adopted   = false;   // >5% improvement, path pushed
@@ -242,23 +190,11 @@ public:
         float agent_speed) const;
 
     // BPR replay of a CACHED STATIC path: congestion-adjusted travel cost when
-    // departing `depart_step`, with each edge sampled at its running arrival
-    // time (deeper into the route = later t). Returns a distance-equivalent
-    // cost (meters) in the SAME units as ObjectivePath::cost, so it is a
-    // drop-in replacement for the static matrix entry. Single forward pass,
-    // O(#edges), reads the load profile as-is (no fixed-point). Returns
-    // FLT_MAX when the path is invalid. The walk is ORIENTED: edges are
-    // replayed in the from→to direction regardless of the cached direction.
-    // self_weight > 0 excludes the caller's own committed load from every
-    // edge read (an agent evaluating its own route sees n others, not n+1).
     float bpr_path_cost(osmium::object_id_type from, osmium::object_id_type to,
                         int group_id, int depart_step, float speed_mps,
                         int self_weight = 0);
 
     // Same BPR replay but in TIME units (steps), walking `path` oriented so
-    // the traversal starts at `from`. Used to compare the remaining travel
-    // time of the current route against a TD-A* alternative in the SAME
-    // units (push_rerouted_path). Returns INT_MAX if `from` is not on the path.
     int path_travel_steps(const ObjectivePath& path,
                           osmium::object_id_type from,
                           int depart_step, float speed_mps) const;
@@ -268,13 +204,14 @@ public:
     int  current_time() const;
     void advance_time(int t_now);
 
+    // Sweep period (steps) for the retired-path purge; 0 disables it.
+    static constexpr int kRetiredPurgeSteps = 100;
+
+    // Drop cached geometry of objective nodes whose task is done, keeping the
+    // paths an agent is currently walking. Called from advance_time.
+    void purge_retired_paths();
+
     // ---- Episode reset --------------------------------------------------
-    //
-    // Clears all per-episode state (tasks, plans, congestion, clock) while
-    // preserving the A* path cache (server_memory / group_caches_) so that
-    // path costs accumulated across episodes remain available.
-    // Must be called at the start of each new episode when the same
-    // PDPGlobalMemory instance is reused across episodes.
     void reset_episode();
 
     // ---- Congestion (delegates to congestion_map) -----------------------
@@ -283,8 +220,6 @@ public:
                           float base_cost, float distance_meters, int t) const;
 
     // Exploration switch for the bid policies: when true (training), the
-    // bid decision is SAMPLED from Bernoulli(μ); when false (evaluation),
-    // it is the deterministic threshold μ >= 0.5. Set by the episode runner.
     bool exploration_enabled = false;
 
 private:
@@ -300,10 +235,6 @@ private:
     std::unordered_map<int, DeliveryAgent*> delivery_agents_;
 
     // Exact ledger of the load increments actually applied for each agent's
-    // committed plan. Bounds are clamped to the CongestionMap window at ADD
-    // time so removal is perfectly symmetric — removing un-clamped windows
-    // after the clock advanced would subtract load that was never added
-    // (corrupting other agents' / ghosts' contributions).
     struct LoadWindow {
         osmium::object_id_type way;
         int t_lo, t_hi;

@@ -9,6 +9,7 @@
 #include "Legacy/MHProcs/VNS.hpp"
 #include "Legacy/MHProcs/PSO.hpp"
 #include "utility.hpp"
+#include <cstdlib>
 #include <iostream>
 #include <iomanip>
 #include <chrono>
@@ -309,7 +310,7 @@ void legacy_create_geobox(const std::string& osm_file, const std::string& cache_
     select_location(location_name, min_lat, min_lon, max_lat, max_lon, bbox);
 
     FlickrConfig config;
-    config.api_key              = "9568c6342a890ef1ba342f54c4c1160f";
+    config.api_key              = flickr_api_key_from_env();
     config.bbox                 = bbox;
     config.poi_assignment_radius = 15.0;
     config.min_date             = "2020-01-01";
@@ -331,7 +332,7 @@ void legacy_init_poi(const std::string& cache_dir)
     select_location(location_name, min_lat, min_lon, max_lat, max_lon, bbox);
 
     FlickrConfig config;
-    config.api_key              = "9568c6342a890ef1ba342f54c4c1160f";
+    config.api_key              = flickr_api_key_from_env();
     config.bbox                 = bbox;
     config.poi_assignment_radius = 15.0;
     config.min_date             = "2020-01-01";

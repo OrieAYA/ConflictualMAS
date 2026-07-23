@@ -49,8 +49,6 @@ void RegionStatsGrid::init(const GeoBox& gb) {
     cell_w_lon = (mx_lon - mn_lon) / static_cast<double>(kDim);
 
     // Precompute up to kMaxEdgesPerCell edge IDs per cell, sampled from way
-    // midpoints. Used by refresh_congestion_cache to estimate per-cell BPR
-    // without scanning the whole graph every refresh.
     for (int i = 0; i < kSize; ++i) cell_edges[i].clear();
     for (const auto& [wid, way] : gb.data.ways) {
         // Use one of the way's endpoints (node1 if known, else first point) as
@@ -158,8 +156,6 @@ float RegionStatsGrid::congestion_norm(double lat, double lon) const {
     const int c = cell_of(lat, lon);
     if (c < 0) return 0.f;
     // Normalise (mul - 1) by (max_mul - 1) so a "free flow" cell scores 0 and
-    // the worst cell scores 1. Guards against the degenerate case where the
-    // whole grid is at BPR 1.0 (no congestion anywhere).
     const float denom = std::max(1e-3f, max_cell_cong - 1.f);
     return std::clamp((cell_cong_cache[c] - 1.f) / denom, 0.f, 1.f);
 }
@@ -297,14 +293,6 @@ const AgentSolution* PDPGlobalMemory::get_solution(int agent_id) const {
 namespace {
 
 // Build a TimedPath from a cached ObjectivePath at a given speed, ORIENTED so
-// the walk starts at `from`. The path cache stores each (a,b) pair once, in
-// the direction it was first computed; a leg traversing it the other way must
-// replay edges in reverse order, otherwise the published occupancy windows
-// (and arrival estimates) describe a walk from the wrong end of the path.
-//
-// edge_steps[i] = CongestionMap::traversal_steps evaluated at the edge's
-// predicted ENTRY step (leg_start + cumulative steps so far) — the same
-// authority the movement engine uses, so estimation and execution agree.
 TimedPath make_timed_path(const ObjectivePath& path,
                           osmium::object_id_type from,
                           float speed_mps,
@@ -349,9 +337,6 @@ void PDPGlobalMemory::unregister_committed_plan(int agent_id) {
     auto it = committed_loads_.find(agent_id);
     if (it == committed_loads_.end()) return;
     // Exact removal of what was added: the ledger holds the (way, t_lo, t_hi,
-    // weight) registered at commit time, so each remove_interval matches its
-    // add. Intervals already purged by advance() (fully past) are simply not
-    // found — harmless, their contribution no longer exists.
     for (const LoadWindow& lw : it->second)
         congestion_map.remove_agent(lw.way, lw.t_lo, lw.t_hi, lw.weight);
     committed_loads_.erase(it);
@@ -425,8 +410,6 @@ void PDPGlobalMemory::push_rerouted_path(int agent_id, float speed_mps,
     const AgentSolution& sol = agent->solution;
     if (sol.empty()) return;
     // Works both mid-traversal (has edge_cursor) and at leg boundaries
-    // (edge_cursor reset). At boundaries, push_updated_path updates current_path
-    // only; begin_leg() then uses that refreshed path to create the cursor.
 
     // The agent is heading from current_node to sequence[0].
     const osmium::object_id_type from = agent->current_node;
@@ -524,8 +507,6 @@ float PDPGlobalMemory::bpr_path_cost(
     if (p->edges.empty()) return p->cost;          // same node / trivial hop
 
     // Orient the replay: the cache stores one direction only, but the BPR
-    // time profile depends on the traversal direction (edges are sampled at
-    // their running entry time).
     const bool forward =
         p->nodes.size() < 2 || p->nodes.front() == from || p->nodes.back() != from;
 
@@ -556,8 +537,6 @@ int PDPGlobalMemory::path_travel_steps(
     if (!path.valid() || path.nodes.size() < 2) return kUnreachable;
 
     // Locate the start within the path, oriented so the walk begins at `from`.
-    // Oriented node i = forward ? nodes[i] : nodes[n-1-i]; oriented edge k
-    // connects oriented nodes k and k+1.
     const auto& nodes = path.nodes;
     const std::size_t nn = nodes.size();
     const std::size_t ne = path.edges.size();
@@ -594,6 +573,22 @@ void PDPGlobalMemory::advance_time(int t_now) {
     // Periodic refresh of the per-cell congestion cache (every
     // kCacheRefreshSteps steps). Cheap: O(N_cells × N_sampled_edges_per_cell).
     region_grid.refresh_congestion_cache(congestion_map, geo_box, t_now);
+
+    // Free the memoised geometry of delivered/picked objective nodes. Deferred
+    if (kRetiredPurgeSteps > 0 && (t_now % kRetiredPurgeSteps) == 0)
+        purge_retired_paths();
+}
+
+void PDPGlobalMemory::purge_retired_paths() {
+    std::unordered_set<const ObjectivePath*> live;
+    live.reserve(delivery_agents_.size() * 2);
+    for (const auto& [aid, agent] : delivery_agents_) {
+        (void)aid;
+        if (!agent) continue;
+        if (agent->local_memory.current_path) live.insert(agent->local_memory.current_path);
+        if (agent->local_memory.next_path)    live.insert(agent->local_memory.next_path);
+    }
+    server_memory.purge_retired_paths(live);
 }
 
 // ---- Episode reset -----------------------------------------------------
@@ -610,8 +605,6 @@ void PDPGlobalMemory::reset_episode() {
     node_to_task_id_.clear();
 
     // Reset the congestion map: drops all occupancy intervals and t_now_ to 0.
-    // Without this, the new episode's early steps (t < t_now_ from the previous
-    // episode) would be treated as past and purged, tracking no congestion.
     congestion_map.reset();
     node_events.reset();
 

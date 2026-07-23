@@ -9,9 +9,7 @@ namespace {
 constexpr float kInf = std::numeric_limits<float>::infinity();
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// ZonePairForecast
-// ════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════
 
 int HybridAdaptivePredictiveSolver::ZonePairForecast::cell_of(
     osmium::object_id_type id, const GeoBox& g) const
@@ -52,10 +50,7 @@ HybridAdaptivePredictiveSolver::ZonePairForecast::top_h(
     int H, float min_p, int min_samples) const
 {
     if (H <= 0) return {};
-    // Paper eq. 12 is estimated on the CURRENT interval ΔT(k). Early in an
-    // interval that histogram is too thin to be meaningful, so we read the
-    // episode-cumulative counts instead — the closest online stand-in for the
-    // paper's week of historical data.
+    // thin interval -> fall back to cumulative counts
     const auto& src = (n_interval >= min_samples) ? count_interval : count_total;
     if (src.empty()) return {};
 
@@ -75,9 +70,7 @@ HybridAdaptivePredictiveSolver::ZonePairForecast::top_h(
     }
     if (cands.empty()) return {};
 
-    // Top-H by observed mass. Deterministic ordering: ties are broken on the
-    // (pickup, delivery) cell indices so the unordered_map traversal order
-    // cannot leak into the result.
+    // top-H by mass; ties on cell indices for determinism
     auto by_mass = [](const auto& a, const auto& b) {
         if (a.first != b.first) return a.first > b.first;
         return a.second < b.second;
@@ -89,16 +82,11 @@ HybridAdaptivePredictiveSolver::ZonePairForecast::top_h(
         std::sort(cands.begin(), cands.end(), by_mass);
     }
 
-    // Total mass of the retained subset BEFORE pruning, so that the pruning
-    // threshold is applied on the same scale the paper's p_h lives on.
     float sum = 0.f;
     for (const auto& c : cands) sum += c.first;
     if (sum <= 0.f) return {};
 
-    // Prune first, THEN normalise: eq. 15's cancellation of the one-step term
-    // C_j(k+1) relies on Σ_h p_h = 1 exactly. Normalising before pruning left
-    // Σ_h p_h < 1 and silently turned the objective into a myopic/two-step
-    // blend instead of the paper's two-step criterion.
+    // prune then normalise: eq.15 needs sum p_h = 1 exactly
     std::vector<std::pair<float, std::pair<int,int>>> kept;
     kept.reserve(cands.size());
     float kept_sum = 0.f;
@@ -121,16 +109,12 @@ HybridAdaptivePredictiveSolver::ZonePairForecast::top_h(
     return out;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// ISolver lifecycle
-// ════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════
 
 HybridAdaptivePredictiveSolver::SharedDistanceCache&
 HybridAdaptivePredictiveSolver::shared_cache()
 {
     // Reusable storage, wiped at every init() (one episode's worth of
-    // distances). Static only to keep the allocation across episodes; content
-    // is cleared each episode so memory is bounded by a single episode.
     static SharedDistanceCache instance;
     return instance;
 }
@@ -139,8 +123,6 @@ std::unique_ptr<PathHelper>&
 HybridAdaptivePredictiveSolver::shared_path_helper()
 {
     // PathHelper rebuilt at every init() so its A* result cache holds only the
-    // current episode's paths (cold start per method/episode). Static only so
-    // the unique_ptr slot survives; the helper itself is replaced each episode.
     static std::unique_ptr<PathHelper> instance;
     return instance;
 }
@@ -148,17 +130,15 @@ HybridAdaptivePredictiveSolver::shared_path_helper()
 void HybridAdaptivePredictiveSolver::init(const SolverContext& ctx) {
     ctx_   = &ctx;
 
-    // Cold caches at every episode (eval protocol: purge between methods /
-    // episodes, keep only the event stream). Persisting distances + PathHelper
-    // across episodes faked HAPC's compute time and grew unbounded over a city
-    // sweep (~48 GB observed). Both are wiped and rebuilt here so each episode
-    // starts fresh and its cost is bounded by one episode's queries.
+    // cold caches every episode: bounded, and timings stay fair
     {
         auto& sc  = shared_cache();
         auto& sph = shared_path_helper();
         sc.gb = ctx.geo_box;
         sc.gb_node_count = (ctx.geo_box) ? ctx.geo_box->data.nodes.size() : 0;
         sc.dijkstra_from.clear();
+        sc.entries = 0;
+        sc.prewarm_refused = 0;
         sph = std::make_unique<PathHelper>(*ctx.geo_box);
         paths_ = sph.get();  // non-owning view for this instance
     }
@@ -187,18 +167,13 @@ void HybridAdaptivePredictiveSolver::init(const SolverContext& ctx) {
     capacity_violations_ = pairing_violations_ = 0;
     instr_.init(ctx.n_active_agents, ctx.speed_mps);
 
-    // ── Build the OD-pair forecast grid over the GeoBox bounding box. ─────
-    // Single pass to find lat/lon extrema AND assign a representative node
-    // to each cell (the FIRST node seen inside the cell — deterministic for
-    // a stable graph order).
+    // ── Build the OD-pair forecast grid over the GeoBox bounding box. ───
     forecast_.dim = std::max(2, hparams.demand_grid_dim);
     forecast_.count_interval.clear();
     forecast_.count_total.clear();
     forecast_.n_interval     = 0;
     forecast_.interval_index = -1;
     // Paper §4.1 splits the horizon into equal time intervals ΔT (three hourly
-    // slots over its three-hour simulation); probabilities are constant inside
-    // one interval and refreshed between them.
     forecast_.interval_len = std::max(
         1, ctx.total_steps / std::max(1, hparams.forecast_n_intervals));
     const int n_cells = forecast_.dim * forecast_.dim;
@@ -239,18 +214,10 @@ void HybridAdaptivePredictiveSolver::inject_task(const ScheduledTask& task,
     r.delivery_node  = task.delivery_node_id;
     r.arrival_step   = step;
 
-    // ── Bulk cache pre-warm (Dijkstra-from-source) ───────────────────────
-    // The new task's pickup and delivery nodes will be queried ~60+N×n times
-    // during the upcoming try_insert_task (in both directions, by every
-    // agent's cheapest_insertion). Running a single Dijkstra per source up
-    // front fills the persistent cache with d(src, X) for ALL reachable X in
-    // one pass — equivalent to (and faster than) N independent A* searches.
-    // Already pre-warmed sources are skipped, so each unique task node is
-    // hit at most ONCE per city.
+    // ── Bulk cache pre-warm (Dijkstra-from-source) ─────────�
     prewarm_from_node(r.pickup_node);
     prewarm_from_node(r.delivery_node);
 
-    // pd_road_dist is now a cheap cache lookup thanks to the prewarm above.
     r.pd_road_dist = seg_cost(r.pickup_node, r.delivery_node);
     if (!std::isfinite(r.pd_road_dist)) r.pd_road_dist = 0.f;
 
@@ -265,34 +232,34 @@ void HybridAdaptivePredictiveSolver::inject_task(const ScheduledTask& task,
     });
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Bulk Dijkstra prewarm
-// ════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════
 
 void HybridAdaptivePredictiveSolver::prewarm_from_node(
     osmium::object_id_type src) const
 {
     if (src == 0) return;
     auto& sc = shared_cache();
-    if (sc.dijkstra_from.count(src)) return;  // already done this city
+    if (sc.dijkstra_from.count(src)) return;  // already done this episode
     if (!ctx_ || !ctx_->geo_box) return;
 
+    // budget guard: refuse rather than grow; seg_cost falls back to A*
+    const size_t projected = sc.entries + ctx_->geo_box->data.nodes.size();
+    if (projected * kPrewarmBytesPerEntry > kPrewarmBudgetBytes) {
+        ++sc.prewarm_refused;
+        return;
+    }
+
     // Single-source Dijkstra over the road graph. Result is d(src, X) for
-    // every reachable X. Stored in dijkstra_from[src] (one inner map per
-    // source) — vastly cheaper to look up than a flat (from,to)→dist map
-    // because each per-source map is much smaller (~10k entries on Small,
-    // ~200k on Paris) and fits in CPU cache.
     auto dists = graph_search::dijkstra_distances(*ctx_->geo_box, src);
     auto& dist_map = sc.dijkstra_from[src];
     dist_map.reserve(dists.size());
     for (const auto& [node, dist] : dists) {
         dist_map.emplace(node, dist);
     }
+    sc.entries += dist_map.size();
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Cost computation — paper eq. 11
-// ════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════
 
 float HybridAdaptivePredictiveSolver::seg_cost(
     osmium::object_id_type from, osmium::object_id_type to) const
@@ -306,11 +273,8 @@ float HybridAdaptivePredictiveSolver::seg_cost(
     if (it != sc.dijkstra_from.end()) {
         auto jt = it->second.find(to);
         if (jt != it->second.end()) return jt->second;
-        // `from` is pre-warmed but `to` is not in its Dijkstra result —
-        // means `to` is unreachable from `from`. Symmetric fallback in case
-        // graph has subtle directional issues; otherwise return kInf.
     }
-    // Symmetric lookup (OSM road graph is undirected).
+    // undirected: try the reverse
     it = sc.dijkstra_from.find(to);
     if (it != sc.dijkstra_from.end()) {
         auto jt = it->second.find(from);
@@ -318,9 +282,6 @@ float HybridAdaptivePredictiveSolver::seg_cost(
     }
 
     // ── L2 fallback: PathHelper (persistent across episodes within city) ──
-    // Lazy A* for non-prewarmed (from, to) pairs. PathHelper caches results
-    // internally, so the first call is ~A*-cost and subsequent identical
-    // calls are O(1).
     if (!paths_) return kInf;
     const auto& p = paths_->get(from, to);
     return p.valid ? p.cost : kInf;
@@ -348,30 +309,23 @@ HybridAdaptivePredictiveSolver::paper_cost(
             return cb;
         }
 
-        // Paper eq. 11 travel term: ( L^(i-1) + 1 ) · ( T^i − T^(i-1) ).
-        // "+1" = operational-cost proxy (the driver).
+        // eq.11 travel: (load+1) * segment time
         cb.travel += static_cast<float>(load + 1) * seg;
 
         cum_time += seg;
 
-        // Paper eq. 11 waiting term: r_j^i · α · ( T^i − T^0 ). Only fires
-        // at pickup stops — that's the customer's perceived waiting time
-        // (vehicle's travel time to reach the pickup from its current
-        // position).
+        // eq.11 waiting: fires at pickups only
         if (stop.is_pickup) {
             cb.waiting += alpha * cum_time;
         }
 
-        // Load update AFTER processing this stop: pickup +1, delivery -1.
         load += stop.is_pickup ? 1 : -1;
         cur = stop.node;
     }
     return cb;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Sequence profile precompute (O(n) — reusable across H virtual calls)
-// ════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════
 
 bool HybridAdaptivePredictiveSolver::build_profile(
     const std::vector<SequenceStop>& seq,
@@ -413,9 +367,7 @@ bool HybridAdaptivePredictiveSolver::build_profile(
     return true;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Insertion helpers
-// ════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════
 
 HybridAdaptivePredictiveSolver::InsertionResult
 HybridAdaptivePredictiveSolver::cheapest_insertion_in_seq(
@@ -427,10 +379,6 @@ HybridAdaptivePredictiveSolver::cheapest_insertion_in_seq(
     osmium::object_id_type virtual_delivery) const
 {
     // Single-shot variant — builds the profile, then dispatches. For the
-    // 2-step lookahead's inner loop (which calls this H times on the SAME
-    // post-insertion sequence) try_insert_task uses build_profile() once and
-    // calls cheapest_insertion_with_profile() H times instead, saving H-1
-    // base-profile recomputes per agent per task.
     SeqProfile profile;
     if (!build_profile(sequence, initial_load, from_node, profile)) {
         InsertionResult bad;
@@ -458,54 +406,16 @@ HybridAdaptivePredictiveSolver::cheapest_insertion_with_profile(
     const int initial_load = profile.initial_load;
     if (initial_load > capacity) return best;
 
-    // ════════════════════════════════════════════════════════════════════════
-    // Solomon-style δ-insertion (fidelity-preserving optim).
-    // ════════════════════════════════════════════════════════════════════════
-    // Replaces the O(n³) full-sequence recompute per candidate with an O(1)
-    // delta formula based on precomputed profile arrays. The delta is
-    // mathematically equivalent to (paper_cost(new_seq) − paper_cost(base_seq))
-    // for paper eq.11 cost — verified by case analysis on:
-    //   (a) pos_p == pos_d        (P+D consecutive, optionally at end)
-    //   (b) pos_p <  pos_d <= n   (P and D bracket pos_d-pos_p original stops)
-    //
-    // Travel-cost decomposition (paper eq.11 term (L+1)·Δt):
-    //   - Edges in [0, pos_p-1] : unchanged
-    //   - Edge into pos_p       : REMOVED (was t_seg[pos_p] × (lbp+1))
-    //   - 2 new edges around P  : pred→P × (lbp+1), P→next × (lbp+2)
-    //   - Edges in (pos_p, pos_d): each gets +1 load weight from P on board
-    //                              → delta contribution = sum of t_seg[i]
-    //   - Edge into pos_d       : REMOVED (was t_seg[pos_d] × (lbd+1))
-    //   - 2 new edges around D  : pred→D × (lbd+2), D→next × (lbd+1)
-    //   - Edges in [pos_d+1, n] : unchanged
-    //
-    // Waiting-cost decomposition (paper eq.11 term α·(T^i - T^0) for pickups):
-    //   - New pickup at P       : + α × arrive_at_P
-    //   - Original pickups in [pos_p, pos_d): shift their arrive time by Δ_P
-    //   - Original pickups in [pos_d, n)    : shift by Δ_P + Δ_D
-    //   where Δ_P = (new edges around P) - (removed edge into pos_p)
-    //         Δ_D = (new edges around D) - (removed edge into pos_d)
-    //
-    // Per candidate (pos_p, pos_d): O(1) delta formula, no inner iteration.
-    // Total seg_cost calls per cheapest_insertion ≈ 4(n+1) instead of O(n³)
-    // — and most are persistent-cache hits after the new task's Dijkstra
-    // prewarm in inject_task().
+    // ══════════════════════════
 
     const osmium::object_id_type from_node = profile.from_node;
-    // Aliases to the precomputed profile (avoids repeated indirection).
     const auto& t_seg         = profile.t_seg;
     const auto& load_after    = profile.load_after;
     const auto& arrive_t      = profile.arrive_t;
     const auto& t_seg_prefix  = profile.t_seg_prefix;
     const auto& pickup_suffix = profile.pickup_suffix;
 
-    // ── Insertion-related seg_cost precompute (O(n)) ────────────────────────
-    // seg_to_P[k]  for k in [0, n] : edge from pred(k) into P
-    // seg_P_out[k] for k in [0, n) : edge from P out to seq[k]
-    // seg_D_in[k]  for k in [1, n] : edge from seq[k-1] into D
-    // seg_D_out[k] for k in [0, n) : edge from D out to seq[k]
-    // Use the solver-scoped scratch buffers — .assign() keeps the underlying
-    // heap allocation across the ~420 calls per task, eliminating ~1700
-    // malloc/free pairs per task arrival on a 60-agent / H=6 config.
+    // ── Insertion-related seg_cost precompute (O(n)) ────────�
     auto& seg_to_P  = scratch_seg_to_P_;   seg_to_P.assign (n + 1, kInf);
     auto& seg_P_out = scratch_seg_P_out_;  seg_P_out.assign(std::max(1, n), kInf);
     auto& seg_D_in  = scratch_seg_D_in_;   seg_D_in.assign (n + 1, kInf);
@@ -534,7 +444,6 @@ HybridAdaptivePredictiveSolver::cheapest_insertion_with_profile(
         const float arrive_at_P      = arrive_at_P_pred + stp;
 
         for (int pos_d = pos_p; pos_d <= n; ++pos_d) {
-            // Capacity feasibility for original stops in (pos_p, pos_d) (load +1).
             bool feasible = true;
             for (int k = pos_p; k <= pos_d - 1; ++k) {
                 if (load_after[k] + 1 > capacity) { feasible = false; break; }
@@ -549,25 +458,18 @@ HybridAdaptivePredictiveSolver::cheapest_insertion_with_profile(
                 if (pos_p < n) {
                     const float sdo = seg_D_out[pos_p];
                     if (!std::isfinite(sdo)) continue;
-                    // Removed: edge pred(pos_p) → seq[pos_p] = t_seg[pos_p]
-                    //          weight (lbp + 1)
-                    // Added:   pred → P  (weight lbp + 1)
-                    //          P → D     (weight lbp + 2  ─ P on board)
-                    //          D → next  (weight lbp + 1  ─ P delivered)
                     delta_travel =
                         - static_cast<float>(lbp + 1) * t_seg[pos_p]
                         + static_cast<float>(lbp + 1) * stp
                         + static_cast<float>(lbp + 2) * seg_P_to_D
                         + static_cast<float>(lbp + 1) * sdo;
-                    // arrive_t shift for all original stops in [pos_p, n)
                     const float delta_combined = stp + seg_P_to_D + sdo - t_seg[pos_p];
                     delta_waiting =
                         alpha * arrive_at_P
                         + alpha * delta_combined *
                             static_cast<float>(pickup_suffix[pos_p]);
                 } else {
-                    // pos_p == pos_d == n → append P, D at the very end.
-                    // No removed edge, no D→next, no shifted originals.
+                    // append at the end
                     delta_travel =
                         + static_cast<float>(lbp + 1) * stp
                         + static_cast<float>(lbp + 2) * seg_P_to_D;
@@ -588,9 +490,7 @@ HybridAdaptivePredictiveSolver::cheapest_insertion_with_profile(
                     + static_cast<float>(lbp + 1) * stp
                     + static_cast<float>(lbp + 2) * spo;
 
-                // Middle edges in (pos_p, pos_d) — each gets +1 load weight
-                // due to P being on board. Net delta = sum of t_seg[i] over
-                // i in [pos_p+1, pos_d-1].
+                // middle edges carry P: +1 load each
                 delta_travel += t_seg_prefix[pos_d] - t_seg_prefix[pos_p + 1];
 
                 // Travel cost — D side
@@ -604,16 +504,12 @@ HybridAdaptivePredictiveSolver::cheapest_insertion_with_profile(
                         + static_cast<float>(lbd + 1) * sdo;
                     delta_D = sdi + sdo - t_seg[pos_d];
                 } else {
-                    // pos_d == n → D appended after last original stop. No
-                    // removed edge, no D→next. lbd here = load_after[n-1].
                     delta_travel +=
                         + static_cast<float>(lbd + 2) * sdi;
                     delta_D = sdi;  // irrelevant for waiting since no pickups in [n, n)
                 }
 
                 // Waiting cost — new pickup + shifted originals.
-                //   pickups in [pos_p, pos_d-1] shift by Δ_P
-                //   pickups in [pos_d, n-1]    shift by Δ_P + Δ_D
                 const int pickups_in_PD     = pickup_suffix[pos_p] - pickup_suffix[pos_d];
                 const int pickups_after_D   = pickup_suffix[pos_d];
                 delta_waiting =
@@ -659,9 +555,7 @@ HybridAdaptivePredictiveSolver::cheapest_insertion(
         t.pickup_node,
         t.delivery_node);
 
-    // Patch the task_id in the resulting sequence (the helper sets -1 since
-    // it doesn't know the id; we re-stamp here so the agent can fire the
-    // pickup/delivery events with the right task identity).
+    // stamp the task id (helper inserts -1)
     if (r.pos_p >= 0 && r.pos_d >= 0) {
         for (auto& s : r.resulting_sequence) {
             if (s.task_id == -1) s.task_id = t.task_id;
@@ -670,9 +564,7 @@ HybridAdaptivePredictiveSolver::cheapest_insertion(
     return r;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Allocation — paper eq. 15 (two-steps-ahead lookahead)
-// ════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════
 
 bool HybridAdaptivePredictiveSolver::try_insert_task(int task_id, int step) {
     if (task_id < 0 || task_id >= static_cast<int>(tasks_.size())) return false;
@@ -693,13 +585,6 @@ bool HybridAdaptivePredictiveSolver::try_insert_task(int task_id, int step) {
     float best_total = kInf;
     std::vector<SequenceStop> best_resulting_sequence;
 
-    // Reusable scratch profiles to avoid repeated vector allocations across
-    // the 60-agent outer loop. Each agent's BASE profile (its current
-    // sequence) is built once. After committing the outer insertion choice,
-    // its POST-insertion profile is built once and reused across the H
-    // virtual-call inner evaluations — saving (H-1) × O(n) seg_cost lookups
-    // per agent per task (i.e. ~3-5k extra cache hits avoided per task on
-    // typical n=10, H=6 configs).
     SeqProfile base_prof;
     SeqProfile post_prof;
 
@@ -707,8 +592,6 @@ bool HybridAdaptivePredictiveSolver::try_insert_task(int task_id, int step) {
         const AgentState& a = agents_[ai];
         const int initial_load = static_cast<int>(a.in_flight_task_ids.size());
 
-        // Build the agent's BASE profile (its current sequence) — used by the
-        // outer cheapest-insertion of task t.
         if (!build_profile(a.sequence, initial_load, a.current_node, base_prof))
             continue;
 
@@ -718,8 +601,6 @@ bool HybridAdaptivePredictiveSolver::try_insert_task(int task_id, int step) {
             t.pickup_node, t.delivery_node);
         if (!std::isfinite(now.cost_delta)) continue;
 
-        // Patch task_id in the resulting sequence (the helper inserts -1
-        // because it doesn't know which TaskRecord we're inserting).
         for (auto& s : now.resulting_sequence)
             if (s.task_id == -1) s.task_id = t.task_id;
 
@@ -729,10 +610,6 @@ bool HybridAdaptivePredictiveSolver::try_insert_task(int task_id, int step) {
         if (hparams.enable_two_step && !virtual_calls.empty()) {
             const auto& post_seq = now.resulting_sequence;
 
-            // Build the POST-insertion profile ONCE per agent and reuse it
-            // across all H virtual calls (only the (vp, vd) endpoints change,
-            // not the base sequence). Initial_load is unchanged (we inserted
-            // but not picked up).
             if (build_profile(post_seq, initial_load, a.current_node, post_prof)) {
                 for (const auto& vc : virtual_calls) {
                     const InsertionResult fut = cheapest_insertion_with_profile(
@@ -760,8 +637,6 @@ bool HybridAdaptivePredictiveSolver::try_insert_task(int task_id, int step) {
     }
     if (best_aid < 0) {
         // Failure → exponential backoff so the per-step retry doesn't burn
-        // ~13ms × 3600 steps on this stuck task. Capped at +64 steps so even
-        // long-pending tasks get checked periodically as system state evolves.
         const int backoff = 1 << std::min(t.retry_count, 6);
         t.next_retry_step = step + backoff;
         ++t.retry_count;
@@ -779,9 +654,7 @@ bool HybridAdaptivePredictiveSolver::try_insert_task(int task_id, int step) {
     return true;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Path execution (unchanged from prior version — paper §3.1 event-only)
-// ════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════
 
 int HybridAdaptivePredictiveSolver::edge_arrival_step(
     osmium::object_id_type edge_id, int t_enter)
@@ -795,20 +668,11 @@ int HybridAdaptivePredictiveSolver::edge_arrival_step(
     if (!ctx_->congestion_map)
         return t_enter + std::max(1, static_cast<int>(std::ceil(base_time)));
 
-    // Paper models constant straight-line speed; we use OSM-A* distance and
-    // BPR-adjust the resulting edge time so the agent's actual travel cost
-    // reflects the SHARED CongestionMap (consistent with other SoTA solvers).
-    // Traversal rule (parity with EpisodeRunner::schedule_next_edge): the agent
-    // pays the BPR time of the n OTHERS on the edge, not n+1 — its own
-    // committed weight, published by recommit_route before it is scheduled
-    // onto the edge, is subtracted.
+    // pays the BPR of the n OTHERS (parity with schedule_next_edge)
     const int self_w = std::max(1, ctx_->congestion_map->params.load_per_agent);
     const float adj  = ctx_->congestion_map->adjusted_cost(
         edge_id, base_time, length_m, t_enter, self_w);
-    // Exposure accumulators sampled at the edge's ENTRY step (t_enter = current
-    // step at all call sites). Must be here, not at completion: advance()
-    // purges past steps → a later query at the entry step reads load 0 →
-    // BPR 1.0. `load_at_entry` is the FULL load, as in the RL jam counter.
+    // sampled at ENTRY: advance() purges past steps
     instr_.record_edge_entry(base_time, adj,
                              ctx_->congestion_map->get_load(edge_id, t_enter));
     return t_enter + std::max(1, static_cast<int>(std::ceil(adj)));
@@ -857,13 +721,8 @@ bool HybridAdaptivePredictiveSolver::resync_leg(AgentState& a, int step) {
     a.current_path_edges = sp.edges;
     a.next_idx = 0;
     a.current_edge_t_enter = step;
-    // Timing of the first edge is DEFERRED to recommit_route: the traversal
-    // rule subtracts this agent's own committed weight, so the footprint of
-    // the fresh plan must be on the map before the edge is timed (same
-    // commit-before-schedule ordering as EpisodeRunner).
+    // timed by recommit_route (commit before schedule)
     a.arrival_step_next_node = -1;
-    // Footprint registered for the FULL remaining sequence by recommit_route()
-    // (Option O commit_plan-style), not edge-by-edge here.
     return true;
 }
 
@@ -881,8 +740,7 @@ void HybridAdaptivePredictiveSolver::advance_agent(AgentState& a, int step) {
         if (a.arrival_step_next_node < 0)
             a.arrival_step_next_node =
                 edge_arrival_step(a.current_path_edges[a.next_idx], step);
-        // Route exposure: load on the edge this agent occupies right now — one
-        // sample per in-transit agent per step (RL parity, Runner.cpp).
+        // route exposure, one sample per in-transit agent per step
         if (ctx_ && ctx_->congestion_map)
             instr_.sample_route_exposure(ctx_->congestion_map->get_load(
                 a.current_path_edges[a.next_idx], step));
@@ -957,21 +815,14 @@ void HybridAdaptivePredictiveSolver::advance_agent(AgentState& a, int step) {
     recommit_route(a, step);   // sequence changed (stop reached) → refresh footprint
 }
 
-// Re-register the agent's full remaining sequence on the shared CongestionMap,
-// exactly like Option O's commit_plan: unregister the previous footprint, then
-// add every edge of every remaining leg with free-flow windows weighted by
-// load_per_agent (static PathHelper geometry). Called on every plan change.
+// republish the whole remaining sequence on the shared map
 void HybridAdaptivePredictiveSolver::recommit_route(AgentState& a, int step) {
     if (!ctx_ || !ctx_->congestion_map || !ctx_->geo_box || !paths_) return;
     std::vector<osmium::object_id_type> stops;
     stops.reserve(a.sequence.size());
     for (const auto& s : a.sequence) stops.push_back(s.node);
 
-    // The first leg is committed on the edges the agent still has to drive,
-    // not on a fresh query from current_node: when the sequence changes while
-    // the agent is mid-edge, resync_leg defers the replan (paper §3.1), so the
-    // running path is authoritative and a fresh A* would publish load on edges
-    // nobody drives.
+    // first leg: use the running path, a fresh A* could diverge
     bool first_leg = true;
     commit_agent_route(
         *ctx_->congestion_map, *ctx_->geo_box, ctx_->speed_mps,
@@ -990,17 +841,13 @@ void HybridAdaptivePredictiveSolver::recommit_route(AgentState& a, int step) {
             return paths_->get(f, to).edges;
         });
 
-    // Commit-before-schedule: this agent's own weight is now on the map, so
-    // edge_arrival_step can subtract it (see resync_leg).
     if (a.arrival_step_next_node < 0 &&
         a.next_idx < static_cast<int>(a.current_path_edges.size()))
         a.arrival_step_next_node =
             edge_arrival_step(a.current_path_edges[a.next_idx], step);
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Demand forecast registration
-// ════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════
 
 void HybridAdaptivePredictiveSolver::register_arrival(
     osmium::object_id_type pickup_node,
@@ -1012,9 +859,7 @@ void HybridAdaptivePredictiveSolver::register_arrival(
     forecast_.register_arrival(p_cell, d_cell);
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Step loop
-// ════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════
 
 void HybridAdaptivePredictiveSolver::step(int timestep) {
     if (ctx_) {
@@ -1026,11 +871,7 @@ void HybridAdaptivePredictiveSolver::step(int timestep) {
     // §4.1: probabilities are constant inside an interval, refreshed between).
     forecast_.advance_interval(timestep);
 
-    // Retry any task whose prior insertion failed AND whose backoff has elapsed.
-    // The backoff (set by try_insert_task on failure) avoids ~3600× retries per
-    // stuck task per episode. Paper §3.1 is silent on retry semantics; backoff
-    // is actually closer to paper's "event-triggered re-routing" than the
-    // previous per-step polling.
+    // retry tasks whose backoff elapsed
     for (auto& t : tasks_) {
         if (t.assigned_agent < 0 &&
             t.delivered_step < 0 &&
@@ -1041,14 +882,11 @@ void HybridAdaptivePredictiveSolver::step(int timestep) {
         }
     }
 
-    // Advance every agent one step. NO periodic MPC — paper §3.1 explicitly
-    // says sequences change only on (a) call arrival or (b) stop reached.
+    // no periodic MPC: sequences change on events only
     for (auto& a : agents_) advance_agent(a, timestep);
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Finalisation
-// ════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════
 
 SolverMetrics HybridAdaptivePredictiveSolver::finalize() {
     SolverMetrics m;
@@ -1078,8 +916,7 @@ SolverMetrics HybridAdaptivePredictiveSolver::finalize() {
     }
     m.capacity_violations = capacity_violations_;
     m.pairing_violations  = pairing_violations_;
-    // Normalised by the MEAN NUMBER OF ACTIVE AGENTS, not the provisioned
-    // fleet (RL parity: Metrics.cpp active_sum/active_steps).
+    // normalised by mean active agents (RL parity)
     if (ctx_ && ctx_->total_steps > 0) {
         const double mean_active =
             static_cast<double>(active_steps_sum_) / ctx_->total_steps;

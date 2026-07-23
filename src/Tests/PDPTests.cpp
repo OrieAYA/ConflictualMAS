@@ -167,7 +167,7 @@ void pdp_create_geobox(const std::string& osm_file, const std::string& cache_dir
     std::cout << "Output cache name (no .json):     "; std::cin >> out_name;
 
     FlickrConfig config;
-    config.api_key               = "9568c6342a890ef1ba342f54c4c1160f";
+    config.api_key               = flickr_api_key_from_env();
     config.bbox                  = bbox;
     config.poi_assignment_radius = 15.0;
     config.min_date              = "2020-01-01";

@@ -28,8 +28,6 @@ struct ObjectivePath {
 };
 
 // Result of a one-shot time-dependent A* query.
-// total_time     : accumulated travel time in steps (BPR-adjusted, rounded)
-// total_distance : total geometric distance in meters (unweighted)
 struct TDAStarResult {
     std::vector<osmium::object_id_type> edges;
     std::vector<osmium::object_id_type> nodes;
@@ -80,12 +78,6 @@ public:
     };
 
     // Incremental Dijkstra — resumes between calls.
-    // Stops at the next uncached objective node OR at any node in agent_positions.
-    // agent_positions: current nodes of idle delivery agents (checked from delivery side only).
-    // max_cost: spatial pruning — stops expansion when the smallest open-set
-    //           cost exceeds this bound. Does NOT permanently exhaust the search
-    //           (the node is pushed back to the heap), so a subsequent call with
-    //           a larger max_cost will resume past the previous frontier.
     DiscoveryStep discover_step(
         osmium::object_id_type from,
         const MyData&          data,
@@ -97,9 +89,6 @@ public:
     const ObjectivePath* discover_next_path(osmium::object_id_type from, const MyData& data);
 
     // Reset the incremental Dijkstra state for a given starting node.
-    // Called before each new TAM agent search so stale closed-sets and
-    // exhausted flags from prior tasks don't block re-discovery of agents
-    // that have since moved. Memoised paths_ are NOT affected.
     void reset_search_state(osmium::object_id_type from) {
         search_states_.erase(from);
     }
@@ -108,12 +97,22 @@ public:
     void clear_paths() {
         paths_.clear();
         search_states_.clear();
+        retired_.clear();
         obj_pair_count_ = 0;
     }
+
+    // Erase the memoised paths of retired (delivered / picked-up) objective
+    std::size_t purge_retired(
+        const std::unordered_set<const ObjectivePath*>& live);
+
+    std::size_t n_paths() const { return paths_.size(); }
 
 private:
     std::unordered_map<PathKey, ObjectivePath, ObjPairHash> paths_;
     std::unordered_set<osmium::object_id_type>              objective_ids_;
+    // Objective nodes whose task is done: their paths are dead weight, but can
+    // only be freed once no agent points at them (see purge_retired).
+    std::unordered_set<osmium::object_id_type>              retired_;
     int                                                      obj_pair_count_ = 0; // paths where both endpoints are objectives
 
     struct SearchState {
@@ -148,14 +147,7 @@ public:
     PDPServerMemory() = delete;
     explicit PDPServerMemory(GeoBox& box);
 
-    // ── Path-compute timing instrumentation ─────────────────────────────────
-    // Accumulates the total wallclock time (in microseconds for precision)
-    // spent inside get_or_compute_path. Reset at episode start by the
-    // EpisodeRunner; read at finalize() to derive (a) per-episode path-compute
-    // cost in ms, and (b) pure-allocation time by subtracting in-offer path
-    // time from total offer_task time. Static because path cache is global
-    // per GeoBox; the simulation is single-threaded so a plain
-    // static counter is sufficient.
+    // ── Path-compute timing instrumentation ───────────�
     static long long path_compute_time_us();
     static void      reset_path_compute_time();
 
@@ -185,8 +177,6 @@ public:
     );
 
     // Refresh the dynamic cost of a cached path using TD-A*.
-    // No-op if the path is not cached or dynamic_step >= current_step.
-    // Returns the updated path (or nullptr if not cached).
     ObjectivePath* refresh_dynamic_cost(
         osmium::object_id_type from,
         osmium::object_id_type to,
@@ -207,17 +197,18 @@ public:
     void reset_objectives(int group_id);
 
     // Drop every memoised path in every group. Called when the episode
-    // CONTENT changes (new ep_seed) — replays of the same episode keep the
-    // cache; keeping it across different episodes grows without bound.
     void clear_paths();
 
     // Reset the Dijkstra search state for one starting node (TAM agent search).
-    // Ensures each new task allocation starts from a clean state so agents that
-    // moved since the previous search are not missed. Memoised paths_ are kept.
     void reset_agent_search(osmium::object_id_type from, int group_id);
 
     // Remove an objective node from its group cache (post pickup/delivery).
     void remove_objective_node(osmium::object_id_type node_id, int group_id);
+
+    // Free the memoised paths of retired objective nodes across every group,
+    // skipping those still referenced by an agent. Returns the count dropped.
+    std::size_t purge_retired_paths(
+        const std::unordered_set<const ObjectivePath*>& live);
 
     bool is_objective_node(osmium::object_id_type node_id, int group_id) const;
     bool is_group_complete(int group_id) const;
@@ -240,4 +231,4 @@ private:
     void          tag_intermediate_objectives(ObjectivePath& path, int group_id);
 };
 
-#endif // OBJECTIVE_CACHE_HPP
+#endif // OBJECTIVE_CACHE_HPP

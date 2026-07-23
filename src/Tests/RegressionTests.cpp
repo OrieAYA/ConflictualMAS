@@ -81,8 +81,8 @@ bool run_regression_tests(const std::string& osm_file, const std::string& cache_
                   << " completed=" << a.tasks_completed << " thr=" << a.throughput_rate << "\n";
         return true;
     };
-    CHECK(check_rl("TAA ", PolicyMode::TamAlwaysAccept, 36, 3, 0.0833333f, 1.005f), "TAA regression");
-    CHECK(check_rl("RMCA", PolicyMode::RMCA,            36, 5, 0.138889f, 1.005f), "RMCA regression");
+    CHECK(check_rl("TAA ", PolicyMode::TamAlwaysAccept, 39, 5, 0.128205f, 1.00459f), "TAA regression");
+    CHECK(check_rl("RMCA", PolicyMode::RMCA,            39, 6, 0.153846f, 1.00459f), "RMCA regression");
 
     // ── [4] SoTA pipeline (deterministic SolverRunner → golden metrics) ───────
     auto check_sota = [&](const char* label, ISolver& s, int g_app, int g_comp, float g_thr) {
@@ -103,8 +103,8 @@ bool run_regression_tests(const std::string& osm_file, const std::string& cache_
                   << " completed=" << a.tasks_completed << "\n";
         return true;
     };
-    { FaithfulCASolver               s; CHECK(check_sota("CA  ", s, 36, 1, 0.0277778f), "CA regression"); }
-    { HybridAdaptivePredictiveSolver s; CHECK(check_sota("HAPC", s, 36, 1, 0.0277778f), "HAPC regression"); }
+    { FaithfulCASolver               s; CHECK(check_sota("CA  ", s, 39, 1, 0.025641f), "CA regression"); }
+    { HybridAdaptivePredictiveSolver s; CHECK(check_sota("HAPC", s, 39, 2, 0.0512821f), "HAPC regression"); }
 
     std::cout << "=== R PASS ===\n";
     return true;

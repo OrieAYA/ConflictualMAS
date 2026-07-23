@@ -103,6 +103,28 @@ void ObjectiveGroupCache::remove_node(osmium::object_id_type node_id) {
     }
     // Invalidate the Dijkstra search state originating from this node only.
     search_states_.erase(node_id);
+    // The node's memoised paths are now dead weight, but an agent may still be
+    // walking one: mark for the deferred sweep instead of erasing here.
+    retired_.insert(node_id);
+}
+
+std::size_t ObjectiveGroupCache::purge_retired(
+    const std::unordered_set<const ObjectivePath*>& live)
+{
+    if (retired_.empty() || paths_.empty()) return 0;
+    std::size_t dropped = 0;
+    for (auto it = paths_.begin(); it != paths_.end(); ) {
+        const bool dead = retired_.count(it->first.first) ||
+                          retired_.count(it->first.second);
+        if (dead && !live.count(&it->second)) {
+            it = paths_.erase(it);
+            ++dropped;
+        } else {
+            ++it;
+        }
+    }
+    // retired_ kept: a live path this round is collected by the next sweep
+    return dropped;
 }
 
 std::vector<const ObjectivePath*> ObjectiveGroupCache::paths_from(
@@ -158,9 +180,6 @@ ObjectiveGroupCache::DiscoveryStep ObjectiveGroupCache::discover_step(
     float                  max_cost
 ) {
     // When searching for agents (agent_positions non-empty), skip the
-    // is_complete() gate: all pairwise objective paths may be cached, but
-    // agents are not objectives — the Dijkstra must continue to find them.
-    // is_complete() still applies for pure path-discovery calls (agent_positions empty).
     if (agent_positions.empty() && is_complete()) return {};
 
     auto& state = search_states_[from];
@@ -182,9 +201,6 @@ ObjectiveGroupCache::DiscoveryStep ObjectiveGroupCache::discover_step(
         if (state.closed.count(current)) continue;
 
         // Spatial pruning: if the cheapest open node exceeds the search budget,
-        // all remaining nodes also exceed it (min-heap). Push current back so a
-        // later call with a larger max_cost can resume past this frontier
-        // (recall mechanism). state.exhausted stays false → transient stop.
         if (cost > max_cost) {
             state.open.push_back({cost, current});
             std::push_heap(state.open.begin(), state.open.end(), cmp);
@@ -360,6 +376,17 @@ void PDPServerMemory::remove_objective_node(osmium::object_id_type node_id, int 
         it->second.remove_node(node_id);
 }
 
+std::size_t PDPServerMemory::purge_retired_paths(
+    const std::unordered_set<const ObjectivePath*>& live)
+{
+    std::size_t dropped = 0;
+    for (auto& [gid, cache] : group_caches_) {
+        (void)gid;
+        dropped += cache.purge_retired(live);
+    }
+    return dropped;
+}
+
 bool PDPServerMemory::is_objective_node(osmium::object_id_type node_id, int group_id) const {
     auto it = group_caches_.find(group_id);
     return it != group_caches_.end() && it->second.contains_objective(node_id);
@@ -417,4 +444,4 @@ TDAStarResult PDPServerMemory::time_dependent_astar(
     const CongestionMap&   congestion
 ) const {
     return td_astar(geo_box, from, to, start_time, agent_speed, congestion);
-}
+}

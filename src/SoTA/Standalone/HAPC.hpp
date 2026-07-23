@@ -7,123 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-// ════════════════════════════════════════════════════════════════════════════
-// HybridAdaptivePredictiveSolver  [Cortés, Sáez, Núñez, Muñoz-Carpintero —
-//                                  2009, Transportation Science 43(1):27-42]
-// ════════════════════════════════════════════════════════════════════════════
-//
-// Paper "Hybrid Adaptive Predictive Control for a Dynamic Pickup and Delivery
-// Problem". The seminal capacitated-DARP baseline with PREDICTIVE rolling
-// horizon: when a new request enters the system the dispatcher picks the
-// insertion (vehicle, pickup_pos, delivery_pos) that minimises BOTH the
-// immediate insertion cost C_j(k+1) AND the expected cost of inserting a
-// PROBABLE future call C_j(k+2) drawn from per-OD-pair historical
-// probabilities. This non-myopic two-steps-ahead lookahead is the paper's
-// headline contribution (paper Tables 2-3: +13% waiting / +5% travel-time
-// savings vs the one-step myopic baseline).
-//
-// ─────────────────────────────────────────────────────────────────────────
-// FAITHFUL CORE — what we implement to match the paper:
-// ─────────────────────────────────────────────────────────────────────────
-//
-//   §3.1 — Variable-step event-triggered dispatch:
-//     ✓ Sequence S_j(k) for each vehicle, fixed between events.
-//     ✓ Re-routing fires only on (a) new task arrival (insertion) or
-//       (b) stop reached (sequence shrinks by one row). No periodic MPC —
-//       the prior version added this and we removed it as a hors-papier
-//       deviation.
-//
-//   §3.2 — State-space sequence representation (paper eq. 7):
-//     ✓ Each stop carries the binary r_j^i ∈ {0,1} (pickup vs delivery)
-//       and the task id ("label") for precedence checking.
-//     ✓ Capacity feasibility enforced during insertion: load profile
-//       across [pos_p .. pos_d-1] cannot exceed agent capacity.
-//
-//   §3.3 — Objective function (paper eq. 11):
-//     ✓ C_j = Σ_i  ( L_j^(i-1) + 1 ) · ( T_j^i − T_j^(i-1) )         [travel]
-//           + Σ_i  r_j^i · α · ( T_j^i − T_j^0 )                       [waiting]
-//       where (load+1) inflates per-edge cost by the number of passengers
-//       (+1 = driver = operational-cost proxy), and the waiting term fires
-//       only at pickup stops (r_j^i = 1) with weight α.
-//     ✓ α = 1 by default (paper §4.1 — travel time as important as waiting).
-//
-//   §3.3 — Two-steps-ahead lookahead (paper eq. 15-16):
-//     ✓ For each candidate insertion (vehicle, pos_p, pos_d) of the
-//       current call, compute the IMMEDIATE cost delta ΔC(k+1).
-//     ✓ Then for each of H probable virtual future calls h with
-//       probability p_h^ΔT (drawn from EMA-tracked OD-pair frequencies),
-//       compute the BEST insertion cost ΔC(k+2)|h of that virtual call into
-//       the post-insertion sequence.
-//     ✓ Total cost = ΔC(k+1) + Σ_h p_h × ΔC(k+2)|h.
-//     ✓ Pick argmin over (vehicle, pos_p, pos_d).
-//
-//   §3.4 — Solution method:
-//     ✗ Paper uses a custom Particle Swarm Optimisation (PSO) with 10
-//       particles × 10 iterations to scale up. We use exhaustive
-//       enumeration (EE) over (pos_p, pos_d). For our typical sequence
-//       lengths < 20, EE is tractable and yields the GLOBAL optimum that
-//       paper's PSO approximates with a 2-3% gap (paper §4.2 note on EE
-//       vs PSO). We disclose this as a strengthening of the paper.
-//
-//   §4.4 — Demand forecast (probabilities p_h^ΔT), paper eq. 12:
-//     ✓ p_h^ΔT = N_h^ΔT / Σ_g N_g^ΔT — PLAIN ARRIVAL COUNTS per OD-pair
-//       inside a time interval ΔT, held CONSTANT within that interval and
-//       refreshed between intervals. The episode is split into
-//       `forecast_n_intervals` equal intervals (paper §4.1 runs 3 hourly
-//       intervals over a 3-hour simulation).
-//     ✓ Zoning: `demand_grid_dim` × `demand_grid_dim` cells over the GeoBox
-//       bounding box, default 3 → 9 zones, matching the paper's nine-zone
-//       disaggregation for which H = 6 was calibrated (§4.1).
-//     ✓ While the current interval holds too few samples to estimate a
-//       histogram, the readout falls back to the episode-cumulative counts.
-//       Paper reads its probabilities off a full week of history; we have no
-//       cross-episode memory, so the cumulative counts are the closest
-//       stand-in for "historical data" available online.
-//     ✗ NO per-step decay. The previous version multiplied every λ by
-//       (1 − α_demand) = 0.98 ONCE PER SIMULATION STEP, i.e. a ~50-step
-//       memory over a 3600-step episode: the "forecast" was really the OD
-//       cells of the last two or three arrivals, which is noise, not the
-//       paper's stationary per-interval distribution. Since the two-steps-
-//       ahead lookahead is this paper's headline contribution, that decay
-//       was silently gutting the very mechanism under evaluation.
-//
-// ─────────────────────────────────────────────────────────────────────────
-// FIDELITY CAVEATS — what we DELIBERATELY adapt to our context:
-// ─────────────────────────────────────────────────────────────────────────
-//   ✗ Paper: Euclidean straight-line at constant 20 km/h.
-//     Ours:  OSM road network with shortest-path A* (static distance,
-//            i.e. free-flow travel time). We could BPR-adjust the segment
-//            cost but the paper itself does not model congestion so we
-//            stay faithful in keeping the routing cost time-independent.
-//   ✗ Paper: PSO with rounding + repair.
-//     Ours:  EE (yields global optimum, sub-2% closer than PSO).
-//   ✗ Paper: τ tuned offline via sensitivity (paper Fig. 5 → 4.8 min for
-//            9 zones, 2.4 min for 4 zones). τ is the assumed time between
-//            calls and only affects the prediction of WHEN the virtual
-//            future call lands.
-//     Ours:  We do not need τ explicitly because we evaluate the future
-//            insertion ON THE SAME SEQUENCE STATE (immediately after the
-//            current insertion). This matches the paper's MIN argument —
-//            see paper eq. 15: only the RELATIVE cost of competing
-//            insertions matters, and τ is constant across them.
-//
-// CAPACITY (paper-native):
-//   Agent capacity ≥ 1 (paper test: 4 passengers per vehicle). Heterogeneous
-//   capacities (ctx.per_agent_capacity) supported — the paper holds capacity
-//   constant but the algorithm generalises trivially.
-//
-// COMPARISON AXIS (publication):
-//   Single-task SoTA (TP, FCA, TF) cannot exploit capacity > 1 and serve
-//   tasks sequentially. HAPC is the capacitated-DARP baseline that
-//   exploits both (a) multi-task carrying and (b) demand-prediction —
-//   this is the methodological lever for the standalone evaluation.
-//
-// DEPENDENCIES:
-//   - ISolver, SolverContext, SolverMetrics                 (Phase 0)
-//   - GeoBox, CongestionMap                                 (Environment)
-//   - PathHelper                                            (shared A*)
-//   - NO dependency on other solvers.
-
+// Cortes+2009 (Transp. Sci.) — 2-step predictive insertion, eq.11/15. Details: ARCHITECTURE.md §6.
 class HybridAdaptivePredictiveSolver : public ISolver {
 public:
     HybridAdaptivePredictiveSolver() = default;
@@ -133,9 +17,9 @@ public:
     struct HParams {
         float alpha            = 1.0f;    // paper §3.3 waiting-cost weight (paper test α = 1)
         bool  enable_two_step  = true;    // §3.3 two-steps-ahead lookahead (false = myopic)
-        int   forecast_top_h   = 6;       // §4.1 paper uses H = 6 for 9-zone disaggregation
+        int   forecast_top_h   = 4;       // §4.1 four-zone case uses H = 4
         float forecast_min_p   = 0.02f;   // skip virtual calls with prob below this
-        int   demand_grid_dim  = 3;       // 3x3 = 9 zones, paper §4.1 nine-zone case
+        int   demand_grid_dim  = 2;       // 2x2 = 4 zones, paper §4.2 preferred case
         int   forecast_n_intervals = 3;   // §4.1 three hourly ΔT over the episode
         int   forecast_min_samples = 12;  // below this, fall back to cumulative counts
     };
@@ -148,10 +32,7 @@ public:
     const char*   name() const override { return "HybridAdaptivePredictive"; }
 
 private:
-    // ── Per-agent state ─────────────────────────────────────────────────────
-    // Mirrors paper's S_j(k) (eq. 7) — a sequence of (r_j^i, label_j^i) pairs
-    // for stop i, with r_j^i = is_pickup, label_j^i = task_id. The Γ_j^i
-    // segment cost is recomputed on the fly from PathHelper.
+    // paper eq.7 sequence S_j(k)
     struct SequenceStop {
         int  task_id     = -1;
         osmium::object_id_type node = 0;
@@ -171,8 +52,7 @@ private:
         std::vector<int> in_flight_task_ids;
         int  capacity = 1;
 
-        // Full-route congestion footprint on the shared map (Option O
-        // commit_plan-style); removed/re-added on every replan.
+        // congestion footprint on shared map
         CommittedOcc committed_occ;
     };
 
@@ -185,72 +65,43 @@ private:
         int  delivered_step = -1;
         int  assigned_agent = -1;
         float pd_road_dist  = 0.f;
-        // Retry backoff (CRITICAL perf fix): per-step retry of an unassignable
-        // task in HAPC's step() would invoke try_insert_task ~3600× per stuck
-        // task per episode (~13 ms each = ~50 s wasted per stuck task). Under
-        // saturation (over_fleet, low fleet count) many tasks remain stuck for
-        // most of the episode → multiple-minutes wallclock overhead.
-        //
-        // With exponential backoff: a stuck task is retried at step+1, +2, +4,
-        // +8, +16, +32, +64 (capped) — at most ~log2(3600) ≈ 12 retries per
-        // episode instead of 3600. ZERO fidelity loss: paper §3.1 says re-
-        // routing is event-triggered (call arrival / stop reached). Per-step
-        // retry was our own non-paper addition; backoff is closer to paper.
+        // exponential retry backoff for stuck tasks
         int next_retry_step = 0;
         int retry_count     = 0;
     };
 
-    // ── Cost components (paper eq. 11) ──────────────────────────────────────
-    // travel_cost is the load-weighted sum of segment travel times;
-    // waiting_cost is the α-weighted sum of arrival times at pickup stops.
+    // paper eq.11 cost split
     struct PaperCost {
         float travel  = 0.f;
         float waiting = 0.f;
         float total() const { return travel + waiting; }
     };
 
-    // ── Demand forecast (paper §4.4 — OD-pair × time-interval probabilities)
-    // We track per-(pickup_cell, delivery_cell) EMA over a coarse grid built
-    // at init() from the GeoBox bounding box. At decision time the top-H
-    // cell-pairs by EMA mass are converted into VirtualCall (pickup_node,
-    // delivery_node, normalised probability) tuples used by the two-step
-    // lookahead. Cell representative nodes are picked at init() — one OSM
-    // node per cell, found via single-pass scan.
+    // paper eq.12 demand forecast, OD-pair counts per interval
     struct ZonePairForecast {
         int dim = 3;
         float lat_min = 0.f, lat_step = 0.f;
         float lon_min = 0.f, lon_step = 0.f;
 
-        // Paper eq. 12 counts N_h, keyed by the OD-pair (i*n+j).
-        //   count_interval = arrivals inside the CURRENT ΔT (the estimate the
-        //                    paper reads off historical data for this interval)
-        //   count_total    = arrivals since episode start (fallback while the
-        //                    current interval is still too thin to estimate)
+        // N_h counts keyed i*n+j; interval, then cumulative fallback
         std::unordered_map<int64_t, float> count_interval;
         std::unordered_map<int64_t, float> count_total;
         int   n_interval      = 0;   // samples in the current interval
         int   interval_index  = -1;  // which ΔT we are in
         int   interval_len    = 1;   // steps per ΔT
 
-        // Representative OSM node per cell, used to instantiate virtual calls.
-        // rep_node_of_cell[c] = some valid road node inside cell c (0 if cell
-        // is empty / not populated by any node).
+        // one road node per cell, 0 if empty
         std::vector<osmium::object_id_type> rep_node_of_cell;
 
-        // Locate a node's cell. Returns -1 if out of bounds / box unset.
+        // node -> cell, -1 if out of bounds
         int cell_of(osmium::object_id_type id, const GeoBox& g) const;
 
-        // Count one arrival (paper eq. 12 numerator).
         void register_arrival(int p_cell, int d_cell);
 
-        // Roll over to the ΔT containing `step`, clearing the interval counts.
+        // roll to the interval holding `step`
         void advance_interval(int step);
 
-        // Top-H (pickup_node, delivery_node, prob) virtual calls. probs are
-        // normalised so Σ = 1 over the returned subset — `min_p` prunes
-        // BEFORE normalisation so the identity Σ_h p_h = 1 holds exactly,
-        // which is what makes the eq. 15 one-step term cancel. Filters out
-        // cells with no rep_node (the OD pair is unrealised on the graph).
+        // top-H virtual calls; prune before normalising (keeps sum p = 1)
         struct VirtualCall {
             osmium::object_id_type pickup_node;
             osmium::object_id_type delivery_node;
@@ -261,76 +112,39 @@ private:
 
     const SolverContext*       ctx_   = nullptr;
 
-    // PathHelper is now process-scoped (one instance per city) via the static
-    // shared_path_helper() singleton. paths_ is a non-owning view that the
-    // current HAPC instance uses. Lifetime is tied to the static singleton,
-    // which is reset only when the city (GeoBox) changes.
+    // non-owning view on the shared helper
     PathHelper*                paths_ = nullptr;
-    // Static accessor — owns the per-city PathHelper. Returns a unique_ptr
-    // reference so init() can replace it when the city changes.
     static std::unique_ptr<PathHelper>& shared_path_helper();
 
-    // ── Persistent cross-episode distance cache (city-scoped) ───────────────
-    // Mirrors the PDPGlobalMemory / ObjectiveCache pattern from the main DMAS
-    // pipeline: shortest-path road distance is a property of the GRAPH alone,
-    // not of any solver/episode. By keying a static cache on the GeoBox* we
-    // let every HAPC episode of the SAME city reuse all distances computed by
-    // prior episodes — cold-cache cost is paid ONCE per city, not once per
-    // (episode × city) combo. The cache is wiped on init() when a different
-    // GeoBox* is detected (= city changed).
-    //
-    // Lookup priority in seg_cost:
-    //   1. shared_cache_->data[(from, to)]                — O(1) hit
-    //   2. PathHelper::get(...) → static A*               — cold path, then
-    //      store into shared_cache_ so subsequent queries are O(1).
+    // per-episode distance cache, keyed on GeoBox
     struct SharedDistanceCache {
         const GeoBox*     gb = nullptr;
-        // Content guard against stack-frame reuse: main.cpp's city for-loop
-        // destroys/recreates the GeoBox as a local — addresses can be
-        // reused. Comparing node count + first sentinel detects this case.
+        // guards GeoBox address reuse across cities
         size_t            gb_node_count = 0;
-        // Per-source Dijkstra results (replaces the prior flat (from,to)→dist
-        // map which bloated to ~4M entries on first city sweep, slowing every
-        // lookup to ~500ns-1μs due to CPU cache misses on big buckets).
-        //
-        // dijkstra_from[src] = {target_node : shortest_path_distance}
-        //
-        // Lookup pattern in seg_cost (OSM road graph is undirected so
-        // d(a,b) == d(b,a)):
-        //   1. dijkstra_from[from][to]    if `from` was pre-warmed
-        //   2. dijkstra_from[to][from]    if only `to` was pre-warmed
-        //   3. fallback to PathHelper::get(from,to).cost
-        //
-        // Memory bound: O(#prewarmed × V) — ~32 MB on Tokyo_Small (200×10k),
-        // ~640 MB on Paris if fully populated. Lookups: ~50ns outer hash +
-        // ~100ns inner hash = ~150ns total vs ~500-1000ns on the prior flat
-        // 4M-entry map.
+        // dijkstra_from[src] = {node : distance}; symmetric lookup in seg_cost
         std::unordered_map<osmium::object_id_type,
                            std::unordered_map<osmium::object_id_type, float>>
             dijkstra_from;
+
+        // entry count vs kPrewarmBudgetBytes
+        size_t entries = 0;
+        // sources refused: HAPC degraded to A*
+        int    prewarm_refused = 0;
     };
     static SharedDistanceCache& shared_cache();
 
-    // Run a single-source Dijkstra from `src` and populate the persistent
-    // cache with d(src, X) AND d(X, src) (OSM road graph is undirected, so
-    // distances are symmetric). No-op if `src` has already been pre-warmed
-    // within this city. Equivalent to N A* calls but typically 5-50× faster
-    // when N is large (the pickup/delivery of a freshly-arrived task gets
-    // queried ~60+N×n times during one allocation round).
+    // Dijkstra from src into the cache; skipped past the memory budget,
+    // seg_cost then falls back to PathHelper A*
     void prewarm_from_node(osmium::object_id_type src) const;
 
-    // ── Precomputed sequence profile ─────────────────────────────────────
-    // Built once per (agent, base or post-insertion sequence) and reused
-    // across all H virtual-call inner cheapest_insertion calls. Mirrors the
-    // PDPGlobalMemory pattern of building the cost matrix once and reusing
-    // it across DbVNS local-search neighborhoods.
+    // per-episode ceiling
+    static constexpr size_t kPrewarmBudgetBytes = 2ull * 1024 * 1024 * 1024;
+    // conservative per-entry cost
+    static constexpr size_t kPrewarmBytesPerEntry = 48;
+
+    // ── Precomputed sequence profile ──────────────
     struct SeqProfile {
         // t_seg[i]        = seg(pred(i), seq[i]) for i ∈ [0, n)
-        // load_before[i]  = load BEFORE processing seq[i]
-        // load_after[i]   = load AFTER  processing seq[i]
-        // arrive_t[i]     = cumulative travel time at seq[i]
-        // t_seg_prefix[i] = Σ t_seg[0..i-1]                (i ∈ [0, n+1])
-        // pickup_suffix[i]= # of pickups in seq[i..n-1]    (i ∈ [0, n+1])
         std::vector<float> t_seg;
         std::vector<int>   load_before;
         std::vector<int>   load_after;
@@ -350,12 +164,7 @@ private:
     std::vector<TaskRecord>    tasks_;
     ZonePairForecast           forecast_;
 
-    // ── Scratch buffers (avoid 4 vec allocs per cheapest_insertion call) ───
-    // cheapest_insertion_with_profile is called N_agents × (1+H) times per
-    // task — ~420 calls per task on a 60-agent / H=6 config. Re-allocating 4
-    // local vectors each call (heap malloc/free) burns ~1ms per task just on
-    // allocator overhead. Hoisting them as mutable members reuses the same
-    // capacity across the entire episode (assign() keeps capacity).
+    // reused across the ~420 insertion calls per task
     mutable std::vector<float> scratch_seg_to_P_;
     mutable std::vector<float> scratch_seg_P_out_;
     mutable std::vector<float> scratch_seg_D_in_;
@@ -378,21 +187,17 @@ private:
 
     // ── Internal helpers ────────────────────────────────────────────────────
 
-    // Static A* shortest-path road distance from -> to. Returns +inf if no
-    // path. PathHelper caches per (from, to).
+    // static shortest-path distance, +inf if none
     float seg_cost(osmium::object_id_type from,
                    osmium::object_id_type to) const;
 
-    // Paper eq. 11 cost of an ordered sequence starting at `from` with
-    // initial load = |in_flight|. Returns +inf if any leg unreachable.
+    // paper eq.11 cost of a sequence
     PaperCost paper_cost(osmium::object_id_type from,
                          const std::vector<SequenceStop>& seq,
                          int initial_load,
                          float alpha) const;
 
-    // Best (pos_p, pos_d) insertion of task t into agent a (capacity-feasible
-    // only). Returns the resulting paper-cost delta (new - old). If no
-    // feasible insertion exists, delta = +inf and pos_* = -1.
+    // cheapest capacity-feasible insertion; delta = +inf if none
     struct InsertionResult {
         float cost_delta = 0.f;
         int   pos_p      = -1;
@@ -402,10 +207,7 @@ private:
     InsertionResult cheapest_insertion(const AgentState& a,
                                        const TaskRecord& t) const;
 
-    // Same as cheapest_insertion but operates on a TEMPORARY sequence (the
-    // post-insertion sequence of the outer iteration). Used by the two-step
-    // lookahead to evaluate ΔC(k+2)|h for a virtual call h inserted into the
-    // already-modified sequence. Does NOT mutate any state.
+    // same, on a temporary sequence (2-step lookahead)
     InsertionResult cheapest_insertion_in_seq(
         const std::vector<SequenceStop>& sequence,
         int initial_load,
@@ -414,10 +216,7 @@ private:
         osmium::object_id_type virtual_pickup,
         osmium::object_id_type virtual_delivery) const;
 
-    // Variant that takes a pre-built SeqProfile. Skips the O(n) base-sequence
-    // precompute (~5n seg_cost calls), reusing the profile across all H
-    // virtual-call iterations of the 2-step lookahead. Same paper-faithful
-    // delta formula as cheapest_insertion_in_seq.
+    // same, with a pre-built profile
     InsertionResult cheapest_insertion_with_profile(
         const std::vector<SequenceStop>& sequence,
         const SeqProfile& profile,
@@ -425,23 +224,21 @@ private:
         osmium::object_id_type virtual_pickup,
         osmium::object_id_type virtual_delivery) const;
 
-    // Allocate task t to its (vehicle, pos_p, pos_d) under the 2-step
-    // criterion (paper eq. 15). Returns true on commit.
+    // allocate under paper eq.15
     bool try_insert_task(int task_id, int step);
 
-    // Replan the leg toward the new sequence[0].
+    // replan toward sequence[0]
     bool resync_leg(AgentState& a, int step);
 
-    // Advance one step along the current path; fire pickup/delivery on arrival.
+    // one step along the path; fires stops
     void advance_agent(AgentState& a, int step);
 
     int edge_arrival_step(osmium::object_id_type edge_id, int t_enter);
 
-    // Re-register the agent's full remaining sequence on the shared
-    // CongestionMap (Option O commit_plan-style). Called on every plan change.
+    // republish footprint on plan change
     void recommit_route(AgentState& a, int step);
 
-    // Update forecast (called from inject_task).
+    // forecast update
     void register_arrival(osmium::object_id_type pickup_node,
                           osmium::object_id_type delivery_node);
 };

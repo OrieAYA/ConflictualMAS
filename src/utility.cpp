@@ -66,7 +66,7 @@ int test() {
 
         // Configuration Flickr
         FlickrConfig config;
-        config.api_key = "9568c6342a890ef1ba342f54c4c1160f";
+        config.api_key = flickr_api_key_from_env();
         config.search_word = "temple";
         config.bbox = std::to_string(min_lon) + "," + std::to_string(min_lat) + "," + 
               std::to_string(max_lon) + "," + std::to_string(max_lat);  

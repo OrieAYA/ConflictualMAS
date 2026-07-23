@@ -46,11 +46,7 @@ void FaithfulCASolver::inject_task(const ScheduledTask& task, int step) {
     r.pickup_node    = task.pickup_node_id;
     r.delivery_node  = task.delivery_node_id;
     r.arrival_step   = step;
-    // STATIC shortest-path pickup→delivery road distance — the reference
-    // "ideal" length behind mean_road_pd_m / delivery_route_efficiency. Must
-    // be the free-flow shortest path, exactly like the RL pipeline
-    // (get_or_compute_path → ObjectivePath::cost) and HAPC (seg_cost); using
-    // the congestion-detoured BPR path here inflated the column for CA alone.
+    // static shortest path: the reference length behind mean_road_pd_m
     {
         const auto& ways = ctx_->geo_box->data.ways;
         const auto edges = graph_search::shortest_path_edges(
@@ -76,38 +72,17 @@ int FaithfulCASolver::edge_arrival_step(osmium::object_id_type edge_id,
     if (!ctx_->congestion_map)
         return t_enter + std::max(1, static_cast<int>(std::ceil(base_time)));
 
-    // Traversal rule (parity with EpisodeRunner::schedule_next_edge): the agent
-    // pays the BPR time of the n OTHERS on the edge, NOT n+1 — its own
-    // committed weight is subtracted. recommit_route always runs before the
-    // agent is scheduled onto an edge, so that weight is present in the map at
-    // this point. Without this the solver paid for its own footprint while the
-    // RL fleet did not — on a short edge (capacity = max(1, d·0.05) = 1 below
-    // 20 m) that alone is a ×1.15 slowdown handed to the baseline.
+    // pays the BPR of the n OTHERS (parity with schedule_next_edge)
     const int self_w = std::max(1, ctx_->congestion_map->params.load_per_agent);
     const float adj  = ctx_->congestion_map->adjusted_cost(
         edge_id, base_time, length_m, t_enter, self_w);
-    // Exposure accumulators sampled at the edge's ENTRY step (t_enter = current
-    // step at all call sites). Must be here, NOT at completion: CongestionMap::
-    // advance() purges past steps, so a later query at the entry step reads
-    // load 0 → BPR 1.0. `load_at_entry` is the FULL load (self included), same
-    // as the RL pipeline's jam counter.
+    // sampled at ENTRY: advance() purges past steps
     instr_.record_edge_entry(base_time, adj,
                              ctx_->congestion_map->get_load(edge_id, t_enter));
     return t_enter + std::max(1, static_cast<int>(std::ceil(adj)));
 }
 
-// ── BPR-aware A* ─────────────────────────────────────────────────────────────
-//
-// Find the path from `from` to `to` that minimises BPR-adjusted travel
-// time, given that traversal starts at `start_step` and edge load on each
-// edge is read at the predicted ARRIVAL step at that edge's head.
-//
-// This is the FAITHFUL implementation of Asadi+2025 §3.2's "modified A*
-// that incorporates estimated congestion". We use the SHARED CongestionMap
-// as the estimator (substituting for the paper's CNN prediction).
-//
-// Admissible heuristic: euclidean distance / speed_mps — a strict lower
-// bound on travel time under zero congestion (BPR factor ≥ 1).
+// ── BPR-aware A* ───────────────────�
 FaithfulCASolver::BPRPath
 FaithfulCASolver::bpr_a_star(osmium::object_id_type from,
                               osmium::object_id_type to,
@@ -225,9 +200,7 @@ FaithfulCASolver::bpr_a_star(osmium::object_id_type from,
 float FaithfulCASolver::decision_cost(const AgentState& a,
                                        const TaskRecord& t,
                                        int step) const {
-    // Marginal APPEND cost (paper §3.1: the order joins the tail of the
-    // agent's sequence T). Priced from where and when the agent finishes what
-    // it already holds; for an idle agent that is here and now.
+    // marginal append cost, priced from the plan tail
     const bool is_busy = !a.task_queue.empty();
     const osmium::object_id_type from = is_busy ? a.plan_tail_node : a.current_node;
     const int from_step = is_busy ? std::max(step, a.plan_tail_step) : step;
@@ -242,8 +215,7 @@ float FaithfulCASolver::decision_cost(const AgentState& a,
     BPRPath leg2 = bpr_a_star(t.pickup_node, t.delivery_node, t_pickup);
     if (!leg2.valid) return std::numeric_limits<float>::max();
 
-    // Completion time of the new order = wait for the sequence to drain + its
-    // own two legs. Minimising it is the paper's M(Π) = max_a |π_a| objective.
+    // completion time = queue drain + both legs (paper M(Pi))
     const float queue_delay = static_cast<float>(std::max(0, from_step - step));
     const float completion  = queue_delay + leg1.trip_time + leg2.trip_time;
 
@@ -277,8 +249,6 @@ void FaithfulCASolver::fire_stop(AgentState& a, int step) {
             ++capacity_violations_;
         wait_sum_ += (t.picked_step - t.arrival_step);
         ++wait_count_;
-        // Paper §3.3: the pickup→delivery transition fires on fulfilling the
-        // order; the delivery leg is then re-planned under current congestion.
         a.active_is_pickup_leg = false;
         return;
     }
@@ -302,7 +272,6 @@ void FaithfulCASolver::fire_stop(AgentState& a, int step) {
 }
 
 bool FaithfulCASolver::advance_plan(AgentState& a, int step) {
-    // Bounded loop: at most 2 stops per queued order can be zero-length.
     for (int guard = 0; guard < 64; ++guard) {
         const osmium::object_id_type target = leg_target(a);
         if (target == 0) {                       // sequence drained
@@ -314,12 +283,7 @@ bool FaithfulCASolver::advance_plan(AgentState& a, int step) {
         if (a.current_node != target) {
             BPRPath p = bpr_a_star(a.current_node, target, step);
             if (!p.valid || p.nodes.size() < 2) {
-                // Unreachable target. Never freeze the agent (that silently
-                // removes it from the fleet for the rest of the episode and
-                // depresses throughput for a non-algorithmic reason):
-                //  - pickup leg  → release the order back to the pending pool;
-                //  - delivery leg→ the order is already on board and cannot be
-                //    released, so back off and retry later.
+                // unreachable: release the pickup, or back off on delivery
                 if (a.active_is_pickup_leg) {
                     const int tid = a.task_queue.front();
                     a.task_queue.erase(a.task_queue.begin());
@@ -336,10 +300,7 @@ bool FaithfulCASolver::advance_plan(AgentState& a, int step) {
             a.current_path_edges = std::move(p.edges);
             a.next_idx = 0;
             a.current_edge_t_enter = step;
-            // Footprint for the FULL remaining sequence is published by
-            // recommit_route(); the caller runs it right after. Scheduling the
-            // first edge therefore happens against a map that already holds
-            // this agent's own weight — which edge_arrival_step subtracts.
+            // timed by recommit_route (commit before schedule)
             a.arrival_step_next_node = -1;
             return true;
         }
@@ -351,14 +312,11 @@ bool FaithfulCASolver::advance_plan(AgentState& a, int step) {
 void FaithfulCASolver::advance_agent(AgentState& a, int step) {
     if (a.next_idx >= static_cast<int>(a.current_path_edges.size())) return;
 
-    // Deferred first-edge timing (advance_plan installs the path, the commit
-    // runs before the schedule so self-exclusion is correct).
     if (a.arrival_step_next_node < 0)
         a.arrival_step_next_node =
             edge_arrival_step(a.current_path_edges[a.next_idx], step);
 
-    // Route exposure: load on the edge this agent occupies right now — one
-    // sample per in-transit agent per step (RL parity, Runner.cpp).
+    // route exposure, one sample per in-transit agent per step
     if (ctx_ && ctx_->congestion_map)
         instr_.sample_route_exposure(ctx_->congestion_map->get_load(
             a.current_path_edges[a.next_idx], step));
@@ -368,8 +326,6 @@ void FaithfulCASolver::advance_agent(AgentState& a, int step) {
         return;
     }
 
-    // Track distance on the edge just completed (BPR is sampled at ENTRY inside
-    // edge_arrival_step — past steps are purged from the CongestionMap).
     if (ctx_) {
         const auto& ways = ctx_->geo_box->data.ways;
         auto wit = ways.find(a.current_path_edges[a.next_idx]);
@@ -381,9 +337,7 @@ void FaithfulCASolver::advance_agent(AgentState& a, int step) {
     a.current_node = a.current_path_nodes[a.next_idx];
 
     if (a.next_idx >= static_cast<int>(a.current_path_edges.size())) {
-        // Leg target reached: advance_plan fires the pickup/delivery event and
-        // re-plans the next leg under CURRENT congestion (paper §3.2 — each
-        // agent continuously re-evaluates its A*).
+        // leg done: fire the stop, replan under current congestion
         advance_plan(a, step);
         recommit_route(a, step);
         return;
@@ -395,15 +349,10 @@ void FaithfulCASolver::advance_agent(AgentState& a, int step) {
     ++active_steps_sum_;
 }
 
-// Re-register the agent's full remaining route on the shared CongestionMap,
-// exactly like Option O's commit_plan: unregister the previous footprint, then
-// add every edge of every remaining leg with free-flow windows weighted by
-// load_per_agent. Called on every plan change (allocation, stop reached).
+// republish the whole remaining route on the shared map
 void FaithfulCASolver::recommit_route(AgentState& a, int step) {
     if (!ctx_ || !ctx_->congestion_map || !ctx_->geo_box) return;
 
-    // Stops = every remaining objective of the whole order sequence, in
-    // execution order (the front order's pickup is skipped once it is done).
     std::vector<osmium::object_id_type> stops;
     stops.reserve(a.task_queue.size() * 2);
     for (std::size_t k = 0; k < a.task_queue.size(); ++k) {
@@ -414,10 +363,7 @@ void FaithfulCASolver::recommit_route(AgentState& a, int step) {
         stops.push_back(t.delivery_node);
     }
 
-    // The FIRST leg must be committed on the path the agent is actually
-    // following, not on a fresh A*: commit_agent_route removes this agent's
-    // own footprint first, so re-running the search here can return a
-    // different route and we would publish load on edges nobody drives.
+    // first leg: use the running path, a fresh A* could diverge
     bool first_leg = true;
     const int tail = commit_agent_route(
         *ctx_->congestion_map, *ctx_->geo_box, ctx_->speed_mps,
@@ -439,8 +385,6 @@ void FaithfulCASolver::recommit_route(AgentState& a, int step) {
     a.plan_tail_step = tail;
     a.plan_tail_node = stops.empty() ? a.current_node : stops.back();
 
-    // Commit-before-schedule (§3.2 self-exclusion): the agent's own weight is
-    // now on the map, so edge_arrival_step can subtract it.
     if (a.arrival_step_next_node < 0 &&
         a.next_idx < static_cast<int>(a.current_path_edges.size()))
         a.arrival_step_next_node =
@@ -450,9 +394,7 @@ void FaithfulCASolver::recommit_route(AgentState& a, int step) {
 bool FaithfulCASolver::try_allocate_one(int step) {
     if (pending_task_ids_.empty()) return false;
 
-    // Eligibility: the order sequence is not full (paper §3.1 — an agent holds
-    // up to N_T orders). A busy agent is a legitimate candidate: the order is
-    // appended to its sequence and its running leg is untouched.
+    // eligible = sequence not full; busy agents included
     std::vector<int> eligible_idx;
     eligible_idx.reserve(agents_.size());
     for (int i = 0; i < static_cast<int>(agents_.size()); ++i) {
@@ -462,9 +404,7 @@ bool FaithfulCASolver::try_allocate_one(int step) {
     }
     if (eligible_idx.empty()) return false;
 
-    // ── DEFINING DECISION RULE (paper §3.4 + §3.3) ──────────────────────────
-    // For each (eligible agent, pending task), compute γ-weighted full-trip
-    // BPR-adjusted travel time. Then apply β_W tie-break.
+    // ── DEFINING DECISION RULE (paper §3.4 + §3.3) ────────�
 
     struct Cand { int agent_id; int task_idx; float cost; int load; };
     std::vector<Cand> cands;
@@ -487,16 +427,7 @@ bool FaithfulCASolver::try_allocate_one(int step) {
     for (const auto& c : cands) if (c.cost < best_cost) best_cost = c.cost;
     const float band = best_cost * hparams.beta_tie_band;
 
-    // β_π tie-break (paper §4.2-a — "the number of orders still to be
-    // fulfilled"): within the cost band, prefer the agent with the SHORTEST
-    // remaining order sequence. Ties broken by lowest cost, then by lowest
-    // (agent, task) ids for determinism. This is what keeps M(Π) = max_a |π_a|
-    // balanced across the fleet.
-    //
-    // NOTE: this is β_π, not β_W. Paper's β_W gives priority to
-    // pickup/delivery (busy) agents over wandering/finished ones, which is the
-    // opposite of what we want for LGPDP allocation (we want to balance load
-    // by feeding less-loaded agents next). β_π is the correct paper analogue.
+    // beta_pi: shortest remaining sequence wins inside the cost band
     int   best_aid       = -1;
     int   best_tidx      = -1;
     int   best_load      = std::numeric_limits<int>::max();
@@ -519,7 +450,6 @@ bool FaithfulCASolver::try_allocate_one(int step) {
     }
     if (best_aid < 0 || best_tidx < 0) return false;
 
-    // Commit allocation: the order joins the tail of the agent's sequence.
     const int tid = pending_task_ids_[best_tidx];
     pending_task_ids_.erase(pending_task_ids_.begin() + best_tidx);
     AgentState& a = agents_[best_aid];
@@ -531,8 +461,6 @@ bool FaithfulCASolver::try_allocate_one(int step) {
         advance_plan(a, step);
     }
     recommit_route(a, step);   // footprint of the FULL remaining sequence
-    // advance_plan releases an order whose pickup turned out unreachable —
-    // don't let the drain loop pick it again this step.
     return tasks_[tid].assigned_agent == best_aid;
 }
 
@@ -542,9 +470,7 @@ void FaithfulCASolver::step(int timestep) {
         if (ctx_->ghost) instr_.sample_ghost(ctx_->ghost->n_active_now());
     }
 
-    // Drain the pending pool. Timed per attempt so compute_time_per_decision_us
-    // counts the same unit as HAPC (one allocation decision), and not timed at
-    // all when nothing is pending.
+    // drain pending; timed per attempt
     while (!pending_task_ids_.empty()) {
         bool progressed = false;
         instr_.time_allocation([&]{ progressed = try_allocate_one(timestep); });
@@ -556,10 +482,7 @@ void FaithfulCASolver::step(int timestep) {
             advance_agent(a, timestep);
             continue;
         }
-        // Orders left but no running leg — an order appended while the agent
-        // was mid-edge, or a target that was unreachable earlier. Re-plan
-        // (backed off so a permanently unreachable target cannot trigger an
-        // A* storm), never leave the agent frozen.
+        // orders left, no leg: replan (backed off)
         if (a.task_queue.empty() || timestep < a.stalled_until) continue;
         a.stalled_until = -1;
         advance_plan(a, timestep);
@@ -582,10 +505,7 @@ SolverMetrics FaithfulCASolver::finalize() {
         m.latency_mean    = static_cast<double>(latency_sum_) / completed_;
         m.mean_trip_steps = static_cast<double>(trip_sum_)    / completed_;
     }
-    // Wait is accumulated at every PICKUP, so its denominator is the pickup
-    // count — not the delivery count. Dividing by completed_ inflated the
-    // column with the tasks picked up but still on board at episode end
-    // (RL parity: Metrics.cpp wait_sum / wait_count).
+    // denominator = pickups, not deliveries (RL parity)
     if (wait_count_ > 0)
         m.mean_wait_steps = static_cast<double>(wait_sum_) / wait_count_;
     if (road_pd_count_ > 0) {
@@ -597,8 +517,7 @@ SolverMetrics FaithfulCASolver::finalize() {
     }
     m.capacity_violations = capacity_violations_;
     m.pairing_violations  = pairing_violations_;
-    // Per-agent latency is normalised by the MEAN NUMBER OF ACTIVE AGENTS, not
-    // by the provisioned fleet (RL parity: Metrics.cpp active_sum/active_steps).
+    // normalised by mean active agents (RL parity)
     if (ctx_ && ctx_->total_steps > 0) {
         const double mean_active =
             static_cast<double>(active_steps_sum_) / ctx_->total_steps;

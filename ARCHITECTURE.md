@@ -7,6 +7,82 @@ CA-L-GPDP*. Les références sont données en `fichier:ligne`.
 
 ---
 
+## 0. Démarrage rapide (clone → run)
+
+### 0.1 Prérequis
+
+Dépendances via **vcpkg** : `boost-system`, `boost-iostreams`, `libosmium`,
+`protozero`, `mapnik`, `curl`, `zlib`, `bzip2`, `expat`. Compilateur C++20
+(MSVC 2022 testé), CMake ≥ 3.10.
+
+```bash
+git clone https://github.com/OrieAYA/ConflictualMAS.git
+cd ConflictualMAS
+```
+
+**Données NON versionnées, à fournir avant le premier run :**
+
+| Chemin | Contenu | Taille |
+|--------|---------|--------|
+| `src/maps/*.osm.pbf` | extraits OSM par ville (Tokyo, Kyoto, LosAngeles, NewYork, Paris) | ~2,2 Go |
+| `data/cache/*.json` | caches GeoBox — **générés automatiquement** au 1ᵉʳ run si absents | ~0,6 Go |
+
+Seuls les `.pbf` sont indispensables : `MultiCityTrainer::load_city`
+(`Trainer.cpp`) construit et sauvegarde le cache JSON quand il ne le trouve
+pas. Le 1ᵉʳ run paie donc le parsing PBF une fois par ville, les suivants
+relisent le JSON.
+
+Les checkpoints d'entraînement (`results/{mappo,ippo,mapper}/*_seed42.bin`)
+**sont** versionnés : l'évaluation est lançable sans ré-entraîner.
+
+### 0.2 Chemins
+
+`src/main.cpp:46-48` fixe `kOsmRoot`, `kCacheRoot`, `kOutputDir` en absolu sur
+`C:\ConflictualMAS`. Cloner ailleurs impose de les ajuster.
+
+### 0.3 Build
+
+```bash
+cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake
+cmake --build build --config Release        # binaire : build/Release/main.exe
+```
+
+`--config Debug` pour la version instrumentée (batteries de test).
+
+### 0.4 Lancer
+
+Le binaire est un menu interactif ; on peut le piloter par redirection.
+
+```bash
+# Batterie de tests complète (A structure, B mécanique, C modules, D e2e, R goldens)
+printf '2\nE\n' | ./build/Debug/main.exe
+
+# Évaluation — protocole article (option 4)
+#   1ʳᵉ saisie : groupe de villes  0=toutes 1=Tokyo+Kyoto 2=LA+NewYork 3=Paris
+#   2ᵉ saisie  : plage RM "min max" (pas de 0,5)
+printf '4\n1\n1.0 5.0\n' | ./build/Release/main.exe
+
+# Entraînement (option 3) / movement policy (5) / pretrain LSM (6)
+printf '3\n' | ./build/Release/main.exe
+```
+
+Sorties :
+`results/paper_eval/pol42_rm{RM}_g{groupe}/episodes_seed{seed}.csv` (modes
+pipeline) et `.../sota_standalone/sota_seed{seed}.csv` (CA/HAPC). Jointure sur
+`(city, scenario, episode)`.
+
+Parallélisme : un terminal par groupe (1, 2, 3) — sorties disjointes, aucun
+conflit d'écriture.
+
+### 0.5 Secrets
+
+Aucune sortie réseau sur les chemins d'entraînement/évaluation. Le client
+Flickr (`Box.cpp`, chemin *Legacy* uniquement) lit sa clé dans
+`FLICKR_API_KEY` ; variable absente = fetch désactivé. **Ne jamais remettre de
+clé en dur : le dépôt est public.**
+
+---
+
 ## 1. Structures de données de l'environnement
 
 ### 1.1 Graphe routier — `src/Environment/GeoBox/Box.hpp`

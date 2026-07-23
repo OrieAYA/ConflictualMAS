@@ -1,6 +1,7 @@
 #ifndef BOX_HPP
 #define BOX_HPP
 
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 #include <unordered_map>
@@ -15,6 +16,13 @@
 
 // Fonctions de validation
 bool is_valid_way_type(const osmium::Way& way);
+
+// Flickr credential, read from the environment and never stored in the source:
+inline std::string flickr_api_key_from_env() {
+    if (const char* k = std::getenv("FLICKR_API_KEY")) return k;
+    std::cout << "[flickr] FLICKR_API_KEY unset - POI fetch disabled.\n";
+    return {};
+}
 
 // Configuration pour l'API Flickr
 struct FlickrConfig {
