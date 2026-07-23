@@ -1,0 +1,62 @@
+
+=== ConflictualMAS ===
+
+  1  Legacy      (orienteering / GeoBox / render / PDP utils)
+  2  Tests       (submenu: A structure B mechanics C modules D e2e E all)
+  3  Training    (MAPPO + IPPO + MAPPER, paper protocol)
+  4  Evaluation  (RL + RMCA + TP + CA + HAPC)
+  5  MovementRL  (PPO replan gate, frozen MAPPO bid)
+  6  LSM         (congestion prediction readout pretrain)
+
+Choice: Groupe de villes (1=Tokyo+Kyoto  2=LosAngeles+NewYork  3=Paris  0=toutes) : RM min max (ex: 1.0 2.0) : 
+???????? Niveau de charge RM=1.0 (seed=42, groupe 3, policy seed 42) ????????
+Loading 2 cities from C:\ConflictualMAS\data\cache
+  [Load] Paris_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Paris_Small.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 91435
+  Ways: 113848
+  Objective groups: 0
+  [Load] Paris_Medium <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Paris_Medium.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 168495
+  Ways: 209656
+  Objective groups: 0
+All cities loaded.
+
+══════════════════════════════════════
+ Seed 0  (rng=42)
+══════════════════════════════════════
+[Policy] Loaded MAPPO    from C:\ConflictualMAS\results\mappo\policy_seed42.bin
+[Policy] Loaded IPPO     from C:\ConflictualMAS\results\ippo\ippo_seed42.bin
+[Policy] Loaded MAPPER   from C:\ConflictualMAS\results\mapper\mapper_seed42.bin
+[Policy] Hybrid base set from MAPPO actor (30 agent slots)
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+  -- Eval --
+    [eval_task_normal/cong_normal/agents_low Paris_Small task_normal/cong_normal/agents_low MAPPO ep1/1]  thr=0.928571 done=78/84 cong=x3.03134 lat=677.769  29442ms
+    [eval_task_normal/cong_normal/agents_low Paris_Small task_normal/cong_normal/agents_low IPPO ep1/1]  thr=0.952381 done=80/84 cong=x3.0327 lat=495.913  26304ms
+    [eval_task_normal/cong_normal/agents_low Paris_Small task_normal/cong_normal/agents_low MAPPER ep1/1]  thr=0.821429 done=69/84 cong=x3.03503 lat=587.188  24962ms
+    [eval_task_normal/cong_normal/agents_low Paris_Small task_normal/cong_normal/agents_low Hybrid ep1/1]  thr=0.952381 done=80/84 cong=x3.03304 lat=507.612  27851ms
+    [eval_task_normal/cong_normal/agents_low Paris_Small task_normal/cong_normal/agents_low RMCA ep1/1]  thr=0.809524 done=68/84 cong=x3.03667 lat=542.191  24578ms
+    [eval_task_normal/cong_normal/agents_low Paris_Small task_normal/cong_normal/agents_low TokenPassing ep1/1]  thr=0.452381 done=38/84 cong=x3.03979 lat=822.368  137770ms
+    [eval_task_normal/cong_normal/agents_low Paris_Small task_normal/cong_normal/agents_low FaithfulCongestionAware ep1/1]  thr=0.571429 lat=821.458  28844ms
+    [eval_task_normal/cong_normal/agents_low Paris_Small task_normal/cong_normal/agents_low HybridAdaptivePredictive ep1/1]  thr=0.452381 lat=1071.42  66426ms
+    [eval_task_normal/cong_normal/agents_mid Paris_Small task_normal/cong_normal/agents_mid MAPPO ep1/1]  thr=0.922222 done=83/90 cong=x3.03329 lat=451.422  39537ms
+    [eval_task_normal/cong_normal/agents_mid Paris_Small task_normal/cong_normal/agents_mid IPPO ep1/1]  thr=0.922222 done=83/90 cong=x3.03248 lat=425.94  37509ms
+    [eval_task_normal/cong_normal/agents_mid Paris_Small task_normal/cong_normal/agents_mid MAPPER ep1/1]  thr=0.855556 done=77/90 cong=x3.03251 lat=488.039  36831ms
+    [eval_task_normal/cong_normal/agents_mid Paris_Small task_normal/cong_normal/agents_mid Hybrid ep1/1]  thr=0.922222 done=83/90 cong=x3.03294 lat=439.94  41274ms
+    [eval_task_normal/cong_normal/agents_mid Paris_Small task_normal/cong_normal/agents_mid RMCA ep1/1]  thr=0.877778 done=79/90 cong=x3.03553 lat=451.57  33743ms
+    [eval_task_normal/cong_normal/agents_mid Paris_Small task_normal/cong_normal/agents_mid TokenPassing ep1/1]  thr=0.566667 done=51/90 cong=x3.03471 lat=921.627  153915ms
+    [eval_task_normal/cong_normal/agents_mid Paris_Small task_normal/cong_normal/agents_mid FaithfulCongestionAware ep1/1]  thr=0.688889 lat=712.29  28749ms
+    [eval_task_normal/cong_normal/agents_mid Paris_Small task_normal/cong_normal/agents_mid HybridAdaptivePredictive ep1/1]  thr=0.6 lat=872.278  97571ms
+    [eval_task_normal/cong_normal/agents_high Paris_Small task_normal/cong_normal/agents_high MAPPO ep1/1]  thr=0.965517 done=84/87 cong=x3.05488 lat=440.369  60258ms
+    [eval_task_normal/cong_normal/agents_high Paris_Small task_normal/cong_normal/agents_high IPPO ep1/1]  thr=0.965517 done=84/87 cong=x3.05543 lat=422.214  58247ms
+    [eval_task_normal/cong_normal/agents_high Paris_Small task_normal/cong_normal/agents_high MAPPER ep1/1]  thr=0.758621 done=66/87 cong=x3.0579 lat=470.121  76147ms
+    [eval_task_normal/cong_normal/agents_high Paris_Small task_normal/cong_normal/agents_high Hybrid ep1/1]  thr=0.988506 done=86/87 cong=x3.05487 lat=440.279  58709ms
+    [eval_task_normal/cong_normal/agents_high Paris_Small task_normal/cong_normal/agents_high RMCA ep1/1]  thr=0.91954 done=80/87 cong=x3.05

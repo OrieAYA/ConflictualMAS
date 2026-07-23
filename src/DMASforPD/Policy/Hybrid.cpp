@@ -23,6 +23,11 @@ void HybridPolicy::reinit(uint32_t seed) {
     clear_buffers();
 }
 
+void HybridPolicy::reset_episode() {
+    residuals_.clear();            // base actor + RNG kept
+    n_hard_rollbacks_ = 0;
+}
+
 float HybridPolicy::logit_of(const Residual& r, const float* x) const {
     float z = base_set_ ? base_.forward(x) : 0.f;
     for (int k = 0; k < kPolicySz; ++k) z += r.w[k] * x[k];

@@ -96,7 +96,7 @@ struct ComparisonMetrics {
     float route_congestion_exposure = 0.f; // mean load on edges agents traverse
     int   max_agent_completed     = 0;
     int   min_agent_completed     = 0;
-    float total_fleet_distance_m  = 0.f;  // Σ road P→D over completed tasks
+    float total_fleet_distance_m  = 0.f;  // Σ metres actually driven by the fleet
 
     // ── Selection intelligence (value, not just count) ─────────────────────
     float value_throughput_rate = 0.f;  // Σvalue(delivered) / Σvalue(appeared)
@@ -155,6 +155,10 @@ struct EpisodeMetricsCollector {
     long   trip_sum    = 0;   int trip_count    = 0;
     long   wait_sum    = 0;   int wait_count    = 0;
     double road_pd_sum = 0.0; int road_pd_count = 0;
+    // Metres actually driven by the fleet (Σ edge length over all traversals),
+    // sampled at edge entry in schedule_next_edge. Distinct from road_pd_sum,
+    // which is the Σ of ideal P→D distances over completed tasks.
+    double fleet_distance_m = 0.0;
     double efficiency_sum = 0.0; int efficiency_count = 0;
 
     // ── Fleet activity (per-step sampling) ─────────────────────────────────

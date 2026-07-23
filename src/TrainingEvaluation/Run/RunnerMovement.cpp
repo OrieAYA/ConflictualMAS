@@ -66,6 +66,10 @@ int EpisodeRunner::schedule_next_edge(int agent_id, int current_step) {
         const float bpr_factor = eff_dist / dist;   // 1.0 = no slowdown
         acc_.bpr_along_route_sum         += bpr_factor;
         acc_.bpr_along_route_count       += 1;
+        // Metres actually driven — same quantity the SoTA solvers report as
+        // total_fleet_distance_m (SolverInstrumentation::record_edge_traversal),
+        // so the column means the same thing in both CSVs.
+        acc_.fleet_distance_m            += static_cast<double>(dist);
         const float extra_dist = std::max(0.f, eff_dist - dist);
         acc_.time_lost_to_congestion_sum += extra_dist / std::max(0.1f, cfg_.speed_mps);
         // Load >= 5 at entry = real chokepoint.

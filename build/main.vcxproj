@@ -432,7 +432,9 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\IPPO.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MAPPERInspired.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MAPPO.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.cpp" />
@@ -443,6 +445,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Render\MapRenderer.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\MovingGhosts.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\Environment\Structure\Episode.cpp" />
@@ -480,6 +483,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerAllocation.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerMovement.cpp" />
+    <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerPrediction.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.cpp" />
     <ClCompile Include="C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\ScenarioConfig.cpp" />

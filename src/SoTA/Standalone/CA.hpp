@@ -29,20 +29,39 @@
 //     ✓ Admissible heuristic = euclidean distance / speed_mps (admissible
 //       lower bound on travel time under zero congestion).
 //
-//   §3.3 Agent modes + priority resolution (β_W):
+//   §3.1 Per-agent ORDER SEQUENCE T = (τ_a,1, …, τ_a,NT), executed in order:
+//     ✓ Each agent owns a queue of assigned-but-undelivered orders, bounded
+//       by its capacity (the LGPDP analogue of the paper's N_T, and the same
+//       semantics as our DMAS pipeline where max_capacity bounds
+//       DeliveryLocalMemory::tasks). Execution stays STRICTLY sequential per
+//       order — pickup_i → delivery_i → pickup_{i+1} … — which is exactly
+//       paper §3.3's mode transition ("the transition from pick up to
+//       delivery occurs upon fulfilling an order"). Concurrent carrying is
+//       therefore ≤ 1 by construction; the capacity is spent on the ORDER
+//       QUEUE, not on the load, and no P/D interleaving heuristic (which
+//       belongs to our DbVNS planner, not to this paper) is imported.
+//     ✓ Allocation cost is therefore MARGINAL: an order is appended at the
+//       tail of the sequence, so it is priced from where and WHEN the agent
+//       finishes what it already holds (plan_tail_node / plan_tail_step,
+//       both produced by the congestion-aware commit of the full route).
+//
+//   §3.3 Agent modes + priority resolution:
 //     ✓ Two modes (LGPDP collapse from paper's three):
-//         - IDLE   (paper Wandering / no active task)
-//         - BUSY   (paper Pickup or Delivery — actively executing a task)
+//         - IDLE   (paper Wandering / no assigned order)
+//         - BUSY   (paper Pickup or Delivery — sequence non-empty)
 //       Paper §3.4 weights γ_moving < γ_equals < γ_others. We expose this
 //       as γ_idle and γ_busy with γ_idle < γ_busy so the BUSY agent's cost
 //       gets INFLATED, biasing allocation toward IDLE agents — same effect
 //       direction as paper's "goal-directed agents take precedence over
 //       wandering agents" (paper §3.4) inverted because we choose ASSIGNEES
 //       not OBSTACLES.
-//     ✓ β_W-style tie-break: among agents whose γ-weighted cost is within
-//       β_tie_band of the best candidate, prefer the agent with the
-//       SMALLEST in-flight load (paper's β_π — fewer remaining orders —
-//       generalised to lifelong setting).
+//     ✓ β_π tie-break: among agents whose γ-weighted cost is within
+//       β_tie_band of the best candidate, prefer the agent with the FEWEST
+//       ORDERS STILL TO BE FULFILLED (paper §4.2-a's β_π, verbatim — it is
+//       the sequence length, not the carried load). Both this and γ above
+//       are only meaningful because agents can now hold a queue: with the
+//       previous one-order-at-a-time eligibility rule every candidate was
+//       idle with an empty queue, so γ_busy and β_π were unreachable code.
 //
 //   §3.4 Global congestion message:
 //     ✗ Paper's CNN-based prediction is replaced by the BPR-adjusted edge
@@ -61,9 +80,15 @@
 //
 // COST FUNCTION (decision time):
 //   cost(agent, task) = γ_mode(agent)
-//                     × ( BPR_cost(agent.loc → task.pickup, step)
-//                       + BPR_cost(task.pickup → task.delivery, step + Δp) )
-//   where γ_mode = γ_idle if agent has no in-flight tasks, γ_busy otherwise.
+//                     × ( queue_delay
+//                       + BPR_cost(tail_node → task.pickup, tail_step)
+//                       + BPR_cost(task.pickup → task.delivery, tail_step + Δp) )
+//   where tail_node / tail_step are where and when the agent finishes the
+//   orders it already holds (its own position / the current step when idle),
+//   queue_delay = tail_step − step, and γ_mode = γ_idle when the agent's
+//   sequence is empty, γ_busy otherwise. Summing the queue delay into the
+//   cost makes the rule target the order's COMPLETION time, which is the
+//   paper's objective M(Π) = max_a |π_a| (§3.1).
 //   Δp is the BPR pickup-leg time used as the launch offset for the
 //   delivery-leg cost — captures the "future state" the paper's CNN tries
 //   to predict, via direct simulation of the agent's planned trajectory.
@@ -90,9 +115,6 @@ public:
     const char*   name() const override { return "FaithfulCongestionAware"; }
 
 private:
-    // Same state model as TP/CA — see those for invariants. Each agent has
-    // at most ONE in-flight objective at a time; capacity > 1 still allows
-    // multiple tasks in the in_flight_task_ids queue once picked up.
     struct AgentState {
         osmium::object_id_type current_node = 0;
 
@@ -102,11 +124,25 @@ private:
         int  arrival_step_next_node  = -1;
         int  current_edge_t_enter    = 0;
 
-        int  active_task_id = -1;
+        // Paper §3.1 order sequence T = (τ_a,1 … τ_a,NT): assigned orders not
+        // yet delivered, served front-to-back. Bounded by `capacity`.
+        std::vector<int> task_queue;
+        // Which half of task_queue.front() the agent is heading for.
         bool active_is_pickup_leg = true;
 
+        // Orders physically on board — ≤ 1 under the paper's strictly
+        // sequential execution. Kept for the capacity-violation audit.
         std::vector<int> in_flight_task_ids;
         int  capacity = 1;
+
+        // Where / when the agent finishes its whole current sequence, produced
+        // by commit_agent_route (BPR-accumulated ETA). Used to price the
+        // marginal append cost of a new order.
+        osmium::object_id_type plan_tail_node = 0;
+        int                    plan_tail_step = 0;
+
+        // Set when planning failed; suppresses per-step A* retry storms.
+        int  stalled_until = -1;
 
         // Full-route congestion footprint registered on the shared map
         // (replicates Option O's commit_plan); removed/re-added on every replan.
@@ -149,6 +185,7 @@ private:
     double road_pd_sum_    = 0.0;
     int  road_pd_count_    = 0;
     long active_steps_sum_ = 0;
+    int  wait_count_       = 0;
     int  capacity_violations_ = 0;
     int  pairing_violations_  = 0;
 
@@ -162,21 +199,33 @@ private:
                        osmium::object_id_type to,
                        int start_step) const;
 
-    // γ-weighted full-trip cost used at decision time. Returns +inf if any
-    // leg is unreachable.
+    // γ-weighted marginal cost of APPENDING task t to agent a's sequence.
+    // Returns +inf if any leg is unreachable.
     float decision_cost(const AgentState& a,
                         const TaskRecord& t,
                         int step) const;
 
     bool try_allocate_one(int step);
-    bool begin_leg_bpr(AgentState& a,
-                       osmium::object_id_type target_node,
-                       int step);
+
+    // Node the agent's current leg is heading to (front order's pickup or
+    // delivery), or 0 when the sequence is empty.
+    osmium::object_id_type leg_target(const AgentState& a) const;
+
+    // Fire the pickup / delivery event of the front order and move the
+    // sequence cursor forward.
+    void fire_stop(AgentState& a, int step);
+
+    // Plan and install the leg toward leg_target(). Fires the stop events of
+    // any target that already coincides with the agent's position, so callers
+    // never recurse. Returns false when nothing could be planned.
+    bool advance_plan(AgentState& a, int step);
+
     void advance_agent(AgentState& a, int step);
     int  edge_arrival_step(osmium::object_id_type edge_id, int t_enter);
 
     // Re-register the agent's full remaining route on the shared CongestionMap
-    // (Option O commit_plan-style footprint). Called on every plan change.
+    // (Option O commit_plan-style footprint) and refresh plan_tail_*. Called on
+    // every plan change.
     void recommit_route(AgentState& a, int step);
 };
 

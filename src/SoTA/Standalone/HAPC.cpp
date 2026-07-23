@@ -29,30 +29,41 @@ int HybridAdaptivePredictiveSolver::ZonePairForecast::cell_of(
 }
 
 void HybridAdaptivePredictiveSolver::ZonePairForecast::register_arrival(
-    int p_cell, int d_cell, float alpha)
+    int p_cell, int d_cell)
 {
     if (p_cell < 0 || d_cell < 0) return;
     const int64_t key = static_cast<int64_t>(p_cell) * (dim * dim) + d_cell;
-    auto& v = lambda_pair[key];
-    // EMA bump: λ ← α·1 + (1-α)·λ — equivalently λ ← λ + α·(1 − λ).
-    v += alpha * (1.f - v);
+    count_interval[key] += 1.f;
+    count_total[key]    += 1.f;
+    ++n_interval;
 }
 
-void HybridAdaptivePredictiveSolver::ZonePairForecast::decay_all(float decay)
+void HybridAdaptivePredictiveSolver::ZonePairForecast::advance_interval(int step)
 {
-    for (auto& [_, v] : lambda_pair) v *= decay;
+    const int idx = step / std::max(1, interval_len);
+    if (idx == interval_index) return;
+    interval_index = idx;
+    count_interval.clear();
+    n_interval = 0;
 }
 
 std::vector<HybridAdaptivePredictiveSolver::ZonePairForecast::VirtualCall>
 HybridAdaptivePredictiveSolver::ZonePairForecast::top_h(
-    int H, float min_p) const
+    int H, float min_p, int min_samples) const
 {
-    if (lambda_pair.empty() || H <= 0) return {};
+    if (H <= 0) return {};
+    // Paper eq. 12 is estimated on the CURRENT interval ΔT(k). Early in an
+    // interval that histogram is too thin to be meaningful, so we read the
+    // episode-cumulative counts instead — the closest online stand-in for the
+    // paper's week of historical data.
+    const auto& src = (n_interval >= min_samples) ? count_interval : count_total;
+    if (src.empty()) return {};
+
     // Collect candidates (filter cells with no rep_node — unrealised on graph).
     std::vector<std::pair<float, std::pair<int,int>>> cands;
-    cands.reserve(lambda_pair.size());
+    cands.reserve(src.size());
     const int n2 = dim * dim;
-    for (const auto& [key, v] : lambda_pair) {
+    for (const auto& [key, v] : src) {
         if (v <= 0.f) continue;
         const int p_cell = static_cast<int>(key / n2);
         const int d_cell = static_cast<int>(key % n2);
@@ -62,33 +73,49 @@ HybridAdaptivePredictiveSolver::ZonePairForecast::top_h(
             continue;
         cands.emplace_back(v, std::make_pair(p_cell, d_cell));
     }
-    // Top-H by EMA mass.
+    if (cands.empty()) return {};
+
+    // Top-H by observed mass. Deterministic ordering: ties are broken on the
+    // (pickup, delivery) cell indices so the unordered_map traversal order
+    // cannot leak into the result.
+    auto by_mass = [](const auto& a, const auto& b) {
+        if (a.first != b.first) return a.first > b.first;
+        return a.second < b.second;
+    };
     if (static_cast<int>(cands.size()) > H) {
-        std::partial_sort(cands.begin(), cands.begin() + H, cands.end(),
-                          [](const auto& a, const auto& b){
-                              return a.first > b.first;
-                          });
+        std::partial_sort(cands.begin(), cands.begin() + H, cands.end(), by_mass);
         cands.resize(static_cast<size_t>(H));
     } else {
-        std::sort(cands.begin(), cands.end(),
-                  [](const auto& a, const auto& b){
-                      return a.first > b.first;
-                  });
+        std::sort(cands.begin(), cands.end(), by_mass);
     }
-    // Normalise probabilities within top-H (paper §4.1 — 90% mass in H pairs).
+
+    // Total mass of the retained subset BEFORE pruning, so that the pruning
+    // threshold is applied on the same scale the paper's p_h lives on.
     float sum = 0.f;
     for (const auto& c : cands) sum += c.first;
     if (sum <= 0.f) return {};
 
-    std::vector<VirtualCall> out;
-    out.reserve(cands.size());
+    // Prune first, THEN normalise: eq. 15's cancellation of the one-step term
+    // C_j(k+1) relies on Σ_h p_h = 1 exactly. Normalising before pruning left
+    // Σ_h p_h < 1 and silently turned the objective into a myopic/two-step
+    // blend instead of the paper's two-step criterion.
+    std::vector<std::pair<float, std::pair<int,int>>> kept;
+    kept.reserve(cands.size());
+    float kept_sum = 0.f;
     for (const auto& c : cands) {
-        const float p = c.first / sum;
-        if (p < min_p) continue;
+        if (c.first / sum < min_p) continue;
+        kept.push_back(c);
+        kept_sum += c.first;
+    }
+    if (kept.empty() || kept_sum <= 0.f) { kept = cands; kept_sum = sum; }
+
+    std::vector<VirtualCall> out;
+    out.reserve(kept.size());
+    for (const auto& c : kept) {
         VirtualCall vc;
         vc.pickup_node   = rep_node_of_cell[c.second.first];
         vc.delivery_node = rep_node_of_cell[c.second.second];
-        vc.probability   = p;
+        vc.probability   = c.first / kept_sum;
         out.push_back(vc);
     }
     return out;
@@ -101,10 +128,9 @@ HybridAdaptivePredictiveSolver::ZonePairForecast::top_h(
 HybridAdaptivePredictiveSolver::SharedDistanceCache&
 HybridAdaptivePredictiveSolver::shared_cache()
 {
-    // Process-scoped singleton. One slot — when the city (= GeoBox*)
-    // changes we wipe and re-populate. Memory stays bounded by the size of one
-    // city's seen-pairs set (typically < 1 MB on Small cities, ~50 MB on full
-    // Paris/NewYork after a full sweep).
+    // Reusable storage, wiped at every init() (one episode's worth of
+    // distances). Static only to keep the allocation across episodes; content
+    // is cleared each episode so memory is bounded by a single episode.
     static SharedDistanceCache instance;
     return instance;
 }
@@ -112,10 +138,9 @@ HybridAdaptivePredictiveSolver::shared_cache()
 std::unique_ptr<PathHelper>&
 HybridAdaptivePredictiveSolver::shared_path_helper()
 {
-    // Process-scoped PathHelper, replaced when the city changes. Its A* result
-    // cache (SimplePath: cost + nodes + edges) persists across all episodes of
-    // the same city — every resync_leg query that PathHelper resolved on a
-    // prior episode is now an O(1) cache hit on subsequent ones.
+    // PathHelper rebuilt at every init() so its A* result cache holds only the
+    // current episode's paths (cold start per method/episode). Static only so
+    // the unique_ptr slot survives; the helper itself is replaced each episode.
     static std::unique_ptr<PathHelper> instance;
     return instance;
 }
@@ -123,28 +148,18 @@ HybridAdaptivePredictiveSolver::shared_path_helper()
 void HybridAdaptivePredictiveSolver::init(const SolverContext& ctx) {
     ctx_   = &ctx;
 
-    // ── Persistent cache check: keep distances + PathHelper across episodes
-    // IF the city (= GeoBox) is the same as the prior init().
-    // On a city change we wipe the (from,to)→dist map, the prewarmed-sources
-    // set, AND rebuild the PathHelper for the new city — all three must stay
-    // in lockstep so neither cache returns stale data from a different graph.
+    // Cold caches at every episode (eval protocol: purge between methods /
+    // episodes, keep only the event stream). Persisting distances + PathHelper
+    // across episodes faked HAPC's compute time and grew unbounded over a city
+    // sweep (~48 GB observed). Both are wiped and rebuilt here so each episode
+    // starts fresh and its cost is bounded by one episode's queries.
     {
-        auto& sc = shared_cache();
+        auto& sc  = shared_cache();
         auto& sph = shared_path_helper();
-        const size_t cur_node_count =
-            (ctx.geo_box) ? ctx.geo_box->data.nodes.size() : 0;
-        // Detect city change by pointer AND by node-count content guard —
-        // covers the stack-frame reuse case where successive cities' GeoBox
-        // locals end up at the same address.
-        const bool city_changed =
-            (sc.gb != ctx.geo_box) ||
-            (sc.gb_node_count != cur_node_count);
-        if (city_changed || !sph) {
-            sc.gb = ctx.geo_box;
-            sc.gb_node_count = cur_node_count;
-            sc.dijkstra_from.clear();
-            sph = std::make_unique<PathHelper>(*ctx.geo_box);
-        }
+        sc.gb = ctx.geo_box;
+        sc.gb_node_count = (ctx.geo_box) ? ctx.geo_box->data.nodes.size() : 0;
+        sc.dijkstra_from.clear();
+        sph = std::make_unique<PathHelper>(*ctx.geo_box);
         paths_ = sph.get();  // non-owning view for this instance
     }
 
@@ -168,15 +183,24 @@ void HybridAdaptivePredictiveSolver::init(const SolverContext& ctx) {
     road_pd_sum_ = 0.0;
     road_pd_count_ = 0;
     active_steps_sum_ = 0;
+    wait_count_ = 0;
     capacity_violations_ = pairing_violations_ = 0;
-    instr_.init(ctx.n_active_agents);
+    instr_.init(ctx.n_active_agents, ctx.speed_mps);
 
     // ── Build the OD-pair forecast grid over the GeoBox bounding box. ─────
     // Single pass to find lat/lon extrema AND assign a representative node
     // to each cell (the FIRST node seen inside the cell — deterministic for
     // a stable graph order).
     forecast_.dim = std::max(2, hparams.demand_grid_dim);
-    forecast_.lambda_pair.clear();
+    forecast_.count_interval.clear();
+    forecast_.count_total.clear();
+    forecast_.n_interval     = 0;
+    forecast_.interval_index = -1;
+    // Paper §4.1 splits the horizon into equal time intervals ΔT (three hourly
+    // slots over its three-hour simulation); probabilities are constant inside
+    // one interval and refreshed between them.
+    forecast_.interval_len = std::max(
+        1, ctx.total_steps / std::max(1, hparams.forecast_n_intervals));
     const int n_cells = forecast_.dim * forecast_.dim;
     forecast_.rep_node_of_cell.assign(static_cast<size_t>(n_cells), 0);
     if (ctx.geo_box && !ctx.geo_box->data.nodes.empty()) {
@@ -659,7 +683,8 @@ bool HybridAdaptivePredictiveSolver::try_insert_task(int task_id, int step) {
     std::vector<ZonePairForecast::VirtualCall> virtual_calls;
     if (hparams.enable_two_step) {
         virtual_calls = forecast_.top_h(hparams.forecast_top_h,
-                                         hparams.forecast_min_p);
+                                         hparams.forecast_min_p,
+                                         hparams.forecast_min_samples);
     }
 
     int   best_aid  = -1;
@@ -767,17 +792,25 @@ int HybridAdaptivePredictiveSolver::edge_arrival_step(
     if (it == ways.end()) return t_enter + 1;
     const float length_m = it->second.distance_meters;
     const float base_time = length_m / std::max(0.1f, ctx_->speed_mps);
+    if (!ctx_->congestion_map)
+        return t_enter + std::max(1, static_cast<int>(std::ceil(base_time)));
+
     // Paper models constant straight-line speed; we use OSM-A* distance and
     // BPR-adjust the resulting edge time so the agent's actual travel cost
     // reflects the SHARED CongestionMap (consistent with other SoTA solvers).
-    const float adj = ctx_->congestion_map
-        ? ctx_->congestion_map->adjusted_cost(edge_id, base_time, length_m, t_enter)
-        : base_time;
-    // BPR factor sampled at the edge's ENTRY step (t_enter = current step at all
-    // call sites). Must be here, not at completion: advance() purges past steps
-    // → a later query at the entry step reads load 0 → BPR 1.0.
-    if (ctx_->congestion_map && base_time > 0.f)
-        instr_.record_edge_bpr(adj / base_time);
+    // Traversal rule (parity with EpisodeRunner::schedule_next_edge): the agent
+    // pays the BPR time of the n OTHERS on the edge, not n+1 — its own
+    // committed weight, published by recommit_route before it is scheduled
+    // onto the edge, is subtracted.
+    const int self_w = std::max(1, ctx_->congestion_map->params.load_per_agent);
+    const float adj  = ctx_->congestion_map->adjusted_cost(
+        edge_id, base_time, length_m, t_enter, self_w);
+    // Exposure accumulators sampled at the edge's ENTRY step (t_enter = current
+    // step at all call sites). Must be here, not at completion: advance()
+    // purges past steps → a later query at the entry step reads load 0 →
+    // BPR 1.0. `load_at_entry` is the FULL load, as in the RL jam counter.
+    instr_.record_edge_entry(base_time, adj,
+                             ctx_->congestion_map->get_load(edge_id, t_enter));
     return t_enter + std::max(1, static_cast<int>(std::ceil(adj)));
 }
 
@@ -824,7 +857,11 @@ bool HybridAdaptivePredictiveSolver::resync_leg(AgentState& a, int step) {
     a.current_path_edges = sp.edges;
     a.next_idx = 0;
     a.current_edge_t_enter = step;
-    a.arrival_step_next_node = edge_arrival_step(sp.edges.front(), step);
+    // Timing of the first edge is DEFERRED to recommit_route: the traversal
+    // rule subtracts this agent's own committed weight, so the footprint of
+    // the fresh plan must be on the map before the edge is timed (same
+    // commit-before-schedule ordering as EpisodeRunner).
+    a.arrival_step_next_node = -1;
     // Footprint registered for the FULL remaining sequence by recommit_route()
     // (Option O commit_plan-style), not edge-by-edge here.
     return true;
@@ -836,10 +873,19 @@ void HybridAdaptivePredictiveSolver::advance_agent(AgentState& a, int step) {
     if (a.current_path_edges.empty()) {
         if (a.current_node != a.sequence.front().node) {
             resync_leg(a, step);
+            recommit_route(a, step);
             return;
         }
         // fall through — fire the stop
     } else {
+        if (a.arrival_step_next_node < 0)
+            a.arrival_step_next_node =
+                edge_arrival_step(a.current_path_edges[a.next_idx], step);
+        // Route exposure: load on the edge this agent occupies right now — one
+        // sample per in-transit agent per step (RL parity, Runner.cpp).
+        if (ctx_ && ctx_->congestion_map)
+            instr_.sample_route_exposure(ctx_->congestion_map->get_load(
+                a.current_path_edges[a.next_idx], step));
         if (step < a.arrival_step_next_node) {
             ++active_steps_sum_;
             return;
@@ -868,6 +914,7 @@ void HybridAdaptivePredictiveSolver::advance_agent(AgentState& a, int step) {
 
     if (a.current_node != a.sequence.front().node) {
         resync_leg(a, step);
+        recommit_route(a, step);
         return;
     }
 
@@ -888,6 +935,7 @@ void HybridAdaptivePredictiveSolver::advance_agent(AgentState& a, int step) {
             ++capacity_violations_;
         }
         wait_sum_ += (t.picked_step - t.arrival_step);
+        ++wait_count_;
     } else {
         if (t.picked_step < 0) ++pairing_violations_;
         t.delivered_step = step;
@@ -918,12 +966,36 @@ void HybridAdaptivePredictiveSolver::recommit_route(AgentState& a, int step) {
     std::vector<osmium::object_id_type> stops;
     stops.reserve(a.sequence.size());
     for (const auto& s : a.sequence) stops.push_back(s.node);
+
+    // The first leg is committed on the edges the agent still has to drive,
+    // not on a fresh query from current_node: when the sequence changes while
+    // the agent is mid-edge, resync_leg defers the replan (paper §3.1), so the
+    // running path is authoritative and a fresh A* would publish load on edges
+    // nobody drives.
+    bool first_leg = true;
     commit_agent_route(
         *ctx_->congestion_map, *ctx_->geo_box, ctx_->speed_mps,
         a.current_node, stops, step, a.committed_occ,
-        [this](osmium::object_id_type f, osmium::object_id_type to, int /*t*/) {
+        [&](osmium::object_id_type f, osmium::object_id_type to, int /*t*/) {
+            if (first_leg) {
+                first_leg = false;
+                if (!a.current_path_edges.empty() &&
+                    a.next_idx < static_cast<int>(a.current_path_edges.size()) &&
+                    to == a.current_path_nodes.back()) {
+                    return std::vector<osmium::object_id_type>(
+                        a.current_path_edges.begin() + a.next_idx,
+                        a.current_path_edges.end());
+                }
+            }
             return paths_->get(f, to).edges;
         });
+
+    // Commit-before-schedule: this agent's own weight is now on the map, so
+    // edge_arrival_step can subtract it (see resync_leg).
+    if (a.arrival_step_next_node < 0 &&
+        a.next_idx < static_cast<int>(a.current_path_edges.size()))
+        a.arrival_step_next_node =
+            edge_arrival_step(a.current_path_edges[a.next_idx], step);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -937,7 +1009,7 @@ void HybridAdaptivePredictiveSolver::register_arrival(
     if (!ctx_) return;
     const int p_cell = forecast_.cell_of(pickup_node,   *ctx_->geo_box);
     const int d_cell = forecast_.cell_of(delivery_node, *ctx_->geo_box);
-    forecast_.register_arrival(p_cell, d_cell, hparams.alpha_demand);
+    forecast_.register_arrival(p_cell, d_cell);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -949,6 +1021,10 @@ void HybridAdaptivePredictiveSolver::step(int timestep) {
         instr_.sample_congestion(ctx_->congestion_map);
         if (ctx_->ghost) instr_.sample_ghost(ctx_->ghost->n_active_now());
     }
+
+    // Roll the demand forecast over to the ΔT containing this step (paper
+    // §4.1: probabilities are constant inside an interval, refreshed between).
+    forecast_.advance_interval(timestep);
 
     // Retry any task whose prior insertion failed AND whose backoff has elapsed.
     // The backoff (set by try_insert_task on failure) avoids ~3600× retries per
@@ -968,9 +1044,6 @@ void HybridAdaptivePredictiveSolver::step(int timestep) {
     // Advance every agent one step. NO periodic MPC — paper §3.1 explicitly
     // says sequences change only on (a) call arrival or (b) stop reached.
     for (auto& a : agents_) advance_agent(a, timestep);
-
-    // Slow uniform decay so the forecast tracks demand drift (paper §4.4 EMA).
-    forecast_.decay_all(1.f - hparams.alpha_demand);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -990,9 +1063,12 @@ SolverMetrics HybridAdaptivePredictiveSolver::finalize() {
         : 0.f;
     if (completed_ > 0) {
         m.latency_mean    = static_cast<double>(latency_sum_) / completed_;
-        m.mean_wait_steps = static_cast<double>(wait_sum_)    / completed_;
         m.mean_trip_steps = static_cast<double>(trip_sum_)    / completed_;
     }
+    // Wait is accumulated at every PICKUP → its denominator is the pickup
+    // count, not the delivery count (RL parity: Metrics.cpp wait_sum/wait_count).
+    if (wait_count_ > 0)
+        m.mean_wait_steps = static_cast<double>(wait_sum_) / wait_count_;
     if (road_pd_count_ > 0) {
         m.mean_road_pd_m = road_pd_sum_ / road_pd_count_;
     }
@@ -1002,8 +1078,13 @@ SolverMetrics HybridAdaptivePredictiveSolver::finalize() {
     }
     m.capacity_violations = capacity_violations_;
     m.pairing_violations  = pairing_violations_;
-    if (ctx_ && ctx_->n_active_agents > 0)
-        m.latency_per_agent = m.latency_mean / ctx_->n_active_agents;
+    // Normalised by the MEAN NUMBER OF ACTIVE AGENTS, not the provisioned
+    // fleet (RL parity: Metrics.cpp active_sum/active_steps).
+    if (ctx_ && ctx_->total_steps > 0) {
+        const double mean_active =
+            static_cast<double>(active_steps_sum_) / ctx_->total_steps;
+        m.latency_per_agent = m.latency_mean / std::max(1.0, mean_active);
+    }
     instr_.finalize_into(m);
     return m;
 }

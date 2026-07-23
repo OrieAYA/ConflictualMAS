@@ -260,8 +260,11 @@ ComparisonMetrics finalize_episode_metrics(
         }
     }
 
-    // Total fleet distance = sum of P→D road distances over completed tasks.
-    metrics.total_fleet_distance_m = static_cast<float>(c.road_pd_sum);
+    // Total fleet distance = metres actually driven by the whole fleet. Was
+    // Σ P→D road distance over completed tasks, which is a different quantity
+    // from the identically-named SoTA column (real traversed distance) — the
+    // two were not comparable despite sharing the name.
+    metrics.total_fleet_distance_m = static_cast<float>(c.fleet_distance_m);
 
     // ── Route efficiency + detour magnitude ─────────────────────────────────
     {

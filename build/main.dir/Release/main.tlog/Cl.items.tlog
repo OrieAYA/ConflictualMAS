@@ -9,7 +9,9 @@ C:\ConflictualMAS\src\DMASforPD\Policy\Hybrid.cpp;C:\ConflictualMAS\build\main.d
 C:\ConflictualMAS\src\DMASforPD\Policy\IPPO.cpp;C:\ConflictualMAS\build\main.dir\Release\IPPO.obj
 C:\ConflictualMAS\src\DMASforPD\Policy\MAPPERInspired.cpp;C:\ConflictualMAS\build\main.dir\Release\MAPPERInspired.obj
 C:\ConflictualMAS\src\DMASforPD\Policy\MAPPO.cpp;C:\ConflictualMAS\build\main.dir\Release\MAPPO.obj
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.cpp;C:\ConflictualMAS\build\main.dir\Release\MovementPolicy.obj
 C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.cpp;C:\ConflictualMAS\build\main.dir\Release\PolicyKit.obj
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.cpp;C:\ConflictualMAS\build\main.dir\Release\Lsm.obj
 C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.cpp;C:\ConflictualMAS\build\main.dir\Release\AgentSolution.obj
 C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.cpp;C:\ConflictualMAS\build\main.dir\Release\ObjectiveCache.obj
 C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.cpp;C:\ConflictualMAS\build\main.dir\Release\OperableEnvironment.obj
@@ -20,6 +22,7 @@ C:\ConflictualMAS\src\Environment\GeoBox\GraphSearch.cpp;C:\ConflictualMAS\build
 C:\ConflictualMAS\src\Environment\Render\MapRenderer.cpp;C:\ConflictualMAS\build\main.dir\Release\MapRenderer.obj
 C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.cpp;C:\ConflictualMAS\build\main.dir\Release\CongestionMap.obj
 C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.cpp;C:\ConflictualMAS\build\main.dir\Release\GhostTrafficController.obj
+C:\ConflictualMAS\src\Environment\Simulation\MovingGhosts.cpp;C:\ConflictualMAS\build\main.dir\Release\MovingGhosts.obj
 C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.cpp;C:\ConflictualMAS\build\main.dir\Release\TemporalChainList.obj
 C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.cpp;C:\ConflictualMAS\build\main.dir\Release\TemporalGraph.obj
 C:\ConflictualMAS\src\Environment\Structure\Episode.cpp;C:\ConflictualMAS\build\main.dir\Release\Episode.obj
@@ -57,6 +60,7 @@ C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.cpp;C:\ConflictualMAS\build
 C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.cpp;C:\ConflictualMAS\build\main.dir\Release\Runner.obj
 C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerAllocation.cpp;C:\ConflictualMAS\build\main.dir\Release\RunnerAllocation.obj
 C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerMovement.cpp;C:\ConflictualMAS\build\main.dir\Release\RunnerMovement.obj
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerPrediction.cpp;C:\ConflictualMAS\build\main.dir\Release\RunnerPrediction.obj
 C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp;C:\ConflictualMAS\build\main.dir\Release\Trainer.obj
 C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.cpp;C:\ConflictualMAS\build\main.dir\Release\CityConfig.obj
 C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\ScenarioConfig.cpp;C:\ConflictualMAS\build\main.dir\Release\ScenarioConfig.obj

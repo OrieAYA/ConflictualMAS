@@ -1,0 +1,1405 @@
+﻿MSBuild のバージョン 18.3.0-preview-25570-20+708535641 (.NET Framework)
+
+  SolverFramework.cpp
+C:\ConflictualMAS\src\SoTA\SolverFramework.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(588,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+  CA.cpp
+C:\ConflictualMAS\src\SoTA\Standalone\CA.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(588,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
+  HAPC.cpp
+C:\ConflictualMAS\src\SoTA\Standalone\HAPC.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(588,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\Standalone\HAPC.cpp(601,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  EndToEndTests.cpp
+C:\ConflictualMAS\src\Tests\EndToEndTests.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\EndToEndTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\TestSupport.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+  MechanicsTests.cpp
+C:\ConflictualMAS\src\Tests\MechanicsTests.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\MechanicsTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\TestSupport.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
+  ModuleTests.cpp
+C:\ConflictualMAS\src\Tests\ModuleTests.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\ModuleTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\TestSupport.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\TamMcTest.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(588,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+  PlanningComparisonTest.cpp
+C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\PlanningComparisonTest.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp(595,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  RegressionTests.cpp
+C:\ConflictualMAS\src\Tests\RegressionTests.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\RegressionTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\TestSupport.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(588,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+  TamMcTest.cpp
+C:\ConflictualMAS\src\Tests\TamMcTest.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\TamMcTest.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+  TrainingSmokeTest.cpp
+C:\ConflictualMAS\src\Tests\TrainingSmokeTest.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+  Metrics.cpp
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
+  Runner.cpp
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+  RunnerAllocation.cpp
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerAllocation.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
+  RunnerMovement.cpp
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerMovement.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
+  RunnerPrediction.cpp
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerPrediction.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+  Trainer.cpp
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\General\TrainingConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\General\EvaluationConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MAPPO.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\IPPO.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MAPPERInspired.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\Hybrid.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(588,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp(23,9): warning C4005: 'NOMINMAX': マクロが再定義されました。 [C:\ConflictualMAS\build\main.vcxproj]
+      C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp(23,9):
+      'NOMINMAX' は以前にコマンド ラインで宣言されています
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp(626,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  main.cpp
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\General\TrainingConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\General\EvaluationConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\StructureTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\MechanicsTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\ModuleTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\EndToEndTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\RegressionTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\PlanningComparisonTest.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\main.cpp(275,22): warning C4566: ユニバーサル文字名 '\u2550' によって表示されている文字は、現在のコード ページ (932) で表示できません [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\main.cpp(277,61): warning C4566: ユニバーサル文字名 '\u2550' によって表示されている文字は、現在のコード ページ (932) で表示できません [C:\ConflictualMAS\build\main.vcxproj]
+  コードを生成中...
+  main.vcxproj -> C:\ConflictualMAS\build\Release\main.exe

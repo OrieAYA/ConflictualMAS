@@ -105,9 +105,12 @@ void EpisodeRunner::prepare_run(const EpisodeScenario& scenario,
 
     // Always start from clean buffers: eval episodes also record decisions,
     // and stale records must not leak into the next training update.
+    // reset_episode() also zeroes Hybrid's online residuals so each episode
+    // restarts from the frozen base (état 0), order-independent.
     if (active_policy_) {
         active_policy_->clear_buffers();
         active_policy_->clear_recent_records();
+        active_policy_->reset_episode();
     }
 
     memory_.record_plan_congestion = cfg_.use_movement_policy;

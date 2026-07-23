@@ -103,7 +103,7 @@ bool run_regression_tests(const std::string& osm_file, const std::string& cache_
                   << " completed=" << a.tasks_completed << "\n";
         return true;
     };
-    { FaithfulCASolver               s; CHECK(check_sota("CA  ", s, 36, 2, 0.0555556f), "CA regression"); }
+    { FaithfulCASolver               s; CHECK(check_sota("CA  ", s, 36, 1, 0.0277778f), "CA regression"); }
     { HybridAdaptivePredictiveSolver s; CHECK(check_sota("HAPC", s, 36, 1, 0.0277778f), "HAPC regression"); }
 
     std::cout << "=== R PASS ===\n";

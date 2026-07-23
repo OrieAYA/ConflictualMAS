@@ -79,6 +79,12 @@ public:
     virtual void set_progress(float /*progress*/) {}
     virtual void ensure_agents(int /*n_agents*/) {}
 
+    // Reset per-episode online state at each episode start (offline policies:
+    // no-op — their weights are frozen in eval / trained across episodes).
+    // Hybrid zeroes its per-agent residuals so every eval episode restarts
+    // from the frozen MAPPO base (état 0), independent of scenario order.
+    virtual void reset_episode() {}
+
     // Re-create the networks from scratch (fresh seed). Used by the trainer
     // at the start of each independent training seed.
     virtual void reinit(uint32_t seed) = 0;

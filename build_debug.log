@@ -1,0 +1,95 @@
+﻿MSBuild のバージョン 18.3.0-preview-25570-20+708535641 (.NET Framework)
+
+  RegressionTests.cpp
+C:\ConflictualMAS\src\Tests\RegressionTests.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\RegressionTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\TestSupport.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Metrics.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\Run\RewardShaping.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(588,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+  main.vcxproj -> C:\ConflictualMAS\build\Debug\main.exe

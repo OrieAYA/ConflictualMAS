@@ -11,8 +11,10 @@
 //   μ_i(x) = sigmoid( z_base(x) + w_i·x + b_i )
 //
 // The residual (w_i ∈ R^12, b_i) starts at zero (pure-MAPPO hot start) and is
-// updated by online REINFORCE at the end of EVERY episode (train and eval —
-// continual adaptation is the defining property). Two safety mechanisms:
+// updated by online REINFORCE during the episode. It is reset to zero at each
+// episode start (reset_episode) so every evaluation episode specialises afresh
+// from the frozen base — within-episode adaptation, order-independent across
+// episodes. Two safety mechanisms:
 //   - fleet-relative rollback: residual halved when the agent's rolling
 //     fitness drops below fleet mean − threshold; reset to zero after K
 //     consecutive halvings.
@@ -59,6 +61,7 @@ public:
 
     void ensure_agents(int n_agents) override;
     void reinit(uint32_t seed) override;       // clears residuals (base kept)
+    void reset_episode() override;             // état 0 per episode (base kept)
 
     void save(const std::string& path) const override;
     bool load(const std::string& path) override;

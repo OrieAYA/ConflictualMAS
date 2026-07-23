@@ -180,6 +180,10 @@ int MultiCityTrainer::run_eval(
                     ep_seed, *ca.config, sc, ca.ep_cfg, ca.geo_box);
 
                 for (PolicyMode m : modes) {
+                    // Cold path cache per method (protocol: purge caches
+                    // between methods, keep the pre-generated event stream) —
+                    // fair timing + no cross-method calc contamination.
+                    runner.release_episode_memory();
                     const char* name = policy_mode_label(m);
                     runner.policy_mode = m;
                     RunResult res = runner.run(ca.index, num_cities, sc,

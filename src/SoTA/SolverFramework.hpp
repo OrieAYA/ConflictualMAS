@@ -143,10 +143,10 @@ struct SolverContext {
 
 // Solver congestion footprint — replicates the DMAS pipeline's commit_plan.
 // Like commit_plan, every agent publishes the occupancy of its ENTIRE remaining
-// route on the shared CongestionMap (each edge registered for its free-flow
-// window with weight = load_per_agent, previous registration removed on replan),
-// so the BPR/throughput/latency axes are measured under the same dense,
-// predictive congestion regime as the EpisodeRunner pipeline.
+// route on the shared CongestionMap (each edge registered for the BPR-adjusted
+// window it will really occupy, weight = load_per_agent, previous registration
+// removed on replan), so the BPR/throughput/latency axes are measured under the
+// same dense, predictive congestion regime as the EpisodeRunner pipeline.
 
 // One committed edge occupancy: (edge_id, t_enter, t_exit). Stored per agent so
 // the previous registration can be removed before re-committing.
@@ -154,12 +154,24 @@ using CommittedOcc = std::vector<std::tuple<osmium::object_id_type, int, int>>;
 
 // Register an agent's full remaining route on `cmap`, exactly like commit_plan:
 //   1. remove the agent's previous occupancy (`committed`);
-//   2. walk the ordered `stops` from `from`, leg by leg, accumulating FREE-FLOW
-//      time (ceil(edge_length / speed)); add_agent each edge for [t, t+steps]
-//      with weight = load_per_agent; remember it in `committed`.
+//   2. walk the ordered `stops` from `from`, leg by leg, accumulating the
+//      BPR-ADJUSTED traversal time of each edge at its predicted entry step;
+//      add_agent each edge for [t, t+steps] with weight = load_per_agent;
+//      remember it in `committed`.
 // `path_fn(from, to, t)` returns the edge-id list of the planned leg path.
+//
+// Window length parity with the RL pipeline (make_timed_path, Manager.cpp):
+// both use CongestionMap::traversal_steps with self_weight = 0 at the edge's
+// predicted entry step. Free-flow windows (the previous behaviour) understated
+// the footprint AND placed it too early in time, so a solver fleet generated
+// strictly less congestion than an RL fleet driving the same routes.
+// The agent's own previous footprint is removed in step 1, so self_weight = 0
+// here reads "everybody else's load" — same contract as the RL pipeline's
+// unregister_committed_plan → register_committed_plan sequence.
+//
+// Returns the accumulated step at the last stop (ETA of the plan's tail).
 template <typename PathFn>
-inline void commit_agent_route(
+inline int commit_agent_route(
     CongestionMap& cmap, const GeoBox& geo_box, float speed_mps,
     osmium::object_id_type from,
     const std::vector<osmium::object_id_type>& stops,
@@ -172,7 +184,7 @@ inline void commit_agent_route(
         cmap.remove_agent(std::get<0>(occ), std::get<1>(occ), std::get<2>(occ), w);
     committed.clear();
 
-    // 2. Register the full remaining route with free-flow windows.
+    // 2. Register the full remaining route with BPR-adjusted windows.
     const auto& ways = geo_box.data.ways;
     const float sp   = std::max(0.1f, speed_mps);
     osmium::object_id_type cur = from;
@@ -184,14 +196,15 @@ inline void commit_agent_route(
         for (osmium::object_id_type eid : edges) {
             auto it = ways.find(eid);
             if (it == ways.end()) continue;
-            const int steps = std::max(1, static_cast<int>(
-                std::ceil(it->second.distance_meters / sp)));
+            const int steps =
+                cmap.traversal_steps(eid, it->second.distance_meters, t, sp, 0);
             cmap.add_agent(eid, t, t + steps, w);
             committed.emplace_back(eid, t, t + steps);
             t += steps;
         }
         cur = target;
     }
+    return t;
 }
 
 // ===== SolverInstrumentation.hpp =====
@@ -223,6 +236,22 @@ public:
     double bpr_sum = 0.0;
     long   bpr_n   = 0;
 
+    // Congestion exposure — same definitions as EpisodeRunner (RunnerMovement
+    // schedule_next_edge / Runner build_global_state) so the columns mean the
+    // same thing in both CSVs:
+    //   time_lost_steps    = Σ (adjusted − free-flow) travel time, at entry
+    //   n_traversals_in_jam= # traversals entered on an edge with load ≥ 5
+    //   exposure_*         = mean load on the edge each in-transit agent
+    //                        occupies, sampled once per step per agent
+    double time_lost_steps     = 0.0;
+    int    n_traversals_in_jam = 0;
+    double exposure_sum        = 0.0;
+    long   exposure_n          = 0;
+
+    // Agent speed — needed to turn mean_road_pd_m into the "ideal" trip time
+    // used by delivery_route_efficiency / mean_extra_steps_per_task.
+    float  speed_mps = 5.f;
+
     // Ghost active sampling.
     double ghost_mean = 0.0;
     long   ghost_n    = 0;
@@ -234,12 +263,15 @@ public:
     long long alloc_time_ns_sum = 0;
 
     // Initialise sizing — call from ISolver::init.
-    void init(int n_agents) {
+    void init(int n_agents, float speed = 5.f) {
         per_agent_completed.assign(static_cast<size_t>(n_agents), 0);
         total_fleet_distance_m = 0.0;
         cong_mean = 0.0; cong_m2 = 0.0; cong_n = 0;
         peak_load = 0;
         bpr_sum = 0.0; bpr_n = 0;
+        time_lost_steps = 0.0; n_traversals_in_jam = 0;
+        exposure_sum = 0.0; exposure_n = 0;
+        speed_mps = (speed > 0.f) ? speed : 5.f;
         ghost_mean = 0.0; ghost_n = 0;
         wallclock_ms = 0;
         n_allocation_calls = 0;
@@ -261,10 +293,25 @@ public:
         if (edge_length_m > 0.f) total_fleet_distance_m += edge_length_m;
     }
 
-    // Record the BPR slowdown factor (adjusted / free-flow) paid on one
-    // traversed edge at its entry step. Mean over traversals → mean_bpr_along_route.
-    void record_edge_bpr(float factor) {
-        if (factor > 0.f) { bpr_sum += static_cast<double>(factor); ++bpr_n; }
+    // Record one edge ENTRY. `base_time` / `eff_time` are the free-flow and
+    // BPR-adjusted traversal times of that edge (same unit, steps), and
+    // `load_at_entry` the edge load read at the entry step. Must be called at
+    // entry, not at completion: CongestionMap::advance() purges past steps.
+    // Mirrors EpisodeRunner::schedule_next_edge's three accumulators.
+    void record_edge_entry(float base_time, float eff_time, int load_at_entry) {
+        if (base_time > 0.f) {
+            bpr_sum += static_cast<double>(eff_time / base_time);
+            ++bpr_n;
+            time_lost_steps += static_cast<double>(std::max(0.f, eff_time - base_time));
+        }
+        if (load_at_entry >= 5) ++n_traversals_in_jam;
+    }
+
+    // Sample the load on the edge an agent is currently traversing — call once
+    // per step per in-transit agent (RL analogue: Runner.cpp route_exposure).
+    void sample_route_exposure(int load_on_edge) {
+        exposure_sum += static_cast<double>(load_on_edge);
+        ++exposure_n;
     }
 
     // Sample the CongestionMap state — call ONCE per simulation step, AFTER
@@ -372,7 +419,23 @@ public:
         m.peak_load = peak_load;
         if (bpr_n > 0)
             m.mean_bpr_along_route = bpr_sum / static_cast<double>(bpr_n);
+        m.time_lost_to_congestion   = time_lost_steps;
+        m.n_traversals_in_jam       = n_traversals_in_jam;
+        m.route_congestion_exposure = (exposure_n > 0)
+            ? static_cast<float>(exposure_sum / exposure_n) : 0.f;
         m.n_ghost_active_mean = static_cast<float>(ghost_mean);
+
+        // Route efficiency / detour — identical formula to the RL pipeline
+        // (Metrics.cpp finalize_episode_metrics). Requires the solver to have
+        // filled mean_road_pd_m and mean_trip_steps beforehand.
+        const double ideal_steps = (speed_mps > 0.f && m.mean_road_pd_m > 0.)
+            ? m.mean_road_pd_m / speed_mps : 0.;
+        if (m.mean_trip_steps > 0. && ideal_steps > 0.) {
+            m.mean_extra_steps_per_task =
+                std::max(0.0, m.mean_trip_steps - ideal_steps);
+            m.delivery_route_efficiency =
+                std::min(1.0, ideal_steps / m.mean_trip_steps);
+        }
 
         m.n_allocation_calls = n_allocation_calls;
         if (m.tasks_appeared > 0) {

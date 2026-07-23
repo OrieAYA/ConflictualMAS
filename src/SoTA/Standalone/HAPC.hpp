@@ -65,16 +65,27 @@
 //       paper's PSO approximates with a 2-3% gap (paper §4.2 note on EE
 //       vs PSO). We disclose this as a strengthening of the paper.
 //
-//   §4.4 — Demand forecast (probabilities p_h^ΔT):
-//     ✓ Paper computes probabilities offline from historical
-//       origin-destination trip counts per zone pair per time interval.
-//     ✓ Our solver substitutes ONLINE per-OD-cell-pair EMA over a coarse
-//       spatial grid (8×8 default over the GeoBox bounding box). Each task
-//       arrival bumps λ_{pickup_cell, delivery_cell}; all cells decay
-//       slowly so the forecast tracks demand drift. The top-H OD-pairs
-//       (by EMA mass) are read out as the virtual future calls; their
-//       probabilities are normalised so Σ_h p_h = 1 inside top-H (matches
-//       paper §4.1 where 90% of trips concentrate in H = 6 pairs).
+//   §4.4 — Demand forecast (probabilities p_h^ΔT), paper eq. 12:
+//     ✓ p_h^ΔT = N_h^ΔT / Σ_g N_g^ΔT — PLAIN ARRIVAL COUNTS per OD-pair
+//       inside a time interval ΔT, held CONSTANT within that interval and
+//       refreshed between intervals. The episode is split into
+//       `forecast_n_intervals` equal intervals (paper §4.1 runs 3 hourly
+//       intervals over a 3-hour simulation).
+//     ✓ Zoning: `demand_grid_dim` × `demand_grid_dim` cells over the GeoBox
+//       bounding box, default 3 → 9 zones, matching the paper's nine-zone
+//       disaggregation for which H = 6 was calibrated (§4.1).
+//     ✓ While the current interval holds too few samples to estimate a
+//       histogram, the readout falls back to the episode-cumulative counts.
+//       Paper reads its probabilities off a full week of history; we have no
+//       cross-episode memory, so the cumulative counts are the closest
+//       stand-in for "historical data" available online.
+//     ✗ NO per-step decay. The previous version multiplied every λ by
+//       (1 − α_demand) = 0.98 ONCE PER SIMULATION STEP, i.e. a ~50-step
+//       memory over a 3600-step episode: the "forecast" was really the OD
+//       cells of the last two or three arrivals, which is noise, not the
+//       paper's stationary per-interval distribution. Since the two-steps-
+//       ahead lookahead is this paper's headline contribution, that decay
+//       was silently gutting the very mechanism under evaluation.
 //
 // ─────────────────────────────────────────────────────────────────────────
 // FIDELITY CAVEATS — what we DELIBERATELY adapt to our context:
@@ -124,8 +135,9 @@ public:
         bool  enable_two_step  = true;    // §3.3 two-steps-ahead lookahead (false = myopic)
         int   forecast_top_h   = 6;       // §4.1 paper uses H = 6 for 9-zone disaggregation
         float forecast_min_p   = 0.02f;   // skip virtual calls with prob below this
-        int   demand_grid_dim  = 8;       // coarse 8x8 spatial grid (paper uses 9 zones)
-        float alpha_demand     = 0.02f;   // §4.4 EMA weight for online OD-pair learning
+        int   demand_grid_dim  = 3;       // 3x3 = 9 zones, paper §4.1 nine-zone case
+        int   forecast_n_intervals = 3;   // §4.1 three hourly ΔT over the episode
+        int   forecast_min_samples = 12;  // below this, fall back to cumulative counts
     };
     HParams hparams;
 
@@ -205,12 +217,20 @@ private:
     // lookahead. Cell representative nodes are picked at init() — one OSM
     // node per cell, found via single-pass scan.
     struct ZonePairForecast {
-        int dim = 8;
+        int dim = 3;
         float lat_min = 0.f, lat_step = 0.f;
         float lon_min = 0.f, lon_step = 0.f;
 
-        // λ_{i,j} for the OD-pair from cell i to cell j (encoded as i*n+j).
-        std::unordered_map<int64_t, float> lambda_pair;
+        // Paper eq. 12 counts N_h, keyed by the OD-pair (i*n+j).
+        //   count_interval = arrivals inside the CURRENT ΔT (the estimate the
+        //                    paper reads off historical data for this interval)
+        //   count_total    = arrivals since episode start (fallback while the
+        //                    current interval is still too thin to estimate)
+        std::unordered_map<int64_t, float> count_interval;
+        std::unordered_map<int64_t, float> count_total;
+        int   n_interval      = 0;   // samples in the current interval
+        int   interval_index  = -1;  // which ΔT we are in
+        int   interval_len    = 1;   // steps per ΔT
 
         // Representative OSM node per cell, used to instantiate virtual calls.
         // rep_node_of_cell[c] = some valid road node inside cell c (0 if cell
@@ -220,22 +240,23 @@ private:
         // Locate a node's cell. Returns -1 if out of bounds / box unset.
         int cell_of(osmium::object_id_type id, const GeoBox& g) const;
 
-        // EMA update for an arrival event.
-        void register_arrival(int p_cell, int d_cell, float alpha);
+        // Count one arrival (paper eq. 12 numerator).
+        void register_arrival(int p_cell, int d_cell);
 
-        // Slow uniform decay of all cells (paper §4.4 EMA implicitly decays
-        // unobserved cells toward 0).
-        void decay_all(float decay);
+        // Roll over to the ΔT containing `step`, clearing the interval counts.
+        void advance_interval(int step);
 
         // Top-H (pickup_node, delivery_node, prob) virtual calls. probs are
-        // normalised so Σ = 1 within the returned subset. Filters out cells
-        // with no rep_node (the OD pair is unrealised on the graph).
+        // normalised so Σ = 1 over the returned subset — `min_p` prunes
+        // BEFORE normalisation so the identity Σ_h p_h = 1 holds exactly,
+        // which is what makes the eq. 15 one-step term cancel. Filters out
+        // cells with no rep_node (the OD pair is unrealised on the graph).
         struct VirtualCall {
             osmium::object_id_type pickup_node;
             osmium::object_id_type delivery_node;
             float probability;
         };
-        std::vector<VirtualCall> top_h(int H, float min_p) const;
+        std::vector<VirtualCall> top_h(int H, float min_p, int min_samples) const;
     };
 
     const SolverContext*       ctx_   = nullptr;
@@ -350,6 +371,7 @@ private:
     double road_pd_sum_    = 0.0;
     int  road_pd_count_    = 0;
     long active_steps_sum_ = 0;
+    int  wait_count_       = 0;
     int  capacity_violations_ = 0;
     int  pairing_violations_  = 0;
     SolverInstrumentation instr_;

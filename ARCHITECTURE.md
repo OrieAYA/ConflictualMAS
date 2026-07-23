@@ -273,7 +273,9 @@ acteur local en exécution). IPPO teste si un critic local suffit ; MAPPER
 décentralise tout + sélection évolutionnaire
 `p_i = 1 − exp(η(R̄_i − R̄_best))` (copie exacte du meilleur, sans mutation,
 `MapperPolicy.cpp:98`) ; Hybrid spécialise en ligne une base partagée gelée
-`μ = σ(z_base + w_i·x + b_i)` (`HybridPolicy.cpp`).
+`μ = σ(z_base + w_i·x + b_i)` (`HybridPolicy.cpp`) — résiduels remis à zéro à
+chaque épisode (`reset_episode`, appelé par `prepare_run`) : adaptation
+intra-épisode, indépendante de l'ordre des scénarios en éval.
 
 ### 4.1 Movement Decision Policy — `MovementPolicy.{hpp,cpp}`
 
@@ -413,9 +415,13 @@ construit une seule fois (l'état initial), rejoué par chaque mode de
 `eval_modes` (`prepare_run` restaure l'état initial et vide les buffers de
 la méthode précédente), puis par les solveurs standalone **CA + HAPC**
 (`SolverRunner` frais sur le même setup) — environnements byte-identiques,
-jointure CSV sur (city, scenario, episode). Les caches de chemins du slot
-sont partagés entre méthodes (données statiques déterministes) et libérés en
-fin de slot (`release_episode_memory`). Sorties : `episodes_seed{seed}.csv`
+jointure CSV sur (city, scenario, episode). **Cache froid par méthode** :
+`run_eval` appelle `release_episode_memory` (purge `paths_`) avant chaque
+mode, et HAPC vide son cache singleton (`SharedDistanceCache` + `PathHelper`)
+à chaque `init()` — seul l'event stream est conservé, garantissant timings
+équitables (chaque méthode paie ses propres calculs) et zéro contamination
+inter-méthodes. Mémoire bornée à un épisode (avant : partage inter-méthodes
+→ 19-48 Go → crash). Sorties : `episodes_seed{seed}.csv`
 (modes) + `sota_standalone/sota_seed{seed}.csv` (CA/HAPC). Hybrid se
 construit à l'évaluation : base = actor MAPPO chargé, résiduels en ligne.
 Les anciennes phases stress/généralisation et le flag
@@ -450,10 +456,32 @@ consolidation par concaténation.
   argmin du coût marginal d'insertion, planner sélectionné via les flags
   `planning_use_*` (`prepare_run`). DbVNS est le planner du framework.
 - **CA** (`FaithfulCASolver`) et **HAPC** (`HybridAdaptivePredictiveSolver`) :
-  pipelines complets autonomes via `SolverRunner` (`SoTA/`), fidèles à l'article
-  (CA : A* BPR + γ-mode + tie-break β_W ; HAPC : dispatch prédictif 2-pas,
-  objectif eq.11, énumération exhaustive au lieu du PSO). Évalués sur le même
-  `SharedEpisodeSetup` (mêmes tâches, positions, ghost s).
+  pipelines complets autonomes via `SolverRunner` (`SoTA/`), fidèles à l'article.
+  - **CA** (Asadi+2025) : A* BPR + **file d'ordres par agent** (paper §3.1
+    `T = (τ_a,1 … τ_a,NT)`, bornée par la capacité comme
+    `DeliveryLocalMemory::tasks` du DMAS ; exécution strictement séquentielle
+    pickup→delivery, donc ≤ 1 tâche à bord). Coût d'allocation = **marginal**
+    (append en queue de séquence, prix depuis `plan_tail_node/step` produits
+    par le commit congestion-aware) × γ-mode (`γ_idle < γ_busy`, §3.4) ;
+    tie-break **β_π** (§4.2-a, plus courte séquence restante). γ et β_π sont
+    désormais **effectifs** — un agent occupé est un candidat éligible, ce qui
+    était impossible sous l'ancienne règle un-ordre-à-la-fois (tout candidat
+    était idle, queue vide → code mort).
+  - **HAPC** (Cortés+2009) : dispatch prédictif 2-pas, objectif eq.11,
+    énumération exhaustive (au lieu du PSO). Forecast §4.4 = **comptes eq.12
+    par intervalle temporel ΔT** (`forecast_n_intervals=3`, `demand_grid_dim=3`
+    → 9 zones, `H=6` comme le cas nine-zone du papier ; fallback comptes
+    cumulés tant que l'intervalle courant est trop maigre). L'ancien décay
+    par pas (~50 pas de mémoire) est supprimé.
+  - **Parité de congestion RL↔SoTA** (§8) : les deux solveurs excluent leur
+    propre poids à la traversée (`self_weight = load_per_agent`) et committent
+    des fenêtres d'occupation **BPR** (`commit_agent_route` via
+    `traversal_steps`), commit avant schedule — mêmes règles que
+    l'`EpisodeRunner`. Ils partagent le socle `SolverInstrumentation` qui
+    renseigne maintenant `time_lost_to_congestion`, `n_traversals_in_jam`,
+    `route_congestion_exposure`, `delivery_route_efficiency`,
+    `mean_extra_steps_per_task` avec les **mêmes définitions** que le RL.
+  - Évalués sur le même `SharedEpisodeSetup` (mêmes tâches, positions, ghosts).
 
 ---
 
@@ -511,6 +539,13 @@ ceux qui entrent après. Implémentation : `schedule_next_edge`
 moment de la soustraction. Les requêtes de **planning/prédiction** passent
 `self_weight = 0` (champ complet).
 
+**Solveurs autonomes CA/HAPC (parité)** : même règle. `edge_arrival_step`
+soustrait `self_weight = load_per_agent`, et `recommit_route` publie l'empreinte
+BPR de la séquence complète **avant** que la 1ʳᵉ arête ne soit chronométrée
+(timing différé : `arrival_step_next_node = -1` tant que le commit n'a pas
+tourné). La 1ʳᵉ jambe est committée sur les arêtes réellement suivies (pas un
+A* frais qui pourrait diverger après retrait de l'empreinte propre).
+
 ---
 
 ## 9. Points ouverts
@@ -519,5 +554,13 @@ moment de la soustraction. Les requêtes de **planning/prédiction** passent
   l'agent libre le plus proche). Version Ma+2017 stricte = pool de tâches non
   allouées (`available_tasks`) + chaque agent libre (ordre fixe) tire
   `argmin_τ h(loc, s_τ)` ; déplace l'allocation de `offer_task` vers la boucle.
-- Self-exclusion du poids propre dans le mouvement interne des solveurs
-  autonomes (CA/HAPC) pour cohérence totale.
+- ~~Self-exclusion du poids propre dans le mouvement interne des solveurs
+  autonomes (CA/HAPC)~~ **fait** (§6/§8 : `self_weight = load_per_agent`,
+  fenêtres BPR, commit avant schedule).
+- **Adaptations CA/HAPC à déclarer dans l'article** (fidèles mais non neutres) :
+  CA — pas de couche *local collision avoidance* §3.3 (OSM continu, pas de
+  blocage de sommet) ; « congestion message » = CongestionMap partagée (oracle)
+  au lieu du CNN §3.4. HAPC — τ éliminé (appel virtuel inséré à Δt=0) ; coût en
+  distance au lieu du temps (invariant à vitesse constante, α=1) ; EE au lieu
+  du PSO (optimum global, écart PSO/EE 2–3 % chiffré par le papier) ; pas de
+  mémoire inter-épisodes pour le forecast (fallback comptes cumulés).
