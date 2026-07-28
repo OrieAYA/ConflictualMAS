@@ -22,7 +22,9 @@ find_package(EXPAT REQUIRED)
 find_package(CURL REQUIRED)
 #find_package(libosmium CONFIG REQUIRED)
 find_path(OSMIUM_INCLUDE_DIRS "osmium/version.hpp")
-find_package(Mapnik CONFIG REQUIRED)
+# Mapnik retire : servait uniquement au rendu PNG (MapRenderer). Le pipeline
+# training/evaluation ne l'utilise pas ; les caches GeoBox passent par
+# nlohmann/json. Version avec rendu conservee sur la branche `mapnik`.
 
 include_directories(SYSTEM ${PROTOZERO_INCLUDE_DIR})
 
@@ -107,9 +109,6 @@ target_link_libraries(main PRIVATE
     Boost::system
     Boost::iostreams
     ${OSMIUM_INCLUDE_DIRS}
-    mapnik::mapnik
-    mapnik::json
-    mapnik::wkt
     CURL::libcurl
     ZLIB::ZLIB
     BZip2::BZip2

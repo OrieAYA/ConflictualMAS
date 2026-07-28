@@ -746,13 +746,9 @@ FIND_PACKAGE_MESSAGE_DETAILS_TIFF:INTERNAL=[optimized;C:/libs/vcpkg/installed/x6
 //Details about finding Threads
 FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 //Details about finding ZLIB
-FIND_PACKAGE_MESSAGE_DETAILS_ZLIB:INTERNAL=[optimized;C:/libs/vcpkg/installed/x64-windows/lib/zlib.lib;debug;C:/libs/vcpkg/installed/x64-windows/debug/lib/zlibd.lib][C:/libs/vcpkg/installed/x64-windows/include][ ][v1.3.1()]
-//ADVANCED property for variable: FREETYPE_LIBRARY_DEBUG
-FREETYPE_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
+FIND_PACKAGE_MESSAGE_DETAILS_ZLIB:INTERNAL=[optimized;C:/libs/vcpkg/installed/x64-windows/lib/zlib.lib;debug;C:/libs/vcpkg/installed/x64-windows/debug/lib/zlibd.lib][C:/libs/vcpkg/installed/x64-windows/include][ ][v1.3.1(1)]
 //vcpkg
 FREETYPE_LIBRARY_DEBUG:INTERNAL=C:/libs/vcpkg/installed/x64-windows/debug/lib/freetyped.lib
-//ADVANCED property for variable: FREETYPE_LIBRARY_RELEASE
-FREETYPE_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
 //vcpkg
 FREETYPE_LIBRARY_RELEASE:INTERNAL=C:/libs/vcpkg/installed/x64-windows/lib/freetype.lib
 HARFBUZZ_INCLUDE_DIR:INTERNAL=C:/libs/vcpkg/installed/x64-windows/include/harfbuzz

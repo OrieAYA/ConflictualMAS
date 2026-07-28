@@ -1,0 +1,36 @@
+
+=== ConflictualMAS ===
+
+  1  Legacy      (orienteering / GeoBox / render / PDP utils)
+  2  Tests       (submenu: A structure B mechanics C modules D e2e E all)
+  3  Training    (MAPPO + IPPO + MAPPER, paper protocol)
+  4  Evaluation  (RL + RMCA + TP + CA + HAPC)
+  5  MovementRL  (PPO replan gate, frozen MAPPO bid)
+  6  LSM         (congestion prediction readout pretrain)
+
+Choice: 
+[Tests]  A Structure  B Mechanics  C Modules  D EndToEnd  R Regression  E All   |   G CongestionDiag  P PlanningCompare
+Choice: 
+=== R. Regression (golden values) ===
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\src\geobox_cache_folder/smoke_test.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 33179
+  Ways: 39877
+  Objective groups: 0
+  [1] Structure OK  E33179 nodes / 39877 ways
+  [2] Scenario grid OK  E27 combos
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+  [3] RL TAA  observed  Eappeared=39 completed=5 thr=0.128205 cong=1.00459
+  [3] RL TAA  OK  Eappeared=39 completed=5 thr=0.128205
+[PDPServerMemory] Initialized 0 group caches
+[PDPServerMemory] Initialized 0 group caches
+  [3] RL RMCA observed  Eappeared=39 completed=6 thr=0.153846 cong=1.00459
+  [3] RL RMCA OK  Eappeared=39 completed=6 thr=0.153846
+  [4] SoTA CA   observed  Eappeared=39 completed=1 thr=0.025641
+  [4] SoTA CA   OK  Eappeared=39 completed=1
+  [4] SoTA HAPC observed  Eappeared=39 completed=2 thr=0.0512821
+  [4] SoTA HAPC OK  Eappeared=39 completed=2
+=== R PASS ===

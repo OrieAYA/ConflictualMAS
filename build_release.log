@@ -1,5 +1,7 @@
 ﻿MSBuild のバージョン 18.3.0-preview-25570-20+708535641 (.NET Framework)
 
+  1>Checking Build System
+  Building Custom Rule C:/ConflictualMAS/CMakeLists.txt
   DeliveryAgent.cpp
 C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
 C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -204,6 +206,96 @@ C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C48
 C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/DMASforPD/Algorithms/TDAStar.cpp' をコンパイルしています)
   
+  BidPolicy.cpp
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/BidPolicy.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/BidPolicy.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MAPPO.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/BidPolicy.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\IPPO.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/BidPolicy.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MAPPERInspired.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/BidPolicy.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\Hybrid.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/BidPolicy.cpp' をコンパイルしています)
+  
+  Hybrid.cpp
+C:\ConflictualMAS\src\DMASforPD\Policy\Hybrid.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Policy\Hybrid.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/Hybrid.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/Hybrid.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/Hybrid.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\Hybrid.cpp(176,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Policy\Hybrid.cpp(194,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  IPPO.cpp
+C:\ConflictualMAS\src\DMASforPD\Policy\IPPO.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/IPPO.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/IPPO.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/IPPO.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\IPPO.cpp(36,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Policy\IPPO.cpp(46,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  MAPPERInspired.cpp
+C:\ConflictualMAS\src\DMASforPD\Policy\MAPPERInspired.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Policy\MAPPERInspired.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/MAPPERInspired.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/MAPPERInspired.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/MAPPERInspired.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MAPPERInspired.cpp(149,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Policy\MAPPERInspired.cpp(165,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  MAPPO.cpp
+C:\ConflictualMAS\src\DMASforPD\Policy\MAPPO.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/MAPPO.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/MAPPO.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/MAPPO.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MAPPO.cpp(37,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Policy\MAPPO.cpp(47,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  MovementPolicy.cpp
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/MovementPolicy.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/MovementPolicy.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.cpp(429,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.cpp(439,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  PolicyKit.cpp
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Policy/PolicyKit.cpp' をコンパイルしています)
+  
+  Lsm.cpp
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Prediction/Lsm.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.cpp(143,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.cpp(154,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
   AgentSolution.cpp
 C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
@@ -301,6 +393,7 @@ C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファ
 C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
   
+  TimePaths.cpp
   Box.cpp
 C:\ConflictualMAS\src\Environment\GeoBox\Box.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -317,6 +410,8 @@ C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイ�
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Environment/GeoBox/GeoBoxManager.cpp' をコンパイルしています)
   
+  コードを生成中...
+  コンパイル中...
   GraphSearch.cpp
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Environment/GeoBox/GraphSearch.cpp' をコンパイルしています)
@@ -385,6 +480,10 @@ C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning
 C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Environment/Simulation/MovingGhosts.cpp' をコンパイルしています)
   
+  TemporalChainList.cpp
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/TemporalChainList.cpp' をコンパイルしています)
+  
   TemporalGraph.cpp
 C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Environment/Simulation/TemporalGraph.cpp' をコンパイルしています)
@@ -451,8 +550,6 @@ C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv'
 C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Environment/Structure/EventStream.cpp' をコンパイルしています)
   
-  コードを生成中...
-  コンパイル中...
   Agent.cpp
 C:\ConflictualMAS\src\Legacy\Common\Pathfinding.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Legacy/Agent/Agent.cpp' をコンパイルしています)
@@ -638,6 +735,8 @@ C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning
 C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/Planning/ALNS.cpp' をコンパイルしています)
   
+  コードを生成中...
+  コンパイル中...
   RMCA.cpp
 C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
@@ -1204,8 +1303,6 @@ C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファ�
 C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
   
-  コードを生成中...
-  コンパイル中...
   ModuleTests.cpp
 C:\ConflictualMAS\src\Tests\ModuleTests.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
 C:\ConflictualMAS\src\Tests\ModuleTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -1872,6 +1969,8 @@ C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): wa
 C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
   
+  コードを生成中...
+  コンパイル中...
   RunnerAllocation.cpp
 C:\ConflictualMAS\src\TrainingEvaluation\Run\RunnerAllocation.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
 C:\ConflictualMAS\src\TrainingEvaluation\Run\Runner.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -2217,7 +2316,12 @@ C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp(23,9): warning C4005: '
       C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp(23,9):
       'NOMINMAX' は以前にコマンド ラインで宣言されています
   
-C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp(626,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp(625,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  CityConfig.cpp
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/StructuresParam/CityConfig.cpp' をコンパイルしています)
+  
   ScenarioConfig.cpp
 C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/StructuresParam/ScenarioConfig.cpp' をコンパイルしています)
@@ -2345,3 +2449,4 @@ C:\ConflictualMAS\src\utility.cpp(221,21): warning C4267: '初期化中': 'size_
 C:\ConflictualMAS\src\utility.cpp(222,20): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。 [C:\ConflictualMAS\build\main.vcxproj]
   コードを生成中...
   main.vcxproj -> C:\ConflictualMAS\build\Release\main.exe
+  Building Custom Rule C:/ConflictualMAS/CMakeLists.txt
