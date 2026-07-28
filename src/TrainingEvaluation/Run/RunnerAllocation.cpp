@@ -57,28 +57,10 @@ EpisodeRunner::OfferResult EpisodeRunner::offer_task(
     // receive_task; every agent is eligible at offer time.
     auto has_cap = [&](const DeliveryAgent& /*a*/) { return true; };
 
-    // ── Ablation baselines: sequential scan, no TAM, no buffer writes ─────────
+    // ── Greedy sanity baseline: first capable agent, no TAM, no buffer ────────
     if (policy_mode == PolicyMode::Greedy) {
         for (int i = 0; i < n_active; ++i)
             if (has_cap(*all_agents_[i])) return { all_agents_[i]->agent_id, false };
-        return { -1, false };
-    }
-    if (policy_mode == PolicyMode::Random) {
-        std::bernoulli_distribution coin(0.5);
-        for (int i = 0; i < n_active; ++i)
-            if (has_cap(*all_agents_[i]) && coin(rng_))
-                return { all_agents_[i]->agent_id, false };
-        return { -1, false };
-    }
-    if (policy_mode == PolicyMode::InsertionGreedy) {
-        TaskOffer offer{ task_id, reward, importance, {}, 0, 0 };
-        for (int i = 0; i < n_active; ++i) {
-            DeliveryAgent& a = *all_agents_[i];
-            if (!has_cap(a)) continue;
-            float bid = a.compute_bid(offer, memory_);
-            if (bid > cfg_.insertion_greedy_threshold)
-                return { a.agent_id, false };
-        }
         return { -1, false };
     }
 

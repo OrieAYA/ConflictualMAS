@@ -62,10 +62,11 @@ load_eval <- function(root = EVAL_ROOT) {
   dirs <- list.dirs(root, recursive = FALSE)
   out <- list()
   for (d in dirs) {
+    # tag = any target label: g1 (old groups), Paris_Medium, Paris, all, ...
     m <- regmatches(basename(d),
-                    regexec("^pol(\\d+)_rm([0-9.]+)_g(\\d+)$", basename(d)))[[1]]
+                    regexec("^pol(\\d+)_rm([0-9.]+)_(.+)$", basename(d)))[[1]]
     if (length(m) != 4) next
-    pol <- as.integer(m[2]); rm_lvl <- as.numeric(m[3]); grp <- as.integer(m[4])
+    pol <- as.integer(m[2]); rm_lvl <- as.numeric(m[3]); grp <- m[4]
 
     for (f in list.files(d, "^episodes_seed.*\\.csv$", full.names = TRUE)) {
       x <- read.csv(f, stringsAsFactors = FALSE)

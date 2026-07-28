@@ -218,9 +218,9 @@ static int run_main()
         trainer.train_grid(cfg);
     }
 
-    // ── 4 — Evaluation: Phase A (RL + RMCA + TP + ablation on the shared
-    //    TAM/DbVNS pipeline) then Phase B (standalone CA + HAPC). Both phases
-    //    consume the same SharedEpisodeSetup per (city, scenario, episode).
+    // ── 4 — Evaluation: each (city, scenario, episode) slot is built once and
+    //    replayed by the 6 pipeline modes (MAPPO/IPPO/MAPPER/Hybrid/RMCA/TP)
+    //    then by the standalone CA + HAPC solvers, all on the same setup.
     //    Loads the per-seed checkpoints produced by option 3.
     else if (rep == "4" || rep == "eval" || rep == "evaluation") {
         // Sweep de charge : un niveau = (seed, RM). RM = ratio_mult des events
@@ -235,30 +235,30 @@ static int run_main()
         const int   kEvalFirstSeed  = 42;    // seed d'éval du niveau RM=1.0
         const float kEvalRatioStep  = 0.5f;
 
-        std::cout << "Groupe de villes (1=Tokyo+Kyoto  2=LosAngeles+NewYork"
-                     "  3=Paris  0=toutes) : ";
-        int grp = 0;
-        std::cin >> grp;
-        std::cout << "RM min max (ex: 1.0 2.0) : ";
-        float rm_min = 1.f, rm_max = 1.f;
-        std::cin >> rm_min >> rm_max;
+        // One process per environment = one terminal. Pick 1-10 (0 = all);
+        // the RM sweep is fixed to 1.0 -> 2.5.
+        const std::vector<std::string> all_envs = {
+            "Tokyo_Small",      "Tokyo_Medium",
+            "Kyoto_Small",      "Kyoto_Medium",
+            "LosAngeles_Small", "LosAngeles_Medium",
+            "NewYork_Small",    "NewYork_Medium",
+            "Paris_Small",      "Paris_Medium",
+        };
+        std::cout << "Environnement a evaluer (RM 1.0 -> 2.5) :\n";
+        for (int i = 0; i < 10; ++i)
+            std::cout << "  " << (i + 1) << "  " << all_envs[i] << "\n";
+        std::cout << "  0  toutes\nChoix (0-10) : ";
+        int n = 0;
+        std::cin >> n;
+
+        const float rm_min = 1.0f, rm_max = 2.5f;
 
         CityRegistry::set_osm_root(kOsmRoot);
 
-        const std::vector<std::vector<std::string>> city_groups = {
-            { "Tokyo_Small",      "Tokyo_Medium",
-              "Kyoto_Small",      "Kyoto_Medium",
-              "LosAngeles_Small", "LosAngeles_Medium",
-              "NewYork_Small",    "NewYork_Medium",
-              "Paris_Small",      "Paris_Medium" },
-            { "Tokyo_Small",      "Tokyo_Medium",
-              "Kyoto_Small",      "Kyoto_Medium" },
-            { "LosAngeles_Small", "LosAngeles_Medium",
-              "NewYork_Small",    "NewYork_Medium" },
-            { "Paris_Small",      "Paris_Medium" },
-        };
-        const std::vector<std::string>& eval_cities =
-            city_groups[(grp >= 1 && grp <= 3) ? grp : 0];
+        std::vector<std::string> eval_cities;
+        std::string sel;
+        if (n >= 1 && n <= 10) { eval_cities = { all_envs[n - 1] }; sel = all_envs[n - 1]; }
+        else                   { eval_cities = all_envs;           sel = "all"; }
 
         const std::string seed_tag =
             "_seed" + std::to_string(kEvalPolicySeed) + ".bin";
@@ -273,7 +273,7 @@ static int run_main()
         const std::string rm_tag =
             std::to_string(tenths / 10) + "." + std::to_string(tenths % 10);
         std::cout << "\n════════ Niveau de charge RM=" << rm_tag
-                  << " (seed=" << seed << ", groupe " << grp
+                  << " (seed=" << seed << ", cible " << sel
                   << ", policy seed " << kEvalPolicySeed << ") ════════\n";
 
         TrainingConfig cfg;
@@ -281,7 +281,7 @@ static int run_main()
         cfg.output_dir      = kOutputDir + "\\paper_eval\\pol"
                             + std::to_string(kEvalPolicySeed)
                             + "_rm" + rm_tag
-                            + "_g" + std::to_string(grp);
+                            + "_" + sel;
         cfg.n_seeds         = 1;
         cfg.start_seed      = seed;
         cfg.n_eval_episodes = 1;
@@ -309,7 +309,7 @@ static int run_main()
         std::filesystem::create_directories(cfg.output_dir);
 
         // Episode-major : chaque slot (ville, scénario, épisode) est généré
-        // une fois puis rejoué par les 7 modes et par CA/HAPC standalone.
+        // une fois puis rejoué par les 6 modes et par CA/HAPC standalone.
         {
             MultiCityTrainer trainer;
             trainer.evaluate(cfg);

@@ -1,0 +1,33 @@
+
+=== ConflictualMAS ===
+
+  1  Legacy      (orienteering / GeoBox / render / PDP utils)
+  2  Tests       (submenu: A structure B mechanics C modules D e2e E all)
+  3  Training    (MAPPO + IPPO + MAPPER, paper protocol)
+  4  Evaluation  (RL + RMCA + TP + CA + HAPC)
+  5  MovementRL  (PPO replan gate, frozen MAPPO bid)
+  6  LSM         (congestion prediction readout pretrain)
+
+Choice: Environnement a evaluer (RM 1.0 -> 2.5) :
+  1  Tokyo_Small
+  2  Tokyo_Medium
+  3  Kyoto_Small
+  4  Kyoto_Medium
+  5  LosAngeles_Small
+  6  LosAngeles_Medium
+  7  NewYork_Small
+  8  NewYork_Medium
+  9  Paris_Small
+  10  Paris_Medium
+  0  toutes
+Choix (0-10) : 
+???????? Niveau de charge RM=1.0 (seed=42, cible Tokyo_Small, policy seed 42) ????????
+Loading 1 cities from C:\ConflictualMAS\data\cache
+  [Load] Tokyo_Small <- cache
+=== Chargement de GeoBox ===
+Fichier: C:\ConflictualMAS\data\cache/Tokyo_Small.json
+Cache version: "1.0"
+GeoBox chargée avec succès!
+  Nodes: 59297
+  Ways: 70715
+  Objective groups: 0

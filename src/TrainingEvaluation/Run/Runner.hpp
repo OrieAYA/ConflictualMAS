@@ -38,11 +38,9 @@ enum class PolicyMode {
     // Policy-level baseline — same TAM + DbVNS pipeline, scoring swapped
     RMCA,             // marginal-cost insertion scorer [Chen+2021], deterministic
 
-    // Ablations / sanity baselines
+    // Sanity baselines (tests only, not in the paper evaluation)
     TamAlwaysAccept,  // TAM routing only, every candidate bids with mu=1
     Greedy,           // first capable agent (sequential scan)
-    Random,           // accept with p=0.5
-    InsertionGreedy,  // bid = reward*importance/insertion_cost > threshold
 
     // Allocation-level baseline — replaces the TAM + policy entirely
     TokenPassing,     // argmin h(loc, pickup) on free agents [Ma+2017]
@@ -81,7 +79,7 @@ public:
     // Run one complete episode. episode_seed > 0 re-anchors every RNG so the
     // same (city, scenario, episode) slot replays identically across policy
     // modes; a SharedEpisodeSetup additionally makes the environment
-    // byte-identical with the standalone SoTA solvers (Phase B).
+    // byte-identical with the standalone SoTA solvers (CA, HAPC).
     RunResult run(int city_index = 0, int num_cities = 1,
                   EpisodeScenario scenario = {},
                   uint32_t episode_seed = 0,

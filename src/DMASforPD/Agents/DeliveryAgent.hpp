@@ -162,10 +162,6 @@ public:
     // returns a deterministic score with bid=true and records nothing.
     BidResult bid_for_task    (const TaskOffer& offer, PDPGlobalMemory& memory);
 
-    // Compute a bid score for InsertionGreedy baseline (no buffer recording).
-    // Returns (reward * importance) / max(insertion_cost, ε). Higher = better task.
-    float compute_bid         (const TaskOffer& offer, PDPGlobalMemory& memory);
-
     // ---- Path management (two-path lookahead) ---------------------------
 
     // Load the path for the current leg into local_memory.current_path and

@@ -611,8 +611,9 @@ void PDPGlobalMemory::reset_episode() {
     // Reset clock to 0 so advance_time() accepts the new episode's steps.
     current_time_ = 0;
 
-    // Clear dynamic objective registrations (task nodes from the just-finished episode).
-    // Preserves paths_ so A* results are reused across episodes.
+    // Clear the task-node objective registrations and invalidate dynamic
+    // costs. The static path geometry (paths_) is kept here; the runner wipes
+    // it via clear_paths() between episodes (and between eval methods).
     server_memory.reset_objectives(1);
 
     // Wipe per-episode heatmap stats (keeps precomputed cell→edge sampling).

@@ -152,9 +152,6 @@ struct EpisodeConfig {
     bool use_double_horizon_planning = false;
     bool use_dbvns_planning          = false;
 
-    // InsertionGreedy: accept if reward·imp / max(insertion_cost_m, ε) > threshold.
-    float insertion_greedy_threshold = 1e-4f;
-
     // ── TAM multi-candidate (paper Algorithm 1) ────────────────────────────
     // K-candidate auction: dual Dijkstra from pickup/delivery, budget x·ratio(x)
     // with ratio = min + (max-min)/(1 + x/scale); winner = argmax μ. force_assign:
@@ -239,7 +236,7 @@ struct GlobalState {
     // Reserved (4) — future features
     float pad[4] = {};
 
-    static_assert(kGlobSz == 20, "GlobalState size must match kGlobSz in ObjectiveDMPolicy");
+    static_assert(kGlobSz == 20, "GlobalState size must match kGlobSz in PolicyKit");
 
     void to_array(float* dst) const {
         dst[ 0]=time_ratio;    dst[ 1]=n_agents_ratio;

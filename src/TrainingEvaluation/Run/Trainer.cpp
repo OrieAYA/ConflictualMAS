@@ -109,8 +109,6 @@ static const char* policy_mode_label(PolicyMode m) {
         case PolicyMode::Hybrid:          return "Hybrid";
         case PolicyMode::TamAlwaysAccept: return "TamAlwaysAccept";
         case PolicyMode::Greedy:          return "Greedy";
-        case PolicyMode::Random:          return "Random";
-        case PolicyMode::InsertionGreedy: return "InsertionGreedy";
         case PolicyMode::TokenPassing:    return "TokenPassing";
         case PolicyMode::DoubleHorizon:   return "DoubleHorizon";
         case PolicyMode::DbVNS:           return "DbVNS";
@@ -149,10 +147,7 @@ int MultiCityTrainer::run_eval(
 
     const std::vector<PolicyMode> modes = resolve_eval_modes(cfg, {
         PolicyMode::MAPPO, PolicyMode::IPPO, PolicyMode::MAPPER,
-        PolicyMode::RMCA,
-        PolicyMode::TamAlwaysAccept,
-        PolicyMode::Greedy, PolicyMode::Random,
-        PolicyMode::TokenPassing });
+        PolicyMode::Hybrid, PolicyMode::RMCA, PolicyMode::TokenPassing });
 
     std::vector<EpisodeScenario> scenarios = cfg.eval_scenarios;
     const bool single_scenario = scenarios.empty();

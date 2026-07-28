@@ -19,8 +19,8 @@
 //   • Huber loss helpers (δ=10.0) — Yu+2022 Tab.7 "value loss huber, δ=10".
 //
 // All routines are header-only inline so the four policy translation units
-// (ObjectiveDMPolicy, IPPOPolicy, MapperPolicy, FaithfulMapperPolicy) compile
-// without an extra .cpp.
+// (MappoPolicy, IppoPolicy, MapperPolicy, HybridPolicy) share them without an
+// extra .cpp.
 
 namespace policy_optim {
 

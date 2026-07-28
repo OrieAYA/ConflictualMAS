@@ -1,11 +1,695 @@
 ﻿MSBuild のバージョン 18.3.0-preview-25570-20+708535641 (.NET Framework)
 
+  DeliveryAgent.cpp
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\BidPolicy.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/DeliveryAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.cpp(612,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  Manager.cpp
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/Manager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/Manager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/Manager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/Manager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/Manager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/Manager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/Manager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/Manager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/Manager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/Manager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/Manager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/Manager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/Manager.cpp' をコンパイルしています)
+  
+  TaskAgent.cpp
+C:\ConflictualMAS\src\DMASforPD\Agents\TaskAgent.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/TaskAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/TaskAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/TaskAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/TaskAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/TaskAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/TaskAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/TaskAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/TaskAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/TaskAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/TaskAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/TaskAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/TaskAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Agents/TaskAgent.cpp' をコンパイルしています)
+  
+  DbVNS.cpp
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/DbVNS.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/DbVNS.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/DbVNS.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/DbVNS.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/DbVNS.cpp' をコンパイルしています)
+  
+  TAM.cpp
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TAM.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TAM.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TAM.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TAM.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TAM.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TAM.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TAM.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TAM.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TAM.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TAM.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TAM.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TAM.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TAM.cpp' をコンパイルしています)
+  
+  TDAStar.cpp
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TDAStar.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TDAStar.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TDAStar.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TDAStar.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Algorithms/TDAStar.cpp' をコンパイルしています)
+  
+  AgentSolution.cpp
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/AgentSolution.cpp' をコンパイルしています)
+  
+  ObjectiveCache.cpp
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/ObjectiveCache.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/ObjectiveCache.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/ObjectiveCache.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/ObjectiveCache.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/ObjectiveCache.cpp' をコンパイルしています)
+  
+  OperableEnvironment.cpp
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/DMASforPD/Structures/OperableEnvironment.cpp' をコンパイルしています)
+  
+  Box.cpp
+C:\ConflictualMAS\src\Environment\GeoBox\Box.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/GeoBox/Box.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/GeoBox/Box.cpp' をコンパイルしています)
+  
+  GeoBoxManager.cpp
+C:\ConflictualMAS\src\Environment\GeoBox\GeoBoxManager.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/GeoBox/GeoBoxManager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/GeoBox/GeoBoxManager.cpp' をコンパイルしています)
+  
+  GraphSearch.cpp
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/GeoBox/GraphSearch.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/GeoBox/GraphSearch.cpp' をコンパイルしています)
+  
+  MapRenderer.cpp
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Render/MapRenderer.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Render/MapRenderer.cpp' をコンパイルしています)
+  
+  CongestionMap.cpp
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/CongestionMap.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/CongestionMap.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/CongestionMap.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/CongestionMap.cpp' をコンパイルしています)
+  
+  GhostTrafficController.cpp
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/GhostTrafficController.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/GhostTrafficController.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/GhostTrafficController.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/GhostTrafficController.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/GhostTrafficController.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/GhostTrafficController.cpp' をコンパイルしています)
+  
+  MovingGhosts.cpp
+C:\ConflictualMAS\src\Environment\Simulation\MovingGhosts.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\Simulation\MovingGhosts.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/MovingGhosts.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/MovingGhosts.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/MovingGhosts.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/MovingGhosts.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/MovingGhosts.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/MovingGhosts.cpp' をコンパイルしています)
+  
+  TemporalGraph.cpp
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/TemporalGraph.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/TemporalGraph.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/TemporalGraph.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Simulation/TemporalGraph.cpp' をコンパイルしています)
+  
+  Episode.cpp
+C:\ConflictualMAS\src\Environment\Structure\Episode.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/Episode.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/Episode.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/Episode.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/Episode.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/Episode.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/Episode.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/Episode.cpp' をコンパイルしています)
+  
+  EpisodeManager.cpp
+C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/EpisodeManager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/EpisodeManager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/EpisodeManager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/EpisodeManager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/EpisodeManager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/EpisodeManager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/EpisodeManager.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/EpisodeManager.cpp' をコンパイルしています)
+  
+  EventStream.cpp
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Environment/Structure/EventStream.cpp' をコンパイルしています)
+  
+  コードを生成中...
+  コンパイル中...
+  Agent.cpp
+C:\ConflictualMAS\src\Legacy\Common\Pathfinding.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/Agent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/Agent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/Agent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Memory.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/Agent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/Agent.cpp' をコンパイルしています)
+  
+  GlobalSolutionConstructor.cpp
+C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/GlobalSolutionConstructor.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/GlobalSolutionConstructor.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/GlobalSolutionConstructor.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Pathfinding.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/GlobalSolutionConstructor.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Memory.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/GlobalSolutionConstructor.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/GlobalSolutionConstructor.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/GlobalSolutionConstructor.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp(54,18): warning C4305: '初期化中': 'double' から 'float' へ切り詰めます。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp(55,18): warning C4305: '初期化中': 'double' から 'float' へ切り詰めます。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp(80,29): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.cpp(81,29): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。 [C:\ConflictualMAS\build\main.vcxproj]
+  MetaAgent.cpp
+C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/MetaAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/MetaAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/MetaAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Pathfinding.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/MetaAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Memory.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/MetaAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Agent/MetaAgent.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.cpp(42,31): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。 [C:\ConflictualMAS\build\main.vcxproj]
+  Memory.cpp
+C:\ConflictualMAS\src\Legacy\Common\Memory.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Common/Memory.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Common/Memory.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Common/Memory.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Pathfinding.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Common/Memory.cpp' をコンパイルしています)
+  
+  Pathfinding.cpp
+C:\ConflictualMAS\src\Legacy\Common\Pathfinding.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\Common\Pathfinding.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Common/Pathfinding.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Common/Pathfinding.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/Common/Pathfinding.cpp' をコンパイルしています)
+  
+  ACO.cpp
+C:\ConflictualMAS\src\Legacy\MHProcs\ACO.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/ACO.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/ACO.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Pathfinding.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/ACO.cpp' をコンパイルしています)
+  
+  GRASP.cpp
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/GRASP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/GRASP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Pathfinding.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/GRASP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(10,71): warning C4244: '引数': '_Rep' から 'unsigned int' への変換です。データが失われる可能性があります。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(10,71): warning C4244:         with [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(10,71): warning C4244:         [ [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(10,71): warning C4244:             _Rep=__int64 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(10,71): warning C4244:         ] [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(79,71): warning C4267: '引数': 'size_t' から '_Ty' に変換しました。データが失われているかもしれません。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(79,71): warning C4267:         with [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(79,71): warning C4267:         [ [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(79,71): warning C4267:             _Ty=int [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(79,71): warning C4267:         ] [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(96,67): warning C4267: '引数': 'size_t' から '_Ty' に変換しました。データが失われているかもしれません。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(96,67): warning C4267:         with [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(96,67): warning C4267:         [ [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(96,67): warning C4267:             _Ty=int [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\GRASP.cpp(96,67): warning C4267:         ] [C:\ConflictualMAS\build\main.vcxproj]
+  PSO.cpp
+C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/PSO.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/PSO.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Pathfinding.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/PSO.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Memory.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/PSO.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp(12,71): warning C4244: '引数': '_Rep' から 'unsigned int' への変換です。データが失われる可能性があります。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp(12,71): warning C4244:         with [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp(12,71): warning C4244:         [ [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp(12,71): warning C4244:             _Rep=__int64 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp(12,71): warning C4244:         ] [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\PSO.cpp(100,48): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。 [C:\ConflictualMAS\build\main.vcxproj]
+  VNS.cpp
+C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/VNS.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/VNS.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Pathfinding.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/VNS.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Memory.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Legacy/MHProcs/VNS.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp(14,71): warning C4244: '引数': '_Rep' から 'unsigned int' への変換です。データが失われる可能性があります。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp(14,71): warning C4244:         with [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp(14,71): warning C4244:         [ [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp(14,71): warning C4244:             _Rep=__int64 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp(14,71): warning C4244:         ] [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp(178,19): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp(179,24): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp(710,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Legacy\MHProcs\VNS.cpp(1296,41): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。 [C:\ConflictualMAS\build\main.vcxproj]
+  ALNS.cpp
+C:\ConflictualMAS\src\SoTA\Planning\ALNS.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Planning/ALNS.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Planning/ALNS.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Planning/ALNS.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Planning/ALNS.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Planning/ALNS.cpp' をコンパイルしています)
+  
+  RMCA.cpp
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/ScoringLike/RMCA.cpp' をコンパイルしています)
+  
   SolverFramework.cpp
 C:\ConflictualMAS\src\SoTA\SolverFramework.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
 C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -75,9 +759,6 @@ C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: �
   (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
-  
-C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(588,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/SolverFramework.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\Environment\Structure\EpisodeManager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -94,6 +775,9 @@ C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイル
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
   
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
+  
 C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
   
@@ -161,9 +845,6 @@ C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: �
   (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
-  
-C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(588,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/Standalone/CA.cpp' をコンパイルしています)
   
   HAPC.cpp
@@ -177,6 +858,9 @@ C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイル
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
   
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+  
 C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
   
@@ -246,10 +930,86 @@ C:\ConflictualMAS\src\DMASforPD\Policy\MovementPolicy.hpp(1,1): warning C4819: �
 C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
   
-C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(588,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/SoTA/Standalone/HAPC.cpp' をコンパイルしています)
+C:\ConflictualMAS\src\SoTA\Standalone\HAPC.cpp(768,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  TP.cpp
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
   
-C:\ConflictualMAS\src\SoTA\Standalone\HAPC.cpp(601,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Policy\PolicyKit.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/SoTA/TaskAgentLike/TP.cpp' をコンパイルしています)
+  
+  CongestionOnlyTest.cpp
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/CongestionOnlyTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\CityConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/CongestionOnlyTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/CongestionOnlyTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/CongestionOnlyTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/CongestionOnlyTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/CongestionOnlyTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/CongestionOnlyTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/CongestionOnlyTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp(98,43): warning C4244: '初期化中': 'const _Ty' から 'double' への変換です。データが失われる可能性があります。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp(98,43): warning C4244:         with [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp(98,43): warning C4244:         [ [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp(98,43): warning C4244:             _Ty=size_t [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp(98,43): warning C4244:         ] [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp(98,25): warning C4244: '初期化中': 'const _Ty' から 'const double' への変換です。データが失われる可能性があります。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp(98,25): warning C4244:         with [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp(98,25): warning C4244:         [ [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp(98,25): warning C4244:             _Ty=size_t [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\CongestionOnlyTest.cpp(98,25): warning C4244:         ] [C:\ConflictualMAS\build\main.vcxproj]
   EndToEndTests.cpp
 C:\ConflictualMAS\src\Tests\EndToEndTests.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
 C:\ConflictualMAS\src\Tests\EndToEndTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -261,6 +1021,9 @@ C:\ConflictualMAS\src\Tests\TestSupport.hpp(1,1): warning C4819: ファイルは
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
   
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
 C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
   
@@ -329,6 +1092,34 @@ C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファ�
   
 C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/EndToEndTests.cpp' をコンパイルしています)
+  
+  GeoBoxConnectivityTest.cpp
+C:\ConflictualMAS\src\Tests\GeoBoxConnectivityTest.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/GeoBoxConnectivityTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/GeoBoxConnectivityTest.cpp' をコンパイルしています)
+  
+  LegacyTests.cpp
+C:\ConflictualMAS\src\Tests\LegacyTests.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/LegacyTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/LegacyTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Pathfinding.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/LegacyTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Common\Memory.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/LegacyTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Agent\MetaAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/LegacyTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Legacy\Agent\GlobalSolutionConstructor.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/LegacyTests.cpp' をコンパイルしています)
   
   MechanicsTests.cpp
 C:\ConflictualMAS\src\Tests\MechanicsTests.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -341,6 +1132,9 @@ C:\ConflictualMAS\src\Tests\TestSupport.hpp(1,1): warning C4819: ファイルは
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
   
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
+  
 C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
   
@@ -410,6 +1204,8 @@ C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファ�
 C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/MechanicsTests.cpp' をコンパイルしています)
   
+  コードを生成中...
+  コンパイル中...
   ModuleTests.cpp
 C:\ConflictualMAS\src\Tests\ModuleTests.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
 C:\ConflictualMAS\src\Tests\ModuleTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -419,6 +1215,9 @@ C:\ConflictualMAS\src\Tests\TestSupport.hpp(1,1): warning C4819: ファイルは
   (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\Tests\TamMcTest.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -496,14 +1295,52 @@ C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): wa
 C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
   
-C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(588,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
-  
 C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/ModuleTests.cpp' をコンパイルしています)
+  
+  PDPTests.cpp
+C:\ConflictualMAS\src\Tests\PDPTests.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PDPTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PDPTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PDPTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PDPTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PDPTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PDPTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PDPTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PDPTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PDPTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PDPTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PDPTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PDPTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PDPTests.cpp' をコンパイルしています)
   
   PlanningComparisonTest.cpp
 C:\ConflictualMAS\src\Tests\PlanningComparisonTest.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -511,6 +1348,9 @@ C:\ConflictualMAS\src\Tests\PlanningComparisonTest.hpp(1,1): warning C4819: フ�
   (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/PlanningComparisonTest.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -594,6 +1434,9 @@ C:\ConflictualMAS\src\Tests\TestSupport.hpp(1,1): warning C4819: ファイルは
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
   
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
 C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
   
@@ -666,14 +1509,58 @@ C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): wa
 C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
   
-C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(588,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
-  
 C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\SoTA\Standalone\HAPC.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/RegressionTests.cpp' をコンパイルしています)
+  
+  StructureTests.cpp
+C:\ConflictualMAS\src\Tests\StructureTests.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\StructureTests.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Tests\TestSupport.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\PDPTask.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Agents\DeliveryAgent.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\AgentSolution.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Structures\OperableEnvironment.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\DbVNS.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\DMASforPD\Algorithms\TAM.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/StructureTests.cpp' をコンパイルしています)
   
   TamMcTest.cpp
 C:\ConflictualMAS\src\Tests\TamMcTest.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -705,6 +1592,9 @@ C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: フ
   (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -752,6 +1642,23 @@ C:\ConflictualMAS\src\DMASforPD\Prediction\Lsm.hpp(1,1): warning C4819: ファ�
 C:\ConflictualMAS\src\Environment\Simulation\GhostTrafficController.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/TamMcTest.cpp' をコンパイルしています)
   
+  TemporalChainListTest.cpp
+C:\ConflictualMAS\src\Tests\TemporalChainListTest.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Tests\TestSupport.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TemporalChainListTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TemporalChainListTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TemporalChainListTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalChainList.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TemporalChainListTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\Simulation\TemporalGraph.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TemporalChainListTest.cpp' をコンパイルしています)
+  
   TrainingSmokeTest.cpp
 C:\ConflictualMAS\src\Tests\TrainingSmokeTest.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
 C:\ConflictualMAS\src\TrainingEvaluation\StructuresParam\EpisodeConfig.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -779,6 +1686,9 @@ C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: フ
   (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/Tests/TrainingSmokeTest.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -852,6 +1762,9 @@ C:\ConflictualMAS\src\DMASforPD\Structures\ObjectiveCache.hpp(1,1): warning C481
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
   
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
+  
 C:\ConflictualMAS\src\Environment\Simulation\CongestionMap.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/Metrics.cpp' をコンパイルしています)
   
@@ -906,6 +1819,9 @@ C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: フ
   (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/Runner.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -985,6 +1901,9 @@ C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: フ
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
   
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
+  
 C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/RunnerAllocation.cpp' をコンパイルしています)
   
@@ -1059,6 +1978,9 @@ C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: フ
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
   
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
+  
 C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/RunnerMovement.cpp' をコンパイルしています)
   
@@ -1131,6 +2053,9 @@ C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: フ
   (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/RunnerPrediction.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -1216,6 +2141,9 @@ C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: フ
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
   
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
+  
 C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
   
@@ -1279,9 +2207,6 @@ C:\ConflictualMAS\src\DMASforPD\Policy\Hybrid.hpp(1,1): warning C4819: ファイ
 C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
   
-C:\ConflictualMAS\src\SoTA\SolverFramework.hpp(588,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
-  (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
-  
 C:\ConflictualMAS\src\SoTA\Standalone\CA.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/TrainingEvaluation/Run/Trainer.cpp' をコンパイルしています)
   
@@ -1293,6 +2218,10 @@ C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp(23,9): warning C4005: '
       'NOMINMAX' は以前にコマンド ラインで宣言されています
   
 C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.cpp(626,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  ScenarioConfig.cpp
+C:\ConflictualMAS\src\Environment\Structure\EventStream.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/TrainingEvaluation/StructuresParam/ScenarioConfig.cpp' をコンパイルしています)
+  
   main.cpp
 C:\ConflictualMAS\src\TrainingEvaluation\Run\Trainer.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/main.cpp' をコンパイルしています)
@@ -1328,6 +2257,9 @@ C:\ConflictualMAS\src\Environment\Structure\Episode.hpp(1,1): warning C4819: フ
   (ソース ファイル '../src/main.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/main.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
   (ソース ファイル '../src/main.cpp' をコンパイルしています)
   
 C:\ConflictualMAS\src\DMASforPD\Agents\Manager.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
@@ -1401,5 +2333,15 @@ C:\ConflictualMAS\src\Tests\PlanningComparisonTest.hpp(1,1): warning C4819: フ�
   
 C:\ConflictualMAS\src\main.cpp(275,22): warning C4566: ユニバーサル文字名 '\u2550' によって表示されている文字は、現在のコード ページ (932) で表示できません [C:\ConflictualMAS\build\main.vcxproj]
 C:\ConflictualMAS\src\main.cpp(277,61): warning C4566: ユニバーサル文字名 '\u2550' によって表示されている文字は、現在のコード ページ (932) で表示できません [C:\ConflictualMAS\build\main.vcxproj]
+  utility.cpp
+C:\ConflictualMAS\src\utility.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。 [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/utility.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\Environment\GeoBox\Box.hpp(22,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\ConflictualMAS\build\main.vcxproj]
+  (ソース ファイル '../src/utility.cpp' をコンパイルしています)
+  
+C:\ConflictualMAS\src\utility.cpp(221,21): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。 [C:\ConflictualMAS\build\main.vcxproj]
+C:\ConflictualMAS\src\utility.cpp(222,20): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。 [C:\ConflictualMAS\build\main.vcxproj]
   コードを生成中...
   main.vcxproj -> C:\ConflictualMAS\build\Release\main.exe
