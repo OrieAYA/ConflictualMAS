@@ -175,6 +175,11 @@ int MultiCityTrainer::run_eval(
                     ep_seed, *ca.config, sc, ca.ep_cfg, ca.geo_box);
 
                 for (PolicyMode m : modes) {
+                    // Pre-increment value == what gets logged as
+                    // global_episode (mirrors the previous global_ep++ use).
+                    const int this_global_ep = global_ep++;
+                    if (this_global_ep < cfg.resume_from_episode) continue;
+
                     // Cold path cache per method (protocol: purge caches
                     // between methods, keep the pre-generated event stream) —
                     // fair timing + no cross-method calc contamination.
@@ -184,7 +189,7 @@ int MultiCityTrainer::run_eval(
                     RunResult res = runner.run(ca.index, num_cities, sc,
                                                 ep_seed, &setup);
                     logger.push(make_record(
-                        res, seed, global_ep++,
+                        res, seed, this_global_ep,
                         ca.config->name, phase, name,
                         res.metrics.n_agents_max));
                     const auto& M = res.metrics;
@@ -198,8 +203,12 @@ int MultiCityTrainer::run_eval(
                               << " lat=" << M.latency_mean
                               << "  " << res.wallclock_ms << "ms\n";
                 }
-
-                if (sota) {
+                // Skip the standalone SoTA pass only for a block entirely
+                // before the resume point (global_ep is now exclusive-end for
+                // this block); run it for the block straddling the resume
+                // point (its modes weren't all finished last time, so SoTA
+                // wasn't reached either) and for every block after it.
+                if (sota && global_ep > cfg.resume_from_episode) {
                     SolverRunner srunner(ca.ep_cfg, ca.geo_box, sc, ep_seed);
                     auto run_solver = [&](ISolver& s) {
                         SolverMetrics m = srunner.run(s, &setup);

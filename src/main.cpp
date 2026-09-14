@@ -235,6 +235,13 @@ static int run_main()
         const int   kEvalFirstSeed  = 42;    // seed d'éval du niveau RM=1.0
         const float kEvalRatioStep  = 0.5f;
 
+        // Reprise après coupure : ne relance que le niveau RM demandé
+        // (-1 = tous, comportement par défaut inchangé) et saute les lignes
+        // (scénario, épisode, mode) déjà loguées d'un run précédent — voir
+        // TrainingConfig::resume_from_episode / MultiCityTrainer::run_eval.
+        const float kOnlyRunRM        = 2.5f;   // -1.f = sweep complet 1.0->2.5
+        const int   kResumeFromEpisode = 142;   // 0 = depuis le debut
+
         // One process per environment = one terminal. Pick 1-10 (0 = all);
         // the RM sweep is fixed to 1.0 -> 2.5.
         const std::vector<std::string> all_envs = {
@@ -267,6 +274,7 @@ static int run_main()
             std::round((rm_max - rm_min) / kEvalRatioStep)) + 1;
         for (int lvl = 0; lvl < n_levels; ++lvl) {
         const float rm     = rm_min + lvl * kEvalRatioStep;
+        if (kOnlyRunRM >= 0.f && std::fabs(rm - kOnlyRunRM) > 1e-3f) continue;
         const int   seed   = kEvalFirstSeed + static_cast<int>(
             std::round((rm - 1.f) / kEvalRatioStep));
         const int   tenths = static_cast<int>(std::round(rm * 10.f));
@@ -298,6 +306,7 @@ static int run_main()
             PolicyMode::TokenPassing,
         };
         cfg.eval_scenarios = make_scenario_grid();
+        cfg.resume_from_episode = kResumeFromEpisode;
 
         apply_paper_environment(cfg.episode_cfg);
         cfg.episode_cfg.ratio_mult = rm;

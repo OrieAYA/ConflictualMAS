@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ミッションコントロール：ロボット経路チャレンジ</title>
+<style>
+  :root {
+    --bg: #0a1622;
+    --panel-bg: #0f2236;
+    --panel-bg-2: #122942;
+    --grid-bg: #0c1c2b;
+    --grid-line: #1c3a52;
+    --obstacle: #22415c;
+    --obstacle-edge: #2f5776;
+    --text: #eaf2f8;
+    --text-dim: #85a0b8;
+    --accent: #ffd166;
+    --accent-dim: #8a6f2e;
+    --cyan: #4cc9f0;
+    --success: #52d17c;
+    --danger: #ef5b5b;
+    --mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    --disp: "Segoe UI", system-ui, -apple-system, "Hiragino Sans", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(ellipse at top left, #0e2135 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: var(--disp);
+    min-height: 100vh;
+    padding: 18px;
+  }
+  .app {
+    max-width: 1160px;
+    margin: 0 auto;
+  }
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--grid-line);
+    padding-bottom: 12px;
+  }
+  header .title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  header .title .eyebrow {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  nav.tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  nav.tabs button {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: var(--panel-bg);
+    color: var(--text-dim);
+    border: 1px solid var(--grid-line);
+    padding: 9px 14px;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  nav.tabs button:hover { color: var(--text); border-color: var(--cyan); }
+  nav.tabs button.active {
+    color: var(--bg);
+    background: var(--accent);
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+  main {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .board-wrap {
+    background: var(--panel-bg);
+    border: 1px solid var(--grid-line);
+    border-radius: 10px;
+    padding: 12px;
+    flex: 0 0 auto;
+  }
+  canvas#grid {
+    display: block;
+    border-radius: 4px;
+    cursor: pointer;
+    max-width: 100%;
+    height: auto;
+  }
+  .status-bar {
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    min-height: 18px;
+    padding: 0 2px;
+  }
+  .panel {
+    flex: 1 1 340px;
+    min-width: 300px;
+    background: var(--panel-bg);
+    border: 1px solid var(--grid-line);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .panel h2 {
+    font-size: 14px;
+    margin: 0 0 4px 0;
+    color: var(--accent);
+    letter-spacing: .5px;
+  }
+  .panel p.hint {
+    color: var(--text-dim);
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin: 0 0 10px 0;
+  }
+  kbd {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    background: var(--grid-bg);
+    border: 1px solid var(--grid-line);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--cyan);
+  }
+  .kbdrow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--panel-bg-2);
+    border: 1px solid var(--grid-line);
+    border-radius: 7px;
+    padding: 8px 10px;
+    margin-bottom: 14px;
+  }
+  .kbdrow span { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .robot-select {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .robot-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    border: 1.5px solid var(--grid-line);
+    background: var(--panel-bg-2);
+    cursor: pointer;
+    color: var(--text);
+    font-family: var(--disp);
+    font-size: 12.5px;
+    text-align: left;
+  }
+  .robot-btn .dot { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 auto; }
+  .robot-btn .prog { margin-left: 6px; font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+  .robot-btn.active { border-color: var(--accent); background: #1c2a1f11; box-shadow: 0 0 0 1px var(--accent) inset; }
+  .robot-btn.done .prog { color: var(--success); }
+
+  ul.checklist { list-style: none; margin: 0 0 14px 0; padding: 0; }
+  ul.checklist li {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+    padding: 7px 4px; font-size: 12.5px; border-bottom: 1px dashed var(--grid-line);
+  }
+  ul.checklist li .row1 { display: flex; align-items: center; gap: 8px; }
+  ul.checklist li .mark { font-family: var(--mono); width: 16px; text-align: center; flex: 0 0 auto; }
+  ul.checklist li.done .row1 { color: var(--success); }
+  ul.checklist li .shared { display: flex; align-items: center; gap: 4px; padding-left: 24px; }
+  ul.checklist li .shared .stxt { font-family: var(--mono); font-size: 9.5px; color: var(--text-dim); }
+  ul.checklist li .shared .dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+
+  .btnrow { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  button.ctrl {
+    font-family: var(--disp); font-size: 12.5px; font-weight: 600;
+    padding: 9px 14px; border-radius: 7px; border: 1px solid var(--grid-line);
+    background: var(--panel-bg-2); color: var(--text); cursor: pointer;
+  }
+  button.ctrl:hover { border-color: var(--cyan); }
+  button.ctrl:disabled { opacity: .4; cursor: not-allowed; }
+  button.ctrl.primary { background: var(--accent); color: #241a00; border-color: var(--accent); }
+  button.ctrl.primary:hover { filter: brightness(1.08); }
+  button.ctrl.danger { color: var(--danger); }
+
+  .divider { height: 1px; background: var(--grid-line); margin: 14px 0; }
+
+  .result-box { border-radius: 8px; padding: 12px; margin-bottom: 12px; font-family: var(--mono); font-size: 12.5px; }
+  .result-box.ok { background: #0f2b1c; border: 1px solid var(--success); }
+  .result-box.fail { background: #2b1414; border: 1px solid var(--danger); }
+  .result-box .big { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .result-box .metric { display: flex; justify-content: space-between; padding: 2px 0; color: var(--text-dim); }
+  .result-box .metric b { color: var(--text); }
+
+  .collision-item { font-size: 11.5px; color: var(--danger); padding: 2px 0; }
+
+  input.nameinput {
+    width: 100%; padding: 9px 10px; border-radius: 7px; border: 1px solid var(--grid-line);
+    background: var(--grid-bg); color: var(--text); font-family: var(--disp); font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  .speedrow { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+  .speedrow input[type=range] { flex: 1; }
+
+  .miniLog {
+    height: 150px; overflow-y: auto; background: var(--grid-bg); border: 1px solid var(--grid-line);
+    border-radius: 7px; padding: 8px 10px; font-family: var(--mono); font-size: 10.5px;
+    color: var(--text-dim); line-height: 1.7;
+  }
+  .miniLog .evt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .miniLog .evt.hl { color: var(--accent); }
+
+  table.board { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
+  table.board th { text-align: left; color: var(--text-dim); font-weight: 500; padding: 6px 4px; border-bottom: 1px solid var(--grid-line); font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px; }
+  table.board td { padding: 7px 4px; border-bottom: 1px solid #16283a; }
+  table.board tr.rank1 td { color: #ffd166; }
+  table.board tr.rank2 td { color: #d9dee3; }
+  table.board tr.rank3 td { color: #cd8f5c; }
+  table.board tr.invalid td { color: var(--danger); opacity: .8; }
+  table.board td.rank { font-weight: 700; width: 26px; }
+
+  .bench-card {
+    background: linear-gradient(135deg, #241c05, #12263b);
+    border: 1px solid var(--accent); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;
+    font-family: var(--mono); font-size: 12px;
+  }
+  .bench-card .label { color: var(--accent); font-weight: 700; margin-bottom: 6px; font-family: var(--disp); font-size: 12.5px; }
+
+  .note { font-size: 10.5px; color: var(--text-dim); line-height: 1.5; margin-top: 10px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="title">
+      <span class="eyebrow">Mission Control — Multi-Robot Routing</span>
+      ロボット経路チャレンジ
+    </div>
+    <nav class="tabs">
+      <button data-mode="create" class="active">① 計画を作る</button>
+      <button data-mode="test">② 計画をテスト</button>
+      <button data-mode="algo">③ アルゴリズムを見る</button>
+      <button data-mode="board">④ 順位表</button>
+    </nav>
+  </header>
+
+  <main>
+    <div class="board-wrap">
+      <canvas id="grid"></canvas>
+      <div class="status-bar" id="statusBar">クリックしてロボットの経路を描こう。</div>
+    </div>
+
+    <!-- ============ 計画を作る ============ -->
+    <div class="panel" id="panel-create">
+      <h2>① 計画を作る</h2>
+      <p class="hint">ロボットを選び、隣接するマスをクリック（または矢印キー）して経路を1マスずつ伸ばそう。同じマスをもう一度クリック、または <kbd>Space</kbd> で「その場で待つ」。3つの地点は<b>どの順番で通過してもOK</b>、すべて訪れよう。他のロボットも同じ地点を目指している場合は、地点の下に相手の色のドットが出るよ。</p>
+      <div class="kbdrow">
+        <span><kbd>↑↓←→</kbd> 移動</span>
+        <span><kbd>Space</kbd> 待機</span>
+        <span><kbd>Backspace</kbd> / <kbd>Ctrl+Z</kbd> 1手戻す</span>
+        <span><kbd>1</kbd>〜<kbd>3</kbd> ロボット切替</span>
+      </div>
+      <div class="robot-select" id="robotSelect"></div>
+      <ul class="checklist" id="checklist"></ul>
+      <div class="btnrow">
+        <button class="ctrl" id="btnUndo">← 1手戻す</button>
+        <button class="ctrl danger" id="btnClear">この経路をクリア</button>
+      </div>
+    </div>
+
+    <!-- ============ 計画をテスト ============ -->
+    <div class="panel hidden" id="panel-test">
+      <h2>② 計画をテスト</h2>
+      <p class="hint">3台すべての経路が完成したらテストできます。衝突（同じマス・すれ違い）がないか調べ、完了時間と総ステップ数を計算します。</p>
+      <div class="btnrow">
+        <button class="ctrl primary" id="btnRunTest">テストを実行</button>
+      </div>
+      <div id="testResult"></div>
+      <div id="testPlayback" class="hidden">
+        <div class="divider"></div>
+        <div class="btnrow">
+          <button class="ctrl" id="btnTestPlay">▶ 再生</button>
+          <button class="ctrl" id="btnTestPause">⏸ 一時停止</button>
+          <button class="ctrl" id="btnTestReset">⟲ 最初から</button>
+        </div>
+        <div class="speedrow">速さ <input type="range" id="testSpeed" min="10" max="400" value="120"></div>
+      </div>
+      <div class="divider"></div>
+      <h2>順位表に登録</h2>
+      <input class="nameinput" id="testName" placeholder="名前を入力（例：たなか班）" maxlength="24">
+      <button class="ctrl primary" id="btnTestSave" disabled style="width:100%">この記録を順位表に登録</button>
+      <p class="note">登録した記録は、このアーティファクトを開いた全員と共有されます。</p>
+    </div>
+
+    <!-- ============ アルゴリズムを見る ============ -->
+    <div class="panel hidden" id="panel-algo">
+      <h2>③ アルゴリズムを見る</h2>
+      <p class="hint">論文のDbVNS（分解ベースVNS）に、時空間の制約（この時刻にこの場所へ移動できるか）を1つ加えたアルゴリズムが、優先度順に3台すべての経路を自動で計算します。地点の訪問順は、現在地から一番近い未訪問の地点を選ぶ「最近傍法」で決めています。まず探索の様子（計画フェーズ）を見て、そのあとシミュレーションで実際の動きを確認しよう。</p>
+      <div class="btnrow">
+        <button class="ctrl primary" id="btnRunAlgo">アルゴリズムを実行（DbVNS）</button>
+      </div>
+
+      <div id="algoPlanningSection" class="hidden">
+        <div class="divider"></div>
+        <h2>計画フェーズ：DbVNSの探索</h2>
+        <div class="btnrow">
+          <button class="ctrl" id="btnAlgoStep">次のステップ ▶</button>
+          <button class="ctrl" id="btnAlgoAutoplay">自動再生 ⏵</button>
+        </div>
+        <div class="btnrow">
+          <button class="ctrl" id="btnAlgoSkipPlan">計画を最後まで進める ⏭</button>
+          <button class="ctrl" id="btnAlgoResetPlan">計画を最初から ⟲</button>
+        </div>
+        <div class="speedrow">速さ <input type="range" id="algoPlanSpeed" min="10" max="300" value="60"></div>
+        <div class="miniLog" id="algoLogText"></div>
+        <div class="btnrow" style="margin-top:10px;">
+          <button class="ctrl primary" id="btnAlgoToSim" style="width:100%">シミュレーションを見る ▶</button>
+        </div>
+      </div>
+
+      <div id="algoResult"></div>
+      <div id="algoPlayback" class="hidden">
+        <div class="divider"></div>
+        <div class="btnrow">
+          <button class="ctrl" id="btnAlgoBackToPlan">⬅ 計画を振り返る</button>
+        </div>
+        <div class="btnrow">
+          <button class="ctrl" id="btnAlgoPlay">▶ 再生</button>
+          <button class="ctrl" id="btnAlgoPause">⏸ 一時停止</button>
+          <button class="ctrl" id="btnAlgoReset">⟲ 最初から</button>
+        </div>
+        <div class="speedrow">速さ <input type="range" id="algoSpeed" min="10" max="400" value="120"></div>
+      </div>
+      <p class="note">k_max=4、反復回数=100、δ=0.3、max_decompositions=5（論文セクション6.2.2の実験設定と同じ）。</p>
+    </div>
+
+    <!-- ============ 順位表 ============ -->
+    <div class="panel hidden" id="panel-board">
+      <h2>④ 順位表</h2>
+      <div class="bench-card" id="benchCard">🤖 アルゴリズムの記録はまだありません。「③ アルゴリズムを見る」で実行してください。</div>
+      <table class="board">
+        <thead><tr><th>#</th><th>名前</th><th>スコア（完了時間）</th><th>スコア（総ステップ）</th><th>衝突</th></tr></thead>
+        <tbody id="boardBody"></tbody>
+      </table>
+      <div class="btnrow" style="margin-top:14px;">
+        <button class="ctrl" id="btnRefreshBoard">更新</button>
+        <button class="ctrl danger" id="btnResetBoard">順位表を全部消す</button>
+      </div>
+      <p class="note">この順位表は共有記憶域に保存され、このアーティファクトを開いた全員から見えます。</p>
+    </div>
+  </main>
+</div>
+
+<script>
+"use strict";
+// ============================================================
+// シナリオデータ（Python版 scenario.py と同一）
+// ============================================================
+const GRID_W = 10, GRID_H = 7, CELL = 52, MARGIN = 22;
+
+// 中央に壁を置き、たった1マスだけの「関門」を作る。
+// 各ロボットは自分側の地点を2つ、反対側の地点を1つ持つように配置して
+// あるので、最近傍法で経路を組むと基本的に関門を1回だけ通ればよい
+// （通過回数を抑えることで、単一の関門でも無理なく解ける）。それでも
+// タイミングが重なれば衝突しうるので、プレイヤーが避ける工夫のしどころになる。
+function buildObstacles() {
+  const obs = new Set();
+  const gateY = 3; // この行だけ壁がなく、通り抜けられる
+  for (let y = 0; y < GRID_H; y++) {
+    if (y !== gateY) obs.add("4," + y);
+  }
+  return obs;
+}
+const OBSTACLES = buildObstacles();
+
+const P = {
+  L1: [1, 1], L2: [1, 5],
+  R1: [8, 1], R2: [8, 5],
+};
+
+const ROBOTS = [
+  { id: 0, name: "ロボット赤", color: "#e6194B", start: [0, 0], waypoints: [
+    { cell: P.L1, label: "地点1" }, { cell: P.L2, label: "地点2" }, { cell: P.R1, label: "地点3" }] },
+  { id: 1, name: "ロボット青", color: "#4363d8", start: [9, 6], waypoints: [
+    { cell: P.R2, label: "地点1" }, { cell: P.R1, label: "地点2" }, { cell: P.L2, label: "地点3" }] },
+  { id: 2, name: "ロボット緑", color: "#3cb44b", start: [0, 6], waypoints: [
+    { cell: P.L2, label: "地点1" }, { cell: P.L1, label: "地点2" }, { cell: P.R2, label: "地点3" }] },
+];
+const ROBOTS_BY_ID = Object.fromEntries(ROBOTS.map(r => [r.id, r]));
+
+// ============================================================
+// グリッド関数
+// ============================================================
+function isFree(cell) {
+  const [x, y] = cell;
+  if (x < 0 || x >= GRID_W || y < 0 || y >= GRID_H) return false;
+  return !OBSTACLES.has(x + "," + y);
+}
+function neighbors(cell) {
+  const [x, y] = cell;
+  return [[x,y],[x+1,y],[x-1,y],[x,y+1],[x,y-1]].filter(isFree);
+}
+const distCache = new Map();
+function bfsFrom(goal) {
+  const key = goal.join(",");
+  const dist = new Map([[key, 0]]);
+  const queue = [goal];
+  let qi = 0;
+  while (qi < queue.length) {
+    const cur = queue[qi++];
+    const [x, y] = cur;
+    for (const nb of [[x+1,y],[x-1,y],[x,y+1],[x,y-1]]) {
+      const nk = nb.join(",");
+      if (isFree(nb) && !dist.has(nk)) { dist.set(nk, dist.get(cur.join(",")) + 1); queue.push(nb); }
+    }
+  }
+  return dist;
+}
+function trueDistance(cell, goal) {
+  const gk = goal.join(",");
+  if (!distCache.has(gk)) distCache.set(gk, bfsFrom(goal));
+  const v = distCache.get(gk).get(cell.join(","));
+  return v === undefined ? GRID_W * GRID_H : v;
+}
+
+// ============================================================
+// 予約テーブル + DbVNS（Python版 dbvns_planner.py の忠実な移植）
+// ============================================================
+class ReservationTable {
+  constructor() { this.vertex = new Map(); this.edge = new Map(); }
+  isVertexFree(cell, t, robotId) {
+    const occ = this.vertex.get(cell.join(",") + "," + t);
+    return occ === undefined || occ === robotId;
+  }
+  isEdgeFree(from, to, t, robotId) {
+    const occ = this.edge.get(to.join(",") + "," + from.join(",") + "," + t);
+    return occ === undefined || occ === robotId;
+  }
+  isMoveValid(from, to, t, robotId) {
+    return this.isVertexFree(to, t + 1, robotId) && this.isEdgeFree(from, to, t, robotId);
+  }
+  reservePath(path, robotId, horizon) {
+    path.forEach(([cell, t], i) => {
+      this.vertex.set(cell.join(",") + "," + t, robotId);
+      if (i > 0) {
+        const [pc, pt] = path[i - 1];
+        this.edge.set(pc.join(",") + "," + cell.join(",") + "," + pt, robotId);
+      }
+    });
+    if (horizon !== undefined && path.length) {
+      const [lc, lt] = path[path.length - 1];
+      for (let t = lt + 1; t <= horizon; t++) this.vertex.set(lc.join(",") + "," + t, robotId);
+    }
+  }
+}
+const K_MAX = 4, MAX_ITERATIONS = 100, MAX_CONSECUTIVE_EMPTY = 3, DELTA = 0.3, MAX_DECOMPOSITIONS = 5;
+class SearchNode {
+  constructor(cell, t, parent, forbidden) { this.cell = cell; this.t = t; this.parent = parent || null; this.forbidden = forbidden || new Set(); }
+  depth() { let d = 0, n = this; while (n.parent) { d++; n = n.parent; } return d; }
+  path() { const out = []; let n = this; while (n) { out.push([n.cell, n.t]); n = n.parent; } return out.reverse(); }
+}
+function candidateNeighbors(node, goal, reservations, robotId) {
+  const cands = [];
+  for (const nc of neighbors(node.cell)) {
+    if (node.forbidden.has(nc.join(","))) continue;
+    if (!reservations.isMoveValid(node.cell, nc, node.t, robotId)) continue;
+    cands.push(nc);
+  }
+  cands.sort((a, b) => {
+    const da = trueDistance(a, goal), db = trueDistance(b, goal);
+    if (da !== db) return da - db;
+    const aw = (a[0] === node.cell[0] && a[1] === node.cell[1]) ? 0 : 1;
+    const bw = (b[0] === node.cell[0] && b[1] === node.cell[1]) ? 0 : 1;
+    return aw - bw;
+  });
+  return cands;
+}
+function greedyConstruction(node, goal, earliestTime, reservations, robotId, log, maxExtraSteps = 80) {
+  let current = node, steps = 0;
+  while (true) {
+    if (current.cell[0] === goal[0] && current.cell[1] === goal[1] && current.t >= earliestTime) {
+      log && log.push({ robotId, kind: "到着", cell: current.cell, t: current.t });
+      return current;
+    }
+    if (steps >= maxExtraSteps) {
+      log && log.push({ robotId, kind: "打ち切り", cell: current.cell, t: current.t });
+      return current;
+    }
+    const cands = candidateNeighbors(current, goal, reservations, robotId);
+    if (cands.length === 0) {
+      log && log.push({ robotId, kind: "行き詰まり", cell: current.cell, t: current.t });
+      return current;
+    }
+    current = new SearchNode(cands[0], current.t + 1, current, new Set());
+    log && log.push({ robotId, kind: "前進", cell: current.cell, t: current.t });
+    steps++;
+  }
+}
+function decomposeWithForbidden(stuckNode, robotId, log) {
+  const branches = [];
+  let current = stuckNode;
+  while (current.parent) {
+    const failed = current.cell;
+    current = current.parent;
+    current.forbidden = new Set(current.forbidden);
+    current.forbidden.add(failed.join(","));
+    branches.push(current);
+    log && log.push({ robotId, kind: "禁止", cell: failed, from: current.cell, t: current.t });
+  }
+  return branches;
+}
+function planSegment(startCell, startT, goalCell, earliestTime, reservations, robotId, log) {
+  const root = new SearchNode(startCell, startT, null, new Set());
+  log && log.push({ robotId, kind: "区間開始", cell: startCell, t: startT, goal: goalCell });
+  let current = greedyConstruction(root, goalCell, earliestTime, reservations, robotId, log);
+  if (current.cell[0] === goalCell[0] && current.cell[1] === goalCell[1] && current.t >= earliestTime) return current.path();
+
+  let pbest = current, pbestScore = trueDistance(pbest.cell, goalCell);
+  let k = 1, iteration = 0, consecutiveEmpty = 0;
+  while (iteration < MAX_ITERATIONS) {
+    const size = pbest.depth() + 1;
+    const until = Math.min(Math.floor(size / K_MAX) * (k - 1), Math.abs(2 - size));
+    let shaken = pbest;
+    for (let i = 0; i < until; i++) if (shaken.parent) shaken = shaken.parent;
+    const branches = decomposeWithForbidden(shaken, robotId, log);
+    if (branches.length === 0) { k++; iteration++; consecutiveEmpty++; if (consecutiveEmpty >= MAX_CONSECUTIVE_EMPTY) break; continue; }
+    const threshold = pbestScore / (1 - DELTA);
+    let promising = branches.filter(b => trueDistance(b.cell, goalCell) <= threshold);
+    if (promising.length === 0) {
+      k++; iteration++; consecutiveEmpty++;
+      log && log.push({ robotId, kind: "有望branchなし", k });
+      if (consecutiveEmpty >= MAX_CONSECUTIVE_EMPTY) break;
+      continue;
+    }
+    if (promising.length > MAX_DECOMPOSITIONS) {
+      promising.sort((a, b) => trueDistance(a.cell, goalCell) - trueDistance(b.cell, goalCell));
+      promising = promising.slice(0, MAX_DECOMPOSITIONS);
+    }
+    consecutiveEmpty = 0;
+    let successNode = null, bestPartial = null, bestPartialScore = pbestScore;
+    for (const branch of promising) {
+      const rebuilt = greedyConstruction(branch, goalCell, earliestTime, reservations, robotId, log);
+      if (rebuilt.cell[0] === goalCell[0] && rebuilt.cell[1] === goalCell[1] && rebuilt.t >= earliestTime) { successNode = rebuilt; break; }
+      const score = trueDistance(rebuilt.cell, goalCell);
+      if (score < bestPartialScore) { bestPartialScore = score; bestPartial = rebuilt; }
+    }
+    if (successNode) {
+      log && log.push({ robotId, kind: "区間解決", t: successNode.t });
+      return successNode.path();
+    }
+    if (bestPartial && bestPartialScore < pbestScore) {
+      pbest = bestPartial; pbestScore = bestPartialScore; k = 1;
+      log && log.push({ robotId, kind: "改善", cell: pbest.cell, score: pbestScore });
+    } else {
+      k = Math.min(k + 1, K_MAX);
+      log && log.push({ robotId, kind: "改善なし", k });
+    }
+    iteration++;
+  }
+  log && log.push({ robotId, kind: "目標未到達", cell: pbest.cell, t: pbest.t });
+  return pbest.path();
+}
+// 目標地点の訪問順は決まっていない（順不同）ため、アルゴリズムは
+// 「現在地から最も近い未訪問の地点」を毎回選ぶ貪欲法（nearest-neighbor）
+// で訪問順をまず決める。DbVNS本体（planSegment）は変更せず、その
+// 「どの順で回るか」という前処理だけを追加している。
+function orderWaypointsGreedy(startCell, waypoints) {
+  const remaining = waypoints.slice();
+  const order = [];
+  let cur = startCell;
+  while (remaining.length) {
+    remaining.sort((a, b) => trueDistance(cur, a.cell) - trueDistance(cur, b.cell));
+    const next = remaining.shift();
+    order.push(next);
+    cur = next.cell;
+  }
+  return order;
+}
+
+function planAllRobots(robots, horizon = 250) {
+  const reservations = new ReservationTable();
+  const paths = {};
+  const log = [];
+  for (const robot of robots) {
+    let fullPath = [[robot.start, 0]];
+    let [cursorCell, cursorT] = [robot.start, 0];
+    const orderedWps = orderWaypointsGreedy(robot.start, robot.waypoints);
+    log.push({ robotId: robot.id, kind: "巡回順序", labels: orderedWps.map(w => w.label) });
+    for (const wp of orderedWps) {
+      const segment = planSegment(cursorCell, cursorT, wp.cell, 0, reservations, robot.id, log);
+      fullPath = fullPath.concat(segment.slice(1));
+      [cursorCell, cursorT] = fullPath[fullPath.length - 1];
+    }
+    paths[robot.id] = fullPath;
+    reservations.reservePath(fullPath, robot.id, horizon);
+    log.push({ robotId: robot.id, kind: "経路確定", length: fullPath.length });
+  }
+  return { paths, log };
+}
+
+// ============================================================
+// 衝突チェック + スコア計算（共通）
+//
+// 【データ形式の統一】プレイヤーが描く経路も、アルゴリズムが計算する
+// 経路も、どちらも「セルの配列（plain cell array）」として扱う。
+// タイムステップ t は常に配列のインデックスと一致する
+// （state.algoPaths を作る際に、planAllRobots が返す [cell,t] 形式から
+// セルだけを取り出して変換している。t=index は元々の計算でも常に
+// 成り立つことを検証済み）。
+// ============================================================
+function padPaths(pathsByRobot) {
+  const horizon = Math.max(...Object.values(pathsByRobot).map(p => p.length - 1));
+  const padded = {};
+  for (const [rid, path] of Object.entries(pathsByRobot)) {
+    const out = path.slice();
+    const last = path[path.length - 1];
+    for (let t = path.length; t <= horizon; t++) out.push(last);
+    padded[rid] = out;
+  }
+  return { padded, horizon };
+}
+const CONFLICT_PENALTY = 10; // 衝突1件あたりのペナルティ（ステップ数換算）
+
+function checkCollisions(pathsByRobot) {
+  const { padded, horizon } = padPaths(pathsByRobot);
+  const vertexMap = new Map(), edgeMap = new Map();
+  const collisions = [];
+  for (const [ridStr, path] of Object.entries(padded)) {
+    const rid = Number(ridStr);
+    path.forEach((cell, t) => {
+      const key = cell.join(",") + "," + t;
+      if (vertexMap.has(key) && vertexMap.get(key) !== rid) {
+        collisions.push({ type: "vertex", t, cell, robots: [vertexMap.get(key), rid] });
+      }
+      vertexMap.set(key, rid);
+      if (t > 0) {
+        const pc = path[t - 1];
+        const revKey = cell.join(",") + "," + pc.join(",") + "," + (t - 1);
+        if (edgeMap.has(revKey) && edgeMap.get(revKey) !== rid) {
+          collisions.push({ type: "edge", t: t - 1, cells: [pc, cell], robots: [edgeMap.get(revKey), rid] });
+        }
+        edgeMap.set(pc.join(",") + "," + cell.join(",") + "," + (t - 1), rid);
+      }
+    });
+  }
+  const makespan = Math.max(...Object.values(pathsByRobot).map(p => p.length - 1));
+  const totalSteps = Object.values(pathsByRobot).reduce((s, p) => s + (p.length - 1), 0);
+  // 衝突は「失格」ではなく、1件につき10ステップのペナルティとしてスコアに加算する。
+  // これにより、衝突があっても他の記録と同じ物差し（スコア）で順位比較ができる。
+  const penalty = collisions.length * CONFLICT_PENALTY;
+  const scoreMakespan = makespan + penalty;
+  const scoreTotalSteps = totalSteps + penalty;
+  return {
+    collisions, valid: collisions.length === 0, penalty,
+    makespan, totalSteps, scoreMakespan, scoreTotalSteps,
+    horizon, padded,
+  };
+}
+function computeProgress(robotId, path) {
+  // 順不同版：各ウェイポイントが「経路のどこかで」訪問されていれば
+  // 達成とみなす（訪れる順番も、時刻も問わない）。
+  const wps = ROBOTS_BY_ID[robotId].waypoints;
+  const reached = wps.map(() => false);
+  path.forEach((cell) => {
+    wps.forEach((wp, i) => {
+      if (!reached[i] && cell[0] === wp.cell[0] && cell[1] === wp.cell[1]) {
+        reached[i] = true;
+      }
+    });
+  });
+  const reachedCount = reached.filter(Boolean).length;
+  return { reached, reachedCount, done: reachedCount === wps.length };
+}
+function sharedRobotsForWaypoint(robotId, cell) {
+  return ROBOTS.filter(r => r.id !== robotId &&
+    r.waypoints.some(wp => wp.cell[0] === cell[0] && wp.cell[1] === cell[1]));
+}
+
+// ============================================================
+// 状態
+// ============================================================
+const state = {
+  mode: "create",
+  activeRobotId: 0,
+  playerPaths: Object.fromEntries(ROBOTS.map(r => [r.id, [r.start]])),
+  algoPaths: null,
+  algoSubPhase: "idle", // "idle" | "planning" | "simulation"
+  algoPlan: null,       // { log, index, activeRobotId, explorer, blocked, trail, forbidden, confirmed, autoplay, timer }
+  testResult: null,
+  algoResult: null,
+  myScores: [],      // このセッションで登録に成功した記録（共有読み出し失敗時のフォールバック表示用）
+  myBenchmark: null, // このセッションで計算したアルゴリズムの基準記録（同上）
+  sim: { paths: null, collisions: [], horizon: 0, t: 0, sub: 0, subframes: 6, playing: false, timer: null },
+};
+
+// ============================================================
+// 描画
+// ============================================================
+const canvas = document.getElementById("grid");
+const ctx = canvas.getContext("2d");
+canvas.width = MARGIN * 2 + GRID_W * CELL;
+canvas.height = MARGIN * 2 + GRID_H * CELL;
+
+function cellPx(cell) { return [MARGIN + cell[0] * CELL + CELL / 2, MARGIN + cell[1] * CELL + CELL / 2]; }
+
+function drawGridBase() {
+  ctx.fillStyle = getCss("--grid-bg");
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = getCss("--grid-line");
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= GRID_W; x++) {
+    ctx.beginPath(); ctx.moveTo(MARGIN + x * CELL, MARGIN); ctx.lineTo(MARGIN + x * CELL, MARGIN + GRID_H * CELL); ctx.stroke();
+  }
+  for (let y = 0; y <= GRID_H; y++) {
+    ctx.beginPath(); ctx.moveTo(MARGIN, MARGIN + y * CELL); ctx.lineTo(MARGIN + GRID_W * CELL, MARGIN + y * CELL); ctx.stroke();
+  }
+  ctx.fillStyle = getCss("--obstacle");
+  ctx.strokeStyle = getCss("--obstacle-edge");
+  for (const key of OBSTACLES) {
+    const [x, y] = key.split(",").map(Number);
+    ctx.fillRect(MARGIN + x * CELL, MARGIN + y * CELL, CELL, CELL);
+    ctx.strokeRect(MARGIN + x * CELL + .5, MARGIN + y * CELL + .5, CELL - 1, CELL - 1);
+  }
+}
+function getCss(varName) { return getComputedStyle(document.documentElement).getPropertyValue(varName).trim(); }
+
+function drawWaypointSquare(cell, color, label, sharedColors, styleState, dim) {
+  const [cx, cy] = cellPx(cell);
+  const s = CELL * 0.62;
+  ctx.save();
+  ctx.lineWidth = styleState === "pending" ? 2.2 : 1.6; // 選択中ロボットの未達成地点は少し太く強調
+  ctx.strokeStyle = styleState === "done" ? getCss("--success") : color;
+  ctx.setLineDash([4, 3]);
+  ctx.globalAlpha = dim ? 0.5 : 1; // 「暗さ」は他ロボットの参考表示だけに適用。選択中ロボットの地点は常にくっきり。
+  ctx.strokeRect(cx - s / 2, cy - s / 2, s, s);
+  ctx.setLineDash([]);
+  ctx.fillStyle = styleState === "done" ? getCss("--success") : color;
+  ctx.font = "bold 11px " + getCss("--mono");
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(styleState === "done" ? "✓" : label, cx, cy - 1);
+  // 他ロボットもこの地点を目標にしている場合、下に小さな色ドットで示す
+  if (sharedColors && sharedColors.length) {
+    const dotR = 2.6, gap = 7;
+    const startX = cx - ((sharedColors.length - 1) * gap) / 2;
+    sharedColors.forEach((c, i) => {
+      ctx.beginPath();
+      ctx.arc(startX + i * gap, cy + s / 2 + 8, dotR, 0, Math.PI * 2);
+      ctx.fillStyle = c;
+      ctx.fill();
+    });
+  }
+  ctx.restore();
+}
+
+function drawRobotStart(cell, color) {
+  const [cx, cy] = cellPx(cell);
+  ctx.beginPath(); ctx.arc(cx, cy, CELL * 0.22, 0, Math.PI * 2);
+  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+}
+
+function drawPathLine(path, color, alpha, width) {
+  if (path.length < 2) return;
+  ctx.save();
+  ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineJoin = "round"; ctx.lineCap = "round";
+  ctx.beginPath();
+  path.forEach((cell, i) => {
+    const [px, py] = cellPx(cell);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawToken(cell, color, label, ringOnly) {
+  const [cx, cy] = cellPx(cell);
+  ctx.beginPath(); ctx.arc(cx, cy, CELL * 0.32, 0, Math.PI * 2);
+  if (ringOnly) { ctx.strokeStyle = color; ctx.lineWidth = 2.4; ctx.stroke(); }
+  else {
+    ctx.fillStyle = color; ctx.fill();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.fillStyle = "#fff"; ctx.font = "bold 12px " + getCss("--disp");
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(label, cx, cy + 1);
+  }
+}
+
+function waypointStyleState(robot, path, wpIndex) {
+  const progress = computeProgress(robot.id, path);
+  return progress.reached[wpIndex] ? "done" : "pending";
+}
+
+function render() {
+  drawGridBase();
+
+  if (state.mode === "create") {
+    // 他ロボットの経路は薄く、起点だけ表示
+    for (const r of ROBOTS) {
+      if (r.id === state.activeRobotId) continue;
+      drawPathLine(state.playerPaths[r.id], r.color, 0.28, 3);
+      drawRobotStart(r.start, r.color);
+      r.waypoints.forEach((wp, i) => drawWaypointSquare(wp.cell, r.color, String(i + 1), [], "future", true));
+    }
+    const activeRobot = ROBOTS_BY_ID[state.activeRobotId];
+    const activePath = state.playerPaths[activeRobot.id];
+    activeRobot.waypoints.forEach((wp, i) => {
+      const sharedColors = sharedRobotsForWaypoint(activeRobot.id, wp.cell).map(r => r.color);
+      drawWaypointSquare(wp.cell, activeRobot.color, String(i + 1), sharedColors, waypointStyleState(activeRobot, activePath, i), false);
+    });
+    drawRobotStart(activeRobot.start, activeRobot.color);
+    drawPathLine(activePath, activeRobot.color, 0.95, 3.4);
+    activePath.forEach((cell, i) => {
+      if (i === 0) return;
+      const [px, py] = cellPx(cell);
+      ctx.beginPath(); ctx.arc(px, py, 2.6, 0, Math.PI * 2); ctx.fillStyle = activeRobot.color; ctx.fill();
+    });
+    drawToken(activePath[activePath.length - 1], activeRobot.color, activeRobot.name.slice(-1), false);
+  }
+
+  if (state.mode === "algo" && state.algoSubPhase === "planning" && state.algoPlan) {
+    const ap = state.algoPlan;
+    for (const r of ROBOTS) {
+      r.waypoints.forEach((wp, i) => drawWaypointSquare(wp.cell, r.color, String(i + 1), [], "future", true));
+      drawRobotStart(r.start, r.color);
+      if (ap.confirmed[r.id]) drawPathLine(ap.confirmed[r.id], r.color, 0.65, 2.4);
+    }
+    if (ap.activeRobotId !== null) {
+      const robot = ROBOTS_BY_ID[ap.activeRobotId];
+      ap.trail.forEach(cell => {
+        const [px, py] = cellPx(cell);
+        ctx.beginPath(); ctx.arc(px, py, 2.6, 0, Math.PI * 2); ctx.fillStyle = robot.color; ctx.fill();
+      });
+      ap.forbidden.forEach(cell => {
+        const [cx, cy] = cellPx(cell);
+        ctx.strokeStyle = "#ff5555"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(cx - 7, cy - 7); ctx.lineTo(cx + 7, cy + 7); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx - 7, cy + 7); ctx.lineTo(cx + 7, cy - 7); ctx.stroke();
+      });
+      if (ap.explorer) {
+        const [cx, cy] = cellPx(ap.explorer);
+        ctx.beginPath(); ctx.arc(cx, cy, 9, 0, Math.PI * 2);
+        ctx.strokeStyle = ap.blocked ? "#ff5555" : robot.color; ctx.lineWidth = 3; ctx.stroke();
+      }
+    }
+    return;
+  }
+
+  if (state.mode === "test" || (state.mode === "algo" && state.algoSubPhase === "simulation")) {
+    const paths = state.mode === "test" ? state.playerPaths : (state.algoPaths || state.playerPaths);
+    for (const r of ROBOTS) {
+      r.waypoints.forEach((wp, i) => drawWaypointSquare(wp.cell, r.color, String(i + 1), [], "future", true));
+      drawRobotStart(r.start, r.color);
+      drawPathLine(paths[r.id], r.color, 0.5, 2.4);
+    }
+    renderSimFrame();
+  }
+
+  if (state.mode === "board") {
+    for (const r of ROBOTS) {
+      r.waypoints.forEach((wp, i) => drawWaypointSquare(wp.cell, r.color, String(i + 1), [], "future", true));
+      drawRobotStart(r.start, r.color);
+    }
+  }
+}
+
+function renderSimFrame() {
+  const sim = state.sim;
+  if (!sim.paths) return;
+  const alpha = sim.sub / sim.subframes;
+  for (const r of ROBOTS) {
+    const path = sim.paths[r.id];
+    const i0 = Math.min(sim.t, path.length - 1);
+    const i1 = Math.min(sim.t + 1, path.length - 1);
+    const c0 = path[i0], c1 = path[i1];
+    const x = c0[0] + (c1[0] - c0[0]) * alpha, y = c0[1] + (c1[1] - c0[1]) * alpha;
+    const [px, py] = cellPx([x, y]);
+    ctx.beginPath(); ctx.arc(px, py, CELL * 0.32, 0, Math.PI * 2);
+    ctx.fillStyle = r.color; ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.fillStyle = "#fff"; ctx.font = "bold 12px " + getCss("--disp"); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(r.name.slice(-1), px, py + 1);
+  }
+  // 衝突ハイライト
+  for (const c of sim.collisions) {
+    if (Math.abs(c.t - sim.t) > 1) continue;
+    const cell = c.type === "vertex" ? c.cell : c.cells[1];
+    const [px, py] = cellPx(cell);
+    ctx.beginPath(); ctx.arc(px, py, CELL * 0.46, 0, Math.PI * 2);
+    ctx.strokeStyle = getCss("--danger"); ctx.lineWidth = 3; ctx.setLineDash([3, 2]); ctx.stroke(); ctx.setLineDash([]);
+  }
+}
+
+// ============================================================
+// モード切り替え
+// ============================================================
+function setMode(mode) {
+  state.mode = mode;
+  stopSim();
+  algoStopAutoplay();
+  document.querySelectorAll("nav.tabs button").forEach(b => b.classList.toggle("active", b.dataset.mode === mode));
+  ["create", "test", "algo", "board"].forEach(m => {
+    document.getElementById("panel-" + m).classList.toggle("hidden", m !== mode);
+  });
+  if (mode === "board") loadBoard();
+  if (mode === "test") { document.getElementById("testPlayback").classList.add("hidden"); }
+  setStatus(modeHint(mode));
+  render();
+}
+function modeHint(mode) {
+  return {
+    create: "クリックしてロボットの経路を描こう。同じマスをもう一度クリックで「待つ」。",
+    test: "3台すべての経路が完成したら「テストを実行」を押そう。",
+    algo: "「アルゴリズムを実行」でDbVNSに解かせてみよう。",
+    board: "順位表を確認しよう。",
+  }[mode];
+}
+function setStatus(text) { document.getElementById("statusBar").textContent = text; }
+
+document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode)));
+
+// ============================================================
+// 「① 計画を作る」モード
+// ============================================================
+function renderRobotSelect() {
+  const wrap = document.getElementById("robotSelect");
+  wrap.innerHTML = "";
+  ROBOTS.forEach((r, idx) => {
+    const prog = computeProgress(r.id, state.playerPaths[r.id]);
+    const btn = document.createElement("div");
+    btn.className = "robot-btn" + (r.id === state.activeRobotId ? " active" : "") + (prog.done ? " done" : "");
+    btn.innerHTML = `<span class="dot" style="background:${r.color}"></span>${r.name}<kbd style="margin-left:auto">${idx + 1}</kbd><span class="prog">${prog.reachedCount}/5${prog.done ? " ✓" : ""}</span>`;
+    btn.addEventListener("click", () => { state.activeRobotId = r.id; renderRobotSelect(); renderChecklist(); render(); });
+    wrap.appendChild(btn);
+  });
+}
+function renderChecklist() {
+  const robot = ROBOTS_BY_ID[state.activeRobotId];
+  const path = state.playerPaths[robot.id];
+  const prog = computeProgress(robot.id, path);
+  const ul = document.getElementById("checklist");
+  ul.innerHTML = "";
+  robot.waypoints.forEach((wp, i) => {
+    const li = document.createElement("li");
+    const isDone = prog.reached[i];
+    const shared = sharedRobotsForWaypoint(robot.id, wp.cell);
+    li.className = isDone ? "done" : "";
+    const labelColor = isDone ? "var(--success)" : robot.color;
+    let html = `<div class="row1"><span class="mark">${isDone ? "✓" : "□"}</span>` +
+      `<span style="color:${labelColor}">${wp.label} (${wp.cell[0]},${wp.cell[1]})</span></div>`;
+    if (shared.length) {
+      html += `<div class="shared"><span class="stxt">他ロボットも目標:</span>` +
+        shared.map(r => `<span class="dot" style="background:${r.color}" title="${r.name}も同じ地点"></span>`).join("") +
+        `</div>`;
+    }
+    li.innerHTML = html;
+    ul.appendChild(li);
+  });
+}
+function handleCreateClick(cell) {
+  const robot = ROBOTS_BY_ID[state.activeRobotId];
+  const path = state.playerPaths[robot.id];
+  const last = path[path.length - 1];
+  if (!isFree(cell)) { setStatus("そこは障害物です。"); return; }
+  const dx = Math.abs(cell[0] - last[0]), dy = Math.abs(cell[1] - last[1]);
+  if (cell[0] === last[0] && cell[1] === last[1]) {
+    path.push(cell);
+    setStatus(`${robot.name}：その場で待機 (t=${path.length - 1})`);
+  } else if (dx + dy === 1) {
+    path.push(cell);
+    setStatus(`${robot.name}：(${cell[0]},${cell[1]}) へ移動 (t=${path.length - 1})`);
+  } else {
+    setStatus("隣接するマス、または今いるマスだけクリックできます。");
+    return;
+  }
+  renderRobotSelect(); renderChecklist(); render();
+}
+document.getElementById("btnUndo").addEventListener("click", undoActive);
+function undoActive() {
+  const path = state.playerPaths[state.activeRobotId];
+  if (path.length > 1) path.pop();
+  renderRobotSelect(); renderChecklist(); render();
+}
+document.getElementById("btnClear").addEventListener("click", clearActive);
+function clearActive() {
+  const robot = ROBOTS_BY_ID[state.activeRobotId];
+  state.playerPaths[robot.id] = [robot.start];
+  renderRobotSelect(); renderChecklist(); render();
+}
+
+// ============================================================
+// キーボード操作（矢印キーで移動・Spaceで待機・Backspaceで戻す・1-3でロボット切替）
+// ============================================================
+const ARROW_DELTA = {
+  ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
+};
+document.addEventListener("keydown", (ev) => {
+  if (state.mode !== "create") return;
+  const tag = (ev.target && ev.target.tagName) || "";
+  if (tag === "INPUT" || tag === "TEXTAREA") return; // 名前入力中などは無視
+
+  if (ARROW_DELTA[ev.key]) {
+    ev.preventDefault();
+    const [dx, dy] = ARROW_DELTA[ev.key];
+    const path = state.playerPaths[state.activeRobotId];
+    const last = path[path.length - 1];
+    handleCreateClick([last[0] + dx, last[1] + dy]);
+    return;
+  }
+  if (ev.key === " " || ev.key === "Spacebar") {
+    ev.preventDefault();
+    const path = state.playerPaths[state.activeRobotId];
+    handleCreateClick(path[path.length - 1]); // 同じマス = 待機
+    return;
+  }
+  if (ev.key === "Backspace") {
+    ev.preventDefault();
+    undoActive();
+    return;
+  }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "z") {
+    ev.preventDefault();
+    undoActive();
+    return;
+  }
+  if (["1", "2", "3"].includes(ev.key)) {
+    ev.preventDefault();
+    const idx = Number(ev.key) - 1;
+    if (ROBOTS[idx]) {
+      state.activeRobotId = ROBOTS[idx].id;
+      renderRobotSelect(); renderChecklist(); render();
+    }
+  }
+});
+
+canvas.addEventListener("click", (ev) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
+  const mx = (ev.clientX - rect.left) * scaleX, my = (ev.clientY - rect.top) * scaleY;
+  const cx = Math.floor((mx - MARGIN) / CELL), cy = Math.floor((my - MARGIN) / CELL);
+  if (cx < 0 || cx >= GRID_W || cy < 0 || cy >= GRID_H) return;
+  if (state.mode === "create") handleCreateClick([cx, cy]);
+});
+
+// ============================================================
+// 「② 計画をテスト」/「③ アルゴリズム」共通：シミュレーター
+// ============================================================
+function stopSim() {
+  state.sim.playing = false;
+  if (state.sim.timer) { clearInterval(state.sim.timer); state.sim.timer = null; }
+}
+function startSimFor(paths, collisions, horizon, speedInputId) {
+  state.sim.paths = paths; state.sim.collisions = collisions; state.sim.horizon = horizon;
+  state.sim.t = 0; state.sim.sub = 0; state.sim.playing = true;
+  stepSimLoop(speedInputId);
+}
+function stepSimLoop(speedInputId) {
+  stopSimTimerOnly();
+  const speedEl = document.getElementById(speedInputId);
+  const delay = speedEl ? Number(speedEl.value) : 120;
+  state.sim.timer = setInterval(() => {
+    if (!state.sim.playing) return;
+    state.sim.sub++;
+    if (state.sim.sub >= state.sim.subframes) { state.sim.sub = 0; state.sim.t++; }
+    if (state.sim.t >= state.sim.horizon && state.sim.sub === 0) { state.sim.playing = false; }
+    render();
+  }, delay);
+}
+function stopSimTimerOnly() { if (state.sim.timer) { clearInterval(state.sim.timer); state.sim.timer = null; } }
+
+// --- テストモード ---
+document.getElementById("btnRunTest").addEventListener("click", () => {
+  const allDone = ROBOTS.every(r => computeProgress(r.id, state.playerPaths[r.id]).done);
+  if (!allDone) {
+    document.getElementById("testResult").innerHTML =
+      `<div class="result-box fail"><div class="big">⚠ まだ完成していないロボットがあります</div>
+       「① 計画を作る」で全ロボットを3地点すべて到達させてください。</div>`;
+    document.getElementById("btnTestSave").disabled = true;
+    return;
+  }
+  const result = checkCollisions(state.playerPaths);
+  state.testResult = result;
+  renderResultBox("testResult", result, "あなたの計画");
+  document.getElementById("testPlayback").classList.remove("hidden");
+  document.getElementById("btnTestSave").disabled = false;
+  state.sim.subframes = 6;
+  startSimFor(state.playerPaths, result.collisions, result.horizon, "testSpeed");
+  setStatus(result.valid ? "衝突なし！お見事。" : "衝突が見つかりました。赤い点滅を確認しよう。");
+});
+document.getElementById("btnTestPlay").addEventListener("click", () => { state.sim.playing = true; stepSimLoop("testSpeed"); });
+document.getElementById("btnTestPause").addEventListener("click", () => { state.sim.playing = false; });
+document.getElementById("btnTestReset").addEventListener("click", () => { state.sim.t = 0; state.sim.sub = 0; render(); });
+
+function renderResultBox(elId, result, title) {
+  const el = document.getElementById(elId);
+  el.innerHTML = `
+    <div class="result-box ${result.valid ? "ok" : "fail"}">
+      <div class="big">${result.valid ? "✅ 衝突なし" : "⚠️ 衝突 " + result.collisions.length + "件（ペナルティ +" + result.penalty + "）"}</div>
+      <div class="metric"><span>完了時間（基本）</span><b>t = ${result.makespan}</b></div>
+      ${result.penalty ? `<div class="metric"><span>衝突ペナルティ</span><b>+${result.penalty}</b></div>` : ""}
+      <div class="metric" style="border-top:1px dashed var(--grid-line); padding-top:6px; margin-top:2px;">
+        <span>スコア（完了時間 + ペナルティ）</span><b style="color:var(--accent)">t = ${result.scoreMakespan}</b></div>
+      <div class="metric"><span>総ステップ数（ペナルティ込み）</span><b>${result.scoreTotalSteps}</b></div>
+      ${result.collisions.slice(0, 6).map(c =>
+        `<div class="collision-item">t=${c.t} ロボット${c.robots.join("・")} が衝突</div>`).join("")}
+      ${result.collisions.length > 6 ? `<div class="collision-item">…他 ${result.collisions.length - 6} 件</div>` : ""}
+    </div>`;
+}
+
+// --- アルゴリズムモード ---
+// ============================================================
+// アルゴリズムモード：① 計画フェーズ（DbVNSの探索を再生） → ② シミュレーション
+// ============================================================
+const ALGO_EVENT_LABELS = {
+  "巡回順序": (e, name) => `[${name}] 訪問順序: ${e.labels.join(" → ")}`,
+  "区間開始": (e, name) => `[${name}] 出発 → 目標 (${e.goal[0]},${e.goal[1]})`,
+  "前進": (e, name) => `[${name}] → (${e.cell[0]},${e.cell[1]}) t=${e.t}`,
+  "到着": (e, name) => `[${name}] 到着 (${e.cell[0]},${e.cell[1]}) t=${e.t}`,
+  "行き詰まり": (e, name) => `[${name}] 行き詰まり (${e.cell[0]},${e.cell[1]})`,
+  "打ち切り": (e, name) => `[${name}] ステップ上限で打ち切り`,
+  "禁止": (e, name) => `[${name}] Shake+Decompose: (${e.cell[0]},${e.cell[1]}) を禁止`,
+  "有望branchなし": (e, name) => `[${name}] 有望な枝なし (k=${e.k})`,
+  "改善": (e, name) => `[${name}] 改善（score=${e.score}）`,
+  "改善なし": (e, name) => `[${name}] 改善なし (k=${e.k})`,
+  "区間解決": (e, name) => `[${name}] 区間解決 t=${e.t}`,
+  "目標未到達": (e, name) => `[${name}] 目標未到達（DbVNSの限界に到達）`,
+  "経路確定": (e, name) => `[${name}] 経路確定（${e.length}ステップ）`,
+};
+function algoLogLine(event) {
+  const name = ROBOTS_BY_ID[event.robotId].name;
+  const fn = ALGO_EVENT_LABELS[event.kind];
+  return fn ? fn(event, name) : `[${name}] ${event.kind}`;
+}
+function algoApplyEvent(event) {
+  const ap = state.algoPlan;
+  const rid = event.robotId;
+  if (rid !== ap.activeRobotId) { ap.activeRobotId = rid; ap.trail = []; ap.forbidden = []; ap.explorer = null; }
+  if (event.kind === "区間開始") { ap.trail = []; ap.forbidden = []; }
+  if (event.cell && ["前進", "区間開始", "到着", "行き詰まり", "打ち切り"].includes(event.kind)) {
+    ap.explorer = event.cell;
+    ap.blocked = (event.kind === "行き詰まり" || event.kind === "打ち切り");
+    if (event.kind !== "区間開始") ap.trail.push(event.cell);
+  }
+  if (event.kind === "禁止" && event.cell) ap.forbidden.push(event.cell);
+  if (event.kind === "経路確定") {
+    ap.confirmed[rid] = state.algoPaths[rid];
+    ap.trail = []; ap.forbidden = []; ap.explorer = null;
+  }
+}
+function algoStopAutoplay() {
+  if (state.algoPlan) state.algoPlan.autoplay = false;
+  if (state.algoPlan && state.algoPlan.timer) { clearInterval(state.algoPlan.timer); state.algoPlan.timer = null; }
+  const btn = document.getElementById("btnAlgoAutoplay");
+  if (btn) btn.textContent = "自動再生 ⏵";
+}
+function algoStepPlanning() {
+  const ap = state.algoPlan;
+  if (!ap || ap.index >= ap.log.length) { algoStopAutoplay(); return false; }
+  const event = ap.log[ap.index++];
+  algoApplyEvent(event);
+  const logEl = document.getElementById("algoLogText");
+  const line = document.createElement("div");
+  line.className = "evt" + (event.kind === "経路確定" ? " hl" : "");
+  line.textContent = algoLogLine(event);
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+  render();
+  if (ap.index >= ap.log.length) {
+    algoStopAutoplay();
+    setStatus("計画フェーズ完了。「シミュレーションを見る」で実際の動きを確認しよう。");
+  }
+  return true;
+}
+function algoSkipPlanning() {
+  algoStopAutoplay();
+  const ap = state.algoPlan;
+  if (!ap) return;
+  while (ap.index < ap.log.length) {
+    const event = ap.log[ap.index++];
+    algoApplyEvent(event);
+  }
+  const logEl = document.getElementById("algoLogText");
+  logEl.innerHTML = "";
+  ap.log.forEach(event => {
+    const line = document.createElement("div");
+    line.className = "evt" + (event.kind === "経路確定" ? " hl" : "");
+    line.textContent = algoLogLine(event);
+    logEl.appendChild(line);
+  });
+  logEl.scrollTop = logEl.scrollHeight;
+  render();
+  setStatus("計画フェーズ完了。「シミュレーションを見る」で実際の動きを確認しよう。");
+}
+
+document.getElementById("btnRunAlgo").addEventListener("click", () => {
+  document.getElementById("btnRunAlgo").disabled = true;
+  document.getElementById("btnRunAlgo").textContent = "計算中…";
+  setTimeout(() => {
+    const { paths: rawPaths, log } = planAllRobots(ROBOTS);
+    // planAllRobots は [cell, t] のペア配列を返す（t は常にインデックスと一致
+    // することを検証済み）。以降の描画・衝突判定はプレーンなセル配列
+    // （インデックス = t）に統一しているので、ここで変換する。
+    const paths = {};
+    for (const rid in rawPaths) paths[rid] = rawPaths[rid].map(([cell, _t]) => cell);
+    state.algoPaths = paths;
+    state.algoResult = null;
+
+    state.algoSubPhase = "planning";
+    state.algoPlan = {
+      log, index: 0, activeRobotId: null, explorer: null, blocked: false,
+      trail: [], forbidden: [], confirmed: {}, autoplay: false, timer: null,
+    };
+    document.getElementById("algoLogText").innerHTML = "";
+    document.getElementById("algoPlanningSection").classList.remove("hidden");
+    document.getElementById("algoResult").innerHTML = "";
+    document.getElementById("algoPlayback").classList.add("hidden");
+
+    document.getElementById("btnRunAlgo").disabled = false;
+    document.getElementById("btnRunAlgo").textContent = "アルゴリズムを実行（DbVNS）";
+    setStatus(`DbVNSの計算が完了（${log.length}件の探索イベント）。「次のステップ」で1つずつ確認しよう。`);
+    render();
+  }, 30);
+});
+
+document.getElementById("btnAlgoStep").addEventListener("click", () => { algoStopAutoplay(); algoStepPlanning(); });
+document.getElementById("btnAlgoSkipPlan").addEventListener("click", algoSkipPlanning);
+document.getElementById("btnAlgoResetPlan").addEventListener("click", () => {
+  algoStopAutoplay();
+  const ap = state.algoPlan;
+  if (!ap) return;
+  ap.index = 0; ap.activeRobotId = null; ap.explorer = null; ap.trail = []; ap.forbidden = []; ap.confirmed = {};
+  document.getElementById("algoLogText").innerHTML = "";
+  setStatus("計画フェーズを最初からやり直します。");
+  render();
+});
+document.getElementById("btnAlgoAutoplay").addEventListener("click", () => {
+  const ap = state.algoPlan;
+  if (!ap) return;
+  ap.autoplay = !ap.autoplay;
+  document.getElementById("btnAlgoAutoplay").textContent = ap.autoplay ? "⏸ 一時停止" : "自動再生 ⏵";
+  if (ap.autoplay) algoAutoplayTick();
+});
+function algoAutoplayTick() {
+  const ap = state.algoPlan;
+  if (!ap || !ap.autoplay) return;
+  const ok = algoStepPlanning();
+  if (ok && ap.index < ap.log.length) {
+    const speed = Number(document.getElementById("algoPlanSpeed").value);
+    ap.timer = setTimeout(algoAutoplayTick, speed);
+  }
+}
+
+document.getElementById("btnAlgoToSim").addEventListener("click", () => {
+  algoSkipPlanning(); // 途中でも押せるよう、まず計画を最後まで進めてから移行する
+  state.algoSubPhase = "simulation";
+  document.getElementById("algoPlanningSection").classList.add("hidden");
+
+  const result = checkCollisions(state.algoPaths);
+  state.algoResult = result;
+  renderResultBox("algoResult", result, "アルゴリズム");
+  document.getElementById("algoPlayback").classList.remove("hidden");
+  state.sim.subframes = 6;
+  startSimFor(state.algoPaths, result.collisions, result.horizon, "algoSpeed");
+  saveAlgoBenchmark(result);
+  setStatus("シミュレーション：実際に3台が同時に動く様子を確認しよう。");
+});
+document.getElementById("btnAlgoBackToPlan").addEventListener("click", () => {
+  state.sim.playing = false;
+  stopSimTimerOnly();
+  state.algoSubPhase = "planning";
+  document.getElementById("algoPlanningSection").classList.remove("hidden");
+  document.getElementById("algoResult").innerHTML = "";
+  document.getElementById("algoPlayback").classList.add("hidden");
+  setStatus("計画フェーズに戻りました。");
+  render();
+});
+
+document.getElementById("btnAlgoPlay").addEventListener("click", () => { state.sim.playing = true; stepSimLoop("algoSpeed"); });
+document.getElementById("btnAlgoPause").addEventListener("click", () => { state.sim.playing = false; });
+document.getElementById("btnAlgoReset").addEventListener("click", () => { state.sim.t = 0; state.sim.sub = 0; render(); });
+
+// ============================================================
+// 順位表（window.storage、共有）
+//
+// 【堅牢化】list() が返すキーは、実装によって "score:xxxx" のように
+// プレフィックスを含む場合と、含まない場合がありうるため、両方に
+// 対応できるよう正規化する。また、保存に成功した記録はブラウザの
+// メモリ内にも一時的に控えておき（state.myScores）、直後に順位表を
+// 開いた時に共有ストレージの読み出しが間に合わなくても、自分の記録は
+// 必ず表示されるようにしている。
+// ============================================================
+const SCORE_PREFIX = "score:";
+function normalizeScoreKey(k) {
+  return k.startsWith(SCORE_PREFIX) ? k : SCORE_PREFIX + k;
+}
+function storageAvailable() {
+  return typeof window.storage !== "undefined" && window.storage !== null;
+}
+
+async function saveAlgoBenchmark(result) {
+  const data = {
+    name: "🤖 DbVNSアルゴリズム", makespan: result.scoreMakespan, totalSteps: result.scoreTotalSteps,
+    conflicts: result.collisions.length, valid: result.valid, isAlgo: true, date: new Date().toISOString(),
+  };
+  state.myBenchmark = data; // ローカルにも保持（読み出し失敗時のフォールバック）
+  if (!storageAvailable()) return;
+  try {
+    await window.storage.set("algorithm_benchmark", JSON.stringify(data), true);
+  } catch (e) { console.error("benchmark save failed", e); }
+}
+
+document.getElementById("btnTestSave").addEventListener("click", async () => {
+  const nameEl = document.getElementById("testName");
+  const name = nameEl.value.trim() || "名無しの班";
+  if (!state.testResult) return;
+  const btn = document.getElementById("btnTestSave");
+  btn.disabled = true; btn.textContent = "登録中…";
+
+  const r = state.testResult;
+  const data = {
+    name,
+    makespan: r.scoreMakespan, totalSteps: r.scoreTotalSteps,   // ペナルティ込みスコア（順位表はこれで比較）
+    rawMakespan: r.makespan, rawTotalSteps: r.totalSteps,        // 参考値（衝突がなければ同じ値）
+    conflicts: r.collisions.length, valid: r.valid,
+    isAlgo: false, date: new Date().toISOString(),
+  };
+  const key = SCORE_PREFIX + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+
+  if (!storageAvailable()) {
+    // 共有ストレージが使えない環境（例：アーティファクト外で直接開いた場合）
+    state.myScores.push({ key, data });
+    btn.textContent = "この端末にのみ保存しました";
+    setTimeout(() => { btn.textContent = "この記録を順位表に登録"; btn.disabled = false; }, 2200);
+    return;
+  }
+  try {
+    await window.storage.set(key, JSON.stringify(data), true);
+    state.myScores.push({ key, data });
+    btn.textContent = "登録しました ✓";
+    setTimeout(() => { btn.textContent = "この記録を順位表に登録"; btn.disabled = false; }, 1500);
+  } catch (e) {
+    console.error(e);
+    // 保存自体は失敗しても、この端末内では見えるようにしておく
+    state.myScores.push({ key, data });
+    btn.textContent = "共有保存に失敗（この端末には残ります）";
+    setTimeout(() => { btn.textContent = "この記録を順位表に登録"; btn.disabled = false; }, 2600);
+  }
+});
+
+async function loadBoard() {
+  const body = document.getElementById("boardBody");
+  const benchCard = document.getElementById("benchCard");
+  body.innerHTML = `<tr><td colspan="5" style="color:var(--text-dim)">読み込み中…</td></tr>`;
+
+  let benchmark = state.myBenchmark || null;
+  const byKey = new Map(state.myScores.map(s => [s.key, s.data])); // 自分の記録から開始
+  let storageError = false;
+
+  if (!storageAvailable()) {
+    storageError = true;
+  } else {
+    try {
+      const listRes = await window.storage.list(SCORE_PREFIX, true);
+      const rawKeys = (listRes && listRes.keys) || [];
+      for (const rawKey of rawKeys) {
+        const k = normalizeScoreKey(rawKey);
+        try {
+          const res = await window.storage.get(k, true);
+          if (!res) continue;
+          const data = JSON.parse(res.value);
+          byKey.set(k, data);
+        } catch (e) { /* このキーだけ壊れている／消えている場合はスキップ */ }
+      }
+      try {
+        const benchRes = await window.storage.get("algorithm_benchmark", true);
+        if (benchRes) benchmark = JSON.parse(benchRes.value);
+      } catch (e) { /* まだ誰も実行していない */ }
+    } catch (e) {
+      console.error("board load failed", e);
+      storageError = true;
+    }
+  }
+
+  if (benchmark) {
+    benchCard.innerHTML = `<div class="label">🤖 アルゴリズムの基準記録（DbVNS）</div>
+      完了時間 t=${benchmark.makespan} ／ 総ステップ ${benchmark.totalSteps}`;
+  } else {
+    benchCard.innerHTML = `🤖 アルゴリズムの記録はまだありません。「③ アルゴリズムを見る」で実行してください。`;
+  }
+
+  // 衝突があっても「失格」にはせず、+10ステップ×衝突数のペナルティを
+  // 加えたスコアで全員をまとめて順位付けする。
+  const entries = Array.from(byKey.values())
+    .sort((a, b) => a.makespan - b.makespan || a.totalSteps - b.totalSteps);
+  body.innerHTML = "";
+  if (entries.length === 0) {
+    body.innerHTML = `<tr><td colspan="5" style="color:var(--text-dim)">まだ記録がありません。「② 計画をテスト」から登録しよう。</td></tr>`;
+  }
+  entries.forEach((e, i) => {
+    const tr = document.createElement("tr");
+    tr.className = (i === 0 ? "rank1" : i === 1 ? "rank2" : i === 2 ? "rank3" : "") + (e.valid ? "" : " invalid");
+    const conflictLabel = e.valid ? "✅" : `⚠️ ${e.conflicts}件 (+${e.conflicts * 10})`;
+    tr.innerHTML = `<td class="rank">${i + 1}</td><td>${escapeHtml(e.name)}</td><td>t=${e.makespan}</td><td>${e.totalSteps}</td><td>${conflictLabel}</td>`;
+    body.appendChild(tr);
+  });
+  if (storageError) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="5" style="color:var(--danger); font-size:10.5px;">⚠ 共有順位表に接続できませんでした。この端末で登録した記録のみ表示しています。</td>`;
+    body.appendChild(tr);
+  }
+}
+document.getElementById("btnRefreshBoard").addEventListener("click", loadBoard);
+document.getElementById("btnResetBoard").addEventListener("click", async () => {
+  if (!confirm("順位表の記録を全部消します。よろしいですか？")) return;
+  state.myScores = [];
+  state.myBenchmark = null;
+  if (storageAvailable()) {
+    try {
+      const listRes = await window.storage.list(SCORE_PREFIX, true);
+      const rawKeys = (listRes && listRes.keys) || [];
+      for (const rawKey of rawKeys) {
+        const k = normalizeScoreKey(rawKey);
+        try { await window.storage.delete(k, true); } catch (e) { /* ignore */ }
+      }
+      try { await window.storage.delete("algorithm_benchmark", true); } catch (e) { /* ignore */ }
+    } catch (e) { console.error(e); alert("削除に失敗しました。"); }
+  }
+  loadBoard();
+});
+function escapeHtml(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+// ============================================================
+// 初期化
+// ============================================================
+renderRobotSelect();
+renderChecklist();
+render();
+</script>
+</body>
+</html>
