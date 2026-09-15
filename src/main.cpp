@@ -100,9 +100,10 @@ static int run_main()
                  "  1  Legacy      (orienteering / GeoBox / render / PDP utils)\n"
                  "  2  Tests       (submenu: A structure B mechanics C modules D e2e E all)\n"
                  "  3  Training    (MAPPO + IPPO + MAPPER, paper protocol)\n"
-                 "  4  Evaluation  (RL + RMCA + TP + CA + HAPC)\n"
+                 "  4  Evaluation  (RL + RMCA + TP + CA + HAPC + MAPDP)\n"
                  "  5  MovementRL  (PPO replan gate, frozen MAPPO bid)\n"
-                 "  6  LSM         (congestion prediction readout pretrain)\n\n"
+                 "  6  LSM         (congestion prediction readout pretrain)\n"
+                 "  7  MAPDP       (Zong+2022, standalone, same protocol as option 3)\n\n"
                  "Choice: ";
     std::string rep;
     std::cin >> rep;
@@ -189,6 +190,36 @@ static int run_main()
         trainer.train_grid(cfg);
     }
 
+    // ── 7 — MAPDP standalone training: same protocol as option 3 (cities,
+    //    seeds, scenario grid), routed through SolverRunner/ISolver instead
+    //    of the TAM/BidPolicy pipeline. Checkpoints under {out}/mapdp/.
+    else if (rep == "7" || rep == "mapdp" || rep == "MAPDP") {
+        CityRegistry::set_osm_root(kOsmRoot);
+
+        TrainingConfig cfg;
+        cfg.cache_root  = kCacheRoot;
+        cfg.output_dir  = kOutputDir;
+        cfg.start_seed  = 42;
+        cfg.n_seeds     = 3;
+        cfg.save_policy = true;
+        cfg.verbose     = true;
+        cfg.log_every   = 1;
+
+        cfg.train_city_filter = {
+            "Tokyo_Small",      "Tokyo_Medium",
+            "LosAngeles_Small", "LosAngeles_Medium",
+            "Paris_Small",      "Paris_Medium",
+        };
+        cfg.train_scenarios = build_scenarios(paper_task_regimes(),
+                                              paper_congestion_regimes(),
+                                              paper_fleet_regimes());
+
+        apply_paper_environment(cfg.episode_cfg);
+
+        MultiCityTrainer trainer;
+        trainer.train_mapdp(cfg);
+    }
+
     // ── S — Smoke training: Tokyo Small+Medium, 1 seed. Times a few episodes
     //    with the real paper environment; kill early after enough ep lines.
     else if (rep == "S" || rep == "smoke") {
@@ -239,8 +270,8 @@ static int run_main()
         // (-1 = tous, comportement par défaut inchangé) et saute les lignes
         // (scénario, épisode, mode) déjà loguées d'un run précédent — voir
         // TrainingConfig::resume_from_episode / MultiCityTrainer::run_eval.
-        const float kOnlyRunRM        = 2.5f;   // -1.f = sweep complet 1.0->2.5
-        const int   kResumeFromEpisode = 142;   // 0 = depuis le debut
+        const float kOnlyRunRM        = -1.f;   // -1.f = sweep complet 1.0->2.5
+        const int   kResumeFromEpisode = 0;     // 0 = depuis le debut
 
         // One process per environment = one terminal. Pick 1-10 (0 = all);
         // the RM sweep is fixed to 1.0 -> 2.5.
@@ -314,6 +345,7 @@ static int run_main()
         cfg.policy_path        = kOutputDir + "\\mappo\\policy" + seed_tag;
         cfg.ippo_policy_path   = kOutputDir + "\\ippo\\ippo" + seed_tag;
         cfg.mapper_policy_path = kOutputDir + "\\mapper\\mapper" + seed_tag;
+        cfg.mapdp_policy_path  = kOutputDir + "\\mapdp\\mapdp" + seed_tag;
 
         std::filesystem::create_directories(cfg.output_dir);
 

@@ -212,6 +212,19 @@ public:
     // rewritten after every episode, so a crash loses at most one episode.
     void train_grid(const TrainingConfig& cfg);
 
+    // Same protocol as train_grid, applied to the standalone MAPDP solver
+    // (SoTA/Standalone/MAPDP.hpp) instead of the MAPPO/IPPO/MAPPER
+    // BidPolicy pipeline: same cities (train_city_filter), same scenario
+    // grid, same per-seed independent re-initialisation (reinit), same
+    // episode-seed formula (identical SharedEpisodeSetup per grid point —
+    // MAPDP trains on the EXACT SAME task streams MAPPO/IPPO/MAPPER saw,
+    // though not necessarily in the same run). Runs through SolverRunner
+    // (ISolver), not EpisodeRunner, since MAPDP is a standalone solver, not
+    // a TAM-pipeline policy. Checkpoint {out}/mapdp/mapdp_seed{seed}.bin
+    // rewritten after every episode; log {out}/episodes_mapdp_train.csv
+    // (same EpisodeRecord schema as train_grid, for a shared summary tool).
+    void train_mapdp(const TrainingConfig& cfg);
+
     // Movement-policy training. Bid side frozen: MAPPO checkpoint loaded from
     // cfg.policy_path, runner in eval mode; only the movement PPO learns
     // (cfg.episode_cfg.use_movement_policy + movement_train must be set).
@@ -239,13 +252,17 @@ private:
 
     // Episode-major sweep: one SharedEpisodeSetup per (city, scenario,
     // episode) slot, replayed by every eval mode then by the standalone SoTA
-    // solvers (CA, HAPC) when `sota` is non-null.
+    // solvers (CA, HAPC, and MAPDP when `mapdp` is non-null — MAPDP carries
+    // trained weights and must persist across the whole sweep, unlike
+    // CA/HAPC which are stateless and built fresh per episode) when `sota`
+    // is non-null.
     static int run_eval(const TrainingConfig& cfg,
                         const std::vector<std::unique_ptr<CityAssets>>& assets,
                         std::vector<std::unique_ptr<EpisodeRunner>>& runners,
                         int global_ep, int seed,
                         TrainingLogger& logger,
-                        SolverCSVLogger* sota);
+                        SolverCSVLogger* sota,
+                        class FaithfulMAPDPSolver* mapdp = nullptr);
 };
 
 #endif // MULTI_CITY_TRAINER_HPP

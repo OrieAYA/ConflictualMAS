@@ -10,6 +10,7 @@
 #include "SoTA/SolverFramework.hpp"
 #include "SoTA/Standalone/CA.hpp"
 #include "SoTA/Standalone/HAPC.hpp"
+#include "SoTA/Standalone/MAPDP.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -141,7 +142,8 @@ int MultiCityTrainer::run_eval(
     std::vector<std::unique_ptr<EpisodeRunner>>& runners,
     int global_ep, int seed,
     TrainingLogger& logger,
-    SolverCSVLogger* sota)
+    SolverCSVLogger* sota,
+    FaithfulMAPDPSolver* mapdp)
 {
     const int num_cities = static_cast<int>(assets.size());
 
@@ -225,6 +227,7 @@ int MultiCityTrainer::run_eval(
                     };
                     { FaithfulCASolver               s; run_solver(s); }
                     { HybridAdaptivePredictiveSolver s; run_solver(s); }
+                    if (mapdp) { mapdp->train_mode = false; run_solver(*mapdp); }
                 }
 
                 runner.release_episode_memory();
@@ -315,6 +318,21 @@ void MultiCityTrainer::evaluate(const TrainingConfig& cfg) {
         try_load("MAPPER  ", cfg.mapper_policy_path,
                  [&](const std::string& p){ return mapper.load(p); });
 
+        // MAPDP is a standalone ISolver (SolverRunner path), not a BidPolicy —
+        // loaded the same way (throws if the checkpoint is missing) but only
+        // participates in the sota pass when a path is actually given.
+        FaithfulMAPDPSolver mapdp;
+        bool have_mapdp = false;
+        if (!cfg.mapdp_policy_path.empty()) {
+            if (!mapdp.load(cfg.mapdp_policy_path))
+                throw std::runtime_error(std::string("Could not load MAPDP from ")
+                    + cfg.mapdp_policy_path
+                    + " — aborting to avoid evaluating fresh-init weights");
+            mapdp.train_mode = false;
+            have_mapdp = true;
+            std::cout << "[Policy] Loaded MAPDP    from " << cfg.mapdp_policy_path << "\n";
+        }
+
         // ── Hybrid base initialisation ──────────────────────────────────────
         // Hybrid uses MAPPO's actor as its frozen base. If MAPPO was loaded
         // from a checkpoint just above, the base is the trained policy;
@@ -372,7 +390,8 @@ void MultiCityTrainer::evaluate(const TrainingConfig& cfg) {
         int global_ep = 0;
 
         std::cout << "  -- Eval --\n";
-        global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger, &sota);
+        global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger, &sota,
+                             have_mapdp ? &mapdp : nullptr);
         sota.close();
         logger.flush();
 
@@ -434,6 +453,37 @@ static std::unordered_map<int, int> completed_grid_points(
         }
     }
     return per_seed;
+}
+
+// SolverMetrics → EpisodeRecord: MAPDP goes through SolverRunner/ISolver (its
+// output is SolverMetrics, the CA/HAPC shape), but is trained/resumed with
+// the SAME machinery as MAPPO/IPPO/MAPPER (TrainingLogger, EpisodeRecord CSV
+// schema, completed_grid_points) — this fills the overlapping fields and
+// leaves the TAM/RL-only ones (actor_loss, TAM offer stats, spatial-
+// complexity metrics — SolverMetrics doesn't compute those) at their
+// EpisodeRecord defaults (0 / empty).
+static EpisodeRecord make_mapdp_record(const SolverMetrics& m, int seed,
+                                       int global_episode, const std::string& city,
+                                       const std::string& phase) {
+    EpisodeRecord r;
+    r.seed = seed; r.global_episode = global_episode;
+    r.city = city; r.phase = phase; r.policy_mode = "MAPDP";
+    r.total_steps  = m.total_steps;
+    r.n_agents_max = m.n_active_agents;
+    r.tasks_appeared  = m.tasks_appeared;
+    r.tasks_completed = m.tasks_completed;
+    r.throughput_rate = m.throughput_rate;
+    r.accept_rate     = m.accept_rate;
+    r.latency_mean    = m.latency_mean;
+    r.agent_utilisation = m.agent_utilisation;
+    r.mean_congestion = m.mean_congestion;
+    r.mean_trip_steps = m.mean_trip_steps;
+    r.mean_wait_steps = m.mean_wait_steps;
+    r.mean_road_pd_m  = m.mean_road_pd_m;
+    r.pairing_violations_runtime  = m.pairing_violations;
+    r.capacity_violations_runtime = m.capacity_violations;
+    r.wallclock_ms = m.wallclock_ms;
+    return r;
 }
 
 void MultiCityTrainer::train_grid(const TrainingConfig& cfg_in) {
@@ -665,6 +715,182 @@ void MultiCityTrainer::train_grid(const TrainingConfig& cfg_in) {
     logger.flush();
     std::cout << "Grid training complete — " << total_eps
               << " episodes / policy. Results in " << cfg.output_dir << "\n";
+}
+
+// ── MAPDP standalone training (same protocol as train_grid) ────────────────
+//
+// MAPDP is a standalone ISolver (SoTA/Standalone/MAPDP.hpp), not a BidPolicy,
+// so it runs through SolverRunner instead of EpisodeRunner and has no TAM/
+// DbVNS involvement at all. Everything ELSE mirrors train_grid exactly: same
+// city rotation, same scenario grid, same per-seed independent
+// reinitialisation, same episode-seed formula (ep_seed is a pure function of
+// (seed, city index, scenario index) — the SharedEpisodeSetup it produces is
+// byte-identical to the one MAPPO/IPPO/MAPPER saw at that grid point, so
+// MAPDP trains on the exact same task streams), one checkpoint rewrite per
+// episode, and the same TrainingLogger/EpisodeRecord/completed_grid_points
+// resume machinery (via make_mapdp_record's SolverMetrics→EpisodeRecord
+// bridge).
+void MultiCityTrainer::train_mapdp(const TrainingConfig& cfg_in) {
+    fs::create_directories(cfg_in.output_dir);
+
+    const std::vector<EpisodeScenario> scenarios =
+        cfg_in.train_scenarios.empty() ? make_scenario_grid()
+                                       : cfg_in.train_scenarios;
+
+    std::vector<const CityConfig*> train_ptrs;
+    {
+        const auto& all_cities = CityRegistry::all();
+        if (cfg_in.train_city_filter.empty()) {
+            train_ptrs = CityRegistry::train_cities();
+        } else {
+            for (const auto& want : cfg_in.train_city_filter) {
+                bool matched = false;
+                for (const auto& cc : all_cities)
+                    if (cc.name == want) { train_ptrs.push_back(&cc); matched = true; break; }
+                if (!matched)
+                    std::cout << "  [Warn] train city \"" << want << "\" not found — skipped.\n";
+            }
+        }
+    }
+    const int num_cities   = static_cast<int>(train_ptrs.size());
+    const int n_seeds      = std::max(1, cfg_in.n_seeds);
+    const int eps_per_seed = num_cities * static_cast<int>(scenarios.size());
+    const int total_eps    = eps_per_seed * n_seeds;
+    if (num_cities == 0 || scenarios.empty()) {
+        std::cout << "  [train_mapdp] nothing to train (no cities/scenarios).\n";
+        return;
+    }
+
+    const TrainingConfig& cfg = cfg_in;
+    std::cout << "MAPDP grid training: " << num_cities << " cities × " << n_seeds
+              << " seeds × " << scenarios.size() << " scenarios = "
+              << total_eps << " episodes.\n";
+
+    std::vector<std::unique_ptr<CityAssets>> assets;
+    assets.reserve(num_cities);
+    for (int i = 0; i < num_cities; ++i)
+        assets.push_back(load_city(*train_ptrs[i], i, cfg.episode_cfg, cfg.cache_root));
+
+    FaithfulMAPDPSolver mapdp;
+    mapdp.train_mode = true;
+
+    auto save_checkpoint = [&](int seed) {
+        if (!cfg.save_policy) return;
+        const std::string dir = cfg.output_dir + "/mapdp";
+        std::error_code ec; fs::create_directories(dir, ec);
+        mapdp.save(dir + "/mapdp_seed" + std::to_string(seed) + ".bin");
+    };
+
+    std::unordered_map<int, int> done_pts;
+    if (cfg.resume)
+        done_pts = completed_grid_points(cfg.output_dir + "/episodes_mapdp_train.csv", 1);
+
+    TrainingLogger logger(cfg.output_dir, std::string("mapdp_train"), !done_pts.empty());
+    const std::string summary_path = cfg.output_dir + "/mapdp_summary.csv";
+
+    int    ep             = 0;
+    size_t seed_rec_begin = 0;
+    for (int si = 0; si < n_seeds; ++si) {
+        const int seed = cfg.start_seed + si;
+
+        int done = 0;
+        if (auto it = done_pts.find(seed); it != done_pts.end())
+            done = std::min(it->second, eps_per_seed);
+        if (done >= eps_per_seed) {
+            ep += eps_per_seed;
+            std::cout << "\n════ seed " << (si + 1) << "/" << n_seeds
+                      << " (rng=" << seed << ") — complete, skipped ════\n";
+            continue;
+        }
+
+        std::cout << "\n════ seed " << (si + 1) << "/" << n_seeds
+                  << " (rng=" << seed << ") ════\n";
+
+        // Fresh network for this seed (mirrors train_grid's reinit_all) —
+        // MAPDP is retrained independently per seed, exactly like MAPPO.
+        mapdp.reinit(static_cast<uint32_t>(seed));
+
+        if (done > 0) {
+            const std::string path = cfg.output_dir + "/mapdp/mapdp_seed"
+                                    + std::to_string(seed) + ".bin";
+            if (mapdp.load(path)) {
+                std::cout << "  Resume: " << done << "/" << eps_per_seed
+                          << " episodes done — continuing at episode "
+                          << (done + 1) << ".\n";
+            } else {
+                std::cout << "  [Warn] checkpoint load failed — seed restarts from 0.\n";
+                done = 0;
+                mapdp.reinit(static_cast<uint32_t>(seed));
+            }
+        }
+        mapdp.train_mode = true;
+
+        int ep_in_seed = 0;
+        for (size_t sc = 0; sc < scenarios.size(); ++sc) {
+            const EpisodeScenario& scen = scenarios[sc];
+            std::cout << "  ── scenario " << (sc + 1) << "/" << scenarios.size()
+                      << "  " << scen.label << "  (AM=" << scen.agents_mult
+                      << ", " << num_cities << " cities) ──\n" << std::flush;
+            for (int ci = 0; ci < num_cities; ++ci) {
+                if (ep_in_seed < done) { ++ep; ++ep_in_seed; continue; }
+                CityAssets& ca = *assets[ci];
+
+                // SAME formula as train_grid — identical SharedEpisodeSetup
+                // at this grid point, whether MAPDP trains in this run or a
+                // separate one.
+                uint32_t ep_seed =
+                      (static_cast<uint32_t>(seed)   * 2654435761u)
+                    ^ (static_cast<uint32_t>(ci + 1) *      40503u)
+                    ^ (static_cast<uint32_t>(sc + 1) * 2246822519u);
+                ep_seed |= 1u;
+
+                const SharedEpisodeSetup setup = build_shared_episode_setup(
+                    ep_seed, *ca.config, scen, ca.ep_cfg, ca.geo_box);
+
+                SolverRunner srunner(ca.ep_cfg, ca.geo_box, scen, ep_seed);
+                SolverMetrics m = srunner.run(mapdp, &setup);
+                m.city_label     = ca.config->name;
+                m.scenario_label = scen.label;
+                m.episode        = ep_in_seed;
+
+                logger.push(make_mapdp_record(m, seed, ep, ca.config->name, "train"));
+
+                if (cfg.verbose && ep % std::max(1, cfg.log_every) == 0)
+                    std::cout << "  [ep " << (ep_in_seed + 1) << "/" << eps_per_seed
+                              << " s" << seed << " " << ca.config->name
+                              << " " << scen.label << " MAPDP]"
+                              << "  thr="  << m.throughput_rate
+                              << " done="  << m.tasks_completed << "/" << m.tasks_appeared
+                              << " acc="   << m.accept_rate
+                              << " cong=x" << m.mean_congestion
+                              << " lat="   << m.latency_mean
+                              << " agents="<< m.n_active_agents
+                              << "  "      << m.wallclock_ms << "ms"
+                              << "  mem="  << process_commit_mb() << "MB\n"
+                              << std::flush;
+
+                ++ep;
+                ++ep_in_seed;
+                logger.flush();
+                save_checkpoint(seed);
+            }
+        }
+
+        save_checkpoint(seed);
+        {
+            const auto& all = logger.records();
+            std::vector<EpisodeRecord> seed_records(
+                all.begin() + seed_rec_begin, all.end());
+            seed_rec_begin = all.size();
+            TrainingLogger::write_summary(summary_path, seed_records, seed);
+        }
+        std::cout << "  Seed " << seed << " done — checkpoint in "
+                  << cfg.output_dir << "/mapdp/mapdp_seed" << seed << ".bin\n";
+    }
+
+    logger.flush();
+    std::cout << "MAPDP grid training complete — " << total_eps
+              << " episodes. Results in " << cfg.output_dir << "\n";
 }
 
 // ── Movement-policy training ──────────────────────────────────────────────────

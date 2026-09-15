@@ -36,6 +36,7 @@ struct TrainingConfig : EvaluationConfig {
     std::string policy_path        = "";   // MAPPO checkpoint to evaluate
     std::string ippo_policy_path   = "";   // IPPO
     std::string mapper_policy_path = "";   // MAPPER
+    std::string mapdp_policy_path  = "";   // MAPDP (Zong+2022, standalone SoTA)
     std::string lsm_path           = "";   // frozen LSM checkpoint (train_movement)
 
     // ── Training mode subset ── empty = train MAPPO+IPPO+MAPPER.
