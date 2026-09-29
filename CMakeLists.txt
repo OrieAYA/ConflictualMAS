@@ -1,6 +1,12 @@
 ﻿cmake_minimum_required(VERSION 3.10)
 project(ConflictualMAS LANGUAGES CXX)
 
+# Default to Release if the user didn't specify a build type
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
+endif()
+
 add_compile_definitions(NOMINMAX)
 
 set(PROJECT_PATH "C:/")
@@ -33,6 +39,7 @@ set(SOURCES
     src/DMASforPD/Agents/Manager.cpp
     src/DMASforPD/Agents/TaskAgent.cpp
     src/DMASforPD/Algorithms/DbVNS.cpp
+    src/DMASforPD/Algorithms/GreedyPlanning.cpp
     src/DMASforPD/Algorithms/TAM.cpp
     src/DMASforPD/Algorithms/TDAStar.cpp
     src/DMASforPD/Policy/BidPolicy.cpp
@@ -103,12 +110,12 @@ add_executable(main ${SOURCES})
 
 target_include_directories(main PRIVATE
     ${CMAKE_SOURCE_DIR}/src
+    ${OSMIUM_INCLUDE_DIRS}
 )
 
 target_link_libraries(main PRIVATE
     Boost::system
     Boost::iostreams
-    ${OSMIUM_INCLUDE_DIRS}
     CURL::libcurl
     ZLIB::ZLIB
     BZip2::BZip2

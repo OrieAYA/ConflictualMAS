@@ -223,7 +223,7 @@ public:
     // a TAM-pipeline policy. Checkpoint {out}/mapdp/mapdp_seed{seed}.bin
     // rewritten after every episode; log {out}/episodes_mapdp_train.csv
     // (same EpisodeRecord schema as train_grid, for a shared summary tool).
-    void train_mapdp(const TrainingConfig& cfg);
+    //void train_mapdp(const TrainingConfig& cfg);
 
     // Movement-policy training. Bid side frozen: MAPPO checkpoint loaded from
     // cfg.policy_path, runner in eval mode; only the movement PPO learns
@@ -261,8 +261,8 @@ private:
                         std::vector<std::unique_ptr<EpisodeRunner>>& runners,
                         int global_ep, int seed,
                         TrainingLogger& logger,
-                        SolverCSVLogger* sota,
-                        class FaithfulMAPDPSolver* mapdp = nullptr);
+                        SolverCSVLogger* sota);
+                        //class FaithfulMAPDPSolver* mapdp = nullptr);
 };
 
 #endif // MULTI_CITY_TRAINER_HPP

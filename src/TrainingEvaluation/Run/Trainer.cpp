@@ -10,7 +10,6 @@
 #include "SoTA/SolverFramework.hpp"
 #include "SoTA/Standalone/CA.hpp"
 #include "SoTA/Standalone/HAPC.hpp"
-#include "SoTA/Standalone/MAPDP.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -142,8 +141,8 @@ int MultiCityTrainer::run_eval(
     std::vector<std::unique_ptr<EpisodeRunner>>& runners,
     int global_ep, int seed,
     TrainingLogger& logger,
-    SolverCSVLogger* sota,
-    FaithfulMAPDPSolver* mapdp)
+    SolverCSVLogger* sota)
+    //FaithfulMAPDPSolver* mapdp)
 {
     const int num_cities = static_cast<int>(assets.size());
 
@@ -227,7 +226,7 @@ int MultiCityTrainer::run_eval(
                     };
                     { FaithfulCASolver               s; run_solver(s); }
                     { HybridAdaptivePredictiveSolver s; run_solver(s); }
-                    if (mapdp) { mapdp->train_mode = false; run_solver(*mapdp); }
+                    //if (mapdp) { mapdp->train_mode = false; run_solver(*mapdp); }
                 }
 
                 runner.release_episode_memory();
@@ -321,6 +320,7 @@ void MultiCityTrainer::evaluate(const TrainingConfig& cfg) {
         // MAPDP is a standalone ISolver (SolverRunner path), not a BidPolicy —
         // loaded the same way (throws if the checkpoint is missing) but only
         // participates in the sota pass when a path is actually given.
+        /*
         FaithfulMAPDPSolver mapdp;
         bool have_mapdp = false;
         if (!cfg.mapdp_policy_path.empty()) {
@@ -331,7 +331,7 @@ void MultiCityTrainer::evaluate(const TrainingConfig& cfg) {
             mapdp.train_mode = false;
             have_mapdp = true;
             std::cout << "[Policy] Loaded MAPDP    from " << cfg.mapdp_policy_path << "\n";
-        }
+        }*/
 
         // ── Hybrid base initialisation ──────────────────────────────────────
         // Hybrid uses MAPPO's actor as its frozen base. If MAPPO was loaded
@@ -390,8 +390,7 @@ void MultiCityTrainer::evaluate(const TrainingConfig& cfg) {
         int global_ep = 0;
 
         std::cout << "  -- Eval --\n";
-        global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger, &sota,
-                             have_mapdp ? &mapdp : nullptr);
+        global_ep = run_eval(cfg, assets, runners, global_ep, seed, logger, nullptr);
         sota.close();
         logger.flush();
 
@@ -730,6 +729,7 @@ void MultiCityTrainer::train_grid(const TrainingConfig& cfg_in) {
 // episode, and the same TrainingLogger/EpisodeRecord/completed_grid_points
 // resume machinery (via make_mapdp_record's SolverMetrics→EpisodeRecord
 // bridge).
+/*
 void MultiCityTrainer::train_mapdp(const TrainingConfig& cfg_in) {
     fs::create_directories(cfg_in.output_dir);
 
@@ -892,6 +892,7 @@ void MultiCityTrainer::train_mapdp(const TrainingConfig& cfg_in) {
     std::cout << "MAPDP grid training complete — " << total_eps
               << " episodes. Results in " << cfg.output_dir << "\n";
 }
+*/
 
 // ── Movement-policy training ──────────────────────────────────────────────────
 

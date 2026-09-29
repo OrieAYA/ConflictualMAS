@@ -159,14 +159,16 @@ void EpisodeRunner::prepare_run(const EpisodeScenario& scenario,
 
     // Planning dispatcher — at most one flag active. DbVNS wins over DH when
     // both are set in cfg; PolicyMode entries force their respective flag.
-    const bool cfg_dbvns = cfg_.use_dbvns_planning;
-    const bool cfg_dh    = cfg_.use_double_horizon_planning && !cfg_dbvns;
+    const bool cfg_greedy = cfg_.use_greedy_planning;
+    const bool cfg_dbvns  = cfg_.use_dbvns_planning && !cfg_greedy;
+    const bool cfg_dh     = cfg_.use_double_horizon_planning && !cfg_greedy && !cfg_dbvns;
+    memory_.planning_use_greedy = cfg_greedy;
     memory_.planning_use_dbvns =
-        cfg_dbvns || (policy_mode == PolicyMode::DbVNS);
+        (cfg_dbvns || (policy_mode == PolicyMode::DbVNS)) && !memory_.planning_use_greedy;
     memory_.planning_use_double_horizon =
         (cfg_dh || policy_mode == PolicyMode::DoubleHorizon)
-        && !memory_.planning_use_dbvns;
-    memory_.planning_use_alns  = (policy_mode == PolicyMode::ALNS);
+        && !memory_.planning_use_dbvns && !memory_.planning_use_greedy;
+    memory_.planning_use_alns  = (policy_mode == PolicyMode::ALNS) && !memory_.planning_use_greedy;
 
     // Heterogeneous fleet: per-agent capacity draw in [min, max]; the TAM
     // global ceiling is bumped to the max so container sizing stays valid.

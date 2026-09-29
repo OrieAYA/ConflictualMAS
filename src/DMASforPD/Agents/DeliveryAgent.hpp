@@ -5,6 +5,7 @@
 #include "DMASforPD/Structures/PDPTask.hpp"
 #include "DMASforPD/Structures/OperableEnvironment.hpp"
 #include "DMASforPD/Algorithms/DbVNS.hpp"
+#include "DMASforPD/Algorithms/GreedyPlanning.hpp"
 #include "DMASforPD/Structures/ObjectiveCache.hpp"
 #include <optional>
 #include <unordered_map>

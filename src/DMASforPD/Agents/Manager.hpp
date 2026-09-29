@@ -89,6 +89,8 @@ public:
     // reoptimises its full remaining sequence (in-flight head preserved).
     bool  planning_use_dbvns = false;
 
+    bool planning_use_greedy = false;
+
     // ALNS-PDP lifelong replanning [Ropke & Pisinger 2006].
     bool  planning_use_alns  = false;
 

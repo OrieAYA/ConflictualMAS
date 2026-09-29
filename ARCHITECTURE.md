@@ -44,6 +44,7 @@ Les checkpoints d'entraînement (`results/{mappo,ippo,mapper}/*_seed42.bin`)
 
 ```bash
 cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake
+(cmake -B build -S . -G Ninja -DCMAKE_TOOLCHAIN_FILE=C:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DOSMIUM_INCLUDE_DIRS=C:/libs/libosmium/include)
 cmake --build build --config Release        # binaire : build/Release/main.exe
 ```
 

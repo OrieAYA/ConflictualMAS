@@ -1,6 +1,8 @@
 #include "DMASforPD/Agents/DeliveryAgent.hpp"
 #include "DMASforPD/Agents/Manager.hpp"
 #include "DMASforPD/Algorithms/TAM.hpp"
+#include "DMASforPD/Algorithms/DbVNS.hpp"
+#include "DMASforPD/Algorithms/GreedyPlanning.hpp"
 #include "DMASforPD/Policy/BidPolicy.hpp"
 #include "SoTA/ScoringLike/RMCA.hpp"
 #include "SoTA/Planning/ALNS.hpp"
@@ -268,6 +270,76 @@ void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
         solution.push_back(inflight);
         for (const auto& node : planned)
             solution.push_back(node);
+
+        status = AgentStatus::Active;
+        prefetch_next_path(memory);
+        return;
+    }
+
+    // ── Greedy global replanning branch (nearest-next-objective) ───────────────
+    if (memory.planning_use_greedy) {
+        if (seq.empty()) {
+            solution.push_back(task.pickup);
+            solution.push_back(task.delivery);
+            status = AgentStatus::Active;
+            prefetch_next_path(memory);
+            return;
+        }
+        const ObjectiveNode inflight = seq[0].node;
+        const osmium::object_id_type plan_start = inflight.id;
+
+        std::unordered_set<osmium::object_id_type> remaining_ids;
+        for (int i = 1; i < n; ++i) remaining_ids.insert(seq[i].node.id);
+        remaining_ids.insert(task.pickup.id);
+        remaining_ids.insert(task.delivery.id);
+
+        OperableEnvironment tmp_env;
+        PairingMap           pickup_of_replan;
+        for (int i = 1; i < n; ++i) tmp_env.add_single_node(seq[i].node);
+        tmp_env.add_single_node(task.pickup);
+        tmp_env.add_single_node(task.delivery);
+
+        for (const PDPTask* t : local_memory.tasks) {
+            if (t->timeline.picked_step >= 0) continue;
+            const bool p_in = remaining_ids.count(t->pickup.id)   > 0;
+            const bool d_in = remaining_ids.count(t->delivery.id) > 0;
+            if (p_in && d_in && t->pickup.id != plan_start)
+                pickup_of_replan[t->delivery.id] = t->pickup.id;
+        }
+
+        int tmp_n = tmp_env.size();
+        std::vector<float> sc(tmp_n, kCostScale);
+        for (int i = 0; i < tmp_n; ++i) {
+            const auto* p = memory.get_or_compute_path(
+                plan_start, tmp_env.nodes[i].id, 1);
+            if (p && p->valid()) sc[i] = p->cost;
+        }
+        tmp_env.refresh_costs(memory);
+
+        const int tam_cap = memory.task_agent.params.max_tasks_per_agent;
+        const int max_cap = std::max(
+            1, this->max_capacity > 0 ? this->max_capacity : tam_cap);
+        int load_at_start = 0;
+        for (const PDPTask* t : local_memory.tasks) {
+            if (t == &task) continue;
+            const bool picked    = t->timeline.picked_step    >= 0;
+            const bool delivered = t->timeline.delivered_step >= 0;
+            if (picked && !delivered) ++load_at_start;
+        }
+        if (const PDPTask* t0 = memory.get_task_for_node(plan_start)) {
+            if (t0->pickup.id   == plan_start && t0->timeline.picked_step    < 0)
+                ++load_at_start;
+            else if (t0->delivery.id == plan_start && t0->timeline.delivered_step < 0)
+                --load_at_start;
+        }
+        load_at_start = std::max(0, std::min(max_cap, load_at_start));
+
+        auto planned = plan_sequence_greedy(
+            tmp_env, pickup_of_replan, sc, max_cap, load_at_start);
+
+        seq.clear();
+        solution.push_back(inflight);
+        for (const auto& node : planned) solution.push_back(node);
 
         status = AgentStatus::Active;
         prefetch_next_path(memory);

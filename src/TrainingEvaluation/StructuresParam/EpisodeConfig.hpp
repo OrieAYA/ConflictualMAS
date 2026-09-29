@@ -151,6 +151,7 @@ struct EpisodeConfig {
     // PDPGlobalMemory::planning_use_* and dispatched in receive_task().
     bool use_double_horizon_planning = false;
     bool use_dbvns_planning          = false;
+    bool use_greedy_planning         = false;
 
     // ── TAM multi-candidate (paper Algorithm 1) ────────────────────────────
     // K-candidate auction: dual Dijkstra from pickup/delivery, budget x·ratio(x)

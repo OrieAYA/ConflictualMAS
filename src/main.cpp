@@ -217,7 +217,7 @@ static int run_main()
         apply_paper_environment(cfg.episode_cfg);
 
         MultiCityTrainer trainer;
-        trainer.train_mapdp(cfg);
+        //trainer.train_mapdp(cfg);
     }
 
     // ── S — Smoke training: Tokyo Small+Medium, 1 seed. Times a few episodes
@@ -249,121 +249,104 @@ static int run_main()
         trainer.train_grid(cfg);
     }
 
-    // ── 4 — Evaluation: each (city, scenario, episode) slot is built once and
-    //    replayed by the 6 pipeline modes (MAPPO/IPPO/MAPPER/Hybrid/RMCA/TP)
-    //    then by the standalone CA + HAPC solvers, all on the same setup.
-    //    Loads the per-seed checkpoints produced by option 3.
-    else if (rep == "4" || rep == "eval" || rep == "evaluation") {
-        // Sweep de charge : un niveau = (seed, RM). RM = ratio_mult des events
-        // (tasks = round(100·SCE·RM), ghosts = round(25000·SCE·RM)) ; la
-        // flotte (10·SCE·AM) ne change pas. RM avance de kEvalRatioStep par
-        // niveau ; seed = kEvalFirstSeed + (RM−1)/step — fonction de RM, donc
-        // un même niveau produit les mêmes épisodes quel que soit le
-        // découpage des lancements. Checkpoints d'entraînement FIXES
-        // (kEvalPolicySeed). Parallélisme : un terminal par groupe de villes,
-        // sorties séparées par le suffixe _g{groupe}.
-        const int   kEvalPolicySeed = 42;    // checkpoint train (42 / 43 / 44)
-        const int   kEvalFirstSeed  = 42;    // seed d'éval du niveau RM=1.0
-        const float kEvalRatioStep  = 0.5f;
+    // ── 4 — Evaluation: chaque (city, scenario, episode) est rejoué UNIQUEMENT
+//    par Hybrid, planification locale Greedy (plus-proche-objectif) au lieu
+//    de DbVNS. Même sweep de villes / RM que le protocole papier.
+else if (rep == "4" || rep == "eval" || rep == "evaluation") {
+    const int   kEvalPolicySeed = 42;    // checkpoint train (42 / 43 / 44)
+    const int   kEvalFirstSeed  = 42;    // seed d'éval du niveau RM=1.0
+    const float kEvalRatioStep  = 0.5f;
 
-        // Reprise après coupure : ne relance que le niveau RM demandé
-        // (-1 = tous, comportement par défaut inchangé) et saute les lignes
-        // (scénario, épisode, mode) déjà loguées d'un run précédent — voir
-        // TrainingConfig::resume_from_episode / MultiCityTrainer::run_eval.
-        const float kOnlyRunRM        = -1.f;   // -1.f = sweep complet 1.0->2.5
-        const int   kResumeFromEpisode = 0;     // 0 = depuis le debut
+    const float kOnlyRunRM        = -1.f;   // -1.f = sweep complet 1.0->2.5
+    const int   kResumeFromEpisode = 0;
 
-        // One process per environment = one terminal. Pick 1-10 (0 = all);
-        // the RM sweep is fixed to 1.0 -> 2.5.
-        const std::vector<std::string> all_envs = {
-            "Tokyo_Small",      "Tokyo_Medium",
-            "Kyoto_Small",      "Kyoto_Medium",
-            "LosAngeles_Small", "LosAngeles_Medium",
-            "NewYork_Small",    "NewYork_Medium",
-            "Paris_Small",      "Paris_Medium",
-        };
-        std::cout << "Environnement a evaluer (RM 1.0 -> 2.5) :\n";
-        for (int i = 0; i < 10; ++i)
-            std::cout << "  " << (i + 1) << "  " << all_envs[i] << "\n";
-        std::cout << "  0  toutes\nChoix (0-10) : ";
-        int n = 0;
-        std::cin >> n;
+    const std::vector<std::string> all_envs = {
+        "Tokyo_Small",      "Tokyo_Medium",
+        "Kyoto_Small",      "Kyoto_Medium",
+        "LosAngeles_Small", "LosAngeles_Medium",
+        "NewYork_Small",    "NewYork_Medium",
+        "Paris_Small",      "Paris_Medium",
+    };
+    std::cout << "Environnement a evaluer (RM 1.0 -> 2.5) :\n";
+    for (int i = 0; i < 10; ++i)
+        std::cout << "  " << (i + 1) << "  " << all_envs[i] << "\n";
+    std::cout << "  0  toutes\nChoix (0-10) : ";
+    int n = 0;
+    std::cin >> n;
 
-        const float rm_min = 1.0f, rm_max = 2.5f;
+    const float rm_min = 1.0f, rm_max = 2.5f;
 
-        CityRegistry::set_osm_root(kOsmRoot);
+    CityRegistry::set_osm_root(kOsmRoot);
 
-        std::vector<std::string> eval_cities;
-        std::string sel;
-        if (n >= 1 && n <= 10) { eval_cities = { all_envs[n - 1] }; sel = all_envs[n - 1]; }
-        else                   { eval_cities = all_envs;           sel = "all"; }
+    std::vector<std::string> eval_cities;
+    std::string sel;
+    if (n >= 1 && n <= 10) { eval_cities = { all_envs[n - 1] }; sel = all_envs[n - 1]; }
+    else                   { eval_cities = all_envs;           sel = "all"; }
 
-        const std::string seed_tag =
-            "_seed" + std::to_string(kEvalPolicySeed) + ".bin";
+    const std::string seed_tag =
+        "_seed" + std::to_string(kEvalPolicySeed) + ".bin";
 
-        const int n_levels = static_cast<int>(
-            std::round((rm_max - rm_min) / kEvalRatioStep)) + 1;
-        for (int lvl = 0; lvl < n_levels; ++lvl) {
-        const float rm     = rm_min + lvl * kEvalRatioStep;
-        if (kOnlyRunRM >= 0.f && std::fabs(rm - kOnlyRunRM) > 1e-3f) continue;
-        const int   seed   = kEvalFirstSeed + static_cast<int>(
-            std::round((rm - 1.f) / kEvalRatioStep));
-        const int   tenths = static_cast<int>(std::round(rm * 10.f));
-        const std::string rm_tag =
-            std::to_string(tenths / 10) + "." + std::to_string(tenths % 10);
-        std::cout << "\n════════ Niveau de charge RM=" << rm_tag
-                  << " (seed=" << seed << ", cible " << sel
-                  << ", policy seed " << kEvalPolicySeed << ") ════════\n";
+    const int n_levels = static_cast<int>(
+        std::round((rm_max - rm_min) / kEvalRatioStep)) + 1;
+    for (int lvl = 0; lvl < n_levels; ++lvl) {
+    const float rm     = rm_min + lvl * kEvalRatioStep;
+    if (kOnlyRunRM >= 0.f && std::fabs(rm - kOnlyRunRM) > 1e-3f) continue;
+    const int   seed   = kEvalFirstSeed + static_cast<int>(
+        std::round((rm - 1.f) / kEvalRatioStep));
+    const int   tenths = static_cast<int>(std::round(rm * 10.f));
+    const std::string rm_tag =
+        std::to_string(tenths / 10) + "." + std::to_string(tenths % 10);
+    std::cout << "\n════════ Niveau de charge RM=" << rm_tag
+              << " (seed=" << seed << ", cible " << sel
+              << ", policy seed " << kEvalPolicySeed << ", Hybrid+Greedy) ════════\n";
 
-        TrainingConfig cfg;
-        cfg.cache_root      = kCacheRoot;
-        cfg.output_dir      = kOutputDir + "\\paper_eval\\pol"
-                            + std::to_string(kEvalPolicySeed)
-                            + "_rm" + rm_tag
-                            + "_" + sel;
-        cfg.n_seeds         = 1;
-        cfg.start_seed      = seed;
-        cfg.n_eval_episodes = 1;
-        cfg.verbose         = true;
+    TrainingConfig cfg;
+    cfg.cache_root      = kCacheRoot;
+    // ── SEUL CHANGEMENT DE CHEMIN : suffixe "_hybrid" ajouté ──
+    cfg.output_dir      = kOutputDir + "\\paper_eval\\pol"
+                        + std::to_string(kEvalPolicySeed)
+                        + "_rm" + rm_tag
+                        + "_" + sel + "_hybrid";
+    cfg.n_seeds         = 1;
+    cfg.start_seed      = seed;
+    cfg.n_eval_episodes = 1;
+    cfg.verbose         = true;
 
-        cfg.train_city_filter = eval_cities;
+    cfg.train_city_filter = eval_cities;
 
-        cfg.eval_modes = {
-            PolicyMode::MAPPO,
-            PolicyMode::IPPO,
-            PolicyMode::MAPPER,
-            PolicyMode::Hybrid,
-            PolicyMode::RMCA,
-            PolicyMode::TokenPassing,
-        };
-        cfg.eval_scenarios = make_scenario_grid();
-        cfg.resume_from_episode = kResumeFromEpisode;
+    // ── SEUL CHANGEMENT DE MODE : Hybrid uniquement ──
+    cfg.eval_modes = {
+        PolicyMode::Hybrid,
+    };
+    cfg.eval_scenarios = make_scenario_grid();
+    cfg.resume_from_episode = kResumeFromEpisode;
 
-        apply_paper_environment(cfg.episode_cfg);
-        cfg.episode_cfg.ratio_mult = rm;
+    apply_paper_environment(cfg.episode_cfg);
+    cfg.episode_cfg.ratio_mult = rm;
 
-        cfg.policy_path        = kOutputDir + "\\mappo\\policy" + seed_tag;
-        cfg.ippo_policy_path   = kOutputDir + "\\ippo\\ippo" + seed_tag;
-        cfg.mapper_policy_path = kOutputDir + "\\mapper\\mapper" + seed_tag;
-        cfg.mapdp_policy_path  = kOutputDir + "\\mapdp\\mapdp" + seed_tag;
+    // ── SEUL CHANGEMENT DE PLANIFICATION : Greedy au lieu de DbVNS ──
+    cfg.episode_cfg.use_dbvns_planning  = false;
+    cfg.episode_cfg.use_greedy_planning = true;   // <- nom de flag à créer
 
-        std::filesystem::create_directories(cfg.output_dir);
+    cfg.policy_path        = kOutputDir + "\\mappo\\policy" + seed_tag;
+    cfg.ippo_policy_path   = kOutputDir + "\\ippo\\ippo" + seed_tag;
+    cfg.mapper_policy_path = kOutputDir + "\\mapper\\mapper" + seed_tag;
 
-        // Episode-major : chaque slot (ville, scénario, épisode) est généré
-        // une fois puis rejoué par les 6 modes et par CA/HAPC standalone.
-        {
-            MultiCityTrainer trainer;
-            trainer.evaluate(cfg);
-        }
+    std::filesystem::create_directories(cfg.output_dir);
 
-        std::cout << "\n=== Niveau RM=" << rm_tag << " termine ===\n"
-                  << "  Modes CSV: " << cfg.output_dir << "\\episodes_seed"
-                  << seed << ".csv\n"
-                  << "  SoTA  CSV: " << cfg.output_dir
-                  << "\\sota_standalone\\sota_seed" << seed << ".csv\n"
-                  << "  Join keys: (city, scenario, episode)\n";
-        }   // fin du niveau RM
+    {
+        MultiCityTrainer trainer;
+        trainer.evaluate(cfg);
     }
+
+    std::cout << "\n=== Niveau RM=" << rm_tag << " termine (Hybrid+Greedy) ===\n"
+              << "  Modes CSV: " << cfg.output_dir << "\\episodes_seed"
+              << seed << ".csv\n"
+              << "  SoTA  CSV: " << cfg.output_dir
+              << "\\sota_standalone\\sota_seed" << seed << ".csv\n"
+              << "  Join keys: (city, scenario, episode)\n";
+    }   // fin du niveau RM
+}
 
 
     // ── 5 — Movement policy training: bid side frozen (MAPPO checkpoint in
