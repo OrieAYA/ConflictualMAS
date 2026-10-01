@@ -244,12 +244,12 @@ static int fwd_best_neighbor(const FwdDecomp& s, const FwdCtx& ctx) {
     for (int j = 0; j < ctx.n; ++j) {
         if (!s.avail[j] || s.forbidden[j]) continue;
         const bool is_pickup = (*ctx.delivery_of)[j] >= 0;
-        if (is_pickup && s.load >= ctx.max_capacity) continue;  // skip → postpone
+        if (is_pickup && s.load >= ctx.max_capacity) continue;
         const float c = s.seq.empty()
             ? (*ctx.start_cost)[j]
             : (ctx.time_aware
                  ? ctx.env->get_cost_at(s.seq.back(), j, fwd_depart_step(s.cost, ctx))
-                 : ctx.env->get_cost(s.seq.back(), j));
+                 : ctx.env->ensure_cost(s.seq.back(), j));   // ← swap
         if (c >= 0.f && c < 1e8f && c < best_c) { best_c = c; best_j = j; }
     }
     return best_j;
@@ -260,10 +260,8 @@ static int fwd_best_neighbor(const FwdDecomp& s, const FwdCtx& ctx) {
 // Agent::greedy_construction() exactly.
 static FwdDecomp* fwd_greedy(FwdDecomp* current, const FwdCtx& ctx) {
     if (current->avail_cnt == 0) return current;
-
     const int j = fwd_best_neighbor(*current, ctx);
     if (j < 0) return current;
-
     auto it = current->childs.find(j);
     if (it != current->childs.end()) return fwd_greedy(it->second, ctx);
 
@@ -271,7 +269,7 @@ static FwdDecomp* fwd_greedy(FwdDecomp* current, const FwdCtx& ctx) {
         ? (*ctx.start_cost)[j]
         : (ctx.time_aware
              ? ctx.env->get_cost_at(current->seq.back(), j, fwd_depart_step(current->cost, ctx))
-             : ctx.env->get_cost(current->seq.back(), j));
+             : ctx.env->ensure_cost(current->seq.back(), j));   // ← swap
 
     FwdDecomp* child = new FwdDecomp;
     child->parent    = current;
@@ -281,8 +279,6 @@ static FwdDecomp* fwd_greedy(FwdDecomp* current, const FwdCtx& ctx) {
     child->avail_cnt = current->avail_cnt - 1;
     child->cost      = current->cost + c;
 
-    // Pickup → unlock its delivery and increment carry.
-    // Delivery → decrement carry.
     const int di = (*ctx.delivery_of)[j];
     if (di >= 0) {
         if (!child->forbidden[di] && !child->avail[di]) {
@@ -291,8 +287,7 @@ static FwdDecomp* fwd_greedy(FwdDecomp* current, const FwdCtx& ctx) {
         }
         child->load = current->load + 1;
     } else {
-        const int pi = (*ctx.pickup_of)[j];
-        child->load = current->load + (pi >= 0 ? -1 : 0);
+        child->load = current->load - 1;   // ← patch load (décrément inconditionnel)
     }
     current->childs[j] = child;
     return fwd_greedy(child, ctx);

@@ -56,9 +56,10 @@ struct OperableEnvironment {
     float plan_speed() const { return speed_ctx_; }
     int   plan_base () const { return base_ctx_;  }
     float get_cost_at(int i, int j, int depart_step) const;
+    float ensure_cost(int i, int j) const;
 
 private:
-    std::vector<float> costs_;   // flat N×N row-major; -1 = not computed
+    mutable std::vector<float> costs_;   // flat N×N row-major; -1 = not computed
     // O(1) lookup maintained in sync with nodes[].
     std::unordered_map<osmium::object_id_type, int> index_map_;
 

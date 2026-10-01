@@ -315,6 +315,9 @@ void DeliveryAgent::receive_task(PDPTask& task, PDPGlobalMemory& memory) {
             if (p && p->valid()) sc[i] = p->cost;
         }
         tmp_env.refresh_costs(memory);
+        const float plan_speed = std::max(memory.speed_mps, 0.1f);
+        const int   plan_base  = memory.current_time();
+        tmp_env.set_time_context(memory, plan_speed, plan_base);  // active ensure_cost's retry
 
         const int tam_cap = memory.task_agent.params.max_tasks_per_agent;
         const int max_cap = std::max(

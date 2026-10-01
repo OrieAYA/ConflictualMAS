@@ -114,20 +114,23 @@ void OperableEnvironment::set_time_context(
     tcost_memo_.clear();
 }
 
-float OperableEnvironment::get_cost_at(int i, int j, int depart_step) const {
-    const float static_c = get_cost(i, j);
-    if (!mem_ctx_ || static_c < 0.f) return static_c;   // no context / infeasible
+float OperableEnvironment::ensure_cost(int i, int j) const {
+    const float c = get_cost(i, j);
+    if (c >= 0.f || !mem_ctx_) return c;
+    const ObjectivePath* path = mem_ctx_->get_or_compute_path(
+        nodes[i].id, nodes[j].id, nodes[i].group_id);
+    if (path && path->valid()) {
+        costs_[i * static_cast<int>(nodes.size()) + j] = path->cost;
+        return path->cost;
+    }
+    return c;   // genuinely infeasible (e.g. disconnected component)
+}
 
-    // Memoise per (i, j, departure step). kBucket = 1 → EXACT per-step
-    // resolution (the load profile is indexed by integer step, so 1 is the
-    // finest meaningful granularity; 0 would be undefined). This re-costs every
-    // branch at its exact traversal time — no coarse collapsing. Cost stays
-    // bounded because re-exploring the SAME decomposition node yields the SAME
-    // exact depart_step → the memo still hits; only genuinely different-time
-    // evaluations of the same (i,j) edge are recomputed, which is the intended
-    // precision. The memo is cleared each replan (set_time_context), so
-    // forecasts are always recomputed fresh per planning call.
-    constexpr int kBucket = 1;                           // steps per bucket (1 = exact)
+float OperableEnvironment::get_cost_at(int i, int j, int depart_step) const {
+    const float static_c = ensure_cost(i, j);   // ← seul changement de cette fonction
+    if (!mem_ctx_ || static_c < 0.f) return static_c;
+
+    constexpr int kBucket = 1;
     const int n      = static_cast<int>(nodes.size());
     const int bucket = (depart_step > 0 ? depart_step : 0) / kBucket;
     const long long key =
